@@ -26,3 +26,13 @@ What it took, all pixel-identical (48 scripts, CRC per frame, strips checked aga
   wrapped text ~20 times per strip, 300 times a frame.
 
 Real play (end-to-end tests, frames as fast as they come): 54-89 fps in 5 s windows, most above 75.
+
+## 2026-10-12 · Step 2: frames in step with the panel
+
+The panel's TE line now pulses once per frame (it pulsed every line too) and the firmware starts sending a frame on
+that pulse, so the strips (8 ms) always run ahead of the panel's scan (16.3 ms): no frame shows half old, half new.
+The zone is drawn before waiting (`game_draw_world`), so only the fast strip composition runs after the pulse; if
+the pulse came less than 3 ms ago the frame goes straight out instead of waiting a whole refresh.
+
+Real play: steady 60-61 fps (the panel refreshes at 61.5 Hz), about 5 ms a frame left waiting for the scan. Still
+slower: Bajo Pueblo's bag (about 15 ms of drawing) and an item's close-up over the bag (about 35 ms a frame).

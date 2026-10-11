@@ -236,22 +236,29 @@ void game_render(uint16_t *native) {
     game_draw(&scr, true);
 }
 
+/* The zone (or the fight) into G.world, once a frame, before its windows are drawn. */
+void game_draw_world(void) {
+    G.draws++;
+    layer_id base = G.nstack ? G.stack[0] : L_TITLE;
+    if (base == L_TITLE || base == L_END || base == L_ERROR) return;
+    surface world = {.px = G.world, .w = WORLD_W, .h = WORLD_H};
+    if (layer_has(L_ARENA)) arena_render_world(&world);
+    else world_render(&world);
+}
+
 /* The frame onto s, which may be a window of it: everything below draws through gfx.c, clipped to s, so drawing the
- * frame window by window gives the same pixels (the console draws its panel strips this way). world: draw the zone
- * into G.world first; once a frame is enough, the windows after the first reuse it. */
+ * frame window by window gives the same pixels (the console draws its panel strips this way). world_pass: draw the
+ * zone into G.world first (game_draw_world); once a frame is enough, the windows after the first reuse it. */
 void game_draw(surface *s, bool world_pass) {
+    if (world_pass) game_draw_world();
     surface scr = *s, world = {.px = G.world, .w = WORLD_W, .h = WORLD_H};
-    if (world_pass) G.draws++;
     layer_id base = G.nstack ? G.stack[0] : L_TITLE;
     if (base == L_TITLE) { title_render(&scr); return; }
     if (base == L_END) { end_render(&scr); return; }
     if (base == L_ERROR) { error_render(&scr); return; }
 
-    if (layer_has(L_ARENA)) { /* the fight covers the zone it was entered from */
-        if (world_pass) arena_render_world(&world);
-        arena_render_screen(&world, &scr);
-    } else {
-        if (world_pass) world_render(&world);
+    if (layer_has(L_ARENA)) arena_render_screen(&world, &scr); /* the fight covers the zone it was entered from */
+    else {
         gfx_upscale2x(&world, &scr);
         world_render_marker(&scr);
     }

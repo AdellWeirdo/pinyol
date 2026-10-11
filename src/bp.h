@@ -72,6 +72,7 @@ typedef struct {
     bool swap;
 } surface;
 void game_draw(surface *s, bool world_pass); /* the frame onto s, a window of it or all (game.c) */
+void game_draw_world(void);                  /* only the zone into G.world: game_draw(s, true) starts with it */
 
 typedef struct {
     char id[32];

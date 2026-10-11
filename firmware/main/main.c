@@ -50,7 +50,7 @@ void hal_audio_unlock(void) { xSemaphoreGive(audio_mutex); }
 bool hal_can_switch_game(void) { return true; }
 void hal_switch_game(void) { switch_req = true; }
 
-static struct { int64_t first, rest; } strip_us; /* where the strips' time goes (perf_report) */
+static struct { int64_t world, wait, first, rest; } strip_us; /* where a frame's time goes (perf_report) */
 
 static void perf_report(void) {
     int64_t now = esp_timer_get_time();
@@ -64,21 +64,22 @@ static void perf_report(void) {
             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
     if (strip_us.first)
-        hal_log("strips: first (with the world) %.2f ms, other 14 %.2f ms a frame", strip_us.first / 1000.0 / perf.frames,
-                strip_us.rest / 1000.0 / perf.frames);
-    strip_us.first = strip_us.rest = 0;
+        hal_log("frame: world %.2f ms, waiting for the scan %.2f ms, strips %.2f ms (CPU, the DMA overlaps)",
+                strip_us.world / 1000.0 / perf.frames, strip_us.wait / 1000.0 / perf.frames,
+                (strip_us.first + strip_us.rest) / 1000.0 / perf.frames);
+    strip_us = (typeof(strip_us)){0};
     perf = (typeof(perf)){.since = now};
     display_present_us = 0;
     audio_out_mix_us = 0;
 }
 
 /* A panel strip drawn straight from the game: the frame's columns p0..p0+31, turned and byte-swapped for the bus, in
- * internal RAM. The world is drawn into G.world with the first strip; no 480x320 frame exists. */
+ * internal RAM. The world is already in G.world (draw); no 480x320 frame exists. */
 static void draw_strip(int p0, uint16_t *out, void *ctx) {
     (void)ctx;
     int64_t a = esp_timer_get_time();
     surface s = gfx_turned(out, p0, 32, SCREEN_W, SCREEN_H, display_flipped(), true); /* the bus sends high bytes first */
-    game_draw(&s, p0 == 0);
+    game_draw(&s, false);
     *(p0 == 0 ? &strip_us.first : &strip_us.rest) += esp_timer_get_time() - a;
 }
 
@@ -91,7 +92,13 @@ static void draw(void) {
     display_submit(frame);
     cur ^= 1;
 #else
+    int64_t w = esp_timer_get_time();
+    game_draw_world();
+    strip_us.world += esp_timer_get_time() - w;
     display_wait(); /* the game list's last frame, if it is still going out */
+    w = esp_timer_get_time();
+    display_wait_scan();
+    strip_us.wait += esp_timer_get_time() - w;
     display_present_strips(draw_strip, NULL);
 #endif
     int64_t us = esp_timer_get_time() - a;

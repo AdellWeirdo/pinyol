@@ -23,6 +23,8 @@
 #define PIN_D2 14
 #define PIN_D3 9
 #define PIN_BL 41
+#define PIN_TE 42
+#define SCAN_START_US 3000 /* this close after the TE pulse the strips (8 ms) still outrun the scan (16 ms) */
 #define FRAME_W 480
 #define FRAME_H 320
 #define PANEL_W 320
@@ -30,6 +32,9 @@
 #define STRIP 32 /* panel rows (frame columns) per transfer: 20 KB */
 
 static spi_device_handle_t dev;
+static SemaphoreHandle_t te_pulse;
+static volatile int64_t te_last; /* when the panel last started a scan */
+static void te_init(void);
 static uint16_t *strip_buf[2];
 static bool flipped;
 
@@ -99,7 +104,7 @@ static const struct {
     {0x29, 0, {0}, 0},                      /* display on */
     {0x3A, 1, {0x01}, 0},                   /* RGB565 */
     {0x36, 1, {0x00}, 0},                   /* portrait, as the panel is */
-    {0x35, 1, {0x01}, 20},                  /* tearing-effect output on */
+    {0x35, 1, {0x00}, 20},                  /* tearing-effect output on: one pulse per frame (display_wait_scan) */
 };
 
 static void write_reg(uint8_t cmd, const uint8_t *data, int len) {
@@ -153,6 +158,33 @@ void display_init(int spi_hz, bool flip) {
         strip_buf[i] = heap_caps_malloc(STRIP * PANEL_W * 2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         assert(strip_buf[i]);
     }
+    te_init();
+}
+
+static void IRAM_ATTR te_isr(void *arg) {
+    (void)arg;
+    te_last = esp_timer_get_time();
+    BaseType_t woken = pdFALSE;
+    xSemaphoreGiveFromISR(te_pulse, &woken);
+    if (woken) portYIELD_FROM_ISR();
+}
+
+static void te_init(void) {
+    te_pulse = xSemaphoreCreateBinary();
+    const gpio_config_t io = {.pin_bit_mask = 1ULL << PIN_TE, .mode = GPIO_MODE_INPUT, .intr_type = GPIO_INTR_POSEDGE};
+    esp_err_t e = gpio_config(&io);
+    if (e == ESP_OK) e = gpio_install_isr_service(0);
+    if (e == ESP_OK || e == ESP_ERR_INVALID_STATE) e = gpio_isr_handler_add(PIN_TE, te_isr, NULL);
+    if (e != ESP_OK) {
+        vSemaphoreDelete(te_pulse);
+        te_pulse = NULL; /* frames go out unsynchronised */
+    }
+}
+
+void display_wait_scan(void) {
+    if (!te_pulse || esp_timer_get_time() - te_last < SCAN_START_US) return;
+    xSemaphoreTake(te_pulse, 0);                    /* a pulse from an earlier scan */
+    xSemaphoreTake(te_pulse, pdMS_TO_TICKS(20));    /* the next one; no pulse in 20 ms: send anyway */
 }
 
 /* Panel rows p0..p0+STRIP-1 from the frame. Panel pixel (px, py) shows frame pixel (lx, ly) with

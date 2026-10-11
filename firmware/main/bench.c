@@ -623,6 +623,8 @@ void bench_v1_run(void) {
     static const char *const bp[] = {"play", "dlg:D_ALCALDESA", "inv", "puz:P01", "puz:P03"};
     static const char *const gg[] = {"play", "dlg:D_M01.noticia", "inv", "puz:P01", "puz:T02"};
     static const char *const bp4[] = {"play", "dlg:D_PANADERA", "inv+dlg:D_PANADERA"};
+    profile_game("/sdcard/games/bajopueblo");
+    profile_game("/sdcard/games/geumgye");
     profile_screens("/sdcard/games/bajopueblo", "Z04", bp4, 3);
     profile_screens("/sdcard/games/bajopueblo", "Z01", bp, 5);
     profile_screens("/sdcard/games/geumgye", "M01", gg, 5);
