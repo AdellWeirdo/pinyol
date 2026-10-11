@@ -59,6 +59,10 @@ if(NOT PROJECT_IS_TOP_LEVEL) # a game's repo registers its own tests
   return()
 endif()
 enable_testing()
+add_executable(ppu_test tests/ppu_test.c)
+target_compile_options(ppu_test PRIVATE -Wall -Wextra -Werror ${SAN})
+target_link_libraries(ppu_test bp_core)
+add_test(NAME ppu COMMAND ppu_test)
 add_test(NAME validate COMMAND bp_headless --game ${GAME_DIR} --validate)
 file(GLOB SCRIPTS CONFIGURE_DEPENDS tests/*.script) # written for examples/hola
 foreach(s ${SCRIPTS})
