@@ -46,6 +46,21 @@ uv run tools/new_game.py games/mygame --title "My Game"
 - **Fonts**: `tools/ttf2fnt.py` turns a pixel TTF into the engine's FNT format.
 - **Tests**: a script plays the game with real input and checks flags, zones and screens. See [tests/hola.script](tests/hola.script); run it with `./build/bp_headless --game DIR --fresh --script FILE`, and `tools/record.sh` records the run as a video.
 
+## A game in its own repo
+
+A bigger game can live in its own repository and build np2d as a subproject, with its own tests:
+
+```cmake
+cmake_minimum_required(VERSION 3.21)
+project(mygame C)
+set(GAME_DIR ${CMAKE_SOURCE_DIR}/games/mygame)  # what bp_sim and bp_headless open by default
+add_subdirectory(../np2d np2d)                  # bp_core, bp_headless, bp_sim
+enable_testing()
+add_test(NAME validate COMMAND bp_headless --game ${GAME_DIR} --validate)
+```
+
+Bajo Pueblo and Geumgye are built this way.
+
 ## Play in the browser
 
 The simulator also builds with [Emscripten](https://emscripten.org) into a web page with the game packed inside.
