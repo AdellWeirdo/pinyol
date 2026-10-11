@@ -478,3 +478,74 @@ void bench_run(void) {
     pipeline("max: aff+4L+128 spr", 4, 128, true, 5);
     LOG("done");
 }
+
+/* ------------------------------------------------------------------ v1 profile: where the current engine's frame goes */
+
+#include "bp.h"
+
+#define V1_SAVES "/sdcard/np2d_bench_saves" /* never the game's own saves/ */
+
+static float best_ms(void (*fn)(void *), void *arg) {
+    uint32_t best = UINT32_MAX;
+    for (int r = 0; r < 3; r++) {
+        uint32_t a = esp_cpu_get_cycle_count();
+        fn(arg);
+        uint32_t c = esp_cpu_get_cycle_count() - a;
+        if (c < best) best = c;
+    }
+    return best / 240000.0f;
+}
+
+static surface v1_world, v1_scr;
+static void do_world(void *a) { (void)a; world_render(&v1_world); }
+static void do_upscale(void *a) { (void)a; gfx_upscale2x(&v1_world, &v1_scr); }
+static void do_frame(void *a) { (void)a; game_render(v1_scr.px); }
+
+static void profile_game(const char *dir) {
+    mkdir(V1_SAVES, 0755);
+    bp_config cfg = {dir, V1_SAVES};
+    if (!game_init(&cfg)) {
+        LOG("%s: game_init failed", dir);
+        game_shutdown();
+        return;
+    }
+    G.autosave_enabled = false;
+    uint16_t *frame = heap_caps_malloc(SCREEN_W * SCREEN_H * 2, MALLOC_CAP_SPIRAM);
+    if (!frame) return;
+    v1_world = (surface){G.world, WORLD_W, WORLD_H};
+    v1_scr = (surface){frame, SCREEN_W, SCREEN_H};
+    const char *id = jstr(G.game, "id") ? jstr(G.game, "id") : dir;
+    LOG("v1 %-10s title                 whole frame %6.2f ms", id, best_ms(do_frame, NULL));
+    game_new();
+    G.autosave_enabled = false;
+    const hal_input none = {0};
+    float sum_w = 0, sum_u = 0, sum_f = 0, max_f = 0;
+    int n = 0;
+    const cJSON *z;
+    cJSON_ArrayForEach(z, jget(G.game, "zones")) {
+        layers_reset(L_PLAY);
+        if (!cJSON_IsString(z) || !world_enter(z->valuestring, "safe")) continue;
+        for (int i = 0; i < 150; i++) game_tick(&none); /* past the arrival label and any entry scene */
+        layers_reset(L_PLAY);
+        G.seq.fade = 0;
+        float w = best_ms(do_world, NULL), u = best_ms(do_upscale, NULL), f = best_ms(do_frame, NULL);
+        LOG("v1 %-10s %-5s world %5.2f ms | upscale %5.2f ms | whole frame %6.2f ms", id, z->valuestring, w, u, f);
+        sum_w += w, sum_u += u, sum_f += f, n++;
+        if (f > max_f) max_f = f;
+        vTaskDelay(1);
+    }
+    if (n) LOG("v1 %-10s average of %d zones: world %.2f ms, upscale %.2f ms, whole frame %.2f ms (worst %.2f ms)", id, n,
+               sum_w / n, sum_u / n, sum_f / n, max_f);
+    heap_caps_free(frame);
+    game_shutdown();
+}
+
+void bench_v1_run(void) {
+    vTaskDelay(pdMS_TO_TICKS(4000)); /* time for the USB log to be reopened after the flash's reset */
+    if (!storage_mount()) { LOG("v1: no card"); return; }
+    LOG("v1 start | free internal %u KB, PSRAM %u KB", (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
+        (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
+    profile_game("/sdcard/games/bajopueblo");
+    profile_game("/sdcard/games/geumgye");
+    LOG("v1 done");
+}

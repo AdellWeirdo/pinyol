@@ -27,7 +27,9 @@
 #define PANEL_HZ (80 * 1000 * 1000) /* clean on the board, 12.3 ms a frame (F1) */
 #define TICK_US (1000000 / TICK_HZ)
 #define SLOW_TICK_US 40000 /* worth a log line: zone loads, card stalls */
+#ifndef TICKS_PER_FRAME /* -DBP_FRAME_TICKS=1: a frame every tick, 60 fps */
 #define TICKS_PER_FRAME 2  /* 30 fps: logic stays at 60 Hz, drawing every other tick keeps the pace even */
+#endif
 #define SLOW_RENDER_US 25000
 
 static SemaphoreHandle_t audio_mutex;
@@ -105,6 +107,18 @@ static void tick(const hal_input *in) {
     perf.ticks++;
 }
 
+#ifdef BP_BENCH_PLAY
+/* -DBP_BENCH=play: each game's end-to-end test, read from the card, plays for 75 s while perf lines are logged; a
+ * restart ends each run and RTC memory says which game is next. Saves go to their own folder, never the game's. */
+#include <sys/stat.h>
+#include "esp_attr.h"
+#include "esp_system.h"
+extern const char e2e_bajopueblo[] asm("_binary_e2e_full_script_start");
+extern const char e2e_geumgye[] asm("_binary_e2e_lectura_script_start");
+static RTC_NOINIT_ATTR uint32_t play_next, play_magic;
+static int64_t play_deadline;
+#endif
+
 /* script_run() ticks the game itself; this is its per-tick hook: show every other tick, let the idle task in. */
 static void script_frame(void) {
     static unsigned n;
@@ -116,8 +130,11 @@ static void script_frame(void) {
         perf.tick += us;
         perf.ticks++;
     }
-    if (n++ % 2 == 0) draw();
+    if (n++ % TICKS_PER_FRAME == 0) draw();
     if (n % 32 == 0) vTaskDelay(1);
+#ifdef BP_BENCH_PLAY
+    if (play_deadline && esp_timer_get_time() > play_deadline) esp_restart(); /* this game's measuring time is up */
+#endif
     perf_report();
     last_end = esp_timer_get_time();
 }
@@ -223,6 +240,41 @@ static void run_tests(const launcher_game *g, int n) {
     }
 }
 
+#ifdef BP_BENCH_PLAY
+static void bench_play(void) {
+    static const struct { const char *dir, *script, *name; } runs[] = {
+        {"/sdcard/games/bajopueblo", e2e_bajopueblo, "e2e_full"}, {"/sdcard/games/geumgye", e2e_geumgye, "e2e_lectura"}};
+    if (play_magic != 0x6E703264) play_magic = 0x6E703264, play_next = 0;
+    if (play_next >= sizeof runs / sizeof runs[0]) {
+        hal_log("BENCH play done");
+        play_magic = 0; /* a reset starts the series again */
+        return;
+    }
+    int i = (int)play_next++;
+    mkdir("/sdcard/np2d_bench", 0755);
+    mkdir("/sdcard/np2d_bench_saves", 0755);
+    char path[96];
+    snprintf(path, sizeof path, "/sdcard/np2d_bench/%s.script", runs[i].name);
+    FILE *f = fopen(path, "w");
+    if (!f) return;
+    for (const char *l = runs[i].script; *l;) { /* without "shot" lines, as the autotest images */
+        const char *e = strchr(l, '\n');
+        size_t n = e ? (size_t)(e - l + 1) : strlen(l);
+        if (strncmp(l, "shot ", 5)) fwrite(l, 1, n, f);
+        l += n;
+    }
+    fclose(f);
+    bp_config cfg = {runs[i].dir, "/sdcard/np2d_bench_saves"};
+    if (!game_init(&cfg)) return;
+    hal_log("BENCH play %s at %d ticks a frame", runs[i].name, TICKS_PER_FRAME);
+    perf = (typeof(perf)){.since = esp_timer_get_time()};
+    play_deadline = esp_timer_get_time() + 75000000;
+    script_run(path, script_frame);
+    hal_log("BENCH play %s ended before its time", runs[i].name);
+    esp_restart();
+}
+#endif
+
 void app_main(void) {
     audio_mutex = xSemaphoreCreateMutex();
     for (int i = 0; i < 2; i++) frames[i] = heap_caps_malloc(SCREEN_W * SCREEN_H * 2, MALLOC_CAP_SPIRAM);
@@ -230,9 +282,13 @@ void app_main(void) {
     display_init(PANEL_HZ, false);
     power_init();
     input_init();
-#ifdef BP_BENCH
+#if defined(BP_BENCH) && !defined(BP_BENCH_PLAY) /* the play bench runs the console as usual (bench_play) */
     display_backlight(100);
+#ifdef BP_BENCH_V1
+    bench_v1_run();
+#else
     bench_run();
+#endif
     for (;;) vTaskDelay(portMAX_DELAY); /* the last frame stays on screen */
 #endif
 #ifdef BP_REMOTE
@@ -252,6 +308,10 @@ void app_main(void) {
         return; /* not marked good: a new firmware that finds no games goes back to the previous one */
     }
     ota_mark_good(); /* storage, screen, sound and the game list are up: this firmware works */
+#ifdef BP_BENCH_PLAY
+    bench_play();
+    for (;;) vTaskDelay(portMAX_DELAY);
+#endif
     run_tests(games, n);
     for (;;) {
         int i = launcher_choose(frames, games, n);
