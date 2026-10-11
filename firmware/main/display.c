@@ -231,6 +231,14 @@ void display_start_task(void) {
     xTaskCreatePinnedToCore(present_task, "display", 4096, NULL, 5, NULL, 1);
 }
 
+bool display_flipped(void) { return flipped; }
+
+void display_wait(void) {
+    if (!idle) return;
+    xSemaphoreTake(idle, portMAX_DELAY); /* the frame the task was sending is out */
+    xSemaphoreGive(idle);
+}
+
 static const uint16_t *last;
 
 const uint16_t *display_last(void) { return last; }

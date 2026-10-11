@@ -131,31 +131,58 @@ bool gfx_opaque(const asset *a, int frame, int u, int v) {
 
 static inline uint16_t blend50(uint16_t a, uint16_t b) { return ((a & 0xF7DE) >> 1) + ((b & 0xF7DE) >> 1); }
 
-/* Visible part of a span [x, x+w) on a line [0, lim): first offset into the span, and how many. */
-static inline int clip(int x, int w, int lim, int *first) {
-    *first = x < 0 ? -x : 0;
-    return (x + w > lim ? lim - x : w) - *first;
+/* A surface's steps between pixels, and the frame it is a window of (surface in bp.h). */
+static inline int step_x(const surface *s) { return s->xs ? s->xs : 1; }
+static inline int step_y(const surface *s) { return s->xs ? s->ys : s->w; }
+static inline int frame_w(const surface *s) { return s->fw ? s->fw : s->w; }
+static inline int frame_h(const surface *s) { return s->fh ? s->fh : s->h; }
+static inline uint16_t *at(const surface *s, int x, int y) {
+    return s->px + (ptrdiff_t)(x - s->x0) * step_x(s) + (ptrdiff_t)(y - s->y0) * step_y(s);
+}
+static inline uint16_t bswap16(uint16_t v) { return (uint16_t)(v << 8 | v >> 8); }
+static inline uint16_t stored(const surface *s, uint16_t c) { return s->swap ? bswap16(c) : c; } /* a colour as kept in s */
+static inline bool inside(const surface *s, int x, int y) {
+    return x >= s->x0 && x < s->x0 + s->w && y >= s->y0 && y < s->y0 + s->h;
+}
+
+/* Visible part of a span [x, x+len) on a line [lo, hi): first offset into the span, and how many. */
+static inline int clip(int x, int len, int lo, int hi, int *first) {
+    *first = x < lo ? lo - x : 0;
+    return (x + len > hi ? hi - x : len) - *first;
+}
+#define CLIP_X(s, x, len, first) clip(x, len, (s)->x0, (s)->x0 + (s)->w, first)
+#define CLIP_Y(s, y, len, first) clip(y, len, (s)->y0, (s)->y0 + (s)->h, first)
+
+surface gfx_turned(uint16_t *out, int row0, int rows, int fw, int fh, bool flip, bool swap) {
+    surface s = {.w = rows, .h = fh, .fw = fw, .fh = fh, .swap = swap};
+    if (!flip) { /* frame pixel (x, y) is panel row x, pixel fh-1-y */
+        s.x0 = row0, s.xs = fh, s.ys = -1, s.px = out + (fh - 1);
+    } else {     /* frame pixel (x, y) is panel row fw-1-x, pixel y */
+        s.x0 = fw - row0 - rows, s.xs = -fh, s.ys = 1, s.px = out + (size_t)(rows - 1) * fh;
+    }
+    return s;
 }
 
 /* Unrotated blit of the first `rows` rows: clipped once, the mask read a row at a time, rows without a mask
  * copied whole. This is every sprite and background in the world, so it is the hot path on the console. */
 static void blit_plain(surface *s, const asset *a, int frame, int x, int y, int rows, bool half) {
-    int u0, v0, n = clip(x, a->w, s->w, &u0), m = clip(y, rows < a->h ? rows : a->h, s->h, &v0);
+    int u0, v0, n = CLIP_X(s, x, a->w, &u0), m = CLIP_Y(s, y, rows < a->h ? rows : a->h, &v0);
     if (n <= 0 || m <= 0) return;
     const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
-    int stride = (a->w + 7) / 8;
+    int stride = (a->w + 7) / 8, xs = step_x(s);
     const uint8_t *mask = a->mask ? a->mask + (size_t)frame * stride * a->h : NULL;
     for (int v = v0; v < v0 + m; v++) {
-        const uint16_t *sp = src + v * a->w;
-        uint16_t *d = s->px + (y + v) * s->w + x;
-        if (!mask && !half) {
-            memcpy(d + u0, sp + u0, (size_t)n * sizeof *d);
+        const uint16_t *sp = src + v * a->w + u0;
+        uint16_t *d = at(s, x + u0, y + v);
+        if (!mask && !half && xs == 1 && !s->swap) {
+            memcpy(d, sp, (size_t)n * sizeof *d);
             continue;
         }
         const uint8_t *mr = mask ? mask + v * stride : NULL;
-        for (int u = u0; u < u0 + n; u++) {
+        for (int k = 0; k < n; k++, d += xs) {
+            int u = u0 + k;
             if (mr && !(mr[u >> 3] & (0x80 >> (u & 7)))) continue;
-            d[u] = half ? blend50(d[u], sp[u]) : sp[u];
+            *d = half ? stored(s, blend50(stored(s, *d), sp[k])) : stored(s, sp[k]);
         }
     }
 }
@@ -172,10 +199,10 @@ void gfx_blit(surface *s, const asset *a, int frame, int x, int y, int rot, bool
     const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
     for (int ry = 0; ry < rh; ry++) {
         int dy = y + ry;
-        if (dy < 0 || dy >= s->h) continue;
+        if (dy < s->y0 || dy >= s->y0 + s->h) continue;
         for (int rx = 0; rx < rw; rx++) {
             int dx = x + rx;
-            if (dx < 0 || dx >= s->w) continue;
+            if (dx < s->x0 || dx >= s->x0 + s->w) continue;
             int u, v;
             switch (rot) {
             case 0: u = rx; v = ry; break;
@@ -185,8 +212,8 @@ void gfx_blit(surface *s, const asset *a, int frame, int x, int y, int rot, bool
             }
             if (!gfx_opaque(a, frame, u, v)) continue;
             uint16_t c = src[v * a->w + u];
-            uint16_t *d = &s->px[dy * s->w + dx];
-            *d = half ? blend50(*d, c) : c;
+            uint16_t *d = at(s, dx, dy);
+            *d = half ? stored(s, blend50(stored(s, *d), c)) : stored(s, c);
         }
     }
 }
@@ -196,21 +223,45 @@ void gfx_blit_rows(surface *s, const asset *a, int frame, int x, int y, int rows
     blit_plain(s, a, frame, x, y, rows, false);
 }
 
+/* Each pixel a 2x2 block; a block that would cross the frame's edge is left out whole, whatever window s is. */
 void gfx_blit2x(surface *s, const asset *a, int frame, int x, int y) {
     if (frame < 0 || frame >= a->frames) frame = 0;
     const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
     int stride = (a->w + 7) / 8;
     const uint8_t *mask = a->mask ? a->mask + (size_t)frame * stride * a->h : NULL;
-    for (int v = 0; v < a->h; v++) {
+    if (!s->xs && !s->swap) { /* a plain buffer: the frame itself */
+        for (int v = 0; v < a->h; v++) {
+            int dy = y + 2 * v;
+            if (dy < 0 || dy + 1 >= s->h) continue;
+            const uint8_t *mr = mask ? mask + v * stride : NULL;
+            uint16_t *row = s->px + dy * s->w;
+            for (int u = 0; u < a->w; u++) {
+                int dx = x + 2 * u;
+                if (dx < 0 || dx + 1 >= s->w || (mr && !(mr[u >> 3] & (0x80 >> (u & 7))))) continue;
+                uint16_t c = src[v * a->w + u], *d = row + dx;
+                d[0] = d[1] = d[s->w] = d[s->w + 1] = c;
+            }
+        }
+        return;
+    }
+    int fw = frame_w(s), fh = frame_h(s);
+    /* a window: only the source pixels whose block can meet it (a margin of one; the tests below are exact) */
+    int ua = (s->x0 - x) / 2 - 1, ub = (s->x0 + s->w - x) / 2 + 1, va = (s->y0 - y) / 2 - 1, vb = (s->y0 + s->h - y) / 2 + 1;
+    if (ua < 0) ua = 0;
+    if (va < 0) va = 0;
+    if (ub > a->w) ub = a->w;
+    if (vb > a->h) vb = a->h;
+    for (int v = va; v < vb; v++) {
         int dy = y + 2 * v;
-        if (dy < 0 || dy + 1 >= s->h) continue;
+        if (dy < 0 || dy + 1 >= fh) continue;
         const uint8_t *mr = mask ? mask + v * stride : NULL;
-        uint16_t *row = s->px + dy * s->w;
-        for (int u = 0; u < a->w; u++) {
+        for (int u = ua; u < ub; u++) {
             int dx = x + 2 * u;
-            if (dx < 0 || dx + 1 >= s->w || (mr && !(mr[u >> 3] & (0x80 >> (u & 7))))) continue;
-            uint16_t c = src[v * a->w + u], *d = row + dx;
-            d[0] = d[1] = d[s->w] = d[s->w + 1] = c;
+            if (dx < 0 || dx + 1 >= fw || (mr && !(mr[u >> 3] & (0x80 >> (u & 7))))) continue;
+            uint16_t c = stored(s, src[v * a->w + u]);
+            for (int j = 0; j < 2; j++)
+                for (int i = 0; i < 2; i++)
+                    if (inside(s, dx + i, dy + j)) *at(s, dx + i, dy + j) = c;
         }
     }
 }
@@ -219,15 +270,29 @@ void gfx_blit2x(surface *s, const asset *a, int frame, int x, int y) {
  * 16-bit pixels: without it, strict aliasing lets the compiler reorder the wide and narrow accesses. */
 typedef uint32_t __attribute__((may_alias)) px2;
 
-void gfx_fill(surface *s, int x, int y, int w, int h, uint16_t c) {
-    int i0, j0, n = clip(x, w, s->w, &i0), m = clip(y, h, s->h, &j0);
+/* n pixels in a row of memory, two at a time where aligned. */
+static void fill_run(uint16_t *d, int n, uint16_t c) {
     uint32_t cc = c * 0x00010001u;
-    for (int j = 0; j < m; j++) {
-        uint16_t *d = s->px + (y + j0 + j) * s->w + x + i0;
-        int i = 0;
-        if (n > 0 && ((uintptr_t)d & 2)) d[i++] = c;
-        for (; i + 1 < n; i += 2) *(px2 *)(d + i) = cc;
-        if (i < n) d[i] = c;
+    int i = 0;
+    if (n > 0 && ((uintptr_t)d & 2)) d[i++] = c;
+    for (; i + 1 < n; i += 2) *(px2 *)(d + i) = cc;
+    if (i < n) d[i] = c;
+}
+
+void gfx_fill(surface *s, int x, int y, int w, int h, uint16_t c) {
+    int i0, j0, n = CLIP_X(s, x, w, &i0), m = CLIP_Y(s, y, h, &j0);
+    if (n <= 0 || m <= 0) return;
+    c = stored(s, c);
+    int xs = step_x(s), ys = step_y(s);
+    if (xs == 1) { /* rows are the contiguous runs */
+        for (int j = 0; j < m; j++) fill_run(at(s, x + i0, y + j0 + j), n, c);
+        return;
+    }
+    uint16_t *col = at(s, x + i0, y + j0);
+    for (int i = 0; i < n; i++, col += xs) { /* a turned window: its columns are */
+        if (ys == 1 || ys == -1) fill_run(ys < 0 ? col - (m - 1) : col, m, c);
+        else
+            for (int j = 0; j < m; j++) col[j * ys] = c;
     }
 }
 
@@ -238,38 +303,90 @@ void gfx_frame(surface *s, int x, int y, int w, int h, uint16_t c) {
     gfx_fill(s, x + w - 2, y, 2, h, c);
 }
 
-/* Halving every channel: with bit 0 of each 16-bit lane masked off, two pixels share one 32-bit shift. */
-void gfx_shade(surface *s, int x, int y, int w, int h) {
-    int i0, j0, n = clip(x, w, s->w, &i0), m = clip(y, h, s->h, &j0);
-    for (int j = 0; j < m; j++) {
-        uint16_t *d = s->px + (y + j0 + j) * s->w + x + i0;
-        int i = 0;
-        if (n > 0 && ((uintptr_t)d & 2)) d[i] = (d[i] & 0xF7DE) >> 1, i++;
+/* Halving every channel: with bit 0 of each 16-bit lane masked off, two pixels share one 32-bit shift. With the bytes
+ * swapped the same halving is a mask and a one-bit rotation of each lane (checked against every colour). */
+static void shade_run(uint16_t *d, int n, bool swap) {
+    int i = 0;
+    if (swap) {
+        if (n > 0 && ((uintptr_t)d & 2)) d[i] = (uint16_t)((d[i] & 0xDEF7) >> 1 | (d[i] & 1) << 15), i++;
         for (; i + 1 < n; i += 2) {
             px2 *q = (px2 *)(d + i);
-            *q = (*q & 0xF7DEF7DEu) >> 1;
+            uint32_t v = *q & 0xDEF7DEF7u;
+            *q = (v >> 1 & 0x7FFF7FFFu) | (v & 0x00010001u) << 15;
         }
-        if (i < n) d[i] = (d[i] & 0xF7DE) >> 1;
+        if (i < n) d[i] = (uint16_t)((d[i] & 0xDEF7) >> 1 | (d[i] & 1) << 15);
+        return;
+    }
+    if (n > 0 && ((uintptr_t)d & 2)) d[i] = (d[i] & 0xF7DE) >> 1, i++;
+    for (; i + 1 < n; i += 2) {
+        px2 *q = (px2 *)(d + i);
+        *q = (*q & 0xF7DEF7DEu) >> 1;
+    }
+    if (i < n) d[i] = (d[i] & 0xF7DE) >> 1;
+}
+
+void gfx_shade(surface *s, int x, int y, int w, int h) {
+    int i0, j0, n = CLIP_X(s, x, w, &i0), m = CLIP_Y(s, y, h, &j0);
+    if (n <= 0 || m <= 0) return;
+    int xs = step_x(s), ys = step_y(s);
+    if (xs == 1) {
+        for (int j = 0; j < m; j++) shade_run(at(s, x + i0, y + j0 + j), n, s->swap);
+        return;
+    }
+    uint16_t *col = at(s, x + i0, y + j0);
+    for (int i = 0; i < n; i++, col += xs) {
+        if (ys == 1 || ys == -1) shade_run(ys < 0 ? col - (m - 1) : col, m, s->swap);
+        else
+            for (int j = 0; j < m; j++) col[j * ys] = stored(s, (uint16_t)((stored(s, col[j * ys]) & 0xF7DE) >> 1));
     }
 }
 
 void gfx_upscale2x(const surface *src, surface *dst) {
-    for (int y = 0; y < src->h; y++) {
-        uint16_t *d0 = dst->px + (2 * y) * dst->w;
-        const uint16_t *sp = src->px + y * src->w;
-        px2 *pair = (px2 *)d0; /* rows start at even pixels: each source pixel is one aligned word */
-        for (int x = 0; x < src->w; x++) pair[x] = sp[x] * 0x00010001u;
-        memcpy(d0 + dst->w, d0, (size_t)src->w * 2 * sizeof *d0); /* the second row is the first again */
+    if (step_x(dst) == 1 && !dst->x0 && !dst->y0) { /* the whole frame, row after row */
+        for (int y = 0; y < src->h; y++) {
+            uint16_t *d0 = dst->px + (2 * y) * dst->w;
+            const uint16_t *sp = src->px + y * src->w;
+            px2 *pair = (px2 *)d0; /* rows start at even pixels: each source pixel is one aligned word */
+            for (int x = 0; x < src->w; x++) pair[x] = sp[x] * 0x00010001u;
+            memcpy(d0 + dst->w, d0, (size_t)src->w * 2 * sizeof *d0); /* the second row is the first again */
+        }
+        return;
+    }
+    int xa = dst->x0, xb = dst->x0 + dst->w, ya = dst->y0, yb = dst->y0 + dst->h, ys = step_y(dst), xs = step_x(dst);
+    if (xb > 2 * src->w) xb = 2 * src->w;
+    if (yb > 2 * src->h) yb = 2 * src->h;
+    if ((ys == 1 || ys == -1) && !(xs & 1) && !((xa | ya | xb | yb) & 1)) {
+        /* a turned strip: each source pixel's 2x2 block is two aligned 32-bit words, one in each of two columns */
+        const int w = src->w, qs = ys, qx = xs / 2, rows = (yb - ya) / 2;
+        for (int x = xa; x < xb; x += 2) {
+            const uint16_t *sp = src->px + (ya >> 1) * w + (x >> 1);
+            uint16_t *d = at(dst, x, ya);
+            px2 *q = (px2 *)(ys < 0 ? d - 1 : d);
+            if (dst->swap)
+                for (int k = 0; k < rows; k++, sp += w, q += qs) {
+                    uint32_t v = *sp;
+                    v = (v << 8 | v >> 8) & 0xFFFF;
+                    q[0] = q[qx] = v | v << 16;
+                }
+            else
+                for (int k = 0; k < rows; k++, sp += w, q += qs) q[0] = q[qx] = *sp * 0x00010001u;
+        }
+        return;
+    }
+    for (int x = xa; x < xb; x++) { /* any other window, pixel by pixel */
+        uint16_t *d = at(dst, x, ya);
+        for (int y = ya; y < yb; y++, d += ys) *d = stored(dst, src->px[(y >> 1) * src->w + x / 2]);
     }
 }
 
 /* ponytail: fixed per-channel scale toward blue-grey; a LUT or palette swap if art needs finer control */
 void gfx_tint_dusk(surface *s) {
-    for (int i = 0; i < s->w * s->h; i++) {
-        uint16_t c = s->px[i];
-        int r = (c >> 11) * 5 / 8, g = ((c >> 5) & 63) * 11 / 16, b = (c & 31) * 13 / 16 + 2;
-        s->px[i] = (uint16_t)((r << 11) | (g << 5) | (b > 31 ? 31 : b));
-    }
+    for (int y = s->y0; y < s->y0 + s->h; y++)
+        for (int x = s->x0; x < s->x0 + s->w; x++) {
+            uint16_t *d = at(s, x, y), c = stored(s, *d);
+            int r = (c >> 11) * 5 / 8, g = ((c >> 5) & 63) * 11 / 16, b = (c & 31) * 13 / 16 + 2;
+            *d = stored(s, (uint16_t)((r << 11) | (g << 5) | (b > 31 ? 31 : b)));
+        }
 }
 
 /* Cards and signs in the style of the approved references: paper, 2 px ink border with cut corners,
@@ -278,6 +395,13 @@ void gfx_tint_dusk(surface *s) {
 static void chamfer(surface *s, int x, int y, int w, int h, uint16_t col, int c, bool shade) {
     for (int r = 0; r < h; r++) {
         int l = r < c ? c - r : 0, rt = r >= h - c ? r - (h - c) + 1 : 0;
+        if (!l && !rt) { /* the rows between the cut corners are one rectangle: one call instead of one per row */
+            int n = h - c - r;
+            if (shade) gfx_shade(s, x, y + r, w, n);
+            else gfx_fill(s, x, y + r, w, n, col);
+            r += n - 1;
+            continue;
+        }
         if (shade) gfx_shade(s, x + l, y + r, w - l - rt, 1);
         else gfx_fill(s, x + l, y + r, w - l - rt, 1, col);
     }
@@ -442,18 +566,19 @@ int font_draw(surface *sf, const font *f, int x, int y, const char *s, int nbyte
     if (nbytes < 0) nbytes = (int)strlen(s);
     const char *e = s + nbytes;
     int x0 = x;
+    col = stored(sf, col);
     for (int n = 0; s < e && (maxchars < 0 || n < maxchars); n++) {
         int c = utf8_cp1252(&s, e);
         if (c < 0) c = '?';
         const uint8_t *g = f->bits + (size_t)c * f->h * f->stride, *b = f->box ? f->box + 4 * c : NULL;
-        int i0, j0, n = clip(x, f->w, sf->w, &i0), m = clip(y, f->h, sf->h, &j0);
+        int i0, j0, n = CLIP_X(sf, x, f->w, &i0), m = CLIP_Y(sf, y, f->h, &j0);
         int ia = b && b[0] > i0 ? b[0] : i0, ib = b && b[1] < i0 + n ? b[1] : i0 + n; /* the ink, clipped */
-        int ja = b && b[2] > j0 ? b[2] : j0, jb = b && b[3] < j0 + m ? b[3] : j0 + m;
-        for (int j = ja; j < jb; j++) {
+        int ja = b && b[2] > j0 ? b[2] : j0, jb = b && b[3] < j0 + m ? b[3] : j0 + m, xs = step_x(sf);
+        for (int j = ja; ia < ib && j < jb; j++) {
             const uint8_t *gr = g + j * f->stride;
-            uint16_t *d = sf->px + (y + j) * sf->w + x;
-            for (int i = ia; i < ib; i++)
-                if (gr[i >> 3] & (0x80 >> (i & 7))) d[i] = col;
+            uint16_t *d = at(sf, x + ia, y + j);
+            for (int i = ia; i < ib; i++, d += xs)
+                if (gr[i >> 3] & (0x80 >> (i & 7))) *d = col;
         }
         x += f->adv[c];
     }

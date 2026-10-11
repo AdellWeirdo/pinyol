@@ -15,6 +15,7 @@
 #include "driver/gpio.h"
 #include "esp_cpu.h"
 #include "esp_heap_caps.h"
+#include "esp_memory_utils.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -497,6 +498,28 @@ static float best_ms(void (*fn)(void *), void *arg) {
 }
 
 static surface v1_world, v1_scr;
+static uint16_t *v1_strip;
+static void do_strips(void *a) { /* the console's way: 15 turned strips of 32 panel rows, world drawn once */
+    (void)a;
+    for (int r = 0; r < SCREEN_W; r += 32) {
+        surface t = gfx_turned(v1_strip, r, 32, SCREEN_W, SCREEN_H, false, true);
+        game_draw(&t, false);
+    }
+}
+static void do_strip_upscale(void *a) {
+    (void)a;
+    for (int r = 0; r < SCREEN_W; r += 32) {
+        surface t = gfx_turned(v1_strip, r, 32, SCREEN_W, SCREEN_H, false, true);
+        gfx_upscale2x(&v1_world, &t);
+    }
+}
+static void do_swap(void *a) {
+    (void)a;
+    for (int r = 0; r < SCREEN_W; r += 32) {
+        uint32_t *w = (uint32_t *)v1_strip;
+        for (int i = 0; i < 32 * SCREEN_H / 2; i++) w[i] = (w[i] & 0x00FF00FFu) << 8 | (w[i] >> 8 & 0x00FF00FFu);
+    }
+}
 static void do_world(void *a) { (void)a; world_render(&v1_world); }
 static void do_upscale(void *a) { (void)a; gfx_upscale2x(&v1_world, &v1_scr); }
 static void do_frame(void *a) { (void)a; game_render(v1_scr.px); }
@@ -511,9 +534,10 @@ static void profile_game(const char *dir) {
     }
     G.autosave_enabled = false;
     uint16_t *frame = heap_caps_malloc(SCREEN_W * SCREEN_H * 2, MALLOC_CAP_SPIRAM);
-    if (!frame) return;
-    v1_world = (surface){G.world, WORLD_W, WORLD_H};
-    v1_scr = (surface){frame, SCREEN_W, SCREEN_H};
+    v1_strip = heap_caps_malloc(32 * SCREEN_H * 2, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    if (!frame || !v1_strip) return;
+    v1_world = (surface){.px = G.world, .w = WORLD_W, .h = WORLD_H};
+    v1_scr = (surface){.px = frame, .w = SCREEN_W, .h = SCREEN_H};
     const char *id = jstr(G.game, "id") ? jstr(G.game, "id") : dir;
     LOG("v1 %-10s title                 whole frame %6.2f ms", id, best_ms(do_frame, NULL));
     game_new();
@@ -529,7 +553,9 @@ static void profile_game(const char *dir) {
         layers_reset(L_PLAY);
         G.seq.fade = 0;
         float w = best_ms(do_world, NULL), u = best_ms(do_upscale, NULL), f = best_ms(do_frame, NULL);
-        LOG("v1 %-10s %-5s world %5.2f ms | upscale %5.2f ms | whole frame %6.2f ms", id, z->valuestring, w, u, f);
+        float st = best_ms(do_strips, NULL), su = best_ms(do_strip_upscale, NULL), sw = best_ms(do_swap, NULL);
+        LOG("v1 %-10s %-5s world %5.2f ms | upscale %5.2f ms | whole frame %6.2f ms || strips: all %5.2f ms, upscale %5.2f ms, swap %5.2f ms",
+            id, z->valuestring, w, u, f, st, su, sw);
         sum_w += w, sum_u += u, sum_f += f, n++;
         if (f > max_f) max_f = f;
         vTaskDelay(1);
@@ -537,11 +563,13 @@ static void profile_game(const char *dir) {
     if (n) LOG("v1 %-10s average of %d zones: world %.2f ms, upscale %.2f ms, whole frame %.2f ms (worst %.2f ms)", id, n,
                sum_w / n, sum_u / n, sum_f / n, max_f);
     heap_caps_free(frame);
+    heap_caps_free(v1_strip);
     game_shutdown();
 }
 
 void bench_v1_run(void) {
     vTaskDelay(pdMS_TO_TICKS(4000)); /* time for the USB log to be reopened after the flash's reset */
+    LOG("v1 G.world at %p: %s", (void *)G.world, esp_ptr_external_ram(G.world) ? "PSRAM" : "internal RAM");
     if (!storage_mount()) { LOG("v1: no card"); return; }
     LOG("v1 start | free internal %u KB, PSRAM %u KB", (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
         (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));

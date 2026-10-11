@@ -70,3 +70,29 @@ Two cores, core 1 drawing frame N+1 while core 0 sends frame N, no TE sync (fram
 - The v1 engine's 30 fps comes from drawing 480×320 frames in PSRAM (writes at 48.5 MB/s), not from the panel.
 
 Not measured yet: audio mixing and Lua running at the same time, TE-synced presents, real game content.
+
+## Phase 1: drawing straight into the panel strips (2026-10-11)
+
+The v1 engine drew a 480×320 frame in PSRAM and sent it, drawing every other tick (30 fps). Drawing every tick only
+reached 46-60 fps, because one core writing that frame and the other reading it to send fought over PSRAM.
+
+Now there is no 480×320 frame on the console. Each 32-row panel strip (32 frame columns) is drawn straight from the
+game into internal RAM, already turned and byte-swapped (`gfx_turned`), while the previous strip goes out by DMA; the
+zone is drawn into `G.world` once a frame. Every pixel is the same as drawing the whole frame: all 48 test scripts of
+Bajo Pueblo and Geumgye give the same CRC as the previous engine on all 72,600 frames, and with `--check-strips` every
+frame is also drawn as strips (both orientations, both byte orders) and compared.
+
+Real play on the board, end-to-end tests, frames drawn as fast as they come (`-DBP_BENCH=play`):
+
+| | Drawing every tick, v1 | Strips |
+|---|---|---|
+| Bajo Pueblo, 5 s windows | 25-60 fps | 43-73 fps (the low ones: bag and dialogue screens) |
+| Geumgye, 5 s windows | 46-56 fps | 57-74 fps |
+| The bag open | 31 ms a frame | 20 ms |
+| Bag and dialogue | 48 ms | 45 ms |
+
+What made the strips fast enough, measured per frame: the 2× upscale written as 32-bit pairs down each panel column
+(8.9 → 2.0 ms), fills and shades the same way (a shade on swapped bytes is a mask and a one-bit rotation), cut-corner
+panels filled as one rectangle between the corners, and the current objective looked up once a frame instead of once
+per strip. Still over 16.7 ms: dialogue, bag and puzzle screens (about 20 ms); the zone itself takes up to 4.5 ms in
+Bajo Pueblo.

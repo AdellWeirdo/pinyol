@@ -232,15 +232,26 @@ void game_tick(const hal_input *in) {
 }
 
 void game_render(uint16_t *native) {
-    surface scr = {native, SCREEN_W, SCREEN_H}, world = {G.world, WORLD_W, WORLD_H};
+    surface scr = {.px = native, .w = SCREEN_W, .h = SCREEN_H};
+    game_draw(&scr, true);
+}
+
+/* The frame onto s, which may be a window of it: everything below draws through gfx.c, clipped to s, so drawing the
+ * frame window by window gives the same pixels (the console draws its panel strips this way). world: draw the zone
+ * into G.world first; once a frame is enough, the windows after the first reuse it. */
+void game_draw(surface *s, bool world_pass) {
+    surface scr = *s, world = {.px = G.world, .w = WORLD_W, .h = WORLD_H};
+    if (world_pass) G.draws++;
     layer_id base = G.nstack ? G.stack[0] : L_TITLE;
     if (base == L_TITLE) { title_render(&scr); return; }
     if (base == L_END) { end_render(&scr); return; }
     if (base == L_ERROR) { error_render(&scr); return; }
 
-    if (layer_has(L_ARENA)) arena_render(&world, &scr); /* the fight covers the zone it was entered from */
-    else {
-        world_render(&world);
+    if (layer_has(L_ARENA)) { /* the fight covers the zone it was entered from */
+        if (world_pass) arena_render_world(&world);
+        arena_render_screen(&world, &scr);
+    } else {
+        if (world_pass) world_render(&world);
         gfx_upscale2x(&world, &scr);
         world_render_marker(&scr);
     }

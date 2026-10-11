@@ -60,7 +60,18 @@ int script_run(const char *path, void (*frame)(void)); /* 0 = all expectations p
 int content_validate(void);                            /* number of errors, each logged */
 
 /* ------------------------------------------------------------------ gfx.c */
-typedef struct { uint16_t *px; int w, h; } surface;
+/* Where drawing goes. {buf, w, h} is a plain w x h buffer, row after row. A surface can also be a window of a bigger
+ * frame (fw x fh) stored any way round: pixel (x, y) is px[(x - x0) * xs + (y - y0) * ys], and everything is clipped to
+ * [x0, x0 + w) x [y0, y0 + h). Drawing a frame window by window gives the same pixels as drawing it whole: the console
+ * draws straight into its panel strips this way (gfx_turned). swap: pixels are stored with their bytes swapped, as a
+ * big-endian display bus wants them. Fields left at 0 mean the plain buffer. */
+typedef struct {
+    uint16_t *px;
+    int w, h;
+    int x0, y0, xs, ys, fw, fh;
+    bool swap;
+} surface;
+void game_draw(surface *s, bool world_pass); /* the frame onto s, a window of it or all (game.c) */
 
 typedef struct {
     char id[32];
@@ -89,6 +100,10 @@ void gfx_fill(surface *s, int x, int y, int w, int h, uint16_t c);
 void gfx_frame(surface *s, int x, int y, int w, int h, uint16_t c);
 void gfx_shade(surface *s, int x, int y, int w, int h); /* darken by half */
 void gfx_upscale2x(const surface *src, surface *dst);
+/* Panel rows row0..row0+rows-1 of a portrait panel showing a fw x fh frame turned a quarter (the console's ST77922,
+ * which cannot swap rows and columns): panel row r is frame column r (flip: fw-1-r), panel pixel p is frame row fh-1-p
+ * (flip: p). out holds rows x fh pixels, row after row, as the panel takes them, with bytes swapped if swap. */
+surface gfx_turned(uint16_t *out, int row0, int rows, int fw, int fh, bool flip, bool swap);
 void gfx_tint_dusk(surface *s);
 void gfx_panel(surface *s, int x, int y, int w, int h);               /* paper card: shadow, rounded ink border */
 void gfx_plate(surface *s, int x, int y, int w, int h, uint16_t fill); /* small sign / name tag */
@@ -260,7 +275,7 @@ void layers_reset(layer_id base);
 void arena_start(const char *id); /* effect ["arena", ID]: arena.json entry, pushed over the zone */
 void arena_practice(bool on);     /* ["arena", ID, "practice"]: winning runs "practice_win", never "win" */
 void arena_tick(void);
-void arena_render(surface *world, surface *scr);
+void arena_render_world(surface *world), arena_render_screen(surface *world, surface *scr);
 void arena_free(void);
 const char *arena_state(const char *who);       /* "boss" / "player": state name, for scripts */
 bool arena_value(const char *field, int *out); /* player_hp, boss_hp, resonance, phase, gap */
@@ -402,6 +417,9 @@ typedef struct {
     float anim_ms;
     uint32_t save_seq;
     bool exit_guard, quit, autosave_enabled;
+    unsigned draws; /* frames drawn: render code that looks things up once a frame keys on it (game_draw) */
+    unsigned objective_at; /* G.draws when objective was looked up (world.c), reset with G at every game_init */
+    const cJSON *objective;
     bool can_continue, can_load_prefinal; /* cached when a menu screen opens: no SD reads per frame */
     char missing_zone[8];
     font font, font_l, bold, bold_l;

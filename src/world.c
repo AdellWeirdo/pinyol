@@ -621,6 +621,21 @@ void world_render(surface *s) {
 }
 
 /* HUD over the world: location sign, arrival card, pointer over the target and the "A" action prompt. */
+/* The first objective whose condition holds, looked up once a frame: a frame drawn as panel strips calls the marker
+ * once per strip, and a game can have dozens of objectives. */
+static const cJSON *current_objective(void) {
+    if (G.objective_at != G.draws) {
+        G.objective_at = G.draws;
+        G.objective = NULL;
+        const cJSON *ob;
+        cJSON_ArrayForEach(ob, jget(G.game, "objectives")) if (cond_eval(jget(ob, "if"))) {
+            G.objective = ob;
+            break;
+        }
+    }
+    return G.objective;
+}
+
 void world_render_marker(surface *s) {
     if (layer_top() != L_PLAY || !Z->def) return;
     const font *f = ui_font(), *b = ui_bold();
@@ -630,11 +645,9 @@ void world_render_marker(surface *s) {
         gfx_plate(s, 8, 8, w, b->h + 10, C_PAPER);
         font_draw(s, b, 20, 13, zname, -1, -1, C_INK);
     }
-    const cJSON *ob, *ck;
-    /* game.json "objectives": the current one, under the sign; it steps aside for the arrival card and notes */
-    if (G.banner_ms <= 0 && G.toast_ms <= 0) cJSON_ArrayForEach(ob, jget(G.game, "objectives")) if (cond_eval(jget(ob, "if"))) {
-        const char *t = jstr(ob, "text");
-        if (!t || !*t) break;
+    const cJSON *ob = G.banner_ms <= 0 && G.toast_ms <= 0 ? current_objective() : NULL, *ck;
+    const char *t = jstr(ob, "text");
+    if (t && *t) { /* game.json "objectives": the current one, under the sign; it steps aside for the arrival card and notes */
         int nck = cJSON_GetArraySize(jget(ob, "checks")), tw = font_width(f, t, -1), y = 8 + b->h + 16, row = f->h + 12;
         bool one_row = tw + 40 + nck * 40 <= SCREEN_W - 16; /* else the checklist goes under the text */
         int w = one_row ? tw + 40 + nck * 40 : (tw + 40 > nck * 40 + 36 ? tw + 40 : nck * 40 + 36);
@@ -654,7 +667,6 @@ void world_render_marker(surface *s) {
             }
             x += 40;
         }
-        break;
     }
     if (zname && G.banner_ms > 0) { /* arrival card: the place name, centred, with ink rules */
         const font *bl = &G.bold_l;

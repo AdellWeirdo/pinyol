@@ -10,6 +10,8 @@ void display_present(const uint16_t *native); /* 480x320 RGB565 frame, as game_r
  * columns), 32 x 320 pixels, byte-swapped for the bus. Strips go out by DMA while the next one is built. */
 typedef void (*display_strip_fn)(int p0, uint16_t *out, void *ctx);
 void display_present_strips(display_strip_fn build, void *ctx);
+bool display_flipped(void);
+void display_wait(void); /* until the presenting task is done with its frame: then the caller may send strips itself */
 /* TE (GPIO 42): one pulse per frame (vblank only) or also one per line (the init's setting). */
 void display_te_vblank_only(bool vblank_only);
 int display_spi_khz(void); /* the clock the SPI driver really set, which can differ from the one asked for */

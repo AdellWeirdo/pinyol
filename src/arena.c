@@ -969,7 +969,7 @@ static void draw_hud(surface *s) {
     if (A.menu) draw_menu(s);
 }
 
-void arena_render(surface *world, surface *scr) {
+void arena_render_world(surface *world) {
     asset *bg = gfx_asset(jstr(A.def, "bg"));
     if (bg->missing) gfx_fill(world, 0, 0, WORLD_W, WORLD_H, C_INK);
     else gfx_blit(world, bg, 0, 0, 0, 0, false);
@@ -979,6 +979,9 @@ void arena_render(surface *world, surface *scr) {
     draw_player(world);
     draw_fx(world);
     if (A.ps == P_CANTO) draw_release(world);
+}
+
+void arena_render_screen(surface *world, surface *scr) {
     gfx_upscale2x(world, scr);
     draw_hud(scr);
     int f = A.fade ? A.fade - (end_ticks() - 60) : A.ps == P_KNEEL ? A.pt * 2 / 3 : 0; /* to black; defeat: dim */

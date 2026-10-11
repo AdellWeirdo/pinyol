@@ -109,7 +109,7 @@ static int row_at(int x, int y, int n) { /* game index, n for "Apagar", -1 for n
 }
 
 static void render(uint16_t *px, const launcher_game *g, int n, int sel) {
-    surface s = {px, SCREEN_W, SCREEN_H};
+    surface s = {.px = px, .w = SCREEN_W, .h = SCREEN_H};
     theme();
     gfx_fill(&s, 0, 0, SCREEN_W, SCREEN_H, D_INK);
     gfx_fill(&s, LEFT, 48, SCREEN_W - 2 * LEFT, 2, D_OCHRE);
@@ -174,7 +174,7 @@ int launcher_choose(uint16_t *frames[2], const launcher_game *g, int n) {
 }
 
 void launcher_message(uint16_t *frame, const char *text, int percent) {
-    surface s = {frame, SCREEN_W, SCREEN_H};
+    surface s = {.px = frame, .w = SCREEN_W, .h = SCREEN_H};
     theme();
     gfx_fill(&s, 0, 0, SCREEN_W, SCREEN_H, D_INK);
     font_draw(&s, &bold, (SCREEN_W - font_width(&bold, text, -1)) / 2, 120, text, -1, -1, D_PAPER);

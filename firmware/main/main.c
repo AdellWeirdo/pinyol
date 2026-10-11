@@ -27,10 +27,10 @@
 #define PANEL_HZ (80 * 1000 * 1000) /* clean on the board, 12.3 ms a frame (F1) */
 #define TICK_US (1000000 / TICK_HZ)
 #define SLOW_TICK_US 40000 /* worth a log line: zone loads, card stalls */
-#ifndef TICKS_PER_FRAME /* -DBP_FRAME_TICKS=1: a frame every tick, 60 fps */
-#define TICKS_PER_FRAME 2  /* 30 fps: logic stays at 60 Hz, drawing every other tick keeps the pace even */
+#ifndef TICKS_PER_FRAME /* -DBP_FRAME_TICKS=2: a frame every other tick, 30 fps */
+#define TICKS_PER_FRAME 1  /* 60 fps: a frame every tick; a slow one makes the next ticks catch up (play) */
 #endif
-#define SLOW_RENDER_US 25000
+#define SLOW_RENDER_US 17000 /* longer than a 60 fps frame: drawn and sent */
 
 static SemaphoreHandle_t audio_mutex;
 static uint16_t *frames[2], *frame; /* drawn into one while the other is on its way to the panel */
@@ -50,26 +50,11 @@ void hal_audio_unlock(void) { xSemaphoreGive(audio_mutex); }
 bool hal_can_switch_game(void) { return true; }
 void hal_switch_game(void) { switch_req = true; }
 
-/* Where a frame's drawing goes: the world (240x160), its 2x upscale, and the rest (UI). Diagnostic only. */
-static void render_breakdown(void) {
-    static uint16_t *scratch;
-    if (!scratch) scratch = heap_caps_malloc(SCREEN_W * SCREEN_H * 2, MALLOC_CAP_SPIRAM);
-    surface world = {G.world, WORLD_W, WORLD_H}, scr = {scratch, SCREEN_W, SCREEN_H};
-    int64_t a = esp_timer_get_time();
-    world_render(&world);
-    int64_t b = esp_timer_get_time();
-    gfx_upscale2x(&world, &scr);
-    int64_t c = esp_timer_get_time();
-    game_render(scratch);
-    int64_t d = esp_timer_get_time();
-    hal_log("render: world %.2f ms, upscale %.2f ms, whole frame %.2f ms (%s)", (b - a) / 1000.0, (c - b) / 1000.0,
-            (d - c) / 1000.0, G.zone.id);
-}
+static struct { int64_t first, rest; } strip_us; /* where the strips' time goes (perf_report) */
 
 static void perf_report(void) {
     int64_t now = esp_timer_get_time();
     if (now - perf.since < 5000000 || !perf.ticks || !perf.frames) return;
-    render_breakdown();
     hal_log("perf: tick %.2f ms, render %.2f ms, present %.2f ms, %.1f fps | audio %.0f%% of a core, %d underruns |"
             " battery %.2f V%s | free internal %u KB, PSRAM %u KB",
             perf.tick / 1000.0 / perf.ticks, perf.render / 1000.0 / perf.frames,
@@ -78,22 +63,41 @@ static void perf_report(void) {
             power_volts(), power_usb() ? " (USB)" : "",
             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
+    if (strip_us.first)
+        hal_log("strips: first (with the world) %.2f ms, other 14 %.2f ms a frame", strip_us.first / 1000.0 / perf.frames,
+                strip_us.rest / 1000.0 / perf.frames);
+    strip_us.first = strip_us.rest = 0;
     perf = (typeof(perf)){.since = now};
     display_present_us = 0;
     audio_out_mix_us = 0;
 }
 
+/* A panel strip drawn straight from the game: the frame's columns p0..p0+31, turned and byte-swapped for the bus, in
+ * internal RAM. The world is drawn into G.world with the first strip; no 480x320 frame exists. */
+static void draw_strip(int p0, uint16_t *out, void *ctx) {
+    (void)ctx;
+    int64_t a = esp_timer_get_time();
+    surface s = gfx_turned(out, p0, 32, SCREEN_W, SCREEN_H, display_flipped(), true); /* the bus sends high bytes first */
+    game_draw(&s, p0 == 0);
+    *(p0 == 0 ? &strip_us.first : &strip_us.rest) += esp_timer_get_time() - a;
+}
+
 static void draw(void) {
+    int64_t a = esp_timer_get_time();
+#ifdef BP_REMOTE /* remote screenshots read a whole frame: draw one and hand it to the presenting task, as before */
     static int cur;
     frame = frames[cur];
-    int64_t a = esp_timer_get_time();
     game_render(frame);
+    display_submit(frame);
+    cur ^= 1;
+#else
+    display_wait(); /* the game list's last frame, if it is still going out */
+    display_present_strips(draw_strip, NULL);
+#endif
     int64_t us = esp_timer_get_time() - a;
     if (us > SLOW_RENDER_US) /* which screen is expensive: the layer stack, bottom first (layer_id in bp.h) */
         hal_log("slow frame: %.0f ms, layers %d %d %d %d (%s)", us / 1000.0, G.nstack > 0 ? G.stack[0] : -1,
                 G.nstack > 1 ? G.stack[1] : -1, G.nstack > 2 ? G.stack[2] : -1, G.nstack > 3 ? G.stack[3] : -1, G.zone.id);
-    display_submit(frame);
-    cur ^= 1;
     perf.render += us;
     perf.frames++;
 }
@@ -244,7 +248,7 @@ static void run_tests(const launcher_game *g, int n) {
 static void bench_play(void) {
     static const struct { const char *dir, *script, *name; } runs[] = {
         {"/sdcard/games/bajopueblo", e2e_bajopueblo, "e2e_full"}, {"/sdcard/games/geumgye", e2e_geumgye, "e2e_lectura"}};
-    if (play_magic != 0x6E703264) play_magic = 0x6E703264, play_next = 0;
+    if (play_magic != 0x6E703264 || esp_reset_reason() != ESP_RST_SW) play_magic = 0x6E703264, play_next = 0;
     if (play_next >= sizeof runs / sizeof runs[0]) {
         hal_log("BENCH play done");
         play_magic = 0; /* a reset starts the series again */
