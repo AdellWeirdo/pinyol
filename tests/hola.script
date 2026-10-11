@@ -1,0 +1,22 @@
+# examples/hola from start to end: the door is locked, the friend gives the key, the chest ends the game.
+new
+expect_layer PLAY
+expect_zone Z01
+exit Z02
+advance
+expect_zone Z01
+interact amiga
+advance
+choose llave
+advance
+expect llave_dada
+expect item:IT_LLAVE
+interact amiga
+advance
+expect_layer PLAY
+exit Z02
+expect_zone Z02
+interact cofre
+advance
+expect cofre_abierto
+expect_layer END

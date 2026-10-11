@@ -1,0 +1,39 @@
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+
+# 16 MB quad flash, 8 MB octal PSRAM inside the ESP32-S3R8 (docs/hardware.md)
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+# an OTA update that never reaches the game list is rolled back on the next restart (ota.c)
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_SPEED_80M=y
+CONFIG_SPIRAM_USE_MALLOC=y
+# the engine allocates small and often (cJSON): keep internal RAM for DMA and the system
+CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=256
+CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL=65536
+
+# UART0 pins are taken (IO43 charger sense, IO44 button C): the console is the native USB
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+
+# the game's file names are long (KL_INTERACT_B.meta.json)
+CONFIG_FATFS_LFN_HEAP=y
+# stdio's buffer per open file on FAT: newlib's default is 128 B, and fread then asks the card for a sliver at a time
+# (1.6 MB/s measured, with sd.c's fast reads; ~9 MB/s with 8 KB). Each open file holds one, in PSRAM.
+CONFIG_FATFS_VFS_FSTAT_BLKSIZE=8192
+CONFIG_FATFS_MAX_LFN=255
+
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=16384
+
+# bp_core statics go to PSRAM (components/bp_core/linker.lf)
+CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY=y
+
+# drawing reads and writes PSRAM all frame long: bigger data cache, longer lines
+CONFIG_ESP32S3_DATA_CACHE_64KB=y
+CONFIG_ESP32S3_DATA_CACHE_LINE_64B=y

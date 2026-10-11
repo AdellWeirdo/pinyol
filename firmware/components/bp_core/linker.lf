@@ -1,0 +1,7 @@
+# The engine's statics (frame kept for "shot", asset cache, flags: ~350 KB) do not fit in internal RAM, so
+# bp_core's .bss lives in PSRAM; G (game.c, 80 KB, holds the world buffer drawn every frame) stays inside.
+[mapping:bp_core_bss]
+archive: libbp_core.a
+entries:
+    * (extram_bss)
+    game (default)

@@ -1,0 +1,8 @@
+{
+  "IT_LLAVE": {
+    "name": "Llave",
+    "icon": "IC_LLAVE",
+    "persistent": true,
+    "desc": "La llave de casa."
+  }
+}

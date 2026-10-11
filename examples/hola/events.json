@@ -1,0 +1,16 @@
+{
+  "EV_COFRE": {
+    "if": "!cofre_abierto",
+    "save": true,
+    "do": [
+      [
+        "set",
+        "cofre_abierto"
+      ],
+      [
+        "dlg",
+        "D_HOLA.cofre"
+      ]
+    ]
+  }
+}

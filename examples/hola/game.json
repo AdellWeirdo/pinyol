@@ -1,0 +1,68 @@
+{
+  "id": "hola",
+  "title": "Hola np2d",
+  "subtitle": "Un juego hecho con np2d",
+  "tagline": "Habla, coge la llave, abre el cofre.",
+  "end_text": "Fin · Hola np2d",
+  "engine": "np2d@1",
+  "content_version": 1,
+  "player": {
+    "speaker": "PROTA",
+    "sprite": "PJ"
+  },
+  "title_layout": {
+    "logo": [
+      128,
+      28
+    ],
+    "sub": [
+      128,
+      236
+    ],
+    "menu": [
+      256,
+      70
+    ]
+  },
+  "speakers": {
+    "PROTA": {
+      "name": "Tú",
+      "portrait": "PT_PROTA",
+      "color": "#AF743A"
+    },
+    "AMIGA": {
+      "name": "Amiga",
+      "portrait": "PT_AMIGA",
+      "color": "#A95743"
+    }
+  },
+  "start": {
+    "zone": "Z01",
+    "spawn": "start"
+  },
+  "zones": [
+    "Z01",
+    "Z02"
+  ],
+  "dialogues": [
+    "D_HOLA"
+  ],
+  "flags": [
+    "llave_dada",
+    "cofre_abierto"
+  ],
+  "objectives": [
+    {
+      "if": "!llave_dada",
+      "text": "Habla con tu amiga."
+    },
+    {
+      "if": [
+        "and",
+        "llave_dada",
+        "!cofre_abierto"
+      ],
+      "text": "Entra en casa y abre el cofre."
+    }
+  ]
+}

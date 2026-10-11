@@ -1,0 +1,10 @@
+# Name,   Type, SubType, Offset,   Size
+nvs,      data, nvs,     0x9000,   0x6000
+otadata,  data, ota,     0xf000,   0x2000
+phy_init, data, phy,     0x11000,  0x1000
+# two firmware slots (ota.c): an update goes into the one not running and is kept only once it boots well;
+# 2 MB each, the firmware is ~0.5 MB and Wi-Fi updates would add ~0.7 MB
+ota_0,    app,  ota_0,   0x20000,  2M
+ota_1,    app,  ota_1,   0x220000, 2M
+# the game baked into the flash (FLASH_GAME, without its music) for a console with no microSD, and autotest scripts
+game,     data, fat,     0x420000, 0xBE0000

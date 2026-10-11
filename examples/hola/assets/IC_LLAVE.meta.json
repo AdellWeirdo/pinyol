@@ -1,0 +1,28 @@
+{
+  "asset": "IC_LLAVE",
+  "type": "sprite",
+  "w": 16,
+  "h": 16,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    0,
+    0
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "mask1"
+  },
+  "memory_bytes": {
+    "pixels": 512,
+    "mask": 32,
+    "total": 544
+  }
+}

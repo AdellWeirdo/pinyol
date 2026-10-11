@@ -1,0 +1,28 @@
+{
+  "asset": "LOGO_SMALL",
+  "type": "ui",
+  "w": 120,
+  "h": 64,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    0,
+    0
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "mask1"
+  },
+  "memory_bytes": {
+    "pixels": 15360,
+    "mask": 960,
+    "total": 16320
+  }
+}

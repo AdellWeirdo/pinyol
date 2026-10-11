@@ -1,0 +1,46 @@
+{
+  "asset": "NPC_AMIGA",
+  "type": "sprite",
+  "w": 24,
+  "h": 32,
+  "frames": 10,
+  "frame_ms": [
+    600,
+    600,
+    600,
+    600,
+    600,
+    600,
+    600,
+    600,
+    600,
+    600
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "anchor": [
+    12,
+    29
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "mask1"
+  },
+  "memory_bytes": {
+    "pixels": 15360,
+    "mask": 960,
+    "total": 16320
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "title": {
+    "cue": "MUS_HOLA",
+    "tension": 1
+  },
+  "end": {
+    "cue": "MUS_HOLA",
+    "tension": 1
+  },
+  "cues": {
+    "MUS_HOLA": {
+      "bpm": 100,
+      "beats": 4,
+      "layers": [
+        [
+          0.6
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ]
+      ]
+    }
+  },
+  "zones": {
+    "Z01": "MUS_HOLA",
+    "Z02": "MUS_HOLA"
+  }
+}

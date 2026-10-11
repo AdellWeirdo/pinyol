@@ -1,0 +1,6 @@
+# runtime assets, fonts and sound are binary: no text diffs or merges
+*.rgb565 binary
+*.mask binary
+*.fnt binary
+*.wav binary
+*.ttf binary

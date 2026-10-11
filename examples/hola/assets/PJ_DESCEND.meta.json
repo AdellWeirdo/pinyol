@@ -1,0 +1,34 @@
+{
+  "asset": "PJ_DESCEND",
+  "type": "sprite",
+  "w": 24,
+  "h": 32,
+  "frames": 4,
+  "frame_ms": [
+    180,
+    180,
+    180,
+    180
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "anchor": [
+    12,
+    29
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "mask1"
+  },
+  "memory_bytes": {
+    "pixels": 6144,
+    "mask": 384,
+    "total": 6528
+  }
+}

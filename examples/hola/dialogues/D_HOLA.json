@@ -1,0 +1,76 @@
+{
+  "nodes": {
+    "amiga": {
+      "repeat": "amiga_2",
+      "lines": [
+        {
+          "s": "AMIGA",
+          "t": "¡Hola! Te estaba esperando."
+        }
+      ],
+      "next": "pregunta"
+    },
+    "pregunta": {
+      "choices": [
+        {
+          "id": "llave",
+          "text": "¿Tienes la llave de casa?",
+          "next": "llave"
+        },
+        {
+          "id": "adios",
+          "text": "Luego hablamos.",
+          "bye": true,
+          "next": "adios"
+        }
+      ]
+    },
+    "llave": {
+      "lines": [
+        {
+          "s": "AMIGA",
+          "t": "Toma. Dentro hay un cofre."
+        }
+      ],
+      "do": [
+        [
+          "give",
+          "IT_LLAVE"
+        ],
+        [
+          "set",
+          "llave_dada"
+        ]
+      ]
+    },
+    "adios": {
+      "lines": [
+        {
+          "s": "AMIGA",
+          "t": "Aquí estaré."
+        }
+      ]
+    },
+    "amiga_2": {
+      "lines": [
+        {
+          "s": "AMIGA",
+          "t": "El cofre está dentro de casa."
+        }
+      ]
+    },
+    "cofre": {
+      "lines": [
+        {
+          "s": "PROTA",
+          "t": "Dentro hay una nota: «Ahora haz tu propio juego»."
+        }
+      ],
+      "do": [
+        [
+          "end"
+        ]
+      ]
+    }
+  }
+}

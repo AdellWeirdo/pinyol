@@ -1,0 +1,32 @@
+/* Platform contract. The core never includes SDL or ESP-IDF headers.
+ * A platform owns its main loop: it polls input into hal_input, calls game_tick() at
+ * TICK_HZ, calls game_render() into a 480x320 RGB565 buffer and presents it, and calls
+ * audio_mix() from its audio callback/task while holding the audio lock. */
+#pragma once
+#include <stdbool.h>
+#include <stdint.h>
+
+enum {
+    ACT_UP = 1 << 0, ACT_DOWN = 1 << 1, ACT_LEFT = 1 << 2, ACT_RIGHT = 1 << 3,
+    ACT_OK = 1 << 4,    /* A / Enter / E */
+    ACT_BACK = 1 << 5,  /* B / Esc */
+    ACT_NEXT = 1 << 6,  /* C / Tab: cycle target, puzzle help */
+    ACT_INV = 1 << 7,   /* MENU / I */
+    ACT_NOTES = 1 << 8, /* J (no hardware button: reachable from pause and inventory) */
+    ACT_PAUSE = 1 << 9, /* START / P */
+    ACT_QUIT = 1 << 10, /* desktop window close */
+};
+
+typedef struct {
+    uint16_t held;  /* ACT_* bits currently down */
+    bool touch;     /* finger / mouse button down */
+    int16_t px, py; /* pointer in native 480x320 coordinates */
+} hal_input;
+
+void hal_log(const char *fmt, ...);
+/* A platform with a game list (the console) gets "Otros juegos" on the title screen; hal_switch_game() asks it to
+ * leave this game for the list once the current tick ends. Desktop platforms answer false and do nothing. */
+bool hal_can_switch_game(void);
+void hal_switch_game(void);
+void hal_audio_lock(void);
+void hal_audio_unlock(void);

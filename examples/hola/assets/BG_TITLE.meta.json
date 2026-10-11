@@ -1,0 +1,28 @@
+{
+  "asset": "BG_TITLE",
+  "type": "background",
+  "w": 240,
+  "h": 160,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    0,
+    0
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "none"
+  },
+  "memory_bytes": {
+    "pixels": 76800,
+    "mask": 0,
+    "total": 76800
+  }
+}

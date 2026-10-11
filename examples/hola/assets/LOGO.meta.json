@@ -1,0 +1,28 @@
+{
+  "asset": "LOGO",
+  "type": "ui",
+  "w": 224,
+  "h": 128,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    0,
+    0
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "mask1"
+  },
+  "memory_bytes": {
+    "pixels": 57344,
+    "mask": 3584,
+    "total": 60928
+  }
+}
