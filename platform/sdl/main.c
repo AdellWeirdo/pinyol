@@ -37,6 +37,9 @@ void hal_log(const char *fmt, ...) {
 
 void *hal_realloc_slow(void *p, size_t n) { return realloc(p, n); }
 
+void hal_parallel(void (*fn)(int part, void *ctx), void *ctx) { fn(0, ctx), fn(1, ctx); }
+uint32_t hal_micros(void) { return (uint32_t)(SDL_GetPerformanceCounter() * 1000000 / SDL_GetPerformanceFrequency()); }
+
 void hal_audio_lock(void) { if (audio_dev) SDL_LockAudioDevice(audio_dev); }
 void hal_audio_unlock(void) { if (audio_dev) SDL_UnlockAudioDevice(audio_dev); }
 

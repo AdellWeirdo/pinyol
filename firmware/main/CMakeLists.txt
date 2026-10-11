@@ -33,3 +33,6 @@ endif()
 if(BP_AUTOTEST OR BP_SOAK OR BP_REMOTE) # test builds run unattended, often at night: mixed and timed, never heard
   target_compile_definitions(${COMPONENT_LIB} PRIVATE BP_QUIET)
 endif()
+if(BP_AUTOTEST OR BP_SOAK)
+  target_compile_definitions(${COMPONENT_LIB} PRIVATE PERF_WINDOW_US=1000000)
+endif()

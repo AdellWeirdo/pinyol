@@ -31,5 +31,9 @@ bool hal_can_switch_game(void);
 void hal_switch_game(void);
 void hal_audio_lock(void);
 void hal_audio_unlock(void);
+/* fn(0, ctx) here and fn(1, ctx) on the other core, if there is one; returns when both are done. They must not
+ * touch the same memory. */
+void hal_parallel(void (*fn)(int part, void *ctx), void *ctx);
+uint32_t hal_micros(void); /* a microsecond clock, for timing (wraps after ~71 minutes) */
 /* realloc for big or script data, in memory that may be slower (PSRAM on the console); free() releases it. */
 void *hal_realloc_slow(void *p, size_t n);

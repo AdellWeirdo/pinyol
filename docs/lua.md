@@ -169,7 +169,9 @@ For high scores, options and progress.
 
 ## Other
 
-`log(...)` (and `print`) writes to the log. `quit()` goes back to the console's game list. `require("name")`
+`log(...)` (and `print`) writes to the log. `quit()` goes back to the console's game list (holding MENU for two
+seconds does too). `perf()` returns the milliseconds the last `_update`, `_draw` and picture took, and the script's
+memory in KB, to see where a frame goes. `require("name")`
 loads `name.lua` from the game folder (`"ui.menu"` is `ui/menu.lua`).
 
 ## Limits (the sandbox)

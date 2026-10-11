@@ -43,3 +43,21 @@ serial data received"); it needs the cable unplugged and plugged back in. Until 
 `cd firmware && idf.py -DBP_BENCH=OFF build && esptool.py --chip esp32s3 -p /dev/cu.usbmodem101 -b 921600 write_flash 0x20000 build/np2d_console.bin`
 (commit 25661b4 or later). Pau reconnected the cable the same night and the console got the normal firmware back
 (25661b4: game list, 60 fps on TE). Board flashing kept to a minimum from here.
+
+## 2026-10-12 · Phases 2 and 3: the virtual hardware and Lua
+
+- **PPU** (`src/ppu.c`, 459a1e4): the GBA's model in software. Four layers (tiles, affine, bitmap), 128 sprites
+  (indexed or direct colour, turned and scaled by 32 matrices), palettes with banks, alpha blending and fades, two
+  windows and an object window, mosaic, and per-line tables (scroll, affine, windows, backdrop, blend). The frame is
+  240×160, scaled 2× into the panel strips with text and panels drawn on top at 480×320.
+- **np2d@2, games in Lua** (e68b9b2): Lua 5.4 with 32-bit numbers on every platform, in a sandbox (memory quota,
+  instruction budget per call, no io/os/debug, source-only `load`, `require` inside the game folder). The API is in
+  [lua.md](lua.md). v1 games (Bajo Pueblo, Geumgye) run as before, unchanged to the pixel.
+- **Three genres as examples** (48f0194, a8cff5a): `plataformas` (platformer: parallax, see-through water with a wavy
+  line scroll, mosaic transitions), `naves` (shoot-'em-up: per-line star parallax, a turning affine planet,
+  blended explosions, a bomb flash), `carreras` (Mode 7 kart race: perspective floor, rivals as scaled sprites
+  placed with `project`). Each has its art drawn by `art.py` and a test script.
+- **On the console** (this commit): the examples first ran at 26-30 fps; now all three hold 60 fps. The steps are in
+  [measurements.md](measurements.md#lua-games-on-the-ppu-2026-10-12). The firmware also gained: Lua in the core
+  component, a scrolling game list (up to 32 games), games in the flash listed with those on the card, holding MENU
+  for two seconds leaves a Lua game, and `-DFLASH_GAME` taking a list of folders (their tests run in autotest builds).

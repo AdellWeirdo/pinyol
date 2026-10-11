@@ -96,3 +96,36 @@ What made the strips fast enough, measured per frame: the 2× upscale written as
 panels filled as one rectangle between the corners, and the current objective looked up once a frame instead of once
 per strip. Still over 16.7 ms: dialogue, bag and puzzle screens (about 20 ms); the zone itself takes up to 4.5 ms in
 Bajo Pueblo.
+
+## Lua games on the PPU (2026-10-12)
+
+The three Lua examples on the board, autotest builds (`-DBP_AUTOTEST=ON`, a perf line every second). "Picture" is
+`ppu_render`, the 240×160 frame from layers and sprites; the strips and their DMA (~8 ms, overlapped) come after it.
+
+| | Picture, first try | Now | Frame rate now |
+|---|---|---|---|
+| Carreras (Mode 7 floor, horizon layer, 4 scaled sprites) | 10.3 ms | 3.3 ms | 60-61 fps |
+| Naves (star parallax per line, turning planet, blended explosions) | 15 ms | 2.8 ms | 60-61 fps (53 with a bomb flash) |
+| Plataformas (4 layers, see-through water) | 25 ms | 5.3 ms | 61 fps |
+
+Plataformas with its layers taken away one by one (a bench script): blending 0.5 ms, BG3 0.6-0.8, BG2 0.7-1.0,
+BG1 0.6, BG0 0.3, sprites 0.1-0.2, the rest (backdrop and copying out) 0.7. Lua itself: `_update` 0.1-1.9 ms,
+`_draw` about 1 ms.
+
+What it took, in order of what it gave:
+
+1. The PPU's code in IRAM and its data in internal RAM (`linker.lf`, scheme `ppu_inside`), and 32 KB of instruction
+   cache instead of 16: from flash, the PPU, the Lua VM and the drawing code kept evicting each other. About 2×
+   on everything, Lua included.
+2. Both cores: even lines on core 0, odd lines on core 1 (`hal_parallel`). 1.6-1.9×.
+3. No `memmove` in the inner loops: GCC turned the 8-pixel "top goes under" copy of blended frames into a call to
+   ROM `memmove` per tile row, 10,000 calls a frame, 4 ms. `-fno-tree-loop-distribute-patterns` for ppu.c.
+4. The layer loops in four copies (windows or not, blending or not) so the inner loops carry no tests they do not
+   need; tile rows known empty skipped, rows known opaque copied without tests (`ppu_tile_rows`); colour and layer
+   packed in one word per pixel.
+5. Affine layers that do not wrap only walk the span of each line inside the map; mosaic samples once per block;
+   fades through per-channel tables; lines with nothing for the blend to touch are copied straight out.
+
+All of it pixel-identical: the 48 Bajo Pueblo and Geumgye scripts and the four Lua scripts give the same CRC on every
+frame, and `tests/ppu_test.c` checks the shortcuts against the plain path and the clipped affine path against the
+formula on 200 random matrices.

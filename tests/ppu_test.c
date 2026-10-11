@@ -252,6 +252,63 @@ static void bitmaps(void) {
     CHECK(fb[0][0] == 1001 && fb[0][15] == GREY && fb[8][1] == 1002);
 }
 
+/* The empty and opaque row flags, and that drawing with them changes nothing, in every way a line is drawn. */
+static void tile_row_shortcuts(void) {
+    static uint16_t plain[PPU_H][PPU_W];
+    uint16_t rows[4];
+    setup();
+    ppu_tile_rows(tiles, 4, rows);
+    CHECK(rows[0] == 0x00FF && rows[1] == 0xFF00 && rows[2] == 0 && rows[3] == 0x00FE);
+    for (int i = 0; i < 32 * 32; i++) map[i] = (uint16_t)((i * 7) % 4 | (i % 3 ? 0x400 : 0) | (i % 5 ? 0 : 0x800));
+    static uint16_t under_map[32 * 32]; /* layer 1: mostly solid red, so what layer 0 leaves see-through shows */
+    for (int i = 0; i < 32 * 32; i++) under_map[i] = (uint16_t)(i % 3 ? 1 : 2 | 0x400);
+    tiled(0, 0), tiled(1, 1);
+    PPU.bg[1].map = under_map;
+    PPU.bg[0].scroll_x = 3, PPU.bg[1].scroll_x = -5, PPU.bg[1].scroll_y = 2;
+    for (int way = 0; way < 4; way++) {
+        PPU.fx = way & 1 ? (typeof(PPU.fx)){FX_ALPHA, PPU_BG0, PPU_BG1 | PPU_BACK, 8, 8, 0} : (typeof(PPU.fx)){0};
+        PPU.win.on[0] = way & 2, PPU.win.rect[0] = (ppu_rect){10, 100, 0, 80};
+        PPU.win.in[0] = PPU_BG0 | PPU_FX, PPU.win.out = PPU_BG1 | PPU_BACK;
+        PPU.bg[0].rows = PPU.bg[1].rows = NULL;
+        ppu_render(&plain[0][0]);
+        PPU.bg[0].rows = PPU.bg[1].rows = rows;
+        ppu_render(&fb[0][0]);
+        CHECK(!memcmp(plain, fb, sizeof fb));
+    }
+}
+
+/* An affine layer that does not wrap, clipped to its map's span on each line, against the formula itself: random
+ * matrices, every pixel. */
+static void affine_against_formula(void) {
+    setup();
+    for (int i = 0; i < 4 * 64; i++) tiles[i] = (uint8_t)(1 + i % 200);
+    for (int i = 0; i < 256; i++) PPU.bg_pal[i] = (uint16_t)(i * 0x0123 + 1);
+    PPU.bg_pal[0] = GREY;
+    for (int i = 0; i < 16 * 16; i++) map[i] = (uint16_t)((i * 5) % 4);
+    PPU.bg[2] = (ppu_bg){.mode = BG_AFFINE, .prio = 0, .tiles = tiles, .ntiles = 4, .map = map, .map_w = 16, .map_h = 16};
+    uint32_t seed = 1;
+    int bad = 0;
+    for (int trial = 0; trial < 200 && !bad; trial++) {
+        int32_t r[6];
+        for (int k = 0; k < 6; k++) seed = seed * 1103515245u + 12345u, r[k] = (int32_t)(seed >> 8);
+        ppu_bg *b = &PPU.bg[2];
+        b->pa = trial % 7 ? r[0] % 600 : 0, b->pb = r[1] % 600, b->pc = trial % 5 ? r[2] % 600 : 0, b->pd = r[3] % 600;
+        b->x0 = r[4] % (256 * 256) - 64 * 256, b->y0 = r[5] % (256 * 256) - 64 * 256;
+        ppu_render(&fb[0][0]);
+        for (int y = 0; y < PPU_H; y++)
+            for (int x = 0; x < PPU_W; x++) {
+                int u = (b->x0 + b->pa * x + b->pb * y) >> 8, v = (b->y0 + b->pc * x + b->pd * y) >> 8;
+                uint16_t want = GREY;
+                if (u >= 0 && u < 128 && v >= 0 && v < 128) {
+                    uint8_t i = tiles[(map[(v >> 3) * 16 + (u >> 3)] & 0xFF) * 64 + (v & 7) * 8 + (u & 7)];
+                    if (i) want = PPU.bg_pal[i];
+                }
+                bad += fb[y][x] != want;
+            }
+    }
+    CHECK(bad == 0);
+}
+
 int main(void) {
     backdrop_only();
     tiles_scroll_flip_bank();
@@ -262,6 +319,8 @@ int main(void) {
     mosaic_and_lines();
     object_window_and_blend_sprite();
     bitmaps();
+    tile_row_shortcuts();
+    affine_against_formula();
     printf("ppu: %d checks, %d failed\n", checks, failures);
     return failures != 0;
 }

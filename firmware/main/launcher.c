@@ -99,16 +99,17 @@ static void theme(void) { /* the engine's defaults: G is cleared between games *
     G.th = (ui_theme){D_INK, D_OCHRE, D_TERRA, D_PAPER, D_PAPER_SEL, D_DIM, D_BROWN, false};
 }
 
-static int row_h(int n) { return n <= 2 ? ROW : (OFF_Y - 12 - TOP) / n; }
+static int shown(int n) { return n < LAUNCHER_ROWS ? n : LAUNCHER_ROWS; }
+static int row_h(int n) { return shown(n) <= 2 ? ROW : (OFF_Y - 12 - TOP) / shown(n); }
 
-static int row_at(int x, int y, int n) { /* game index, n for "Apagar", -1 for nothing */
+static int row_at(int x, int y, int n, int first) { /* game index, n for "Apagar", -1 for nothing */
     if (x >= OFF_X && x < OFF_X + OFF_W && y >= OFF_Y && y < OFF_Y + OFF_H) return n;
     if (x < LEFT || x >= SCREEN_W - LEFT || y < TOP) return -1;
     int i = (y - TOP) / row_h(n);
-    return i < n && (y - TOP) % row_h(n) < row_h(n) - 10 ? i : -1;
+    return i < shown(n) && (y - TOP) % row_h(n) < row_h(n) - 10 ? first + i : -1;
 }
 
-static void render(uint16_t *px, const launcher_game *g, int n, int sel) {
+static void render(uint16_t *px, const launcher_game *g, int n, int sel, int first) {
     surface s = {.px = px, .w = SCREEN_W, .h = SCREEN_H};
     theme();
     gfx_fill(&s, 0, 0, SCREEN_W, SCREEN_H, D_INK);
@@ -117,8 +118,10 @@ static void render(uint16_t *px, const launcher_game *g, int n, int sel) {
     const char *brand = "ConsolaS3";
     font_draw(&s, &regular, SCREEN_W - LEFT - font_width(&regular, brand, -1), 22, brand, -1, -1, D_DIM);
     int h = row_h(n);
-    for (int i = 0; i < n; i++) {
-        int y = TOP + i * h, ph = h - 10, tx = LEFT + 30;
+    if (first > 0) gfx_tri(&s, SCREEN_W / 2 - 8, 36, 8, false, D_DIM); /* more above (drawn pointing down: a cue) */
+    if (first + shown(n) < n) gfx_tri(&s, SCREEN_W / 2 - 8, OFF_Y - 12, 8, false, D_OCHRE); /* more below */
+    for (int i = first; i < first + shown(n); i++) {
+        int y = TOP + (i - first) * h, ph = h - 10, tx = LEFT + 30;
         gfx_plate(&s, LEFT, y, SCREEN_W - 2 * LEFT, ph, i == sel ? D_PAPER_SEL : D_PAPER);
         if (i == sel) gfx_tri(&s, LEFT + 12, y + ph / 2 - 6, 6, true, D_TERRA);
         if (g[i].thumb && ph >= TH + 8) { /* the game's own title picture, in an ink frame */
@@ -143,21 +146,23 @@ static void render(uint16_t *px, const launcher_game *g, int n, int sel) {
 }
 
 int launcher_choose(uint16_t *frames[2], const launcher_game *g, int n) {
-    int sel = last < n ? last : 0, rows = n + 1, cur = 0, chosen = -2;
+    int sel = last < n ? last : 0, rows = n + 1, cur = 0, chosen = -2, first = 0;
     bool dirty = true;
     hal_input was = input_poll(); /* whatever is held on arrival (the tap that left a game) is not a choice */
     while (chosen == -2) {
         hal_input in = input_poll();
         uint16_t pressed = in.held & ~was.held;
-        int hit = in.touch && !was.touch ? row_at(in.px, in.py, n) : -1;
+        int hit = in.touch && !was.touch ? row_at(in.px, in.py, n, first) : -1;
         was = in;
         if (pressed & (ACT_DOWN | ACT_NEXT)) sel = (sel + 1) % rows, dirty = true;
         if (pressed & ACT_UP) sel = (sel + rows - 1) % rows, dirty = true;
         if (hit >= 0) sel = hit, dirty = true;
         if (hit >= 0 || (pressed & ACT_OK)) chosen = sel;
         if (power_critical()) chosen = n;
+        if (sel < n && sel < first) first = sel; /* the window follows the selection */
+        if (sel < n && sel >= first + shown(n)) first = sel - shown(n) + 1;
         if (dirty) {
-            render(frames[cur], g, n, sel);
+            render(frames[cur], g, n, sel, first);
             display_submit(frames[cur]);
             cur ^= 1;
             dirty = false;

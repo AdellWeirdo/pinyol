@@ -31,6 +31,9 @@
 #define TICKS_PER_FRAME 1  /* 60 fps: a frame every tick; a slow one makes the next ticks catch up (play) */
 #endif
 #define SLOW_RENDER_US 17000 /* longer than a 60 fps frame: drawn and sent */
+#ifndef PERF_WINDOW_US
+#define PERF_WINDOW_US 5000000 /* a perf line every 5 s (test builds: every second, to see a short test's phases) */
+#endif
 
 static SemaphoreHandle_t audio_mutex;
 static uint16_t *frames[2], *frame; /* drawn into one while the other is on its way to the panel */
@@ -43,6 +46,34 @@ void hal_log(const char *fmt, ...) {
     vprintf(fmt, ap);
     va_end(ap);
     putchar('\n');
+}
+
+uint32_t hal_micros(void) { return (uint32_t)esp_timer_get_time(); }
+
+/* hal_parallel: the second part runs on core 1, where the audio mixer (higher priority) and the idle game-list
+ * presenter live; the caller is the game loop on core 0. */
+static TaskHandle_t part1_task, part1_waiter;
+static void (*part1_fn)(int, void *);
+static void *part1_ctx;
+
+static void part1_loop(void *arg) {
+    (void)arg;
+    for (;;) {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        part1_fn(1, part1_ctx);
+        xTaskNotifyGive(part1_waiter);
+    }
+}
+
+void hal_parallel(void (*fn)(int part, void *ctx), void *ctx) {
+    if (!part1_task) {
+        fn(0, ctx), fn(1, ctx);
+        return;
+    }
+    part1_fn = fn, part1_ctx = ctx, part1_waiter = xTaskGetCurrentTaskHandle();
+    xTaskNotifyGive(part1_task);
+    fn(0, ctx);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 }
 
 void *hal_realloc_slow(void *p, size_t n) { /* PSRAM: internal RAM is for DMA, strips and the frame's hot data */
@@ -59,7 +90,7 @@ static struct { int64_t world, wait, first, rest; } strip_us; /* where a frame's
 
 static void perf_report(void) {
     int64_t now = esp_timer_get_time();
-    if (now - perf.since < 5000000 || !perf.ticks || !perf.frames) return;
+    if (now - perf.since < PERF_WINDOW_US || !perf.ticks || !perf.frames) return;
     hal_log("perf: tick %.2f ms, render %.2f ms, present %.2f ms, %.1f fps | audio %.0f%% of a core, %d underruns |"
             " battery %.2f V%s | free internal %u KB, PSRAM %u KB",
             perf.tick / 1000.0 / perf.ticks, perf.render / 1000.0 / perf.frames,
@@ -72,6 +103,12 @@ static void perf_report(void) {
         hal_log("frame: world %.2f ms, waiting for the scan %.2f ms, strips %.2f ms (CPU, the DMA overlaps)",
                 strip_us.world / 1000.0 / perf.frames, strip_us.wait / 1000.0 / perf.frames,
                 (strip_us.first + strip_us.rest) / 1000.0 / perf.frames);
+    if (G.v2) { /* a Lua game: where its frames went */
+        v2_times t;
+        v2_timing(&t);
+        hal_log("lua: _update %.2f ms, _draw %.2f ms, picture %.2f ms (longest %.2f), script memory %u KB",
+                t.update / 1000.0, t.draw / 1000.0, t.ppu / 1000.0, t.ppu_max / 1000.0, (unsigned)(v2_memory() / 1024));
+    }
     strip_us = (typeof(strip_us)){0};
     perf = (typeof(perf)){.since = now};
     display_present_us = 0;
@@ -318,6 +355,7 @@ void app_main(void) {
     display_present(frame);
     display_backlight(100);
     display_start_task();
+    xTaskCreatePinnedToCore(part1_loop, "part1", 4096, NULL, 4, &part1_task, 1); /* hal_parallel */
     ota_from_card(frames[1]); /* a card with only firmware.bin on it still updates the console */
     if (!n) {
         fatal_screen();

@@ -37,3 +37,5 @@ CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY=y
 # drawing reads and writes PSRAM all frame long: bigger data cache, longer lines
 CONFIG_ESP32S3_DATA_CACHE_64KB=y
 CONFIG_ESP32S3_DATA_CACHE_LINE_64B=y
+# the Lua VM, the picture processor and the drawing code run from flash at once: 16 KB of instruction cache thrashed
+CONFIG_ESP32S3_INSTRUCTION_CACHE_32KB=y

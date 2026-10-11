@@ -4,32 +4,50 @@ cmake_minimum_required(VERSION 3.16)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(np2d_console)
 
-# One game, minus its music and ambience beds (they need the card) and local saves, as a FAT image in the "game"
-# partition, so the console runs without a microSD. Re-run `idf.py reconfigure` after changing the game's files.
-#   idf.py -DFLASH_GAME=/path/to/games/mygame build
-set(FLASH_GAME ${CMAKE_SOURCE_DIR}/../examples/hola CACHE PATH "Game folder baked into the flash")
-string(REGEX REPLACE "/+$" "" FLASH_GAME "${FLASH_GAME}") # "games/mygame/" would otherwise give an empty id
-get_filename_component(GAME_ID ${FLASH_GAME} NAME)
+# Games in the flash (FLASH_GAME, a ;-list of folders), so the console has something to play without a microSD.
+# A game's music and ambience beds stay on the card when its audio is big; saves and art sources never go.
+# Re-run `idf.py reconfigure` after changing a game's files.
+#   idf.py -DFLASH_GAME="/abs/games/a;/abs/games/b" build
+set(FLASH_GAME ${CMAKE_SOURCE_DIR}/../examples/hola CACHE STRING "Game folders baked into the flash (a ;-list)")
 set(GAME_IMG ${CMAKE_BINARY_DIR}/game_image)
+set(FLASH_IDS "")
 file(REMOVE_RECURSE ${GAME_IMG})
-file(COPY ${FLASH_GAME}/ DESTINATION ${GAME_IMG}/games/${GAME_ID} PATTERN audio EXCLUDE PATTERN saves EXCLUDE)
-# of the audio, what fits: interaction effects, listening clips and voices; music, ambience beds and random
-# ambience events (SFX_AMB_*) stay on the card
-if(EXISTS ${FLASH_GAME}/audio)
-  file(COPY ${FLASH_GAME}/audio/ DESTINATION ${GAME_IMG}/games/${GAME_ID}/audio
-       FILES_MATCHING PATTERN "SFX_*.wav" PATTERN "L*.wav" PATTERN "VO_*.wav")
-  file(GLOB AMB_EVENTS ${GAME_IMG}/games/${GAME_ID}/audio/SFX_AMB_*.wav)
-  file(REMOVE ${AMB_EVENTS})
-endif()
+foreach(game ${FLASH_GAME})
+  string(REGEX REPLACE "/+$" "" game "${game}") # "games/mygame/" would otherwise give an empty id
+  get_filename_component(GAME_ID ${game} NAME)
+  list(APPEND FLASH_IDS ${GAME_ID})
+  file(COPY ${game}/ DESTINATION ${GAME_IMG}/games/${GAME_ID}
+       PATTERN audio EXCLUDE PATTERN saves EXCLUDE PATTERN art EXCLUDE PATTERN art.py EXCLUDE)
+  if(EXISTS ${game}/audio)
+    file(GLOB WAVS ${game}/audio/*.wav)
+    set(audio_bytes 0)
+    foreach(w ${WAVS})
+      file(SIZE ${w} n)
+      math(EXPR audio_bytes "${audio_bytes} + ${n}")
+    endforeach()
+    if(audio_bytes LESS 2000000) # small: all of it
+      file(COPY ${game}/audio/ DESTINATION ${GAME_IMG}/games/${GAME_ID}/audio)
+    else() # of a big game's audio, what fits: effects, listening clips and voices, not random ambience events
+      file(COPY ${game}/audio/ DESTINATION ${GAME_IMG}/games/${GAME_ID}/audio
+           FILES_MATCHING PATTERN "SFX_*.wav" PATTERN "L*.wav" PATTERN "VO_*.wav")
+      file(GLOB AMB_EVENTS ${GAME_IMG}/games/${GAME_ID}/audio/SFX_AMB_*.wav)
+      file(REMOVE ${AMB_EVENTS})
+    endif()
+  endif()
+endforeach()
 # -DBP_AUTOTEST=ON: the console plays the listed end-to-end scripts on boot (/autotest/<game>/, without their
 # shots), then shows its list; -DBP_SOAK=ON: the same again and again while all pass (/autotest/loop), heap logged.
 #   -DBP_TESTS="mygame=/abs/mygame/tests/e2e.script;other=..." (the game folders must be on the card or in the flash);
-#   with the example in the flash and no BP_TESTS, its own test runs
+#   without BP_TESTS, every game in the flash with a tests/<id>.script in np2d runs it
 set(BP_TESTS "" CACHE STRING "game=script pairs for autotest builds")
 if(BP_AUTOTEST OR BP_SOAK)
   set(TESTS ${BP_TESTS})
-  if(NOT TESTS AND GAME_ID STREQUAL "hola")
-    set(TESTS hola=${CMAKE_SOURCE_DIR}/../tests/hola.script)
+  if(NOT TESTS)
+    foreach(id ${FLASH_IDS})
+      if(EXISTS ${CMAKE_SOURCE_DIR}/../tests/${id}.script)
+        list(APPEND TESTS ${id}=${CMAKE_SOURCE_DIR}/../tests/${id}.script)
+      endif()
+    endforeach()
   endif()
   foreach(t ${TESTS})
     string(REPLACE "=" ";" kv ${t})

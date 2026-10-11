@@ -67,6 +67,8 @@ void v2_draw_world(void);             /* _draw(), then the PPU into G.world */
 const char *v2_error(void);           /* the script's error, or NULL */
 bool v2_run(const char *code, bool expr, char *msg, int n); /* test scripts: run code or check an expression */
 size_t v2_memory(void);               /* bytes the script's state holds */
+typedef struct { uint32_t update, draw, ppu, ppu_max; } v2_times; /* microseconds */
+void v2_timing(v2_times *t); /* the averages (and the longest picture) since the last call */
 
 /* ------------------------------------------------------------------ gfx.c */
 /* Where drawing goes. {buf, w, h} is a plain w x h buffer, row after row. A surface can also be a window of a bigger

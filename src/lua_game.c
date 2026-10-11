@@ -25,6 +25,8 @@
 #define OV_TEXT 12288              /* overlay text bytes per frame */
 
 static lua_State *Ls;
+static uint32_t us_update, us_draw, us_ppu; /* the last tick's _update, the last frame's _draw and picture (perf()) */
+static struct { uint64_t update, draw, ppu; uint32_t ppu_max; int ticks, frames; } acc; /* since v2_timing */
 static size_t mem_used, mem_quota;
 static long budget;
 static char error[320];
@@ -43,6 +45,7 @@ typedef struct {
     char id[32];
     uint8_t *tiles;
     int ntiles;
+    uint16_t *rows;  /* ppu_tile_rows */
     uint16_t *map;   /* the asset's map, read-only: a layer copies it */
     int map_w, map_h;
     char palette[32]; /* the palette its colours index (png2asset --palette), "" if its own */
@@ -122,6 +125,8 @@ static tilemap *tilemap_get(const char *id) {
         const uint8_t *b = (const uint8_t *)&t->map[i];
         t->map[i] = (uint16_t)(b[0] | b[1] << 8);
     }
+    t->rows = malloc(t->ntiles * sizeof *t->rows);
+    if (t->rows) ppu_tile_rows(t->tiles, t->ntiles, t->rows); /* else drawn without the shortcuts */
     ntilemaps++;
     return t;
 }
@@ -142,7 +147,7 @@ static int palette_load(const char *id, uint16_t *pal, int offset) { /* entries 
 
 static void assets_free(void) {
     for (int i = 0; i < nsheets; i++) free(sheets[i].idx);
-    for (int i = 0; i < ntilemaps; i++) free(tilemaps[i].tiles), free(tilemaps[i].map);
+    for (int i = 0; i < ntilemaps; i++) free(tilemaps[i].tiles), free(tilemaps[i].map), free(tilemaps[i].rows);
     for (int i = 0; i < PPU_BGS; i++) free(layer[i].map);
     nsheets = ntilemaps = 0;
     memset(layer, 0, sizeof layer);
@@ -462,7 +467,8 @@ static int l_bg(lua_State *L) {
     if (!layer[n].map) return luaL_error(L, "bg %d: out of memory for its map", n);
     memcpy(layer[n].map, t->map, bytes);
     b->mode = strcmp(mode, "affine") ? BG_TILES : BG_AFFINE;
-    b->tiles = t->tiles, b->ntiles = t->ntiles, b->map = layer[n].map, b->map_w = t->map_w, b->map_h = t->map_h;
+    b->tiles = t->tiles, b->ntiles = t->ntiles, b->rows = t->rows;
+    b->map = layer[n].map, b->map_w = t->map_w, b->map_h = t->map_h;
     if (opt_bool(L, 2, "pal", true) && safe_name(t->palette)) palette_load(t->palette, PPU.bg_pal, 0); /* its colours */
     return 0;
 }
@@ -801,6 +807,12 @@ static int l_music(lua_State *L) { /* music(id) loops a WAV; music() or music(ni
     return 0;
 }
 
+static int l_perf(lua_State *L) { /* perf() -> ms of the last _update, _draw, picture, and KB of script memory */
+    lua_pushnumber(L, us_update / 1000.0f), lua_pushnumber(L, us_draw / 1000.0f), lua_pushnumber(L, us_ppu / 1000.0f);
+    lua_pushnumber(L, mem_used / 1024.0f);
+    return 4;
+}
+
 static int l_quit(lua_State *L) {
     (void)L;
     if (hal_can_switch_game()) hal_switch_game();
@@ -868,7 +880,7 @@ static void api(lua_State *L) {
         {"mat", l_mat}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off}, {"window", l_window},
         {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow}, {"mosaic", l_mosaic},
         {"text", l_text}, {"textw", l_textw}, {"rect", l_rect}, {"box", l_box}, {"shade", l_shade}, {"panel", l_panel},
-        {"plate", l_plate}, {"img", l_img}, {"sfx", l_sfx}, {"music", l_music}, {"quit", l_quit}, {"store", l_store},
+        {"plate", l_plate}, {"img", l_img}, {"sfx", l_sfx}, {"music", l_music}, {"quit", l_quit}, {"perf", l_perf}, {"store", l_store},
         {"stored", l_stored}, {"load", l_load}, {"log", l_log}, {"print", l_log}, {"require", l_require}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);
@@ -960,14 +972,32 @@ bool v2_load(void) {
 }
 
 void v2_tick(void) {
+    static int menu_held;
     if (G.in.held & ACT_QUIT) G.quit = true;
+    menu_held = (G.in.held & ACT_INV) ? menu_held + 1 : 0;
+    if (menu_held == 2 * TICK_HZ && hal_can_switch_game()) hal_switch_game(); /* MENU held 2 s: back to the list */
+    uint32_t t = hal_micros();
     call("_update", 0);
+    us_update = hal_micros() - t;
+    acc.update += us_update, acc.ticks++;
 }
 
 void v2_draw_world(void) {
     nov = ntext = 0;
+    uint32_t t = hal_micros();
     call("_draw", 0);
+    uint32_t u = hal_micros();
     ppu_render(G.world);
+    us_draw = u - t, us_ppu = hal_micros() - u;
+    acc.draw += us_draw, acc.ppu += us_ppu, acc.frames++;
+    if (us_ppu > acc.ppu_max) acc.ppu_max = us_ppu;
+}
+
+void v2_timing(v2_times *t) {
+    *t = (v2_times){.update = acc.ticks ? (uint32_t)(acc.update / acc.ticks) : 0,
+                    .draw = acc.frames ? (uint32_t)(acc.draw / acc.frames) : 0,
+                    .ppu = acc.frames ? (uint32_t)(acc.ppu / acc.frames) : 0, .ppu_max = acc.ppu_max};
+    memset(&acc, 0, sizeof acc);
 }
 
 void v2_draw(surface *s) {

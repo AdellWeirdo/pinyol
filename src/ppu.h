@@ -32,6 +32,7 @@ typedef struct {
     bool mosaic;          /* blocky, by PPU.mosaic.bg_w x bg_h */
     const uint8_t *tiles; /* TILES, AFFINE: 8x8 tiles of 64 index bytes each, row by row */
     int ntiles;
+    const uint16_t *rows; /* TILES, optional: ppu_tile_rows() of the tiles, to skip empty rows and copy opaque ones */
     const uint16_t *map;  /* TILES: tile | 0x400 hflip | 0x800 vflip | bank << 12. AFFINE: tile number (low byte) */
     int map_w, map_h;     /* in tiles */
     int scroll_x, scroll_y; /* TILES, BITMAP: the map pixel shown at the screen's top-left */
@@ -99,3 +100,5 @@ extern ppu_state PPU;
 
 void ppu_reset(void);           /* everything off, palettes black, mosaic 1, identity matrices, no tables */
 void ppu_render(uint16_t *out); /* the frame, PPU_W x PPU_H RGB565, row after row */
+/* For each of ntiles tiles: bit y set when its row y is all transparent, bit 8 + y when it has no transparent pixel. */
+void ppu_tile_rows(const uint8_t *tiles, int ntiles, uint16_t *rows);
