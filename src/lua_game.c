@@ -45,6 +45,7 @@ typedef struct {
     int ntiles;
     uint16_t *map;   /* the asset's map, read-only: a layer copies it */
     int map_w, map_h;
+    char palette[32]; /* the palette its colours index (png2asset --palette), "" if its own */
 } tilemap;
 
 static sheet sheets[MAX_SHEETS];
@@ -105,6 +106,7 @@ static tilemap *tilemap_get(const char *id) {
     snprintf(t->id, sizeof t->id, "%s", id);
     cJSON *meta = load_meta(id);
     t->ntiles = jint(meta, "tiles", 0), t->map_w = jint(meta, "map_w", 0), t->map_h = jint(meta, "map_h", 0);
+    snprintf(t->palette, sizeof t->palette, "%s", jstr(meta, "palette") ? jstr(meta, "palette") : id);
     cJSON_Delete(meta);
     long tl = 0, ml = 0;
     t->tiles = load_bytes(id, "tiles", &tl);
@@ -132,7 +134,8 @@ static int palette_load(const char *id, uint16_t *pal, int offset) { /* entries 
         return 0;
     }
     int n = (int)(len / 2);
-    for (int i = 0; i < n && offset + i < 256; i++) pal[offset + i] = (uint16_t)(raw[2 * i] | raw[2 * i + 1] << 8);
+    for (int i = 0; i < n && offset + i < 256; i++) /* an index 0 is transparent: entry 0 keeps the backdrop */
+        if (offset + i) pal[offset + i] = (uint16_t)(raw[2 * i] | raw[2 * i + 1] << 8);
     free(raw);
     return n;
 }
@@ -320,9 +323,10 @@ static int l_load(lua_State *L) { /* load(chunk [, name [, mode [, env]]]) with 
 }
 
 static int l_log(lua_State *L) {
+    int n = lua_gettop(L); /* before the buffer takes a stack slot */
     luaL_Buffer b;
     luaL_buffinit(L, &b);
-    for (int i = 1; i <= lua_gettop(L); i++) {
+    for (int i = 1; i <= n; i++) {
         if (i > 1) luaL_addchar(&b, ' ');
         luaL_tolstring(L, i, NULL);
         luaL_addvalue(&b);
@@ -333,6 +337,10 @@ static int l_log(lua_State *L) {
 }
 
 /* ------------------------------------------------------------------ the API */
+
+/* A number argument as an int, rounded down: game code computes positions and colours with fractions. */
+static int num(lua_State *L, int arg) { return (int)floorf((float)luaL_checknumber(L, arg)); }
+static int optnum(lua_State *L, int arg, int d) { return lua_isnoneornil(L, arg) ? d : num(L, arg); }
 
 static uint16_t to565(lua_Integer rgb) {
     unsigned r = (rgb >> 16) & 255, g = (rgb >> 8) & 255, b = rgb & 255;
@@ -363,13 +371,14 @@ static int l_t(lua_State *L) { lua_pushnumber(L, (lua_Number)G.ticks / TICK_HZ);
 static int l_ticks(lua_State *L) { lua_pushinteger(L, (lua_Integer)G.ticks); return 1; }
 
 static int l_rgb(lua_State *L) {
-    lua_Integer r = luaL_checkinteger(L, 1), g = luaL_checkinteger(L, 2), b = luaL_checkinteger(L, 3);
+    lua_Integer r = num(L, 1), g = num(L, 2), b = num(L, 3);
+    r = r < 0 ? 0 : r > 255 ? 255 : r, g = g < 0 ? 0 : g > 255 ? 255 : g, b = b < 0 ? 0 : b > 255 ? 255 : b;
     lua_pushinteger(L, (r & 255) << 16 | (g & 255) << 8 | (b & 255));
     return 1;
 }
 
 static int l_pal(lua_State *L) { /* pal(i, 0xRRGGBB [, "obj"]) */
-    int i = (int)luaL_checkinteger(L, 1) & 255;
+    int i = num(L, 1) & 255;
     uint16_t c = to565(luaL_checkinteger(L, 2));
     if (lua_toboolean(L, 3)) PPU.obj_pal[i] = c;
     else PPU.bg_pal[i] = c;
@@ -454,7 +463,7 @@ static int l_bg(lua_State *L) {
     memcpy(layer[n].map, t->map, bytes);
     b->mode = strcmp(mode, "affine") ? BG_TILES : BG_AFFINE;
     b->tiles = t->tiles, b->ntiles = t->ntiles, b->map = layer[n].map, b->map_w = t->map_w, b->map_h = t->map_h;
-    if (opt_bool(L, 2, "pal", true)) palette_load(id, PPU.bg_pal, 0); /* the tilemap's own palette, if it has one */
+    if (opt_bool(L, 2, "pal", true) && safe_name(t->palette)) palette_load(t->palette, PPU.bg_pal, 0); /* its colours */
     return 0;
 }
 
@@ -571,7 +580,7 @@ static int l_line_scroll(lua_State *L) { /* line_scroll(n, y, x, y_offset) */
             line_scroll_tab[n][i] = (ppu_line_scroll){(int16_t)PPU.bg[n].scroll_x, (int16_t)PPU.bg[n].scroll_y};
         PPU.line.scroll[n] = line_scroll_tab[n];
     }
-    line_scroll_tab[n][y] = (ppu_line_scroll){(int16_t)luaL_checkinteger(L, 3), (int16_t)luaL_optinteger(L, 4, PPU.bg[n].scroll_y)};
+    line_scroll_tab[n][y] = (ppu_line_scroll){(int16_t)num(L, 3), (int16_t)optnum(L, 4, PPU.bg[n].scroll_y)};
     return 0;
 }
 
@@ -591,7 +600,7 @@ static int l_line_window(lua_State *L) { /* line_window(k, y, x1, x2) */
         memset(line_win_tab[k], 0, sizeof line_win_tab[k]);
         PPU.line.win[k] = line_win_tab[k];
     }
-    line_win_tab[k][y] = (ppu_line_span){(int16_t)luaL_checkinteger(L, 3), (int16_t)luaL_checkinteger(L, 4)};
+    line_win_tab[k][y] = (ppu_line_span){(int16_t)num(L, 3), (int16_t)num(L, 4)};
     return 0;
 }
 
@@ -671,7 +680,7 @@ static int l_mat(lua_State *L) { /* mat(m, degrees, scale_x [, scale_y]): sprite
 }
 
 static int ev(lua_State *L, int arg) {
-    int v = (int)luaL_checkinteger(L, arg);
+    int v = num(L, arg);
     return v < 0 ? 0 : v > 16 ? 16 : v;
 }
 
@@ -697,8 +706,7 @@ static int l_fx_off(lua_State *L) {
 static int l_window(lua_State *L) { /* window(k, x1, y1, x2, y2, inside) */
     int k = (int)luaL_checkinteger(L, 1) & 1;
     PPU.win.on[k] = true;
-    PPU.win.rect[k] = (ppu_rect){(int16_t)luaL_checkinteger(L, 2), (int16_t)luaL_checkinteger(L, 4),
-                                 (int16_t)luaL_checkinteger(L, 3), (int16_t)luaL_checkinteger(L, 5)};
+    PPU.win.rect[k] = (ppu_rect){(int16_t)num(L, 2), (int16_t)num(L, 4), (int16_t)num(L, 3), (int16_t)num(L, 5)};
     PPU.win.in[k] = (uint8_t)luaL_checkinteger(L, 6);
     return 0;
 }
@@ -731,7 +739,7 @@ static int font_arg(lua_State *L, int arg) {
 static int l_text(lua_State *L) { /* text(str, x, y [, color [, font [, align]]]) -> width; screen pixels (480x320) */
     size_t n = 0;
     const char *s = luaL_checklstring(L, 1, &n);
-    int x = (int)luaL_checkinteger(L, 2), y = (int)luaL_checkinteger(L, 3), f = font_arg(L, 5);
+    int x = num(L, 2), y = num(L, 3), f = font_arg(L, 5);
     static const char *const aligns[] = {"left", "center", "right", NULL};
     int al = luaL_checkoption(L, 6, "left", aligns), w = font_width(font_named(f), s, (int)n);
     ov_cmd *c = ntext + (int)n <= OV_TEXT ? ov_add(OV_TEXT_OP) : NULL;
@@ -756,8 +764,7 @@ static int l_textw(lua_State *L) {
 static int shape(lua_State *L, int op, bool colour) {
     ov_cmd *c = ov_add(op);
     if (!c) return 0;
-    c->x = (int16_t)luaL_checkinteger(L, 1), c->y = (int16_t)luaL_checkinteger(L, 2);
-    c->w = (int16_t)luaL_checkinteger(L, 3), c->h = (int16_t)luaL_checkinteger(L, 4);
+    c->x = (int16_t)num(L, 1), c->y = (int16_t)num(L, 2), c->w = (int16_t)num(L, 3), c->h = (int16_t)num(L, 4);
     if (colour) c->color = to565(luaL_optinteger(L, 5, 0xFFFFFF));
     return 0;
 }
@@ -773,7 +780,7 @@ static int l_img(lua_State *L) { /* img(id, x, y [, frame [, scale 1|2]]): a run
     asset *a = gfx_asset(id);
     ov_cmd *c = a->missing ? NULL : ov_add(OV_IMG);
     if (c) {
-        c->a = a, c->x = (int16_t)luaL_checkinteger(L, 2), c->y = (int16_t)luaL_checkinteger(L, 3);
+        c->a = a, c->x = (int16_t)num(L, 2), c->y = (int16_t)num(L, 3);
         c->frame = (int16_t)luaL_optinteger(L, 4, 0), c->scale = (uint8_t)(luaL_optinteger(L, 5, 1) == 2 ? 2 : 1);
     }
     return 0;

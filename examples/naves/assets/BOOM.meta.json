@@ -1,0 +1,16 @@
+{
+  "asset": "BOOM",
+  "type": "sprite",
+  "format": "idx8",
+  "w": 16,
+  "h": 16,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "palette": "OBJ"
+}

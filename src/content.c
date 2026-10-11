@@ -76,36 +76,8 @@ void content_free(void) {
     }
 }
 
-bool content_load(void) {
-    content_free();
-    G.game = json_file("game.json");
-    const char *engine = jstr(G.game, "engine");
-    G.v2 = engine && !strncmp(engine, "np2d@2", 6);
-    if (G.v2) { /* a Lua game: none of the v1 content files */
-        cJSON **rest[] = {&G.tiles, &G.items, &G.events, &G.notebook, &G.sequences, &G.listens, &G.puzzles, &G.music};
-        for (size_t i = 0; i < sizeof rest / sizeof rest[0]; i++) *rest[i] = cJSON_CreateObject();
-        G.dialogues = cJSON_CreateObject();
-        G.zones = cJSON_CreateObject();
-        return true;
-    }
-    cJSON_Delete(G.game);
-    G.game = NULL;
-    struct { cJSON **dst; const char *file; } files[] = {
-        {&G.game, "game.json"},         {&G.tiles, "tiles.json"},         {&G.items, "items.json"},
-        {&G.events, "events.json"},     {&G.notebook, "notebook.json"},   {&G.sequences, "sequences.json"},
-        {&G.listens, "listen.json"},    {&G.puzzles, "puzzles.json"},     {&G.music, "music.json"},
-    };
-    bool ok = true;
-    for (size_t i = 0; i < sizeof files / sizeof files[0]; i++) {
-        *files[i].dst = json_file(files[i].file);
-        if (!*files[i].dst) {
-            hal_log("required content missing or invalid: %s", files[i].file);
-            *files[i].dst = cJSON_CreateObject();
-            ok = false;
-        }
-    }
-    G.dialogues = cJSON_CreateObject();
-    G.zones = cJSON_CreateObject();
+/* game.json "theme" (UI colours, corners) and "player": the defaults are Bajo Pueblo's. */
+static void content_theme(void) {
     ui_theme *t = &G.th;
     const cJSON *th = jget(G.game, "theme");
     t->ink = hex565(jstr(th, "ink"), D_INK);
@@ -130,6 +102,40 @@ bool content_load(void) {
     snprintf(p->interact, sizeof p->interact, "%s_INTERACT", tag);
     snprintf(p->listen, sizeof p->listen, "%s_LISTEN", tag);
     snprintf(p->descend, sizeof p->descend, "%s_DESCEND", tag);
+}
+
+bool content_load(void) {
+    content_free();
+    G.game = json_file("game.json");
+    const char *engine = jstr(G.game, "engine");
+    G.v2 = engine && !strncmp(engine, "np2d@2", 6);
+    if (G.v2) { /* a Lua game: none of the v1 content files */
+        cJSON **rest[] = {&G.tiles, &G.items, &G.events, &G.notebook, &G.sequences, &G.listens, &G.puzzles, &G.music};
+        for (size_t i = 0; i < sizeof rest / sizeof rest[0]; i++) *rest[i] = cJSON_CreateObject();
+        G.dialogues = cJSON_CreateObject();
+        G.zones = cJSON_CreateObject();
+        content_theme();
+        return true;
+    }
+    cJSON_Delete(G.game);
+    G.game = NULL;
+    struct { cJSON **dst; const char *file; } files[] = {
+        {&G.game, "game.json"},         {&G.tiles, "tiles.json"},         {&G.items, "items.json"},
+        {&G.events, "events.json"},     {&G.notebook, "notebook.json"},   {&G.sequences, "sequences.json"},
+        {&G.listens, "listen.json"},    {&G.puzzles, "puzzles.json"},     {&G.music, "music.json"},
+    };
+    bool ok = true;
+    for (size_t i = 0; i < sizeof files / sizeof files[0]; i++) {
+        *files[i].dst = json_file(files[i].file);
+        if (!*files[i].dst) {
+            hal_log("required content missing or invalid: %s", files[i].file);
+            *files[i].dst = cJSON_CreateObject();
+            ok = false;
+        }
+    }
+    G.dialogues = cJSON_CreateObject();
+    G.zones = cJSON_CreateObject();
+    content_theme();
     return ok;
 }
 

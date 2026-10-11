@@ -1,0 +1,27 @@
+# The shoot-'em-up example: start, shoot, a wave, an enemy down, a bomb, game over and the record.
+new
+tick 10
+expect_ok
+expect_lua state == "title"
+press A
+tick 5
+expect_lua state == "play"
+hold A 20
+expect_lua next(shots) ~= nil
+tick 170
+expect_lua next(enemies) ~= nil
+lua e = enemies[1]; e.kind, e.hp, e.x, e.y = "mine", 1, ship.x + 30, ship.y
+hold A 15
+expect_lua score > 0
+press C
+expect_lua bombs == 2 and next(enemies) == nil
+lua lives, ship.inv = 1, 0
+lua ebullets[1] = {x = ship.x + 4, y = ship.y + 4, vx = 0, vy = 0}
+tick 2
+expect_lua state == "over"
+expect_lua stored("hiscore") == score
+tick 70
+press A
+tick 2
+expect_lua state == "title"
+expect_ok

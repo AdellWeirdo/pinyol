@@ -85,7 +85,7 @@ bool game_init(const bp_config *cfg) {
     G.autosave_enabled = true;
     music_reset();
     layers_reset(L_TITLE);
-    if (G.v2) ok = v2_load() && ok; /* an error shows on screen; the folder still opens */
+    if (G.v2) v2_load(); /* a script error shows on screen (and fails --validate); the folder still opens */
     if (!ok) hal_log("game folder %s is incomplete", G.game_dir);
     return ok && G.font.bits && G.font_l.bits && G.bold.bits && G.bold_l.bits;
 }

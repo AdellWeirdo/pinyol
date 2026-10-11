@@ -1,0 +1,12 @@
+{
+  "asset": "POWER",
+  "type": "sprite",
+  "format": "idx8",
+  "w": 8,
+  "h": 8,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "palette": "OBJ"
+}

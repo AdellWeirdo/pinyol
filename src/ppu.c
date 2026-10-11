@@ -153,8 +153,9 @@ static bool obj_pixel(const ppu_obj *o, int sx, int sy, uint16_t *c) {
         u = ((a->pa * dx + a->pb * dy) >> 9) + o->w / 2;
         v = ((a->pc * dx + a->pd * dy) >> 9) + o->h / 2;
         if ((unsigned)u >= o->w || (unsigned)v >= o->h) return false;
-    } else {
+    } else { /* mosaic can snap a pixel to a block edge outside the box */
         u = sx - o->x, v = sy - o->y;
+        if ((unsigned)u >= o->w || (unsigned)v >= o->h) return false;
         if (o->hflip) u = o->w - 1 - u;
         if (o->vflip) v = o->h - 1 - v;
     }

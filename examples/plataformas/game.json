@@ -1,0 +1,8 @@
+{
+  "id": "plataformas",
+  "title": "Plataformas",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "np2d examples",
+  "description": "A platformer: parallax layers, blended water with a wavy scroll per line, sprites and a HUD."
+}

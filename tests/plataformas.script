@@ -1,0 +1,35 @@
+# The platformer example: start, a coin, a slime stomped, run and jump, the flag, play again.
+new
+tick 10
+expect_ok
+expect_lua state == "title"
+press A
+tick 20
+expect_lua state == "play"
+# a coin: the hero is put on it
+lua P.x, P.y, P.vx, P.vy = coin_list[1].x - 4, coin_list[1].y - 4, 0, 0
+tick 2
+expect_lua coins >= 1
+# the slime walking towards the start: the hero falls onto it
+lua s = slimes[2]; P.x, P.y, P.vx, P.vy = s.x, s.y - 14, 0, 2
+tick 3
+expect_lua slimes[2].dead > 0 and state == "play"
+# back at the start: run and jump
+lua P.x, P.y, P.vx, P.vy = 24, 120, 0, 0
+hold RIGHT 30
+expect_lua P.x > 40 and P.ground
+press A
+tick 3
+expect_lua P.vy < 0 and not P.ground
+tick 60
+expect_lua P.ground and state == "play"
+# the flag
+lua P.x, P.y, P.vx, P.vy = 730, 112, 0, 0
+tick 5
+expect_lua state == "won"
+expect_lua stored("best_ticks") ~= nil
+tick 70
+press A
+tick 5
+expect_lua state == "play" and coins == 0
+expect_ok

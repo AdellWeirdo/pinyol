@@ -1,0 +1,8 @@
+{
+  "asset": "PLANET",
+  "type": "tilemap",
+  "tiles": 104,
+  "map_w": 16,
+  "map_h": 16,
+  "palette": "SPACE"
+}

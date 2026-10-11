@@ -1,0 +1,8 @@
+{
+  "id": "naves",
+  "title": "Naves",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "np2d examples",
+  "description": "A shoot-'em-up: stars with a scroll speed per line, a turning planet on an affine layer, blended explosions."
+}

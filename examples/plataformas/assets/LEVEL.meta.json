@@ -1,0 +1,8 @@
+{
+  "asset": "LEVEL",
+  "type": "tilemap",
+  "tiles": 257,
+  "map_w": 96,
+  "map_h": 20,
+  "palette": "WORLD"
+}

@@ -201,6 +201,15 @@ static void mosaic_and_lines(void) {
     ppu_render(&fb[0][0]);
     CHECK(fb[0][10] == BLUE && fb[0][0] == GREY);
     PPU.line.scroll[0] = NULL;
+    /* a mosaic sprite off the block grid: block edges fall outside its box, and stay outside its pixels */
+    static uint8_t blk[3 * 3];
+    memset(blk, 1, sizeof blk);
+    PPU.obj_pal[1] = RED;
+    PPU.obj[0] = (ppu_obj){.on = true, .x = 6, .y = 6, .w = 3, .h = 3, .affine = -1, .mosaic = true, .idx = blk};
+    PPU.mosaic.obj_w = PPU.mosaic.obj_h = 4;
+    ppu_render(&fb[0][0]);
+    CHECK(fb[6][6] == GREY && fb[8][8] == RED && fb[9][9] == GREY);
+    PPU.obj[0].on = false;
     static uint16_t back[PPU_H];
     for (int y = 0; y < PPU_H; y++) back[y] = (uint16_t)y;
     PPU.line.backdrop = back;

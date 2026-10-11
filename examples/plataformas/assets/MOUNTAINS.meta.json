@@ -1,0 +1,8 @@
+{
+  "asset": "MOUNTAINS",
+  "type": "tilemap",
+  "tiles": 110,
+  "map_w": 32,
+  "map_h": 20,
+  "palette": "WORLD"
+}

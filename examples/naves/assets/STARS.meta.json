@@ -1,0 +1,8 @@
+{
+  "asset": "STARS",
+  "type": "tilemap",
+  "tiles": 66,
+  "map_w": 32,
+  "map_h": 20,
+  "palette": "SPACE"
+}
