@@ -157,7 +157,8 @@ void display_init(int spi_hz, bool flip) {
 
 /* Panel rows p0..p0+STRIP-1 from the frame. Panel pixel (px, py) shows frame pixel (lx, ly) with
  * lx = py, ly = 319 - px; flipped turns it 180 degrees. Frame rows are read contiguously. */
-static void build_strip(const uint16_t *frame, int p0, uint16_t *out) {
+static void build_strip(int p0, uint16_t *out, void *ctx) {
+    const uint16_t *frame = ctx;
     for (int ly = 0; ly < FRAME_H; ly++) {
         const uint16_t *row = frame + ly * FRAME_W;
         int px = flipped ? ly : PANEL_W - 1 - ly;
@@ -168,7 +169,7 @@ static void build_strip(const uint16_t *frame, int p0, uint16_t *out) {
     }
 }
 
-void display_present(const uint16_t *frame) {
+void display_present_strips(display_strip_fn build, void *ctx) {
     static spi_transaction_ext_t t[2];
     int inflight = 0;
     for (int s = 0; s < PANEL_H / STRIP; s++) {
@@ -178,7 +179,7 @@ void display_present(const uint16_t *frame) {
             inflight--;
         }
         uint16_t *buf = strip_buf[s & 1];
-        build_strip(frame, s * STRIP, buf);
+        build(s * STRIP, buf, ctx);
         spi_transaction_ext_t *x = &t[s & 1];
         memset(x, 0, sizeof *x);
         x->base.flags = SPI_TRANS_MODE_QIO | SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR;
@@ -195,6 +196,16 @@ void display_present(const uint16_t *frame) {
         spi_transaction_t *done;
         ESP_ERROR_CHECK(spi_device_get_trans_result(dev, &done, portMAX_DELAY));
     }
+}
+
+void display_present(const uint16_t *frame) { display_present_strips(build_strip, (void *)frame); }
+
+void display_te_vblank_only(bool vblank_only) { write_reg(0x35, (const uint8_t[]){vblank_only ? 0x00 : 0x01}, 1); }
+
+int display_spi_khz(void) {
+    int khz = 0;
+    spi_device_get_actual_freq(dev, &khz);
+    return khz;
 }
 
 volatile int64_t display_present_us;

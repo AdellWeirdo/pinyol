@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "audio_out.h"
+#include "bench.h"
 #include "bp.h"
 #include "display.h"
 #include "esp_heap_caps.h"
@@ -229,6 +230,11 @@ void app_main(void) {
     display_init(PANEL_HZ, false);
     power_init();
     input_init();
+#ifdef BP_BENCH
+    display_backlight(100);
+    bench_run();
+    for (;;) vTaskDelay(portMAX_DELAY); /* the last frame stays on screen */
+#endif
 #ifdef BP_REMOTE
     remote_init();
 #endif
