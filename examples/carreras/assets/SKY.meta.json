@@ -1,0 +1,8 @@
+{
+  "asset": "SKY",
+  "type": "tilemap",
+  "tiles": 76,
+  "map_w": 32,
+  "map_h": 20,
+  "palette": "WORLD"
+}

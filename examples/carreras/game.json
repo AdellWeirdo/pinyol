@@ -1,0 +1,8 @@
+{
+  "id": "carreras",
+  "title": "Carreras",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "np2d examples",
+  "description": "A Mode 7 kart race: the circuit in perspective on an affine layer, rivals scaled by distance, three laps."
+}

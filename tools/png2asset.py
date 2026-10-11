@@ -112,8 +112,9 @@ def save_palette(path: Path, pal: list[int]) -> None:
     path.write_bytes(b"".join(c.to_bytes(2, "little") for c in pal))
 
 
-def tiles_and_map(px: bytes, w: int, h: int) -> tuple[list[bytes], list[int]]:
-    """8x8 tiles, each kept once (tile 0 is the empty one); map entries tile | 0x400 hflip | 0x800 vflip."""
+def tiles_and_map(px: bytes, w: int, h: int, flips: bool = True) -> tuple[list[bytes], list[int]]:
+    """8x8 tiles, each kept once (tile 0 is the empty one); map entries tile | 0x400 hflip | 0x800 vflip. Affine
+    layers ignore flips, so for them (flips=False) a flipped copy is a tile of its own."""
     def tile(tx: int, ty: int) -> bytes:
         return b"".join(px[(ty * 8 + y) * w + tx * 8:(ty * 8 + y) * w + tx * 8 + 8] for y in range(8))
 
@@ -127,7 +128,8 @@ def tiles_and_map(px: bytes, w: int, h: int) -> tuple[list[bytes], list[int]]:
     for ty in range(h // 8):
         for tx in range(w // 8):
             t = tile(tx, ty)
-            for flags, v in ((0, t), (0x400, hflip(t)), (0x800, vflip(t)), (0xC00, vflip(hflip(t)))):
+            variants = ((0, t), (0x400, hflip(t)), (0x800, vflip(t)), (0xC00, vflip(hflip(t)))) if flips else ((0, t),)
+            for flags, v in variants:
                 if v in seen:
                     entries.append(seen[v] | flags)
                     break
@@ -151,6 +153,7 @@ def main() -> None:
     p.add_argument("--type", default="sprite", choices=("sprite", "background", "ui"))
     p.add_argument("--tiles", action="store_true", help="indexed 8x8 tiles + a map of the image (a PPU background)")
     p.add_argument("--indexed", action="store_true", help="indexed sprite frames (a PPU sprite sheet)")
+    p.add_argument("--affine", action="store_true", help="with --tiles: for an affine layer (no flips, 256 tiles)")
     p.add_argument("--palette", help="share assets/PALETTE.pal (it grows); default: the asset's own <ID>.pal")
     a = p.parse_args()
     if not re.fullmatch(r"[A-Za-z0-9_]+", a.id) or (a.palette and not re.fullmatch(r"[A-Za-z0-9_]+", a.palette)):
@@ -163,7 +166,9 @@ def main() -> None:
         if a.tiles:
             if img.width % 8 or img.height % 8:
                 p.error(f"{img.width}x{img.height}: --tiles needs a size in whole 8x8 tiles")
-            tiles, entries = tiles_and_map(indices(img, pal), img.width, img.height)
+            tiles, entries = tiles_and_map(indices(img, pal), img.width, img.height, flips=not a.affine)
+            if a.affine and len(tiles) > 256:
+                raise SystemExit(f"{len(tiles)} different tiles: an affine layer holds 256 (simplify the image)")
             (a.assets / f"{a.id}.tiles").write_bytes(b"".join(tiles))
             (a.assets / f"{a.id}.map").write_bytes(b"".join(e.to_bytes(2, "little") for e in entries))
             meta = {"asset": a.id, "type": "tilemap", "tiles": len(tiles), "map_w": img.width // 8,

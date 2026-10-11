@@ -1,0 +1,31 @@
+# The Mode 7 racing example: the countdown, driving, the rivals, a lap, the finish.
+new
+tick 10
+expect_ok
+expect_lua state == "count"
+tick 180
+expect_lua state == "race"
+lua x0, y0 = kart.x, kart.y
+hold A 40
+expect_lua kart.speed > 1.2
+expect_lua (kart.x - x0) ^ 2 + (kart.y - y0) ^ 2 > 900
+expect_lua rivals[1].speed > 1
+lua a0 = kart.angle
+hold A+LEFT 20
+expect_lua kart.angle < a0 - 10
+# a lap: just before the line, having been round the far side
+lua kart.half, kart.way = true, rawlen(TRACK.way)
+lua kart.x, kart.y = TRACK.way[1][1] * 8, TRACK.way[1][2] * 8
+tick 2
+expect_lua kart.lap == 1
+# the last lap
+lua kart.lap, kart.half, kart.way = 2, true, rawlen(TRACK.way)
+lua kart.x, kart.y = TRACK.way[1][1] * 8, TRACK.way[1][2] * 8
+tick 2
+expect_lua state == "done"
+expect_lua stored("best_race") ~= nil
+tick 70
+press A
+tick 2
+expect_lua state == "count" and kart.lap == 0
+expect_ok
