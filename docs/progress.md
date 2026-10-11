@@ -36,3 +36,9 @@ the pulse came less than 3 ms ago the frame goes straight out instead of waiting
 
 Real play: steady 60-61 fps (the panel refreshes at 61.5 Hz), about 5 ms a frame left waiting for the scan. Still
 slower: Bajo Pueblo's bag (about 15 ms of drawing) and an item's close-up over the bag (about 35 ms a frame).
+
+**Board note (night of 2026-10-12):** after many flash/reset cycles the board's USB stopped answering (esptool: "No
+serial data received"); it needs the cable unplugged and plugged back in. Until then the console runs the play bench
+(`-DBP_BENCH=play`), not the game list. To put the normal firmware back:
+`cd firmware && idf.py -DBP_BENCH=OFF build && esptool.py --chip esp32s3 -p /dev/cu.usbmodem101 -b 921600 write_flash 0x20000 build/np2d_console.bin`
+(commit 25661b4 or later). Work continues on the desktop simulator, the headless runner and the web build.
