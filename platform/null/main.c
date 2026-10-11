@@ -12,6 +12,10 @@
 
 #include "bp.h"
 
+#ifndef NP2D_GAME /* the build's GAME_DIR (CMakeLists.txt) */
+#define NP2D_GAME "examples/hola"
+#endif
+
 static void wipe_saves(const char *dir) {
     mkdir(dir, 0755);
     DIR *d = opendir(dir);
@@ -107,7 +111,7 @@ static FILE *open_video(const char *path) {
 }
 
 int main(int argc, char **argv) {
-    bp_config cfg = {"examples/hola", NULL};
+    bp_config cfg = {NP2D_GAME, NULL};
     const char *script = NULL;
     bool validate = false, fresh = false;
     for (int i = 1; i < argc; i++) {

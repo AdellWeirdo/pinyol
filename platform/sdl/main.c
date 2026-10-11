@@ -13,6 +13,8 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #define DEFAULT_GAME "/game"
+#elif defined NP2D_GAME /* the build's GAME_DIR */
+#define DEFAULT_GAME NP2D_GAME
 #else
 #define DEFAULT_GAME "examples/hola"
 #endif
