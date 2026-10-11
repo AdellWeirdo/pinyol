@@ -141,9 +141,6 @@ static inline uint16_t *at(const surface *s, int x, int y) {
 }
 static inline uint16_t bswap16(uint16_t v) { return (uint16_t)(v << 8 | v >> 8); }
 static inline uint16_t stored(const surface *s, uint16_t c) { return s->swap ? bswap16(c) : c; } /* a colour as kept in s */
-static inline bool inside(const surface *s, int x, int y) {
-    return x >= s->x0 && x < s->x0 + s->w && y >= s->y0 && y < s->y0 + s->h;
-}
 
 /* Visible part of a span [x, x+len) on a line [lo, hi): first offset into the span, and how many. */
 static inline int clip(int x, int len, int lo, int hi, int *first) {
@@ -179,6 +176,21 @@ static void blit_plain(surface *s, const asset *a, int frame, int x, int y, int 
             continue;
         }
         const uint8_t *mr = mask ? mask + v * stride : NULL;
+        if (mr && !half && xs == 1 && !s->swap) { /* a plain row: the mask a byte (8 pixels) at a time */
+            int u = u0, end = u0 + n;
+            for (; u < end && (u & 7); u++)
+                if (mr[u >> 3] & (0x80 >> (u & 7))) d[u - u0] = sp[u - u0];
+            for (; u + 8 <= end; u += 8) {
+                uint8_t m = mr[u >> 3];
+                if (m == 0xFF) memcpy(d + (u - u0), sp + (u - u0), 8 * sizeof *d);
+                else if (m)
+                    for (int b = 0; b < 8; b++)
+                        if (m & (0x80 >> b)) d[u - u0 + b] = sp[u - u0 + b];
+            }
+            for (; u < end; u++)
+                if (mr[u >> 3] & (0x80 >> (u & 7))) d[u - u0] = sp[u - u0];
+            continue;
+        }
         for (int k = 0; k < n; k++, d += xs) {
             int u = u0 + k;
             if (mr && !(mr[u >> 3] & (0x80 >> (u & 7)))) continue;
@@ -251,17 +263,20 @@ void gfx_blit2x(surface *s, const asset *a, int frame, int x, int y) {
     if (va < 0) va = 0;
     if (ub > a->w) ub = a->w;
     if (vb > a->h) vb = a->h;
-    for (int v = va; v < vb; v++) {
-        int dy = y + 2 * v;
-        if (dy < 0 || dy + 1 >= fh) continue;
-        const uint8_t *mr = mask ? mask + v * stride : NULL;
-        for (int u = ua; u < ub; u++) {
-            int dx = x + 2 * u;
-            if (dx < 0 || dx + 1 >= fw || (mr && !(mr[u >> 3] & (0x80 >> (u & 7))))) continue;
-            uint16_t c = stored(s, src[v * a->w + u]);
-            for (int j = 0; j < 2; j++)
-                for (int i = 0; i < 2; i++)
-                    if (inside(s, dx + i, dy + j)) *at(s, dx + i, dy + j) = c;
+    const int ys = step_y(s), ya = s->y0, yb = s->y0 + s->h;
+    for (int u = ua; u < ub; u++) { /* column by column: a turned strip's columns are contiguous */
+        int dx = x + 2 * u;
+        if (dx < 0 || dx + 1 >= fw) continue;
+        for (int i = 0; i < 2; i++) {
+            if (dx + i < s->x0 || dx + i >= s->x0 + s->w) continue;
+            uint16_t *col = at(s, dx + i, ya); /* row ya of this column; row r is col + (r - ya) * ys */
+            for (int v = va; v < vb; v++) {
+                int dy = y + 2 * v;
+                if (dy < 0 || dy + 1 >= fh || (mask && !(mask[v * stride + (u >> 3)] & (0x80 >> (u & 7))))) continue;
+                uint16_t c = stored(s, src[v * a->w + u]);
+                if (dy >= ya && dy < yb) col[(dy - ya) * ys] = c;
+                if (dy + 1 >= ya && dy + 1 < yb) col[(dy + 1 - ya) * ys] = c;
+            }
         }
     }
 }
@@ -391,28 +406,47 @@ void gfx_tint_dusk(surface *s) {
 
 /* Cards and signs in the style of the approved references: paper, 2 px ink border with cut corners,
  * a thin tan inner line and a soft drop shadow. */
-/* Mecha theme ("corners": "cut"): top-left and bottom-right corners chamfered by c pixels. */
-static void chamfer(surface *s, int x, int y, int w, int h, uint16_t col, int c, bool shade) {
-    for (int r = 0; r < h; r++) {
-        int l = r < c ? c - r : 0, rt = r >= h - c ? r - (h - c) + 1 : 0;
-        if (!l && !rt) { /* the rows between the cut corners are one rectangle: one call instead of one per row */
-            int n = h - c - r;
-            if (shade) gfx_shade(s, x, y + r, w, n);
-            else gfx_fill(s, x, y + r, w, n, col);
-            r += n - 1;
-            continue;
-        }
-        if (shade) gfx_shade(s, x + l, y + r, w - l - rt, 1);
-        else gfx_fill(s, x + l, y + r, w - l - rt, 1, col);
+/* Mecha theme ("corners": "cut"): top-left and bottom-right corners chamfered by c pixels. Column k (0..w-1) of such a
+ * w x h card covers rows [top, return value): the first c rows start c - row in, the last c rows end row - (h - c) + 1
+ * short. */
+static int cut_column(int k, int w, int h, int c, int *top) {
+    *top = k < c ? c - k : 0;
+    int bot = w - k + h - c - 1;
+    return bot < h ? bot : h;
+}
+
+/* Shade or fill rows [a, b) of column x, minus rows [ca, cb) that something drawn later covers. */
+static void column_minus(surface *s, int x, int a, int b, int ca, int cb, bool shade, uint16_t col) {
+    if (ca >= cb) ca = cb = b; /* nothing covers it */
+    int spans[2][2] = {{a, ca < b ? ca : b}, {cb > a ? cb : a, b}};
+    for (int i = 0; i < 2; i++) {
+        if (spans[i][0] >= spans[i][1]) continue;
+        if (shade) gfx_shade(s, x, spans[i][0], 1, spans[i][1] - spans[i][0]);
+        else gfx_fill(s, x, spans[i][0], 1, spans[i][1] - spans[i][0], col);
+    }
+}
+
+/* A cut-corner card, column by column so each pixel is drawn once: shade where only the shadow is, ink on the 2 px
+ * border, paper inside. The same pixels as shading the whole shadow card, then filling the ink card, then the paper
+ * card (c - 1 cut, 2 px in) on top; a turned panel strip stores columns contiguously. */
+static void cut_card(surface *s, int x, int y, int w, int h, uint16_t fill, int shadow) {
+    int c = h >= 24 ? 8 : 5, ka = s->x0 - x, kb = s->x0 + s->w - x; /* only the columns inside the window */
+    if (ka < 0) ka = 0;
+    if (kb > w + shadow) kb = w + shadow;
+    for (int k = ka; k < kb; k++) {
+        int it = 0, ib = 0, pt = 0, pb = 0, st = 0, sb = 0; /* ink, paper and shadow rows, relative to y */
+        if (k < w) ib = cut_column(k, w, h, c, &it);
+        if (k >= 2 && k < w - 2) pb = 2 + cut_column(k - 2, w - 4, h - 4, c - 1, &pt), pt += 2;
+        if (shadow && k >= shadow) sb = shadow + cut_column(k - shadow, w, h, c, &st), st += shadow;
+        if (st < sb) column_minus(s, x + k, y + st, y + sb, y + it, y + ib, true, 0);
+        if (it < ib) column_minus(s, x + k, y + it, y + ib, y + pt, y + pb, false, C_INK);
+        if (pt < pb) gfx_fill(s, x + k, y + pt, 1, pb - pt, fill);
     }
 }
 
 static void rounded(surface *s, int x, int y, int w, int h, uint16_t fill, int shadow) {
     if (G.th.cut) {
-        int c = h >= 24 ? 8 : 5;
-        if (shadow) chamfer(s, x + shadow, y + shadow, w, h, 0, c, true);
-        chamfer(s, x, y, w, h, C_INK, c, false);
-        chamfer(s, x + 2, y + 2, w - 4, h - 4, fill, c - 1, false);
+        cut_card(s, x, y, w, h, fill, shadow);
         return;
     }
     if (shadow) { /* the shadow shows only right and below: the fill covers the rest, so it is not shaded */

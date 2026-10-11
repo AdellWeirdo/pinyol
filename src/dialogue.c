@@ -75,6 +75,7 @@ static void next_line(void) {
         return;
     }
     D->nchoices = 0;
+    D->choice_rows_font = NULL;
     const cJSON *c;
     cJSON_ArrayForEach(c, jget(D->node, "choices")) {
         if (D->nchoices == 16 || !cond_eval(jget(c, "if"))) continue;
@@ -229,10 +230,18 @@ static int page_lines(void) {
 }
 
 /* Choices may wrap to two lines; rows are laid out from the top of the box. */
+/* Each choice's wrapped lines. Wrapping is slow and the layout asks for them many times (choice_y, box_h, touch), in
+ * every panel strip of a frame: they are counted when the choices or the font (large text) change. */
 static int choice_lines(int i) {
-    const char *t = jstr(D->choices[i], "text") ? jstr(D->choices[i], "text") : jstr(D->choices[i], "label");
-    uint16_t ls[2], ll[2];
-    return t ? text_wrap(ui_bold(), t, BOX_W - 2 * TEXT_PAD - 14, ls, ll, 2) : 1;
+    if (D->choice_rows_font != ui_bold()) {
+        D->choice_rows_font = ui_bold();
+        for (int k = 0; k < D->nchoices; k++) {
+            const char *t = jstr(D->choices[k], "text") ? jstr(D->choices[k], "text") : jstr(D->choices[k], "label");
+            uint16_t ls[2], ll[2];
+            D->choice_rows[k] = (uint8_t)(t ? text_wrap(ui_bold(), t, BOX_W - 2 * TEXT_PAD - 14, ls, ll, 2) : 1);
+        }
+    }
+    return D->choice_rows[i];
 }
 
 static int choice_y(int i) {

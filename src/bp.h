@@ -314,6 +314,8 @@ typedef struct {
     bool choosing;
     cJSON *choices[16];
     int nchoices, sel;
+    uint8_t choice_rows[16];     /* wrapped lines of each choice (dialogue.c, choice_lines) */
+    const void *choice_rows_font; /* the font they were counted with; NULL: count again */
     cJSON *pending_choice; /* choice whose Klaus line is showing */
     const char *pending_target;
     bool wrapped_large;

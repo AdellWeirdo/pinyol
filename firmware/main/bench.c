@@ -567,13 +567,64 @@ static void profile_game(const char *dir) {
     game_shutdown();
 }
 
+static void do_frame_strips(void *a) { /* a whole frame as the console draws it: the world, then 15 strips */
+    (void)a;
+    for (int r = 0; r < SCREEN_W; r += 32) {
+        surface t = gfx_turned(v1_strip, r, 32, SCREEN_W, SCREEN_H, false, true);
+        game_draw(&t, r == 0);
+    }
+}
+
+/* One zone with a screen open on it: "play", "dlg:REF", "inv" (every item in the bag) or "puz:ID". */
+static void profile_screens(const char *dir, const char *zone, const char *const *modes, int nmodes) {
+    for (int i = 0; i < nmodes; i++) {
+        mkdir(V1_SAVES, 0755);
+        bp_config cfg = {dir, V1_SAVES};
+        if (!game_init(&cfg)) { game_shutdown(); return; }
+        uint16_t *frame = heap_caps_malloc(SCREEN_W * SCREEN_H * 2, MALLOC_CAP_SPIRAM);
+        v1_strip = heap_caps_malloc(32 * SCREEN_H * 2, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+        if (!frame || !v1_strip) return;
+        v1_scr = (surface){.px = frame, .w = SCREEN_W, .h = SCREEN_H};
+        game_new();
+        G.autosave_enabled = false;
+        layers_reset(L_PLAY);
+        world_enter(zone, "safe");
+        const hal_input none = {0};
+        for (int t = 0; t < 150; t++) game_tick(&none);
+        layers_reset(L_PLAY);
+        G.seq.fade = 0;
+        const char *m = modes[i];
+        const cJSON *it;
+        if (!strncmp(m, "dlg:", 4)) dlg_open(m + 4);
+        else if (!strncmp(m, "inv+dlg:", 8)) { /* the bag with a dialogue over it, as when an item is examined */
+            cJSON_ArrayForEach(it, G.items) flagf_set(1, "item:%s%s", it->string, "");
+            layer_push(L_INV);
+            dlg_open(m + 8);
+        } else if (!strcmp(m, "inv")) {
+            cJSON_ArrayForEach(it, G.items) flagf_set(1, "item:%s%s", it->string, "");
+            layer_push(L_INV);
+        } else if (!strncmp(m, "puz:", 4)) puzzle_open(m + 4);
+        for (int t = 0; t < 240; t++) game_tick(&none); /* the typewriter done */
+        LOG("v1 %-10s %-5s %-18s whole frame %6.2f ms || strips with the world %6.2f ms", jstr(G.game, "id"), zone, m,
+            best_ms(do_frame, NULL), best_ms(do_frame_strips, NULL));
+        heap_caps_free(frame);
+        heap_caps_free(v1_strip);
+        game_shutdown();
+        vTaskDelay(1);
+    }
+}
+
 void bench_v1_run(void) {
     vTaskDelay(pdMS_TO_TICKS(4000)); /* time for the USB log to be reopened after the flash's reset */
     LOG("v1 G.world at %p: %s", (void *)G.world, esp_ptr_external_ram(G.world) ? "PSRAM" : "internal RAM");
     if (!storage_mount()) { LOG("v1: no card"); return; }
     LOG("v1 start | free internal %u KB, PSRAM %u KB", (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
         (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
-    profile_game("/sdcard/games/bajopueblo");
-    profile_game("/sdcard/games/geumgye");
+    static const char *const bp[] = {"play", "dlg:D_ALCALDESA", "inv", "puz:P01", "puz:P03"};
+    static const char *const gg[] = {"play", "dlg:D_M01.noticia", "inv", "puz:P01", "puz:T02"};
+    static const char *const bp4[] = {"play", "dlg:D_PANADERA", "inv+dlg:D_PANADERA"};
+    profile_screens("/sdcard/games/bajopueblo", "Z04", bp4, 3);
+    profile_screens("/sdcard/games/bajopueblo", "Z01", bp, 5);
+    profile_screens("/sdcard/games/geumgye", "M01", gg, 5);
     LOG("v1 done");
 }
