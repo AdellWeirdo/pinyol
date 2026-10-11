@@ -41,4 +41,5 @@ slower: Bajo Pueblo's bag (about 15 ms of drawing) and an item's close-up over t
 serial data received"); it needs the cable unplugged and plugged back in. Until then the console runs the play bench
 (`-DBP_BENCH=play`), not the game list. To put the normal firmware back:
 `cd firmware && idf.py -DBP_BENCH=OFF build && esptool.py --chip esp32s3 -p /dev/cu.usbmodem101 -b 921600 write_flash 0x20000 build/np2d_console.bin`
-(commit 25661b4 or later). Work continues on the desktop simulator, the headless runner and the web build.
+(commit 25661b4 or later). Pau reconnected the cable the same night and the console got the normal firmware back
+(25661b4: game list, 60 fps on TE). Board flashing kept to a minimum from here.
