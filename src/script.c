@@ -266,6 +266,21 @@ static bool text_visible(const char *s) {
 
 static bool run_line(char *cmd, char *arg) {
     if (!strcmp(cmd, "new")) { game_new(); return tick(0); }
+    if (!strcmp(cmd, "lua") || !strcmp(cmd, "expect_lua")) { /* np2d@2: run code / check an expression in the game */
+        char msg[200];
+        if (!v2_run(arg, cmd[0] == 'e', msg, sizeof msg)) FAIL("%s %s -> %s", cmd, arg, msg);
+        return true;
+    }
+    if (!strcmp(cmd, "expect_lua_error")) { /* np2d@2: this code must fail (a limit of the sandbox) */
+        char msg[200];
+        if (v2_run(arg, false, msg, sizeof msg)) FAIL("expect_lua_error %s: it ran without an error", arg);
+        hal_log("expected error: %s", msg);
+        return true;
+    }
+    if (!strcmp(cmd, "expect_ok")) { /* np2d@2: the script has not stopped on an error */
+        if (v2_error()) FAIL("the game's script failed: %s", v2_error());
+        return true;
+    }
     if (!strcmp(cmd, "continue")) {
         const char *slot = *arg ? arg : save_newest();
         if (!slot) FAIL("continue: no save");

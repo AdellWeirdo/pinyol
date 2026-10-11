@@ -45,6 +45,11 @@ void hal_log(const char *fmt, ...) {
     putchar('\n');
 }
 
+void *hal_realloc_slow(void *p, size_t n) { /* PSRAM: internal RAM is for DMA, strips and the frame's hot data */
+    void *q = heap_caps_realloc(p, n, MALLOC_CAP_SPIRAM);
+    return q ? q : realloc(p, n);
+}
+
 void hal_audio_lock(void) { xSemaphoreTake(audio_mutex, portMAX_DELAY); }
 void hal_audio_unlock(void) { xSemaphoreGive(audio_mutex); }
 bool hal_can_switch_game(void) { return true; }

@@ -16,5 +16,7 @@ void hal_log(const char *fmt, ...) {
 void hal_audio_lock(void) {}
 void hal_audio_unlock(void) {}
 
+void *hal_realloc_slow(void *p, size_t n) { return realloc(p, n); }
+
 bool hal_can_switch_game(void) { return getenv("BP_SWITCH_GAME") != NULL; } /* to see the console's title menu */
 void hal_switch_game(void) {}

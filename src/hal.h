@@ -4,6 +4,7 @@
  * audio_mix() from its audio callback/task while holding the audio lock. */
 #pragma once
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 enum {
@@ -30,3 +31,5 @@ bool hal_can_switch_game(void);
 void hal_switch_game(void);
 void hal_audio_lock(void);
 void hal_audio_unlock(void);
+/* realloc for big or script data, in memory that may be slower (PSRAM on the console); free() releases it. */
+void *hal_realloc_slow(void *p, size_t n);

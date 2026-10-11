@@ -2,13 +2,23 @@
 # requires-python = ">=3.10"
 # dependencies = ["pillow>=10"]
 # ///
-"""Convert a PNG into an np2d runtime asset: <ID>.rgb565 (little endian) + <ID>.mask (1 bit, MSB first) + <ID>.meta.json.
+"""Convert a PNG into an np2d runtime asset.
+
+Direct colour (np2d@1 games, and sprites or bitmap layers of np2d@2 ones): <ID>.rgb565 (little endian) + <ID>.mask
+(1 bit, MSB first) + <ID>.meta.json.
 
     uv run tools/png2asset.py hero_walk.png games/mygame/assets PJ_WALK --frames 16 --ms 125 --anchor 12,29
     uv run tools/png2asset.py room.png games/mygame/assets BG_Z01 --type background
 
---frames N cuts the PNG into N equal frames, left to right (a horizontal strip). Character sheets go in
-direction order N, E, S, W. Pixels with alpha < 128 are transparent; an opaque image writes no .mask.
+Indexed, for the PPU of np2d@2 games (docs/lua.md): one byte per pixel into a palette of up to 255 colours plus
+transparent index 0. --palette PAL shares (and grows) assets/PAL.pal across several images.
+
+    uv run tools/png2asset.py level.png games/mygame/assets LEVEL --tiles --palette WORLD    # .tiles .map .pal
+    uv run tools/png2asset.py ship.png games/mygame/assets SHIP --indexed --frames 4 --palette OBJ  # .idx .pal
+
+--tiles cuts the image into 8x8 tiles, keeps one copy of each (a flipped copy counts as the same tile) and writes
+the map that rebuilds the image. --frames N cuts a horizontal strip into N frames. Pixels with alpha < 128 are
+transparent.
 """
 from __future__ import annotations
 
@@ -66,6 +76,70 @@ def export(assets: Path, aid: str, frames: list[Image.Image], frame_ms: int = 0,
     (assets / f"{aid}.meta.json").write_text(json.dumps(meta, indent=2) + "\n")
 
 
+def rgb565(r: int, g: int, b: int) -> int:
+    return pack565(r, g, b)
+
+
+def load_palette(path: Path) -> list[int]:
+    if not path.exists():
+        return [0]  # index 0: transparent
+    raw = path.read_bytes()
+    return [raw[i] | raw[i + 1] << 8 for i in range(0, len(raw), 2)]
+
+
+def indices(img: Image.Image, pal: list[int]) -> bytes:
+    """One palette index per pixel, adding colours to pal as they appear (index 0 is transparent)."""
+    img = img.convert("RGBA")
+    out = bytearray()
+    where = {c: i for i, c in enumerate(pal) if i}
+    raw = img.tobytes()
+    for k in range(0, len(raw), 4):
+        r, g, b, a = raw[k], raw[k + 1], raw[k + 2], raw[k + 3]
+        if a < 128:
+            out.append(0)
+            continue
+        c = rgb565(r, g, b)
+        if c not in where:
+            if len(pal) >= 256:
+                raise SystemExit("more than 255 colours: reduce the image's colours or split the palette")
+            where[c] = len(pal)
+            pal.append(c)
+        out.append(where[c])
+    return bytes(out)
+
+
+def save_palette(path: Path, pal: list[int]) -> None:
+    path.write_bytes(b"".join(c.to_bytes(2, "little") for c in pal))
+
+
+def tiles_and_map(px: bytes, w: int, h: int) -> tuple[list[bytes], list[int]]:
+    """8x8 tiles, each kept once (tile 0 is the empty one); map entries tile | 0x400 hflip | 0x800 vflip."""
+    def tile(tx: int, ty: int) -> bytes:
+        return b"".join(px[(ty * 8 + y) * w + tx * 8:(ty * 8 + y) * w + tx * 8 + 8] for y in range(8))
+
+    def hflip(t: bytes) -> bytes:
+        return b"".join(t[y * 8:y * 8 + 8][::-1] for y in range(8))
+
+    def vflip(t: bytes) -> bytes:
+        return b"".join(t[y * 8:y * 8 + 8] for y in range(7, -1, -1))
+
+    tiles, seen, entries = [bytes(64)], {bytes(64): 0}, []
+    for ty in range(h // 8):
+        for tx in range(w // 8):
+            t = tile(tx, ty)
+            for flags, v in ((0, t), (0x400, hflip(t)), (0x800, vflip(t)), (0xC00, vflip(hflip(t)))):
+                if v in seen:
+                    entries.append(seen[v] | flags)
+                    break
+            else:
+                if len(tiles) >= 1024:
+                    raise SystemExit("more than 1024 different tiles: a map holds tile numbers up to 1023")
+                seen[t] = len(tiles)
+                entries.append(len(tiles))
+                tiles.append(t)
+    return tiles, entries
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("png", type=Path)
@@ -75,7 +149,38 @@ def main() -> None:
     p.add_argument("--ms", type=int, default=0, help="milliseconds per frame")
     p.add_argument("--anchor", help="x,y inside a frame (characters: their feet); default bottom centre")
     p.add_argument("--type", default="sprite", choices=("sprite", "background", "ui"))
+    p.add_argument("--tiles", action="store_true", help="indexed 8x8 tiles + a map of the image (a PPU background)")
+    p.add_argument("--indexed", action="store_true", help="indexed sprite frames (a PPU sprite sheet)")
+    p.add_argument("--palette", help="share assets/PALETTE.pal (it grows); default: the asset's own <ID>.pal")
     a = p.parse_args()
+    if not re.fullmatch(r"[A-Za-z0-9_]+", a.id) or (a.palette and not re.fullmatch(r"[A-Za-z0-9_]+", a.palette)):
+        p.error("IDs: letters, digits and _ only")
+    if a.tiles or a.indexed:
+        a.assets.mkdir(parents=True, exist_ok=True)
+        pal_path = a.assets / f"{a.palette or a.id}.pal"
+        pal = load_palette(pal_path)
+        img = Image.open(a.png).convert("RGBA")
+        if a.tiles:
+            if img.width % 8 or img.height % 8:
+                p.error(f"{img.width}x{img.height}: --tiles needs a size in whole 8x8 tiles")
+            tiles, entries = tiles_and_map(indices(img, pal), img.width, img.height)
+            (a.assets / f"{a.id}.tiles").write_bytes(b"".join(tiles))
+            (a.assets / f"{a.id}.map").write_bytes(b"".join(e.to_bytes(2, "little") for e in entries))
+            meta = {"asset": a.id, "type": "tilemap", "tiles": len(tiles), "map_w": img.width // 8,
+                    "map_h": img.height // 8, "palette": a.palette or a.id}
+            print(f"{a.assets / a.id}: {len(tiles)} tiles, map {img.width // 8}x{img.height // 8}, {len(pal) - 1} colours")
+        else:
+            if img.width % a.frames:
+                p.error(f"{img.width} px wide does not split into {a.frames} equal frames")
+            fw = img.width // a.frames
+            frames = [img.crop((i * fw, 0, (i + 1) * fw, img.height)) for i in range(a.frames)]
+            (a.assets / f"{a.id}.idx").write_bytes(b"".join(indices(f, pal) for f in frames))
+            meta = {"asset": a.id, "type": "sprite", "format": "idx8", "w": fw, "h": img.height, "frames": a.frames,
+                    "frame_ms": [a.ms] * a.frames, "palette": a.palette or a.id}
+            print(f"{a.assets / a.id}: {a.frames} indexed frame(s) of {fw}x{img.height}, {len(pal) - 1} colours")
+        save_palette(pal_path, pal)
+        (a.assets / f"{a.id}.meta.json").write_text(json.dumps(meta, indent=2) + "\n")
+        return
     img = Image.open(a.png).convert("RGBA")
     if img.width % a.frames:
         p.error(f"{img.width} px wide does not split into {a.frames} equal frames")

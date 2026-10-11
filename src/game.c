@@ -85,11 +85,13 @@ bool game_init(const bp_config *cfg) {
     G.autosave_enabled = true;
     music_reset();
     layers_reset(L_TITLE);
+    if (G.v2) ok = v2_load() && ok; /* an error shows on screen; the folder still opens */
     if (!ok) hal_log("game folder %s is incomplete", G.game_dir);
     return ok && G.font.bits && G.font_l.bits && G.bold.bits && G.bold_l.bits;
 }
 
 void game_shutdown(void) {
+    v2_free();
     arena_free();
     audio_reset();
     gfx_reset();
@@ -117,6 +119,10 @@ static void reset_run(void) {
 }
 
 void game_new(void) {
+    if (G.v2) {
+        v2_load();
+        return;
+    }
     reset_run();
     layers_reset(L_PLAY);
     const cJSON *st = jget(G.game, "start");
@@ -190,6 +196,10 @@ void game_tick(const hal_input *in) {
     G.in.py = in->py;
     if (in->held & ACT_QUIT) G.quit = true;
     G.ticks++;
+    if (G.v2) {
+        v2_tick();
+        return;
+    }
 
     layer_id top = layer_top();
     if (top != L_PAUSE) {
@@ -239,6 +249,10 @@ void game_render(uint16_t *native) {
 /* The zone (or the fight) into G.world, once a frame, before its windows are drawn. */
 void game_draw_world(void) {
     G.draws++;
+    if (G.v2) {
+        v2_draw_world();
+        return;
+    }
     layer_id base = G.nstack ? G.stack[0] : L_TITLE;
     if (base == L_TITLE || base == L_END || base == L_ERROR) return;
     surface world = {.px = G.world, .w = WORLD_W, .h = WORLD_H};
@@ -251,6 +265,10 @@ void game_draw_world(void) {
  * zone into G.world first (game_draw_world); once a frame is enough, the windows after the first reuse it. */
 void game_draw(surface *s, bool world_pass) {
     if (world_pass) game_draw_world();
+    if (G.v2) {
+        v2_draw(s);
+        return;
+    }
     surface scr = *s, world = {.px = G.world, .w = WORLD_W, .h = WORLD_H};
     layer_id base = G.nstack ? G.stack[0] : L_TITLE;
     if (base == L_TITLE) { title_render(&scr); return; }

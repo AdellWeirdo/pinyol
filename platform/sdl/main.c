@@ -35,6 +35,8 @@ void hal_log(const char *fmt, ...) {
     fputc('\n', stderr);
 }
 
+void *hal_realloc_slow(void *p, size_t n) { return realloc(p, n); }
+
 void hal_audio_lock(void) { if (audio_dev) SDL_LockAudioDevice(audio_dev); }
 void hal_audio_unlock(void) { if (audio_dev) SDL_UnlockAudioDevice(audio_dev); }
 

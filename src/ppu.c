@@ -97,6 +97,7 @@ static void bg_affine(const ppu_bg *b, int n, int y) {
     int32_t ax, ay, pa, pc;
     if (PPU.line.affine[n]) {
         const ppu_line_affine *l = &PPU.line.affine[n][y];
+        if (l->x == PPU_LINE_OFF) return;
         ax = l->x, ay = l->y, pa = l->pa, pc = l->pc;
     } else {
         int yy = y - y % (mh > 1 ? mh : 1);

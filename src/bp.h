@@ -59,18 +59,28 @@ void audio_mix(int16_t *out, int n); /* AUDIO_HZ mono; caller holds the audio lo
 int script_run(const char *path, void (*frame)(void)); /* 0 = all expectations passed */
 int content_validate(void);                            /* number of errors, each logged */
 
+/* ------------------------------------------------------------------ lua_game.c: np2d@2 games (docs/lua.md) */
+bool v2_load(void);                   /* a fresh Lua state running main.lua and _init(); false on an error */
+void v2_free(void);
+void v2_tick(void);                   /* _update() */
+void v2_draw_world(void);             /* _draw(), then the PPU into G.world */
+const char *v2_error(void);           /* the script's error, or NULL */
+bool v2_run(const char *code, bool expr, char *msg, int n); /* test scripts: run code or check an expression */
+size_t v2_memory(void);               /* bytes the script's state holds */
+
 /* ------------------------------------------------------------------ gfx.c */
 /* Where drawing goes. {buf, w, h} is a plain w x h buffer, row after row. A surface can also be a window of a bigger
  * frame (fw x fh) stored any way round: pixel (x, y) is px[(x - x0) * xs + (y - y0) * ys], and everything is clipped to
  * [x0, x0 + w) x [y0, y0 + h). Drawing a frame window by window gives the same pixels as drawing it whole: the console
  * draws straight into its panel strips this way (gfx_turned). swap: pixels are stored with their bytes swapped, as a
  * big-endian display bus wants them. Fields left at 0 mean the plain buffer. */
-typedef struct {
+typedef struct surface {
     uint16_t *px;
     int w, h;
     int x0, y0, xs, ys, fw, fh;
     bool swap;
 } surface;
+void v2_draw(surface *s); /* np2d@2: the world 2x and the script's text and shapes, onto s (lua_game.c) */
 void game_draw(surface *s, bool world_pass); /* the frame onto s, a window of it or all (game.c) */
 void game_draw_world(void);                  /* only the zone into G.world: game_draw(s, true) starts with it */
 
@@ -421,6 +431,7 @@ typedef struct {
     uint32_t save_seq;
     bool exit_guard, quit, autosave_enabled;
     unsigned draws; /* frames drawn: render code that looks things up once a frame keys on it (game_draw) */
+    bool v2;        /* game.json "engine": "np2d@2": a Lua game on the PPU (lua_game.c), none of the v1 layers */
     unsigned objective_at; /* G.draws when objective was looked up (world.c), reset with G at every game_init */
     const cJSON *objective;
     bool can_continue, can_load_prefinal; /* cached when a menu screen opens: no SD reads per frame */

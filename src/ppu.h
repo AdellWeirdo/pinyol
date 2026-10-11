@@ -68,6 +68,7 @@ enum { FX_NONE, FX_ALPHA, FX_LIGHTEN, FX_DARKEN };
 /* Per-line overrides, a value for each of the 160 lines; NULL keeps the register. */
 typedef struct { int16_t x, y; } ppu_line_scroll;
 typedef struct { int32_t pa, pc, x, y; } ppu_line_affine; /* the line's start (24.8) and step per pixel (8.8) */
+#define PPU_LINE_OFF INT32_MIN /* as ppu_line_affine.x: the layer shows nothing on that line (a Mode 7 sky) */
 typedef struct { int16_t x1, x2; } ppu_line_span;
 
 typedef struct {

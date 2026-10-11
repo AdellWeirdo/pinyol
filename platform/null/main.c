@@ -61,14 +61,15 @@ static uint32_t crc32(const void *data, size_t n) {
 static bool check_strips; /* --check-strips: every frame drawn whole and as the console's 32-row panel strips */
 static int strip_errors;
 
-/* The frame drawn strip by strip into a turned panel, as the firmware does, against the frame drawn whole. */
+/* The frame drawn strip by strip into a turned panel, as the firmware does (the world pass is done: game_render just
+ * did it), against the frame drawn whole. */
 static void compare_strips(const uint16_t *fb, unsigned n) {
     enum { ROWS = 32 };
     static uint16_t strip[ROWS * SCREEN_H];
     bool flip = n & 2, swap = n & 4; /* both ways round and both byte orders, frame about */
     for (int r0 = 0; r0 < SCREEN_W; r0 += ROWS) {
         surface s = gfx_turned(strip, r0, ROWS, SCREEN_W, SCREEN_H, flip, swap);
-        game_draw(&s, r0 == 0);
+        game_draw(&s, false);
         for (int k = 0; k < ROWS; k++)
             for (int p = 0; p < SCREEN_H; p++) {
                 int r = r0 + k, x = flip ? SCREEN_W - 1 - r : r, y = flip ? p : SCREEN_H - 1 - p;

@@ -1,0 +1,20 @@
+# The Lua sandbox: limits that keep a community game from hurting the console.
+new
+tick 10
+expect_ok
+expect_lua ticks_seen >= 10
+expect_lua helper_value() == 42
+expect_lua io == nil and os == nil and debug == nil and package == nil
+expect_lua dofile == nil and loadfile == nil and string.dump == nil
+expect_lua load(string.char(27) .. "Lua") == nil
+expect_lua load("return 1 + 1")() == 2
+expect_lua_error require("../../etc/passwd")
+expect_lua_error spin()
+expect_lua_error hog()
+lua store("best", 1234)
+expect_lua stored("best") == 1234
+expect_lua stored("missing", "x") == "x"
+lua math.randomseed(7) first = math.random(1000)
+lua math.randomseed(7)
+expect_lua math.random(1000) == first
+expect_ok

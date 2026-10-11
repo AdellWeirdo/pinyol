@@ -1,0 +1,998 @@
+/* np2d@2 games: the game is a Lua program (main.lua) that drives the virtual picture processor (ppu.h) and draws text
+ * and shapes at the screen's full resolution over it. The engine calls _init() once, _update() every tick (60 Hz)
+ * and _draw() before each frame; docs/lua.md lists the API.
+ *
+ * The script runs in a sandbox: a memory quota, an instruction budget per call (an endless loop ends in an error,
+ * not a frozen console), source chunks only (never bytecode), no io/os/debug/package, and require() reads .lua
+ * files from the game's own folder. Lua is built with 32-bit numbers everywhere, so a game behaves the same on the
+ * console, the desktop and the web. */
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "bp.h"
+#include "lauxlib.h"
+#include "lua.h"
+#include "lualib.h"
+#include "ppu.h"
+
+#define MEM_QUOTA_KB 4096          /* game.json "lua_memory_kb" can ask for up to MEM_MAX_KB */
+#define MEM_MAX_KB 6144
+#define CALL_BUDGET 50000000L      /* VM instructions per _init/_update/_draw call before it is stopped */
+#define MAX_SHEETS 96
+#define MAX_TILEMAPS 24
+#define OV_MAX 768                 /* overlay commands per frame */
+#define OV_TEXT 12288              /* overlay text bytes per frame */
+
+static lua_State *Ls;
+static size_t mem_used, mem_quota;
+static long budget;
+static char error[320];
+static bool failed;
+
+/* ------------------------------------------------------------------ assets: sheets, tilemaps, palettes */
+
+typedef struct {
+    char id[32];
+    int w, h, frames;
+    uint8_t *idx;    /* indexed sheet (.idx), or */
+    const asset *a;  /* a runtime RGB565 asset */
+} sheet;
+
+typedef struct {
+    char id[32];
+    uint8_t *tiles;
+    int ntiles;
+    uint16_t *map;   /* the asset's map, read-only: a layer copies it */
+    int map_w, map_h;
+} tilemap;
+
+static sheet sheets[MAX_SHEETS];
+static int nsheets;
+static tilemap tilemaps[MAX_TILEMAPS];
+static int ntilemaps;
+static struct { uint16_t *map; int mx7_on; float cx, cy, angle, height, horizon, fov; } layer[PPU_BGS];
+
+static void *load_bytes(const char *id, const char *ext, long *len) {
+    char path[384];
+    snprintf(path, sizeof path, "%s/assets/%s.%s", G.game_dir, id, ext);
+    return read_file(path, len);
+}
+
+static cJSON *load_meta(const char *id) {
+    char rel[96];
+    snprintf(rel, sizeof rel, "assets/%s.meta.json", id);
+    return json_file(rel);
+}
+
+static int sheet_get(const char *id) { /* handle (1-based), 0 if it cannot be loaded */
+    for (int i = 0; i < nsheets; i++)
+        if (!strcmp(sheets[i].id, id)) return i + 1;
+    if (nsheets == MAX_SHEETS) return 0;
+    sheet *s = &sheets[nsheets];
+    memset(s, 0, sizeof *s);
+    snprintf(s->id, sizeof s->id, "%s", id);
+    cJSON *meta = load_meta(id);
+    const char *fmt = jstr(meta, "format");
+    if (fmt && !strcmp(fmt, "idx8")) {
+        s->w = jint(meta, "w", 0), s->h = jint(meta, "h", 0), s->frames = jint(meta, "frames", 1);
+        long len = 0;
+        s->idx = load_bytes(id, "idx", &len);
+        if (!s->idx || s->w <= 0 || s->h <= 0 || s->w > 255 || s->h > 255 || len != (long)s->w * s->h * s->frames) {
+            hal_log("sheet %s: bad indexed pixels", id);
+            free(s->idx);
+            cJSON_Delete(meta);
+            return 0;
+        }
+    } else {
+        asset *a = gfx_asset(id);
+        if (a->missing || a->w > 255 || a->h > 255) {
+            cJSON_Delete(meta);
+            return 0;
+        }
+        s->a = a, s->w = a->w, s->h = a->h, s->frames = a->frames;
+    }
+    cJSON_Delete(meta);
+    return ++nsheets;
+}
+
+static tilemap *tilemap_get(const char *id) {
+    for (int i = 0; i < ntilemaps; i++)
+        if (!strcmp(tilemaps[i].id, id)) return &tilemaps[i];
+    if (ntilemaps == MAX_TILEMAPS) return NULL;
+    tilemap *t = &tilemaps[ntilemaps];
+    memset(t, 0, sizeof *t);
+    snprintf(t->id, sizeof t->id, "%s", id);
+    cJSON *meta = load_meta(id);
+    t->ntiles = jint(meta, "tiles", 0), t->map_w = jint(meta, "map_w", 0), t->map_h = jint(meta, "map_h", 0);
+    cJSON_Delete(meta);
+    long tl = 0, ml = 0;
+    t->tiles = load_bytes(id, "tiles", &tl);
+    t->map = load_bytes(id, "map", &ml);
+    if (!t->tiles || !t->map || t->ntiles <= 0 || tl != t->ntiles * 64L || t->map_w <= 0 || t->map_h <= 0 ||
+        ml != 2L * t->map_w * t->map_h) {
+        hal_log("tilemap %s: missing or the wrong size", id);
+        free(t->tiles);
+        free(t->map);
+        return NULL;
+    }
+    for (long i = 0; i < ml / 2; i++) { /* little endian on disk */
+        const uint8_t *b = (const uint8_t *)&t->map[i];
+        t->map[i] = (uint16_t)(b[0] | b[1] << 8);
+    }
+    ntilemaps++;
+    return t;
+}
+
+static int palette_load(const char *id, uint16_t *pal, int offset) { /* entries loaded, 0 on failure */
+    long len = 0;
+    uint8_t *raw = load_bytes(id, "pal", &len);
+    if (!raw || len < 2) {
+        free(raw);
+        return 0;
+    }
+    int n = (int)(len / 2);
+    for (int i = 0; i < n && offset + i < 256; i++) pal[offset + i] = (uint16_t)(raw[2 * i] | raw[2 * i + 1] << 8);
+    free(raw);
+    return n;
+}
+
+static void assets_free(void) {
+    for (int i = 0; i < nsheets; i++) free(sheets[i].idx);
+    for (int i = 0; i < ntilemaps; i++) free(tilemaps[i].tiles), free(tilemaps[i].map);
+    for (int i = 0; i < PPU_BGS; i++) free(layer[i].map);
+    nsheets = ntilemaps = 0;
+    memset(layer, 0, sizeof layer);
+}
+
+/* ------------------------------------------------------------------ the overlay: text and shapes at 480x320 */
+
+enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG };
+
+typedef struct {
+    uint8_t op, font, scale;
+    int16_t x, y, w, h, frame;
+    uint16_t color, str, len;
+    const asset *a;
+} ov_cmd;
+
+static ov_cmd ov[OV_MAX];
+static char ov_text[OV_TEXT];
+static int nov, ntext;
+
+static ov_cmd *ov_add(int op) {
+    if (nov == OV_MAX) return NULL;
+    ov_cmd *c = &ov[nov++];
+    memset(c, 0, sizeof *c);
+    c->op = (uint8_t)op;
+    return c;
+}
+
+static const font *font_named(int k) {
+    switch (k) {
+    case 1: return &G.bold;
+    case 2: return &G.font_l;
+    case 3: return &G.bold_l;
+    default: return &G.font;
+    }
+}
+
+static void overlay_draw(surface *s) {
+    for (int i = 0; i < nov; i++) {
+        const ov_cmd *c = &ov[i];
+        switch (c->op) {
+        case OV_TEXT_OP: font_draw(s, font_named(c->font), c->x, c->y, ov_text + c->str, c->len, -1, c->color); break;
+        case OV_FILL: gfx_fill(s, c->x, c->y, c->w, c->h, c->color); break;
+        case OV_SHADE: gfx_shade(s, c->x, c->y, c->w, c->h); break;
+        case OV_PANEL: gfx_panel(s, c->x, c->y, c->w, c->h); break;
+        case OV_PLATE: gfx_plate(s, c->x, c->y, c->w, c->h, c->color); break;
+        case OV_BOX: gfx_frame(s, c->x, c->y, c->w, c->h, c->color); break;
+        case OV_IMG:
+            if (c->scale == 2) gfx_blit2x(s, c->a, c->frame, c->x, c->y);
+            else gfx_blit(s, c->a, c->frame, c->x, c->y, 0, false);
+            break;
+        }
+    }
+}
+
+/* ------------------------------------------------------------------ per-line tables */
+
+static ppu_line_scroll line_scroll_tab[PPU_BGS][PPU_H];
+static ppu_line_affine line_affine_tab[PPU_BGS][PPU_H];
+static ppu_line_span line_win_tab[2][PPU_H];
+static uint16_t line_back_tab[PPU_H];
+
+/* ------------------------------------------------------------------ the sandbox */
+
+static void *alloc(void *ud, void *p, size_t osize, size_t nsize) {
+    (void)ud;
+    if (!p) osize = 0;
+    if (!nsize) {
+        free(p);
+        mem_used -= osize;
+        return NULL;
+    }
+    if (mem_used - osize + nsize > mem_quota) return NULL; /* Lua raises "not enough memory" */
+    void *q = hal_realloc_slow(p, nsize);
+    if (q) mem_used = mem_used - osize + nsize;
+    return q;
+}
+
+static void hook(lua_State *L, lua_Debug *ar) {
+    (void)ar;
+    if ((budget -= 1000) < 0) luaL_error(L, "the script ran too long without returning (an endless loop?)");
+}
+
+static int msgh(lua_State *L) { /* the error with where it happened */
+    const char *m = lua_tostring(L, 1);
+    luaL_traceback(L, L, m ? m : "error", 1);
+    return 1;
+}
+
+static void fail(const char *what, const char *msg) {
+    snprintf(error, sizeof error, "%s: %s", what, msg ? msg : "error");
+    hal_log("lua %s", error);
+    failed = true;
+}
+
+static bool call(const char *fn, int nargs) { /* args are on the stack; true if it ran (or does not exist) */
+    if (failed) {
+        lua_pop(Ls, nargs);
+        return false;
+    }
+    lua_getglobal(Ls, fn);
+    if (!lua_isfunction(Ls, -1)) {
+        lua_pop(Ls, 1 + nargs);
+        return true;
+    }
+    lua_insert(Ls, -1 - nargs);
+    lua_pushcfunction(Ls, msgh);
+    lua_insert(Ls, -2 - nargs);
+    budget = CALL_BUDGET;
+    int base = lua_gettop(Ls) - nargs - 1;
+    int rc = lua_pcall(Ls, nargs, 0, base);
+    lua_remove(Ls, base); /* msgh */
+    if (rc != LUA_OK) {
+        fail(fn, lua_tostring(Ls, -1));
+        lua_pop(Ls, 1);
+        return false;
+    }
+    return true;
+}
+
+static bool safe_name(const char *s) { /* a module or asset name: letters, digits, _ . / and no ".." */
+    if (!s || !*s || strstr(s, "..") || *s == '/') return false;
+    for (; *s; s++)
+        if (!(*s == '_' || *s == '.' || *s == '/' || (*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z') ||
+              (*s >= '0' && *s <= '9')))
+            return false;
+    return true;
+}
+
+static int load_chunk(lua_State *L, const char *rel) { /* pushes the compiled chunk, or raises */
+    char path[384];
+    snprintf(path, sizeof path, "%s/%s", G.game_dir, rel);
+    long len = 0;
+    char *src = read_file(path, &len);
+    if (!src) return luaL_error(L, "cannot read %s", rel);
+    char name[96];
+    snprintf(name, sizeof name, "@%s", rel);
+    int rc = luaL_loadbufferx(L, src, (size_t)len, name, "t");
+    free(src);
+    if (rc != LUA_OK) return lua_error(L);
+    return 1;
+}
+
+static int l_require(lua_State *L) {
+    const char *mod = luaL_checkstring(L, 1);
+    if (!safe_name(mod)) return luaL_error(L, "require: bad module name '%s'", mod);
+    lua_getfield(L, LUA_REGISTRYINDEX, "np2d.loaded");
+    lua_getfield(L, -1, mod);
+    if (!lua_isnil(L, -1)) return 1;
+    lua_pop(L, 1);
+    char rel[128];
+    snprintf(rel, sizeof rel, "%s.lua", mod);
+    for (char *c = rel; *c && strcmp(c, ".lua"); c++) if (*c == '.') *c = '/'; /* "ui.menu" -> ui/menu.lua */
+    load_chunk(L, rel);
+    lua_pushstring(L, mod);
+    lua_call(L, 1, 1);
+    if (lua_isnil(L, -1)) lua_pop(L, 1), lua_pushboolean(L, 1);
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -3, mod);
+    return 1;
+}
+
+static int l_load(lua_State *L) { /* load(chunk [, name [, mode [, env]]]) with source only, never bytecode */
+    size_t n = 0;
+    const char *s = luaL_checklstring(L, 1, &n);
+    const char *name = luaL_optstring(L, 2, s);
+    int env = !lua_isnone(L, 4);
+    if (luaL_loadbufferx(L, s, n, name, "t") != LUA_OK) {
+        lua_pushnil(L);
+        lua_insert(L, -2);
+        return 2;
+    }
+    if (env) {
+        lua_pushvalue(L, 4);
+        if (!lua_setupvalue(L, -2, 1)) lua_pop(L, 1);
+    }
+    return 1;
+}
+
+static int l_log(lua_State *L) {
+    luaL_Buffer b;
+    luaL_buffinit(L, &b);
+    for (int i = 1; i <= lua_gettop(L); i++) {
+        if (i > 1) luaL_addchar(&b, ' ');
+        luaL_tolstring(L, i, NULL);
+        luaL_addvalue(&b);
+    }
+    luaL_pushresult(&b);
+    hal_log("lua: %s", lua_tostring(L, -1));
+    return 0;
+}
+
+/* ------------------------------------------------------------------ the API */
+
+static uint16_t to565(lua_Integer rgb) {
+    unsigned r = (rgb >> 16) & 255, g = (rgb >> 8) & 255, b = rgb & 255;
+    return (uint16_t)((r >> 3) << 11 | (g >> 2) << 5 | b >> 3);
+}
+
+static int act_bit(const char *name) {
+    static const struct { const char *n; int bit; } A[] = {
+        {"up", ACT_UP}, {"down", ACT_DOWN}, {"left", ACT_LEFT}, {"right", ACT_RIGHT}, {"a", ACT_OK}, {"b", ACT_BACK},
+        {"c", ACT_NEXT}, {"start", ACT_PAUSE}, {"menu", ACT_INV}};
+    for (size_t i = 0; i < sizeof A / sizeof A[0]; i++)
+        if (!strcmp(A[i].n, name)) return A[i].bit;
+    return 0;
+}
+
+static int l_btn(lua_State *L) { lua_pushboolean(L, G.in.held & act_bit(luaL_checkstring(L, 1))); return 1; }
+static int l_btnp(lua_State *L) { lua_pushboolean(L, G.in.pressed & act_bit(luaL_checkstring(L, 1))); return 1; }
+
+static int l_touch(lua_State *L) { /* in the 240x160 world's pixels */
+    lua_pushinteger(L, G.in.px / 2);
+    lua_pushinteger(L, G.in.py / 2);
+    lua_pushboolean(L, G.in.touch);
+    lua_pushboolean(L, G.in.tap);
+    return 4;
+}
+
+static int l_t(lua_State *L) { lua_pushnumber(L, (lua_Number)G.ticks / TICK_HZ); return 1; }
+static int l_ticks(lua_State *L) { lua_pushinteger(L, (lua_Integer)G.ticks); return 1; }
+
+static int l_rgb(lua_State *L) {
+    lua_Integer r = luaL_checkinteger(L, 1), g = luaL_checkinteger(L, 2), b = luaL_checkinteger(L, 3);
+    lua_pushinteger(L, (r & 255) << 16 | (g & 255) << 8 | (b & 255));
+    return 1;
+}
+
+static int l_pal(lua_State *L) { /* pal(i, 0xRRGGBB [, "obj"]) */
+    int i = (int)luaL_checkinteger(L, 1) & 255;
+    uint16_t c = to565(luaL_checkinteger(L, 2));
+    if (lua_toboolean(L, 3)) PPU.obj_pal[i] = c;
+    else PPU.bg_pal[i] = c;
+    return 0;
+}
+
+static int l_palette(lua_State *L) { /* palette(id [, "obj"] [, offset]) */
+    const char *id = luaL_checkstring(L, 1);
+    bool obj = lua_toboolean(L, 2);
+    int off = (int)luaL_optinteger(L, 3, 0);
+    if (off < 0 || off > 255) return luaL_error(L, "palette: offset %d outside 0..255", off);
+    int n = palette_load(id, obj ? PPU.obj_pal : PPU.bg_pal, off);
+    if (!n) return luaL_error(L, "palette: no assets/%s.pal", id);
+    lua_pushinteger(L, n);
+    return 1;
+}
+
+static int l_backdrop(lua_State *L) { PPU.bg_pal[0] = to565(luaL_checkinteger(L, 1)); return 0; }
+
+static int bg_index(lua_State *L, int arg) {
+    int n = (int)luaL_checkinteger(L, arg);
+    luaL_argcheck(L, n >= 0 && n < PPU_BGS, arg, "background 0..3");
+    return n;
+}
+
+static bool opt_bool(lua_State *L, int t, const char *k, bool d) {
+    lua_getfield(L, t, k);
+    bool v = lua_isnil(L, -1) ? d : lua_toboolean(L, -1);
+    lua_pop(L, 1);
+    return v;
+}
+
+static lua_Integer opt_int(lua_State *L, int t, const char *k, lua_Integer d) {
+    lua_getfield(L, t, k);
+    lua_Integer v = lua_isnil(L, -1) ? d : luaL_checkinteger(L, -1);
+    lua_pop(L, 1);
+    return v;
+}
+
+static const char *opt_str(lua_State *L, int t, const char *k) {
+    lua_getfield(L, t, k);
+    const char *v = lua_tostring(L, -1); /* the table keeps the string alive */
+    lua_pop(L, 1);
+    return v;
+}
+
+/* bg(n, {mode = "tiles" | "affine" | "bitmap" | "off", map = "ID", image = "ID", prio, wrap, mosaic, x, y, pal}) */
+static int l_bg(lua_State *L) {
+    int n = bg_index(L, 1);
+    ppu_bg *b = &PPU.bg[n];
+    if (lua_isnoneornil(L, 2)) {
+        b->mode = BG_OFF;
+        return 0;
+    }
+    luaL_checktype(L, 2, LUA_TTABLE);
+    const char *mode = opt_str(L, 2, "mode");
+    if (!mode) mode = opt_str(L, 2, "image") ? "bitmap" : "tiles";
+    free(layer[n].map);
+    layer[n].map = NULL;
+    layer[n].mx7_on = 0;
+    PPU.line.affine[n] = NULL;
+    memset(b, 0, sizeof *b);
+    b->prio = (uint8_t)(opt_int(L, 2, "prio", n) & 3);
+    b->wrap = opt_bool(L, 2, "wrap", true);
+    b->mosaic = opt_bool(L, 2, "mosaic", false);
+    b->scroll_x = (int)opt_int(L, 2, "x", 0), b->scroll_y = (int)opt_int(L, 2, "y", 0);
+    b->pa = b->pd = 256;
+    if (!strcmp(mode, "off")) return 0;
+    if (!strcmp(mode, "bitmap")) {
+        const char *id = opt_str(L, 2, "image");
+        asset *a = id ? gfx_asset(id) : NULL;
+        if (!a || a->missing) return luaL_error(L, "bg %d: no image '%s'", n, id ? id : "");
+        b->mode = BG_BITMAP, b->bitmap = a->pixels, b->bitmap_mask = a->mask, b->bitmap_w = a->w, b->bitmap_h = a->h;
+        return 0;
+    }
+    const char *id = opt_str(L, 2, "map");
+    tilemap *t = id ? tilemap_get(id) : NULL;
+    if (!t) return luaL_error(L, "bg %d: no tilemap '%s' (assets/%s.tiles, .map, .meta.json)", n, id ? id : "", id ? id : "");
+    size_t bytes = (size_t)t->map_w * t->map_h * 2;
+    layer[n].map = hal_realloc_slow(NULL, bytes);
+    if (!layer[n].map) return luaL_error(L, "bg %d: out of memory for its map", n);
+    memcpy(layer[n].map, t->map, bytes);
+    b->mode = strcmp(mode, "affine") ? BG_TILES : BG_AFFINE;
+    b->tiles = t->tiles, b->ntiles = t->ntiles, b->map = layer[n].map, b->map_w = t->map_w, b->map_h = t->map_h;
+    if (opt_bool(L, 2, "pal", true)) palette_load(id, PPU.bg_pal, 0); /* the tilemap's own palette, if it has one */
+    return 0;
+}
+
+static int l_scroll(lua_State *L) {
+    int n = bg_index(L, 1);
+    PPU.bg[n].scroll_x = (int)floorf((float)luaL_checknumber(L, 2));
+    PPU.bg[n].scroll_y = (int)floorf((float)luaL_checknumber(L, 3));
+    return 0;
+}
+
+static int32_t fx8(lua_Number v) { return (int32_t)lroundf((float)v * 256.0f); }
+
+static int l_affine(lua_State *L) { /* affine(n, pa, pb, pc, pd, x0, y0): screen (x, y) shows map (x0 + pa x + pb y, ...) */
+    int n = bg_index(L, 1);
+    ppu_bg *b = &PPU.bg[n];
+    b->pa = fx8(luaL_checknumber(L, 2)), b->pb = fx8(luaL_checknumber(L, 3));
+    b->pc = fx8(luaL_checknumber(L, 4)), b->pd = fx8(luaL_checknumber(L, 5));
+    b->x0 = fx8(luaL_checknumber(L, 6)), b->y0 = fx8(luaL_checknumber(L, 7));
+    return 0;
+}
+
+static int l_rot(lua_State *L) { /* rot(n, degrees, zoom, map_x, map_y, screen_x, screen_y) */
+    int n = bg_index(L, 1);
+    float a = (float)luaL_checknumber(L, 2) * 3.14159265f / 180.0f, z = (float)luaL_optnumber(L, 3, 1);
+    float cx = (float)luaL_optnumber(L, 4, 0), cy = (float)luaL_optnumber(L, 5, 0);
+    float sx = (float)luaL_optnumber(L, 6, PPU_W / 2), sy = (float)luaL_optnumber(L, 7, PPU_H / 2);
+    if (z == 0) z = 1;
+    float pa = cosf(a) / z, pb = sinf(a) / z, pc = -sinf(a) / z, pd = cosf(a) / z;
+    ppu_bg *b = &PPU.bg[n];
+    b->pa = fx8(pa), b->pb = fx8(pb), b->pc = fx8(pc), b->pd = fx8(pd);
+    b->x0 = fx8(cx - (pa * sx + pb * sy)), b->y0 = fx8(cy - (pc * sx + pd * sy));
+    return 0;
+}
+
+/* mode7(n, cam_x, cam_y, degrees, height, horizon, fov): a perspective floor from a camera over the map. */
+static int l_mode7(lua_State *L) {
+    int n = bg_index(L, 1);
+    float cx = (float)luaL_checknumber(L, 2), cy = (float)luaL_checknumber(L, 3);
+    float a = (float)luaL_checknumber(L, 4) * 3.14159265f / 180.0f, h = (float)luaL_optnumber(L, 5, 32);
+    int hor = (int)luaL_optinteger(L, 6, 40);
+    float fov = (float)luaL_optnumber(L, 7, 120);
+    float fx = sinf(a), fy = -cosf(a), rx = cosf(a), ry = sinf(a); /* forward and right on the map */
+    for (int y = 0; y < PPU_H; y++) {
+        ppu_line_affine *l = &line_affine_tab[n][y];
+        if (y <= hor) {
+            *l = (ppu_line_affine){.x = PPU_LINE_OFF};
+            continue;
+        }
+        float d = h * fov / (float)(y - hor), step = d / fov; /* distance to the line, map units per pixel */
+        float mx = cx + fx * d - rx * step * (PPU_W / 2), my = cy + fy * d - ry * step * (PPU_W / 2);
+        *l = (ppu_line_affine){.pa = fx8(rx * step), .pc = fx8(ry * step), .x = fx8(mx), .y = fx8(my)};
+    }
+    PPU.line.affine[n] = line_affine_tab[n];
+    layer[n].mx7_on = 1;
+    layer[n].cx = cx, layer[n].cy = cy, layer[n].angle = a, layer[n].height = h, layer[n].horizon = (float)hor,
+    layer[n].fov = fov;
+    return 0;
+}
+
+/* project(n, map_x, map_y) -> screen x, y, scale, visible: where a point of a mode7 floor appears (for its sprites) */
+static int l_project(lua_State *L) {
+    int n = bg_index(L, 1);
+    if (!layer[n].mx7_on) return luaL_error(L, "project: background %d has no mode7", n);
+    float dx = (float)luaL_checknumber(L, 2) - layer[n].cx, dy = (float)luaL_checknumber(L, 3) - layer[n].cy;
+    float a = layer[n].angle, fx = sinf(a), fy = -cosf(a), rx = cosf(a), ry = sinf(a);
+    float d = dx * fx + dy * fy, side = dx * rx + dy * ry;
+    if (d <= 0.5f) {
+        lua_pushnumber(L, 0), lua_pushnumber(L, 0), lua_pushnumber(L, 0), lua_pushboolean(L, 0);
+        return 4;
+    }
+    float scale = layer[n].fov / d;
+    lua_pushnumber(L, PPU_W / 2 + side * scale);
+    lua_pushnumber(L, layer[n].horizon + layer[n].height * scale);
+    lua_pushnumber(L, scale);
+    lua_pushboolean(L, 1);
+    return 4;
+}
+
+static uint16_t *map_at(lua_State *L, int n, int tx, int ty) {
+    ppu_bg *b = &PPU.bg[n];
+    if (!layer[n].map) luaL_error(L, "background %d has no map", n);
+    if (tx < 0 || ty < 0 || tx >= b->map_w || ty >= b->map_h) return NULL;
+    return &layer[n].map[ty * b->map_w + tx];
+}
+
+static int l_mget(lua_State *L) {
+    uint16_t *m = map_at(L, bg_index(L, 1), (int)luaL_checkinteger(L, 2), (int)luaL_checkinteger(L, 3));
+    lua_pushinteger(L, m ? *m : 0);
+    return 1;
+}
+
+static int l_mset(lua_State *L) {
+    uint16_t *m = map_at(L, bg_index(L, 1), (int)luaL_checkinteger(L, 2), (int)luaL_checkinteger(L, 3));
+    if (m) *m = (uint16_t)luaL_checkinteger(L, 4);
+    return 0;
+}
+
+static int l_mapsize(lua_State *L) {
+    int n = bg_index(L, 1);
+    lua_pushinteger(L, PPU.bg[n].map_w), lua_pushinteger(L, PPU.bg[n].map_h);
+    return 2;
+}
+
+static int line_index(lua_State *L, int arg) {
+    int y = (int)luaL_checkinteger(L, arg);
+    luaL_argcheck(L, y >= 0 && y < PPU_H, arg, "line 0..159");
+    return y;
+}
+
+static int l_line_scroll(lua_State *L) { /* line_scroll(n, y, x, y_offset) */
+    int n = bg_index(L, 1), y = line_index(L, 2);
+    if (PPU.line.scroll[n] != line_scroll_tab[n]) { /* first use this frame: start from the layer's own scroll */
+        for (int i = 0; i < PPU_H; i++)
+            line_scroll_tab[n][i] = (ppu_line_scroll){(int16_t)PPU.bg[n].scroll_x, (int16_t)PPU.bg[n].scroll_y};
+        PPU.line.scroll[n] = line_scroll_tab[n];
+    }
+    line_scroll_tab[n][y] = (ppu_line_scroll){(int16_t)luaL_checkinteger(L, 3), (int16_t)luaL_optinteger(L, 4, PPU.bg[n].scroll_y)};
+    return 0;
+}
+
+static int l_line_backdrop(lua_State *L) {
+    int y = line_index(L, 1);
+    if (PPU.line.backdrop != line_back_tab) {
+        for (int i = 0; i < PPU_H; i++) line_back_tab[i] = PPU.bg_pal[0];
+        PPU.line.backdrop = line_back_tab;
+    }
+    line_back_tab[y] = to565(luaL_checkinteger(L, 2));
+    return 0;
+}
+
+static int l_line_window(lua_State *L) { /* line_window(k, y, x1, x2) */
+    int k = (int)luaL_checkinteger(L, 1) & 1, y = line_index(L, 2);
+    if (PPU.line.win[k] != line_win_tab[k]) {
+        memset(line_win_tab[k], 0, sizeof line_win_tab[k]);
+        PPU.line.win[k] = line_win_tab[k];
+    }
+    line_win_tab[k][y] = (ppu_line_span){(int16_t)luaL_checkinteger(L, 3), (int16_t)luaL_checkinteger(L, 4)};
+    return 0;
+}
+
+static int l_line_off(lua_State *L) {
+    (void)L;
+    for (int n = 0; n < PPU_BGS; n++) {
+        PPU.line.scroll[n] = NULL;
+        if (!layer[n].mx7_on) PPU.line.affine[n] = NULL;
+    }
+    PPU.line.win[0] = PPU.line.win[1] = NULL;
+    PPU.line.backdrop = NULL;
+    PPU.line.fx_ev = NULL;
+    return 0;
+}
+
+static int l_sheet(lua_State *L) { /* sheet(id) -> handle, w, h, frames */
+    const char *id = luaL_checkstring(L, 1);
+    int h = safe_name(id) ? sheet_get(id) : 0;
+    if (!h) return luaL_error(L, "sheet: no sprite sheet '%s'", id);
+    lua_pushinteger(L, h);
+    lua_pushinteger(L, sheets[h - 1].w), lua_pushinteger(L, sheets[h - 1].h), lua_pushinteger(L, sheets[h - 1].frames);
+    return 4;
+}
+
+enum { F_FLIPX = 1, F_FLIPY = 2, F_BLEND = 4, F_WINDOW = 8, F_DOUBLE = 16, F_MOSAIC = 32 };
+
+static int obj_index(lua_State *L, int arg) {
+    int i = (int)luaL_checkinteger(L, arg);
+    luaL_argcheck(L, i >= 0 && i < PPU_OBJS, arg, "sprite 0..127");
+    return i;
+}
+
+/* spr(i, sheet, frame, x, y [, flags]): flags FLIP_X | FLIP_Y | BLEND | WINDOW | DOUBLE | MOSAIC | prio(p) | bank(b) |
+ * spr_mat(m) */
+static int l_spr(lua_State *L) {
+    int i = obj_index(L, 1), h = (int)luaL_checkinteger(L, 2);
+    if (h < 1 || h > nsheets) return luaL_error(L, "spr: %d is not a sheet (use sheet(id))", h);
+    const sheet *s = &sheets[h - 1];
+    int f = (int)luaL_optinteger(L, 3, 0), fl = (int)luaL_optinteger(L, 6, 0);
+    if (f < 0 || f >= s->frames) f = 0;
+    ppu_obj *o = &PPU.obj[i];
+    *o = (ppu_obj){.on = true, .x = (int16_t)floorf((float)luaL_checknumber(L, 4)),
+                   .y = (int16_t)floorf((float)luaL_checknumber(L, 5)), .w = (uint8_t)s->w, .h = (uint8_t)s->h,
+                   .hflip = fl & F_FLIPX, .vflip = (fl & F_FLIPY) != 0, .mosaic = (fl & F_MOSAIC) != 0,
+                   .mode = (uint8_t)(fl & F_WINDOW ? OBJ_WINDOW : fl & F_BLEND ? OBJ_BLEND : OBJ_NORMAL),
+                   .dbl = (fl & F_DOUBLE) != 0, .prio = (uint8_t)((fl >> 8) & 3), .bank = (uint8_t)((fl >> 12) & 15),
+                   .affine = (int8_t)(((fl >> 16) & 63) - 1)};
+    if (s->idx) o->idx = s->idx + (size_t)f * s->w * s->h;
+    else {
+        o->rgb = s->a->pixels + (size_t)f * s->w * s->h;
+        o->mask = s->a->mask ? s->a->mask + (size_t)f * ((s->w + 7) / 8) * s->h : NULL;
+    }
+    return 0;
+}
+
+static int l_spr_off(lua_State *L) { PPU.obj[obj_index(L, 1)].on = false; return 0; }
+
+static int l_spr_clear(lua_State *L) {
+    (void)L;
+    for (int i = 0; i < PPU_OBJS; i++) PPU.obj[i].on = false;
+    return 0;
+}
+
+static int l_prio(lua_State *L) { lua_pushinteger(L, (luaL_checkinteger(L, 1) & 3) << 8); return 1; }
+static int l_bank(lua_State *L) { lua_pushinteger(L, (luaL_checkinteger(L, 1) & 15) << 12); return 1; }
+static int l_spr_mat(lua_State *L) { lua_pushinteger(L, ((luaL_checkinteger(L, 1) & 31) + 1) << 16); return 1; }
+
+static int l_mat(lua_State *L) { /* mat(m, degrees, scale_x [, scale_y]): sprite matrix m turns and scales */
+    int m = (int)luaL_checkinteger(L, 1) & (PPU_AFFINES - 1);
+    float a = (float)luaL_checknumber(L, 2) * 3.14159265f / 180.0f, sx = (float)luaL_optnumber(L, 3, 1);
+    float sy = (float)luaL_optnumber(L, 4, sx);
+    if (sx == 0) sx = 1;
+    if (sy == 0) sy = 1;
+    PPU.affine[m] = (ppu_affine){(int16_t)fx8(cosf(a) / sx), (int16_t)fx8(sinf(a) / sx), (int16_t)fx8(-sinf(a) / sy),
+                                 (int16_t)fx8(cosf(a) / sy)};
+    return 0;
+}
+
+static int ev(lua_State *L, int arg) {
+    int v = (int)luaL_checkinteger(L, arg);
+    return v < 0 ? 0 : v > 16 ? 16 : v;
+}
+
+static int l_blend(lua_State *L) { /* blend(first, second, eva, evb) */
+    PPU.fx.mode = FX_ALPHA, PPU.fx.first = (uint8_t)luaL_checkinteger(L, 1), PPU.fx.second = (uint8_t)luaL_checkinteger(L, 2);
+    PPU.fx.eva = (uint8_t)ev(L, 3), PPU.fx.evb = (uint8_t)ev(L, 4);
+    return 0;
+}
+
+static int l_fade(lua_State *L) { /* fade("light" | "dark", layers, amount 0..16) */
+    const char *k = luaL_checkstring(L, 1);
+    PPU.fx.mode = strcmp(k, "light") ? FX_DARKEN : FX_LIGHTEN;
+    PPU.fx.first = (uint8_t)luaL_checkinteger(L, 2), PPU.fx.evy = (uint8_t)ev(L, 3);
+    return 0;
+}
+
+static int l_fx_off(lua_State *L) {
+    (void)L;
+    PPU.fx.mode = FX_NONE;
+    return 0;
+}
+
+static int l_window(lua_State *L) { /* window(k, x1, y1, x2, y2, inside) */
+    int k = (int)luaL_checkinteger(L, 1) & 1;
+    PPU.win.on[k] = true;
+    PPU.win.rect[k] = (ppu_rect){(int16_t)luaL_checkinteger(L, 2), (int16_t)luaL_checkinteger(L, 4),
+                                 (int16_t)luaL_checkinteger(L, 3), (int16_t)luaL_checkinteger(L, 5)};
+    PPU.win.in[k] = (uint8_t)luaL_checkinteger(L, 6);
+    return 0;
+}
+
+static int l_window_off(lua_State *L) { PPU.win.on[(int)luaL_checkinteger(L, 1) & 1] = false; return 0; }
+static int l_window_out(lua_State *L) { PPU.win.out = (uint8_t)luaL_checkinteger(L, 1); return 0; }
+
+static int l_objwindow(lua_State *L) { /* objwindow(inside) or objwindow(nil) to turn it off */
+    PPU.win.obj_on = !lua_isnoneornil(L, 1);
+    PPU.win.obj_in = (uint8_t)luaL_optinteger(L, 1, 0);
+    return 0;
+}
+
+static int l_mosaic(lua_State *L) {
+    int v[4];
+    for (int i = 0; i < 4; i++) {
+        v[i] = (int)luaL_optinteger(L, i + 1, i < 2 ? 1 : (int)luaL_optinteger(L, i - 1, 1));
+        if (v[i] < 1) v[i] = 1;
+        if (v[i] > 16) v[i] = 16;
+    }
+    PPU.mosaic.bg_w = (uint8_t)v[0], PPU.mosaic.bg_h = (uint8_t)v[1], PPU.mosaic.obj_w = (uint8_t)v[2], PPU.mosaic.obj_h = (uint8_t)v[3];
+    return 0;
+}
+
+static int font_arg(lua_State *L, int arg) {
+    static const char *const names[] = {"main", "bold", "large", "large_bold", NULL};
+    return luaL_checkoption(L, arg, "main", names);
+}
+
+static int l_text(lua_State *L) { /* text(str, x, y [, color [, font [, align]]]) -> width; screen pixels (480x320) */
+    size_t n = 0;
+    const char *s = luaL_checklstring(L, 1, &n);
+    int x = (int)luaL_checkinteger(L, 2), y = (int)luaL_checkinteger(L, 3), f = font_arg(L, 5);
+    static const char *const aligns[] = {"left", "center", "right", NULL};
+    int al = luaL_checkoption(L, 6, "left", aligns), w = font_width(font_named(f), s, (int)n);
+    ov_cmd *c = ntext + (int)n <= OV_TEXT ? ov_add(OV_TEXT_OP) : NULL;
+    if (c) {
+        memcpy(ov_text + ntext, s, n);
+        c->str = (uint16_t)ntext, c->len = (uint16_t)n, ntext += (int)n;
+        c->x = (int16_t)(x - (al == 1 ? w / 2 : al == 2 ? w : 0)), c->y = (int16_t)y;
+        c->font = (uint8_t)f, c->color = to565(luaL_optinteger(L, 4, 0xFFFFFF));
+    }
+    lua_pushinteger(L, w);
+    return 1;
+}
+
+static int l_textw(lua_State *L) {
+    size_t n = 0;
+    const char *s = luaL_checklstring(L, 1, &n);
+    lua_pushinteger(L, font_width(font_named(font_arg(L, 2)), s, (int)n));
+    lua_pushinteger(L, font_named(font_arg(L, 2))->h);
+    return 2;
+}
+
+static int shape(lua_State *L, int op, bool colour) {
+    ov_cmd *c = ov_add(op);
+    if (!c) return 0;
+    c->x = (int16_t)luaL_checkinteger(L, 1), c->y = (int16_t)luaL_checkinteger(L, 2);
+    c->w = (int16_t)luaL_checkinteger(L, 3), c->h = (int16_t)luaL_checkinteger(L, 4);
+    if (colour) c->color = to565(luaL_optinteger(L, 5, 0xFFFFFF));
+    return 0;
+}
+
+static int l_rect(lua_State *L) { return shape(L, OV_FILL, true); }
+static int l_box(lua_State *L) { return shape(L, OV_BOX, true); }
+static int l_shade(lua_State *L) { return shape(L, OV_SHADE, false); }
+static int l_panel(lua_State *L) { return shape(L, OV_PANEL, false); }
+static int l_plate(lua_State *L) { return shape(L, OV_PLATE, true); }
+
+static int l_img(lua_State *L) { /* img(id, x, y [, frame [, scale 1|2]]): a runtime asset at screen resolution */
+    const char *id = luaL_checkstring(L, 1);
+    asset *a = gfx_asset(id);
+    ov_cmd *c = a->missing ? NULL : ov_add(OV_IMG);
+    if (c) {
+        c->a = a, c->x = (int16_t)luaL_checkinteger(L, 2), c->y = (int16_t)luaL_checkinteger(L, 3);
+        c->frame = (int16_t)luaL_optinteger(L, 4, 0), c->scale = (uint8_t)(luaL_optinteger(L, 5, 1) == 2 ? 2 : 1);
+    }
+    return 0;
+}
+
+static int l_sfx(lua_State *L) {
+    audio_sfx(luaL_checkstring(L, 1), (float)luaL_optnumber(L, 2, 1));
+    return 0;
+}
+
+static int l_music(lua_State *L) { /* music(id) loops a WAV; music() or music(nil) stops it */
+    if (lua_isnoneornil(L, 1)) {
+        audio_music_stop((int)luaL_optinteger(L, 2, 500));
+        return 0;
+    }
+    static const float all[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+    audio_music_start(luaL_checkstring(L, 1), 0, 0, all, (int)luaL_optinteger(L, 2, 300));
+    return 0;
+}
+
+static int l_quit(lua_State *L) {
+    (void)L;
+    if (hal_can_switch_game()) hal_switch_game();
+    else G.quit = true;
+    return 0;
+}
+
+/* store(key, value) / stored(key [, default]): numbers, strings and booleans kept in the game's saves folder
+ * (v2.json), for high scores, options and progress. */
+static cJSON *store;
+
+static void store_path(char *p, size_t n) { snprintf(p, n, "%s/v2.json", G.save_dir); }
+
+static cJSON *store_get(void) {
+    if (store) return store;
+    char p[384];
+    store_path(p, sizeof p);
+    char *txt = read_file(p, NULL);
+    store = txt ? cJSON_Parse(txt) : NULL;
+    free(txt);
+    if (!cJSON_IsObject(store)) cJSON_Delete(store), store = cJSON_CreateObject();
+    return store;
+}
+
+static int l_store(lua_State *L) {
+    const char *k = luaL_checkstring(L, 1);
+    cJSON *s = store_get(), *v = NULL;
+    switch (lua_type(L, 2)) {
+    case LUA_TNUMBER: v = cJSON_CreateNumber(lua_tonumber(L, 2)); break;
+    case LUA_TSTRING: v = cJSON_CreateString(lua_tostring(L, 2)); break;
+    case LUA_TBOOLEAN: v = cJSON_CreateBool(lua_toboolean(L, 2)); break;
+    case LUA_TNIL: cJSON_DeleteItemFromObjectCaseSensitive(s, k); break;
+    default: return luaL_error(L, "store: only numbers, strings and booleans");
+    }
+    if (v) {
+        if (jget(s, k)) cJSON_ReplaceItemInObjectCaseSensitive(s, k, v);
+        else cJSON_AddItemToObject(s, k, v);
+    }
+    char p[384];
+    store_path(p, sizeof p);
+    char *txt = cJSON_PrintUnformatted(s);
+    FILE *f = txt ? fopen(p, "wb") : NULL;
+    if (f) fputs(txt, f), fclose(f);
+    cJSON_free(txt);
+    return 0;
+}
+
+static int l_stored(lua_State *L) {
+    cJSON *v = jget(store_get(), luaL_checkstring(L, 1));
+    if (cJSON_IsNumber(v)) lua_pushnumber(L, v->valuedouble);
+    else if (cJSON_IsString(v)) lua_pushstring(L, v->valuestring);
+    else if (cJSON_IsBool(v)) lua_pushboolean(L, cJSON_IsTrue(v));
+    else lua_pushvalue(L, 2); /* the default */
+    return 1;
+}
+
+static void api(lua_State *L) {
+    static const luaL_Reg F[] = {
+        {"btn", l_btn}, {"btnp", l_btnp}, {"touch", l_touch}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
+        {"pal", l_pal}, {"palette", l_palette}, {"backdrop", l_backdrop}, {"bg", l_bg}, {"scroll", l_scroll},
+        {"affine", l_affine}, {"rot", l_rot}, {"mode7", l_mode7}, {"project", l_project}, {"mget", l_mget},
+        {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_backdrop", l_line_backdrop},
+        {"line_window", l_line_window}, {"line_off", l_line_off}, {"sheet", l_sheet}, {"spr", l_spr},
+        {"spr_off", l_spr_off}, {"spr_clear", l_spr_clear}, {"prio", l_prio}, {"bank", l_bank}, {"spr_mat", l_spr_mat},
+        {"mat", l_mat}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off}, {"window", l_window},
+        {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow}, {"mosaic", l_mosaic},
+        {"text", l_text}, {"textw", l_textw}, {"rect", l_rect}, {"box", l_box}, {"shade", l_shade}, {"panel", l_panel},
+        {"plate", l_plate}, {"img", l_img}, {"sfx", l_sfx}, {"music", l_music}, {"quit", l_quit}, {"store", l_store},
+        {"stored", l_stored}, {"load", l_load}, {"log", l_log}, {"print", l_log}, {"require", l_require}, {NULL, NULL}};
+    lua_pushglobaltable(L);
+    luaL_setfuncs(L, F, 0);
+    static const struct { const char *n; int v; } K[] = {
+        {"BG0", PPU_BG0}, {"BG1", PPU_BG1}, {"BG2", PPU_BG2}, {"BG3", PPU_BG3}, {"OBJ", PPU_OBJ}, {"BACK", PPU_BACK},
+        {"FX", PPU_FX}, {"ALL", 0x3F}, {"FLIP_X", F_FLIPX}, {"FLIP_Y", F_FLIPY}, {"BLEND", F_BLEND},
+        {"WINDOW", F_WINDOW}, {"DOUBLE", F_DOUBLE}, {"MOSAIC", F_MOSAIC}, {"SCREEN_W", SCREEN_W}, {"SCREEN_H", SCREEN_H},
+        {"W", PPU_W}, {"H", PPU_H}};
+    for (size_t i = 0; i < sizeof K / sizeof K[0]; i++) lua_pushinteger(L, K[i].v), lua_setfield(L, -2, K[i].n);
+    lua_pop(L, 1);
+}
+
+/* ------------------------------------------------------------------ lifecycle */
+
+void v2_free(void) {
+    if (Ls) lua_close(Ls);
+    Ls = NULL;
+    assets_free();
+    cJSON_Delete(store);
+    store = NULL;
+    nov = ntext = 0;
+    failed = false;
+    error[0] = 0;
+    mem_used = 0;
+}
+
+bool v2_load(void) {
+    v2_free();
+    ppu_reset();
+    int kb = jint(G.game, "lua_memory_kb", MEM_QUOTA_KB);
+    mem_quota = (size_t)(kb < 256 ? 256 : kb > MEM_MAX_KB ? MEM_MAX_KB : kb) * 1024;
+    Ls = lua_newstate(alloc, NULL);
+    if (!Ls) {
+        fail("start", "no memory for Lua");
+        return false;
+    }
+    lua_sethook(Ls, hook, LUA_MASKCOUNT, 1000);
+    static const luaL_Reg libs[] = {{LUA_GNAME, luaopen_base}, {LUA_COLIBNAME, luaopen_coroutine},
+                                    {LUA_TABLIBNAME, luaopen_table}, {LUA_STRLIBNAME, luaopen_string},
+                                    {LUA_MATHLIBNAME, luaopen_math}, {LUA_UTF8LIBNAME, luaopen_utf8}};
+    for (size_t i = 0; i < sizeof libs / sizeof libs[0]; i++) {
+        luaL_requiref(Ls, libs[i].name, libs[i].func, 1);
+        lua_pop(Ls, 1);
+    }
+    static const char *const unsafe[] = {"dofile", "loadfile", NULL}; /* load is replaced by a source-only one (api) */
+    for (int i = 0; unsafe[i]; i++) lua_pushnil(Ls), lua_setglobal(Ls, unsafe[i]);
+    lua_getglobal(Ls, "string");
+    lua_pushnil(Ls), lua_setfield(Ls, -2, "dump");
+    lua_pop(Ls, 1);
+    lua_newtable(Ls);
+    lua_setfield(Ls, LUA_REGISTRYINDEX, "np2d.loaded");
+    api(Ls);
+    lua_getglobal(Ls, "math"); /* the same random numbers on every run: tests and replays depend on it */
+    lua_getfield(Ls, -1, "randomseed");
+    lua_pushinteger(Ls, 1);
+    lua_call(Ls, 1, 0);
+    lua_pop(Ls, 1);
+
+    const char *main = jstr(G.game, "main") ? jstr(G.game, "main") : "main.lua";
+    if (!safe_name(main)) {
+        fail("start", "game.json \"main\" is not a file name in the game folder");
+        return false;
+    }
+    lua_pushcfunction(Ls, msgh);
+    budget = CALL_BUDGET;
+    int rc;
+    {
+        char path[384];
+        snprintf(path, sizeof path, "%s/%s", G.game_dir, main);
+        long len = 0;
+        char *src = read_file(path, &len);
+        if (!src) {
+            fail(main, "cannot read it");
+            return false;
+        }
+        char name[96];
+        snprintf(name, sizeof name, "@%s", main);
+        rc = luaL_loadbufferx(Ls, src, (size_t)len, name, "t");
+        free(src);
+    }
+    if (rc == LUA_OK) rc = lua_pcall(Ls, 0, 0, -2);
+    if (rc != LUA_OK) {
+        fail(main, lua_tostring(Ls, -1));
+        lua_settop(Ls, 0);
+        return false;
+    }
+    lua_settop(Ls, 0);
+    return call("_init", 0);
+}
+
+void v2_tick(void) {
+    if (G.in.held & ACT_QUIT) G.quit = true;
+    call("_update", 0);
+}
+
+void v2_draw_world(void) {
+    nov = ntext = 0;
+    call("_draw", 0);
+    ppu_render(G.world);
+}
+
+void v2_draw(surface *s) {
+    surface world = {.px = G.world, .w = WORLD_W, .h = WORLD_H};
+    gfx_upscale2x(&world, s);
+    overlay_draw(s);
+    if (failed) { /* the error, readable, over whatever was drawn */
+        gfx_fill(s, 0, 0, SCREEN_W, 64, C_INK);
+        uint16_t ls[4], ll[4];
+        int n = text_wrap(&G.font, error, SCREEN_W - 16, ls, ll, 4);
+        for (int i = 0; i < n; i++) font_draw(s, &G.font, 8, 2 + i * (G.font.h - 6), error + ls[i], ll[i], -1, C_PAPER);
+    }
+}
+
+const char *v2_error(void) { return failed ? error : NULL; }
+
+/* For test scripts: run code (or evaluate an expression when expr) in the game's state; true if it ran and, for an
+ * expression, came out truthy. */
+bool v2_run(const char *code, bool expr, char *msg, int n) {
+    if (!Ls) return snprintf(msg, (size_t)n, "no Lua state"), false;
+    char buf[512];
+    snprintf(buf, sizeof buf, expr ? "return (%s)" : "%s", code);
+    budget = CALL_BUDGET;
+    if (luaL_loadbufferx(Ls, buf, strlen(buf), "=script", "t") != LUA_OK || lua_pcall(Ls, 0, 1, 0) != LUA_OK) {
+        snprintf(msg, (size_t)n, "%s", lua_tostring(Ls, -1));
+        lua_settop(Ls, 0);
+        return false;
+    }
+    bool ok = !expr || lua_toboolean(Ls, -1);
+    if (!ok) snprintf(msg, (size_t)n, "%s is %s", code, luaL_tolstring(Ls, -1, NULL)), lua_pop(Ls, 1);
+    lua_settop(Ls, 0);
+    return ok;
+}
+
+size_t v2_memory(void) { return mem_used; }

@@ -78,6 +78,18 @@ void content_free(void) {
 
 bool content_load(void) {
     content_free();
+    G.game = json_file("game.json");
+    const char *engine = jstr(G.game, "engine");
+    G.v2 = engine && !strncmp(engine, "np2d@2", 6);
+    if (G.v2) { /* a Lua game: none of the v1 content files */
+        cJSON **rest[] = {&G.tiles, &G.items, &G.events, &G.notebook, &G.sequences, &G.listens, &G.puzzles, &G.music};
+        for (size_t i = 0; i < sizeof rest / sizeof rest[0]; i++) *rest[i] = cJSON_CreateObject();
+        G.dialogues = cJSON_CreateObject();
+        G.zones = cJSON_CreateObject();
+        return true;
+    }
+    cJSON_Delete(G.game);
+    G.game = NULL;
     struct { cJSON **dst; const char *file; } files[] = {
         {&G.game, "game.json"},         {&G.tiles, "tiles.json"},         {&G.items, "items.json"},
         {&G.events, "events.json"},     {&G.notebook, "notebook.json"},   {&G.sequences, "sequences.json"},
@@ -582,6 +594,11 @@ static void check_arenas(void) {
 
 int content_validate(void) {
     errors = 0;
+    if (G.v2) { /* a Lua game: main.lua must start (compile, run, _init) */
+        if (v2_error()) hal_log("validate: %s", v2_error()), errors++;
+        hal_log("validate: %d error(s)", errors);
+        return errors;
+    }
     char path[384];
     snprintf(path, sizeof path, "%s/arena.json", G.game_dir);
     FILE *af = fopen(path, "rb");

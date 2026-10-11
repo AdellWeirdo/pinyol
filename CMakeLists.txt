@@ -18,12 +18,19 @@ add_library(cjson STATIC third_party/cjson/cJSON.c)
 target_include_directories(cjson PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cjson)
 target_compile_options(cjson PRIVATE -Wno-deprecated-declarations ${SAN})
 
+# Lua 5.4 (third_party/lua/README.np2d), with 32-bit integers and floats on every platform so a game behaves the same.
+file(GLOB LUA_SRC CONFIGURE_DEPENDS third_party/lua/*.c)
+add_library(lua STATIC ${LUA_SRC})
+target_include_directories(lua PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lua)
+target_compile_definitions(lua PUBLIC LUA_32BITS=1)
+target_compile_options(lua PRIVATE ${SAN})
+
 # Portable engine core: no SDL/ESP headers allowed in src/.
 file(GLOB CORE_SRC CONFIGURE_DEPENDS src/*.c)
 add_library(bp_core STATIC ${CORE_SRC})
 target_include_directories(bp_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_options(bp_core PRIVATE -Wall -Wextra -Werror ${SAN})
-target_link_libraries(bp_core PUBLIC cjson m)
+target_link_libraries(bp_core PUBLIC cjson lua m)
 target_link_options(bp_core PUBLIC ${SAN})
 
 # Web player: emcmake cmake -B build-web -DCMAKE_BUILD_TYPE=Release && cmake --build build-web
@@ -59,14 +66,25 @@ if(NOT PROJECT_IS_TOP_LEVEL) # a game's repo registers its own tests
   return()
 endif()
 enable_testing()
-add_executable(ppu_test tests/ppu_test.c)
+add_executable(ppu_test tests/ppu_test.c platform/null/hal_null.c)
 target_compile_options(ppu_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(ppu_test bp_core)
 add_test(NAME ppu COMMAND ppu_test)
-add_test(NAME validate COMMAND bp_headless --game ${GAME_DIR} --validate)
-file(GLOB SCRIPTS CONFIGURE_DEPENDS tests/*.script) # written for examples/hola
+# Every example opens and validates; tests/<name>.script plays examples/<name> (with its strips checked).
+file(GLOB EXAMPLES LIST_DIRECTORIES true CONFIGURE_DEPENDS examples/*)
+foreach(dir ${EXAMPLES})
+  if(IS_DIRECTORY ${dir})
+    get_filename_component(n ${dir} NAME)
+    add_test(NAME validate_${n} COMMAND bp_headless --game ${dir} --validate)
+  endif()
+endforeach()
+file(GLOB SCRIPTS CONFIGURE_DEPENDS tests/*.script)
 foreach(s ${SCRIPTS})
   get_filename_component(n ${s} NAME_WE)
-  add_test(NAME script_${n}
-           COMMAND bp_headless --game ${GAME_DIR} --saves ${CMAKE_BINARY_DIR}/saves_${n} --fresh --script ${s})
+  set(game ${CMAKE_CURRENT_SOURCE_DIR}/examples/${n})
+  if(NOT IS_DIRECTORY ${game})
+    set(game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/${n}) # games that only exist to be tested
+  endif()
+  add_test(NAME script_${n} COMMAND bp_headless --game ${game}
+           --saves ${CMAKE_BINARY_DIR}/saves_${n} --fresh --script ${s} --check-strips)
 endforeach()
