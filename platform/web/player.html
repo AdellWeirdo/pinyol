@@ -30,6 +30,13 @@
   #play { background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 1.05rem; padding: 12px 34px; }
   #play:hover { filter: brightness(1.08); }
   #play:active { transform: translateY(1px); }
+  .tools { display: flex; gap: 8px; margin-left: auto; }
+  .tools[hidden] { display: none; }
+  .tools button { background: var(--panel); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); padding: 6px 14px;
+                  font-size: .85rem; }
+  .tools button:hover { box-shadow: inset 0 0 0 1px var(--dim); }
+  .tools button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  .screen:fullscreen { border-radius: 0; box-shadow: none; width: auto; height: 100%; margin: auto; }
   .pick { background: var(--panel); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
   .pick:hover { box-shadow: inset 0 0 0 1px var(--dim); }
   .pick input { position: absolute; width: 1px; height: 1px; opacity: 0; }
@@ -60,6 +67,10 @@
   <header>
     <h1 id="title">np2d</h1>
     <span class="by">Motor np2d · consola RetroGo</span>
+    <span class="tools" id="tools" hidden>
+      <button id="mute" aria-pressed="false">Silenciar</button>
+      <button id="full">Pantalla completa</button>
+    </span>
   </header>
   <div class="screen" id="screen">
     <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()" aria-label="Pantalla del juego"></canvas>
@@ -219,6 +230,8 @@ async function start() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) syncSaves(); });
   addEventListener('pagehide', syncSaves);
   $('gate').hidden = true;
+  $('tools').hidden = false;
+  $('full').hidden = !document.fullscreenEnabled; /* not on the iPhone: its browser only does it for videos */
   status('');
   $('canvas').focus();
   try { Module.callMain(['--game', '/game', '--saves', '/persist/' + gameFiles.id]); }
@@ -226,6 +239,17 @@ async function start() {
 }
 
 $('play').addEventListener('click', start);
+$('mute').addEventListener('click', () => {
+  const on = $('mute').getAttribute('aria-pressed') !== 'true';
+  $('mute').setAttribute('aria-pressed', String(on));
+  if (Module._web_mute) Module._web_mute(on ? 1 : 0);
+  $('canvas').focus();
+});
+$('full').addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else $('screen').requestFullscreen().catch(() => {});
+  $('canvas').focus();
+});
 $('file').addEventListener('change', async e => { const f = e.target.files[0]; if (f) load(await f.arrayBuffer()); });
 const gate = $('gate');
 gate.addEventListener('dragover', e => { e.preventDefault(); gate.classList.add('drag'); });

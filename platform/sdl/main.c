@@ -44,15 +44,21 @@ uint32_t hal_micros(void) { return (uint32_t)(SDL_GetPerformanceCounter() * 1000
 void hal_audio_lock(void) { if (audio_dev) SDL_LockAudioDevice(audio_dev); }
 void hal_audio_unlock(void) { if (audio_dev) SDL_UnlockAudioDevice(audio_dev); }
 
+static bool muted; /* the web page's mute button: the game plays on, silent (its own fades are left alone) */
+
 static void audio_cb(void *user, Uint8 *stream, int len) {
     (void)user;
     audio_mix((int16_t *)stream, len / 2); /* SDL holds the device lock during the callback */
+    if (muted) memset(stream, 0, (size_t)len);
 }
 
 #ifdef __EMSCRIPTEN__
 static uint16_t web_held; /* the page's on-screen buttons */
 
 /* button: 0 up, 1 down, 2 left, 3 right, 4 A, 5 B, 6 C, 7 START, 8 MENU (the names btn() takes in Lua) */
+
+EMSCRIPTEN_KEEPALIVE void web_mute(int on) { muted = on; }
+
 EMSCRIPTEN_KEEPALIVE void web_button(int button, int down) {
     static const uint16_t bits[] = {ACT_UP, ACT_DOWN, ACT_LEFT, ACT_RIGHT, ACT_OK, ACT_BACK, ACT_NEXT, ACT_PAUSE, ACT_INV};
     if (button < 0 || button >= (int)(sizeof bits / sizeof bits[0])) return;
