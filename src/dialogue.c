@@ -330,16 +330,35 @@ void dlg_tick(void) {
     }
 }
 
-void dlg_render(surface *s) {
+static void closeup_at(const asset *a, int by, int *x, int *y) { /* the 2x illustration's corner, above the box */
+    *x = (SCREEN_W - 2 * a->w) / 2, *y = by - 2 * a->h - 14;
+    if (*y < 6) *y = 6;
+}
+
+int dlg_opaque(screen_rect *r, bool *closeup) {
+    *closeup = false;
+    if (!D->active || D->hold > 0) return 0;
+    int bh = box_h(), by = SCREEN_H - bh - 6, n = 0;
+    if ((*closeup = D->ill && !D->choosing)) { /* the card around the close-up: gfx_panel(x - 8, y - 8, 2w + 16, 2h + 16) */
+        asset *a = gfx_asset(D->ill);
+        int x, y;
+        closeup_at(a, by, &x, &y);
+        if (2 * a->h + 16 > 2 * PANEL_CORNER) r[n++] = (screen_rect){x - 8, y - 8 + PANEL_CORNER, 2 * a->w + 16, 2 * a->h + 16 - 2 * PANEL_CORNER};
+    }
+    if (bh > 2 * PANEL_CORNER) r[n++] = (screen_rect){BOX_X, by + PANEL_CORNER, BOX_W, bh - 2 * PANEL_CORNER};
+    return n;
+}
+
+void dlg_render(surface *s, bool shade) {
     if (!D->active || D->hold > 0) return;
     const font *f = ui_font(), *b = ui_bold();
     int lh = line_h(), bh = box_h(), by = SCREEN_H - bh - 6;
     bool ill = D->ill && !D->choosing;
     if (ill) { /* close-up: 2x illustration on a framed card above the box */
         asset *a = gfx_asset(D->ill);
-        int x = (SCREEN_W - 2 * a->w) / 2, y = by - 2 * a->h - 14;
-        if (y < 6) y = 6;
-        gfx_shade(s, 0, 0, SCREEN_W, SCREEN_H);
+        int x, y;
+        closeup_at(a, by, &x, &y);
+        if (shade) gfx_shade(s, 0, 0, SCREEN_W, SCREEN_H);
         gfx_panel(s, x - 8, y - 8, 2 * a->w + 16, 2 * a->h + 16);
         gfx_blit2x(s, a, 0, x, y);
     }

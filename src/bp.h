@@ -85,6 +85,8 @@ typedef struct surface {
 void v2_draw(surface *s); /* np2d@2: the world 2x and the script's text and shapes, onto s (lua_game.c) */
 void game_draw(surface *s, bool world_pass); /* the frame onto s, a window of it or all (game.c) */
 surface gfx_clip(const surface *s, int x, int y, int w, int h); /* the part of s inside a rectangle (maybe empty) */
+typedef struct { int x, y, w, h; } screen_rect;
+#define PANEL_CORNER 12 /* rows at a panel's top and bottom its corners may leave open (cut corners are 8) */
 void game_draw_world(void);                  /* only the zone into G.world: game_draw(s, true) starts with it */
 
 typedef struct {
@@ -177,7 +179,8 @@ void dlg_open(const char *ref); /* "D_X", "D_X.node" or "@text" */
 void dlg_say(const char *speaker, const char *text, const char *ill);
 void dlg_show(const char *dlg_id, const char *item);
 void dlg_tick(void);
-void dlg_render(surface *s);
+void dlg_render(surface *s, bool shade); /* shade: darken what is under a close-up */
+int dlg_opaque(screen_rect *r, bool *closeup); /* its opaque panels, corners left out; closeup: it shades the screen */
 const char *dlg_text(void); /* text of the current line, for scripts */
 
 /* ------------------------------------------------------------------ world.c */

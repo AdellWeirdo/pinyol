@@ -260,30 +260,123 @@ void game_draw_world(void) {
     else world_render(&world);
 }
 
-/* Layers from..to-1 of the stack onto s (0: the zone, or the fight). The panel layers (bag, notebook) shade what is
- * under them unless they are the first drawn here: then game_draw has shaded only where it shows. */
-static void draw_layers(surface *s, surface *world, int from, int to) {
-    for (int i = from; i < to; i++) {
-        if (i == 0) {
-            if (layer_has(L_ARENA)) arena_render_screen(world, s); /* the fight covers the zone it was entered from */
-            else {
-                gfx_upscale2x(world, s);
-                world_render_marker(s);
-            }
-            continue;
+/* Occlusion: a layer is drawn only where the layers above it do not cover it with an opaque panel. A region is a list
+ * of disjoint rectangles; cutting a rectangle out of one leaves up to four. */
+#define MAX_RECTS 24
+typedef struct { int n; screen_rect r[MAX_RECTS]; } region;
+
+static void region_cut(region *g, screen_rect c) {
+    /* inward to even edges: the pieces keep the even bounds the 2x upscale's fast path wants (covering a little less
+     * is still right) */
+    int cx0 = (c.x + 1) & ~1, cy0 = (c.y + 1) & ~1, cx1 = (c.x + c.w) & ~1, cy1 = (c.y + c.h) & ~1;
+    if (cx1 <= cx0 || cy1 <= cy0) return;
+    c = (screen_rect){cx0, cy0, cx1 - cx0, cy1 - cy0};
+    region out = {0};
+    for (int k = 0; k < g->n; k++) {
+        screen_rect a = g->r[k];
+        int x0 = a.x > c.x ? a.x : c.x, y0 = a.y > c.y ? a.y : c.y;
+        int x1 = a.x + a.w < c.x + c.w ? a.x + a.w : c.x + c.w, y1 = a.y + a.h < c.y + c.h ? a.y + a.h : c.y + c.h;
+        screen_rect piece[4] = {{a.x, a.y, a.w, y0 - a.y}, {a.x, y1, a.w, a.y + a.h - y1},
+                                {a.x, y0, x0 - a.x, y1 - y0}, {x1, y0, a.x + a.w - x1, y1 - y0}};
+        int np = 0;
+        if (x0 >= x1 || y0 >= y1) piece[0] = a, np = 1; /* they do not meet: a stays whole */
+        else
+            for (int i = 0; i < 4; i++)
+                if (piece[i].w > 0 && piece[i].h > 0) piece[np++] = piece[i];
+        if (out.n + np > MAX_RECTS) return; /* too many pieces: keep g as it was (more drawing, same pixels) */
+        for (int i = 0; i < np; i++) out.r[out.n++] = piece[i];
+    }
+    *g = out;
+}
+
+static bool covered_dlg(int i) { /* a dialogue waiting under a sequence/listen/puzzle stays hidden */
+    for (int j = i + 1; j < G.nstack; j++)
+        if (G.stack[j] == L_SEQ || G.stack[j] == L_LISTEN || G.stack[j] == L_PUZZLE) return true;
+    return false;
+}
+
+/* The opaque panels stack layer i leaves on screen, corners left out; and whether it shades what is under it. */
+static int layer_opaque(int i, screen_rect *r, bool *shades) {
+    *shades = false;
+    switch (G.stack[i]) {
+    case L_INV:
+    case L_NOTES: /* gfx_panel(8, 24, 464, 288) over a full-screen shade */
+        *shades = true;
+        r[0] = (screen_rect){8, 24 + PANEL_CORNER, SCREEN_W - 16, SCREEN_H - 32 - 2 * PANEL_CORNER};
+        return 1;
+    case L_DLG: {
+        if (covered_dlg(i)) return 0;
+        return dlg_opaque(r, shades); /* a close-up darkens the screen around its card */
+    }
+    default: return 0;
+    }
+}
+
+/* Stack layer i onto s (0: the zone, or the fight); shade: as when it is drawn whole. */
+static void draw_layer(surface *s, surface *world, int i, bool shade) {
+    if (i == 0) {
+        if (layer_has(L_ARENA)) arena_render_screen(world, s); /* the fight covers the zone it was entered from */
+        else {
+            gfx_upscale2x(world, s);
+            world_render_marker(s);
         }
-        bool covered = false; /* a dialogue waiting under a sequence/listen/puzzle stays hidden */
-        for (int j = i + 1; j < G.nstack; j++) covered |= G.stack[j] == L_SEQ || G.stack[j] == L_LISTEN || G.stack[j] == L_PUZZLE;
-        switch (G.stack[i]) {
-        case L_DLG: if (!covered) dlg_render(s); break;
-        case L_INV: inv_render(s, i > from); break;
-        case L_NOTES: notes_render(s, i > from); break;
-        case L_PUZZLE: puzzle_render(s); break;
-        case L_LISTEN: listen_render(s); break;
-        case L_PAUSE: pause_render(s); break;
-        default: break;
+        return;
+    }
+    switch (G.stack[i]) {
+    case L_DLG: if (!covered_dlg(i)) dlg_render(s, shade); break;
+    case L_INV: inv_render(s, shade); break;
+    case L_NOTES: notes_render(s, shade); break;
+    case L_PUZZLE: puzzle_render(s); break;
+    case L_LISTEN: listen_render(s); break;
+    case L_PAUSE: pause_render(s); break;
+    default: break;
+    }
+}
+
+static void draw_in(surface *s, const region *g, surface *world, int i, bool shade) {
+    if (g->n == 1 && g->r[0].x <= s->x0 && g->r[0].y <= s->y0 && g->r[0].x + g->r[0].w >= s->x0 + s->w &&
+        g->r[0].y + g->r[0].h >= s->y0 + s->h) { /* all of s: straight onto it */
+        if (i < 0) gfx_shade(s, 0, 0, SCREEN_W, SCREEN_H);
+        else draw_layer(s, world, i, shade);
+        return;
+    }
+    for (int k = 0; k < g->n; k++) {
+        surface part = gfx_clip(s, g->r[k].x, g->r[k].y, g->r[k].w, g->r[k].h);
+        if (part.w > 0 && part.h > 0) {
+            if (i < 0) gfx_shade(&part, 0, 0, SCREEN_W, SCREEN_H);
+            else draw_layer(&part, world, i, shade);
         }
     }
+}
+
+/* The stack bottom to top: the zone only where the layers above leave it visible, a panel layer's shade only where
+ * its own panels and those above do not cover it. Same pixels as drawing every layer whole, in order. */
+static void draw_stack(surface *s, surface *world) {
+    int n = G.nstack > 8 ? 8 : G.nstack;
+    screen_rect opq[8][3];
+    int nopq[8] = {0};
+    bool shades[8] = {false};
+    for (int i = 1; i < n; i++) nopq[i] = layer_opaque(i, opq[i], &shades[i]);
+    static region reg[8];
+    surface whole = gfx_clip(s, 0, 0, SCREEN_W, SCREEN_H); /* s's window, in frame coordinates */
+    reg[n - 1] = (region){1, {{whole.x0, whole.y0, whole.w, whole.h}}};
+    for (int i = n - 2; i >= 0; i--) {
+        reg[i] = reg[i + 1];
+        for (int k = 0; k < nopq[i + 1]; k++) region_cut(&reg[i], opq[i + 1][k]);
+    }
+    for (int i = 0; i < n; i++) {
+        if (shades[i]) { /* its shade, only where its panels leave the layers below visible */
+            static region dim;
+            dim = reg[i];
+            for (int k = 0; k < nopq[i]; k++) region_cut(&dim, opq[i][k]);
+            draw_in(s, &dim, world, -1, false);
+        }
+        /* the zone is cheap to draw in pieces; a panel layer is not (each piece would lay out its text again): it is
+         * drawn whole, over whatever is under it, and only the zone and the shades are cut */
+        if (i == 0) draw_in(s, &reg[0], world, 0, false);
+        else draw_layer(s, world, i, false);
+    }
+    for (int i = n; i < G.nstack; i++) draw_layer(s, world, i, true); /* (never: the stack holds fewer than 8) */
 }
 
 /* The frame onto s, which may be a window of it: everything below draws through gfx.c, clipped to s, so drawing the
@@ -301,28 +394,12 @@ void game_draw(surface *s, bool world_pass) {
     if (base == L_END) { end_render(&scr); return; }
     if (base == L_ERROR) { error_render(&scr); return; }
 
-    /* The bag and the notebook are opaque panels over almost all the screen: what is under them (the zone, layers
-     * below, their shade) is drawn only around the panel's middle, in four bands that miss its corners. */
-    int cover = 0;
-    for (int i = 1; i < G.nstack; i++)
-        if (G.stack[i] == L_INV || G.stack[i] == L_NOTES) cover = i;
-    if (!cover) draw_layers(&scr, &world, 0, G.nstack);
-    else {
-        static const struct { int16_t x, y, w, h; } around[4] = { /* the panel is (8, 24, 464, 288), corners 8 */
-            {0, 0, SCREEN_W, 36}, {0, 300, SCREEN_W, SCREEN_H - 300}, {0, 36, 8, 264}, {SCREEN_W - 8, 36, 8, 264}};
-        for (int k = 0; k < 4; k++) {
-            surface part = gfx_clip(&scr, around[k].x, around[k].y, around[k].w, around[k].h);
-            if (part.w <= 0) continue;
-            draw_layers(&part, &world, 0, cover);
-            gfx_shade(&part, 0, 0, SCREEN_W, SCREEN_H);
-        }
-        draw_layers(&scr, &world, cover, G.nstack);
-    }
+    draw_stack(&scr, &world);
     if (G.seq.fade > 0) {
         if (G.seq.fade >= 1) gfx_fill(&scr, 0, 0, SCREEN_W, SCREEN_H, C_BLACK);
         else if (G.seq.fade >= 0.5f) gfx_shade(&scr, 0, 0, SCREEN_W, SCREEN_H), gfx_shade(&scr, 0, 0, SCREEN_W, SCREEN_H);
         else gfx_shade(&scr, 0, 0, SCREEN_W, SCREEN_H);
-        if (layer_has(L_DLG)) dlg_render(&scr); /* echo lines stay readable over the fade */
+        if (layer_has(L_DLG)) dlg_render(&scr, true); /* echo lines stay readable over the fade */
     }
     hud_render(&scr);
     seq_render(&scr);

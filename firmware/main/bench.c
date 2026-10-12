@@ -600,6 +600,13 @@ static void profile_screens(const char *dir, const char *zone, const char *const
             cJSON_ArrayForEach(it, G.items) flagf_set(1, "item:%s%s", it->string, "");
             layer_push(L_INV);
             dlg_open(m + 8);
+        } else if (!strncmp(m, "inv+ill:", 8) || !strncmp(m, "ill:", 4)) { /* an item examined: its close-up */
+            bool bag = m[0] == 'i' && m[1] == 'n';
+            if (bag) {
+                cJSON_ArrayForEach(it, G.items) flagf_set(1, "item:%s%s", it->string, "");
+                layer_push(L_INV);
+            }
+            dlg_say("KLAUS", "La fuente sigue ahí. Pero hay una calle detrás que no reconozco.", strchr(m, ':') + 1);
         } else if (!strcmp(m, "inv")) {
             cJSON_ArrayForEach(it, G.items) flagf_set(1, "item:%s%s", it->string, "");
             layer_push(L_INV);
@@ -622,10 +629,11 @@ void bench_v1_run(void) {
         (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
     static const char *const bp[] = {"play", "dlg:D_ALCALDESA", "inv", "puz:P01", "puz:P03"};
     static const char *const gg[] = {"play", "dlg:D_M01.noticia", "inv", "puz:P01", "puz:T02"};
-    static const char *const bp4[] = {"play", "dlg:D_PANADERA", "inv+dlg:D_PANADERA"};
+    static const char *const bp4[] = {"play", "dlg:D_PANADERA", "inv+dlg:D_PANADERA", "ill:ILL_PHOTO",
+                                      "inv+ill:ILL_PHOTO"};
     profile_game("/sdcard/games/bajopueblo");
     profile_game("/sdcard/games/geumgye");
-    profile_screens("/sdcard/games/bajopueblo", "Z04", bp4, 3);
+    profile_screens("/sdcard/games/bajopueblo", "Z04", bp4, 5);
     profile_screens("/sdcard/games/bajopueblo", "Z01", bp, 5);
     profile_screens("/sdcard/games/geumgye", "M01", gg, 5);
     LOG("v1 done");

@@ -277,14 +277,38 @@ void gfx_blit2x(surface *s, const asset *a, int frame, int x, int y) {
     if (va < 0) va = 0;
     if (ub > a->w) ub = a->w;
     if (vb > a->h) vb = a->h;
-    const int ys = step_y(s), ya = s->y0, yb = s->y0 + s->h;
+    const int ys = step_y(s), xs = step_x(s), ya = s->y0, yb = s->y0 + s->h;
+    /* the source rows whose 2x2 block lies whole inside the window and the frame: [v_in, v_out) */
+    const int lo = ya > 0 ? ya : 0, hi = yb < fh ? yb : fh;
+    int v_in = (lo - y + 1) >> 1, v_out = ((hi - 2 - y) >> 1) + 1; /* >> on a negative rounds down */
+    if (v_in < va) v_in = va;
+    if (v_out > vb) v_out = vb;
     for (int u = ua; u < ub; u++) { /* column by column: a turned strip's columns are contiguous */
         int dx = x + 2 * u;
         if (dx < 0 || dx + 1 >= fw) continue;
-        for (int i = 0; i < 2; i++) {
+        int vs = vb, ve = vb; /* rows [vs, ve) done by the fast path: none yet */
+        if (dx >= s->x0 && dx + 1 < s->x0 + s->w && v_in < v_out) { /* both columns in: whole blocks, no tests */
+            uint16_t *d = at(s, dx, y + 2 * v_in);
+            const uint16_t *sp = src + v_in * a->w + u;
+            const uint8_t *mp = mask ? mask + v_in * stride + (u >> 3) : NULL;
+            const uint8_t bit = (uint8_t)(0x80 >> (u & 7));
+            for (int v = v_in; v < v_out; v++, d += 2 * ys, sp += a->w) {
+                if (mp) {
+                    bool on = *mp & bit;
+                    mp += stride;
+                    if (!on) continue;
+                }
+                uint16_t c = stored(s, *sp);
+                d[0] = d[ys] = d[xs] = d[xs + ys] = c;
+            }
+            vs = v_in, ve = v_out; /* done: only the rows outside [v_in, v_out) remain */
+        }
+        for (int i = 0; i < 2; i++) { /* the rest, carefully: rows [va, vs) and [ve, vb) */
             if (dx + i < s->x0 || dx + i >= s->x0 + s->w) continue;
             uint16_t *col = at(s, dx + i, ya); /* row ya of this column; row r is col + (r - ya) * ys */
             for (int v = va; v < vb; v++) {
+                if (v == vs) v = ve;
+                if (v >= vb) break;
                 int dy = y + 2 * v;
                 if (dy < 0 || dy + 1 >= fh || (mask && !(mask[v * stride + (u >> 3)] & (0x80 >> (u & 7))))) continue;
                 uint16_t c = stored(s, src[v * a->w + u]);
