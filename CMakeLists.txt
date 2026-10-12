@@ -33,9 +33,20 @@ target_compile_options(bp_core PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(bp_core PUBLIC cjson lua m)
 target_link_options(bp_core PUBLIC ${SAN})
 
-# Web player: emcmake cmake -B build-web -DCMAKE_BUILD_TYPE=Release && cmake --build build-web
-# -> build-web/index.html + .js + .wasm + .data (GAME_DIR packed at /game). Serve the folder over http.
+# Web builds: emcmake cmake -B build-web -DCMAKE_BUILD_TYPE=Release && cmake --build build-web
+# -> build-web/index.html + .js + .wasm + .data: GAME_DIR packed in, at /game.
+# -> build-web/player.html + .js + .wasm: any game, from a .zip (tools/pack_game.py) given as ?game=URL or dropped on
+#    the page. Serve the folder over http.
 if(EMSCRIPTEN)
+  add_executable(np2d_player platform/sdl/main.c)
+  set_target_properties(np2d_player PROPERTIES OUTPUT_NAME player SUFFIX .html)
+  target_compile_options(np2d_player PRIVATE -Wall -Wextra -sUSE_SDL=2)
+  target_link_libraries(np2d_player bp_core)
+  target_link_options(np2d_player PRIVATE -sUSE_SDL=2 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sINVOKE_RUN=0
+                      -sFORCE_FILESYSTEM=1 -sEXPORTED_RUNTIME_METHODS=FS,callMain -lidbfs.js
+                      --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/platform/web/player.html)
+  set_property(TARGET np2d_player APPEND PROPERTY LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/platform/web/player.html)
+
   add_executable(np2d_web platform/sdl/main.c)
   set_target_properties(np2d_web PROPERTIES OUTPUT_NAME index SUFFIX .html)
   target_compile_options(np2d_web PRIVATE -Wall -Wextra -sUSE_SDL=2)

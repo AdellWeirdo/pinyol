@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>np2d player</title>
+<style>
+  :root {
+    --bg: #11161a; --panel: #1b2329; --ink: #e8dcc2; --dim: #9aa39c; --accent: #e0a040; --accent-ink: #1b1408;
+    --line: #2c363d; --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, sans-serif; }
+  main { max-width: 1000px; margin: 0 auto; padding: 16px; display: grid; gap: 14px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: clamp(1.2rem, 1rem + 1.2vw, 1.8rem); letter-spacing: .01em; }
+  .by { color: var(--dim); font-size: .85rem; }
+  /* the game draws 480x320: the canvas keeps that ratio, whole pixels stay crisp at any size */
+  .screen { position: relative; width: 100%; aspect-ratio: 3 / 2; background: #000; border-radius: var(--radius);
+            overflow: hidden; box-shadow: 0 0 0 1px var(--line), 0 18px 40px -18px #000; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; outline: none; }
+  .gate { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px;
+          padding: 16px; text-align: center; background: radial-gradient(circle at 50% 40%, #1f2a31, #0b0f12 70%); }
+  .gate.drag { box-shadow: inset 0 0 0 3px var(--accent); }
+  .gate[hidden] { display: none; }
+  .gate p { margin: 0; }
+  #gate-title { font-size: clamp(1.1rem, .9rem + 1.5vw, 1.9rem); font-weight: 650; }
+  .hint { color: var(--dim); font-size: .9rem; }
+  button, .pick { font: inherit; border: 0; border-radius: 999px; padding: 10px 22px; cursor: pointer; }
+  #play { background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 1.05rem; padding: 12px 34px; }
+  #play:hover { filter: brightness(1.08); }
+  #play:active { transform: translateY(1px); }
+  .pick { background: var(--panel); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+  .pick:hover { box-shadow: inset 0 0 0 1px var(--dim); }
+  .pick input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  button:focus-visible, .pick:focus-within, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #status { margin: 0; color: var(--dim); min-height: 1.4em; }
+  #status.error { color: #f08a7a; }
+  .keys { margin: 0; color: var(--dim); font-size: .85rem; }
+  .keys kbd { font: inherit; color: var(--ink); }
+  a { color: var(--accent); }
+  /* on-screen buttons, shown on touch screens */
+  .pad { display: none; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; user-select: none;
+         -webkit-user-select: none; touch-action: none; }
+  .dpad { display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); }
+  .pad button { background: var(--panel); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); border-radius: 12px;
+                padding: 0; font-weight: 700; touch-action: none; }
+  .pad button.on { background: var(--accent); color: var(--accent-ink); }
+  .dpad .u { grid-area: 1 / 2; } .dpad .l { grid-area: 2 / 1; } .dpad .r { grid-area: 2 / 3; } .dpad .d { grid-area: 3 / 2; }
+  .mid { display: flex; justify-content: center; gap: 10px; }
+  .mid button { height: 34px; padding: 0 14px; font-size: .8rem; border-radius: 999px; }
+  .abc { display: grid; grid-template-columns: repeat(2, 60px); grid-template-rows: repeat(2, 60px); gap: 6px; }
+  .abc button { border-radius: 50%; font-size: 1.1rem; }
+  .abc .a { grid-area: 1 / 2; } .abc .b { grid-area: 2 / 1; } .abc .c { grid-area: 1 / 1; }
+  @media (pointer: coarse) { .pad { display: grid; } .keys { display: none; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 id="title">np2d</h1>
+    <span class="by">Motor np2d · consola RetroGo</span>
+  </header>
+  <div class="screen" id="screen">
+    <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()" aria-label="Pantalla del juego"></canvas>
+    <div class="gate" id="gate">
+      <p id="gate-title">Elige un juego</p>
+      <button id="play" hidden>Jugar</button>
+      <label class="pick" id="pick">Abrir un juego (.zip)<input type="file" id="file" accept=".zip,application/zip"></label>
+      <p class="hint" id="hint">o arrástralo aquí</p>
+    </div>
+  </div>
+  <nav class="pad" aria-label="Botones de la consola">
+    <div class="dpad">
+      <button class="u" data-b="0" aria-label="Arriba">▲</button><button class="l" data-b="2" aria-label="Izquierda">◀</button>
+      <button class="r" data-b="3" aria-label="Derecha">▶</button><button class="d" data-b="1" aria-label="Abajo">▼</button>
+    </div>
+    <div class="mid"><button data-b="8">MENU</button><button data-b="7">START</button></div>
+    <div class="abc">
+      <button class="c" data-b="6">C</button><button class="a" data-b="4">A</button><button class="b" data-b="5">B</button>
+    </div>
+  </nav>
+  <p id="status" role="status"></p>
+  <p class="keys"><kbd>Flechas</kbd>/<kbd>WASD</kbd> mover · <kbd>Z</kbd>/<kbd>Enter</kbd> A · <kbd>X</kbd>/<kbd>Esc</kbd> B ·
+    <kbd>C</kbd>/<kbd>Tab</kbd> C · <kbd>P</kbd> START · <kbd>I</kbd> MENU · ratón = pantalla táctil</p>
+  <p class="keys"><a id="download" hidden>Descargar este juego para la consola</a></p>
+</main>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const status = (text, error) => { $('status').textContent = text || ''; $('status').classList.toggle('error', !!error); };
+let runtimeReady, gameFiles = null, started = false;
+const ready = new Promise(r => { runtimeReady = r; });
+
+var Module = {
+  canvas: $('canvas'),
+  setStatus: t => { if (!started) status(t); },
+  onRuntimeInitialized: () => runtimeReady(),
+};
+
+/* A .zip, read in the browser: stored or deflated entries, with limits (a game is small; a bomb is not). */
+const LIMITS = { files: 4000, bytes: 96 << 20 };
+async function unzip(buf) {
+  const u8 = new Uint8Array(buf), dv = new DataView(buf), dec = new TextDecoder();
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--)
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error('No es un archivo .zip');
+  const count = dv.getUint16(eocd + 10, true);
+  if (count > LIMITS.files) throw new Error('Demasiados archivos en el .zip');
+  let p = dv.getUint32(eocd + 16, true), total = 0;
+  const out = new Map();
+  for (let k = 0; k < count; k++) {
+    if (p + 46 > u8.length || dv.getUint32(p, true) !== 0x02014b50) throw new Error('El .zip está dañado');
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), size = dv.getUint32(p + 24, true);
+    const nlen = dv.getUint16(p + 28, true), xlen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+    const off = dv.getUint32(p + 42, true), name = dec.decode(u8.subarray(p + 46, p + 46 + nlen));
+    p += 46 + nlen + xlen + clen;
+    if (name.endsWith('/')) continue;
+    total += size;
+    if (total > LIMITS.bytes) throw new Error('El juego es demasiado grande');
+    if (off + 30 > u8.length || dv.getUint32(off, true) !== 0x04034b50) throw new Error('El .zip está dañado');
+    const start = off + 30 + dv.getUint16(off + 26, true) + dv.getUint16(off + 28, true);
+    const data = u8.subarray(start, start + csize);
+    let bytes;
+    if (method === 0) bytes = data.slice();
+    else if (method === 8)
+      bytes = new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+    else throw new Error('Compresión no soportada en ' + name);
+    if (bytes.length !== size) throw new Error('El .zip está dañado (' + name + ')');
+    out.set(name, bytes);
+  }
+  return out;
+}
+
+/* The game folder from a zip's paths: safe relative paths, the common top folder dropped (mygame/game.json). */
+function gameFolder(entries) {
+  const files = new Map();
+  for (const [name, bytes] of entries) {
+    const parts = name.replace(/\\/g, '/').split('/');
+    if (parts.some(s => s === '' || s === '.' || s === '..')) throw new Error('Ruta no válida en el .zip: ' + name);
+    if (parts[0] === '__MACOSX' || parts[parts.length - 1] === '.DS_Store') continue;
+    files.set(parts.join('/'), bytes);
+  }
+  if (!files.has('game.json')) {
+    const tops = new Set([...files.keys()].map(n => n.split('/')[0]));
+    const top = tops.size === 1 ? [...tops][0] : null;
+    if (!top || !files.has(top + '/game.json')) throw new Error('No hay game.json en el .zip');
+    return new Map([...files].map(([n, b]) => [n.slice(top.length + 1), b]));
+  }
+  return files;
+}
+
+async function load(buf, url) {
+  try {
+    status('Abriendo el juego…');
+    const files = gameFolder(await unzip(buf));
+    const meta = JSON.parse(new TextDecoder().decode(files.get('game.json')));
+    const id = String(meta.id || 'game');
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(id)) throw new Error('El id del juego no es válido: ' + id);
+    gameFiles = { files, id, title: String(meta.title || id) };
+    $('title').textContent = gameFiles.title;
+    document.title = gameFiles.title + ' · np2d';
+    $('gate-title').textContent = gameFiles.title;
+    $('play').hidden = false;
+    $('pick').hidden = true;
+    $('hint').textContent = 'Teclado, ratón o botones en pantalla';
+    if (url) { $('download').href = url; $('download').hidden = false; }
+    status('');
+    $('play').focus();
+  } catch (e) {
+    status(e.message, true);
+  }
+}
+
+const syncSaves = () => new Promise(r => Module.FS.syncfs(false, r));
+
+async function start() {
+  if (!gameFiles || started) return;
+  started = true;
+  $('play').disabled = true;
+  status('Cargando el motor…');
+  await ready;
+  const FS = Module.FS;
+  for (const [name, bytes] of gameFiles.files) {
+    const path = '/game/' + name;
+    FS.mkdirTree(path.slice(0, path.lastIndexOf('/')));
+    FS.writeFile(path, bytes);
+  }
+  FS.mkdirTree('/persist'); /* the game's saves (store, stored) live in the browser's IndexedDB */
+  FS.mount(FS.filesystems.IDBFS, {}, '/persist');
+  await new Promise(r => FS.syncfs(true, r));
+  FS.mkdirTree('/persist/' + gameFiles.id);
+  setInterval(syncSaves, 4000);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) syncSaves(); });
+  addEventListener('pagehide', syncSaves);
+  $('gate').hidden = true;
+  status('');
+  $('canvas').focus();
+  try { Module.callMain(['--game', '/game', '--saves', '/persist/' + gameFiles.id]); }
+  catch (e) { if (e !== 'unwind' && !(e && e.name === 'ExitStatus')) status('El juego se ha parado: ' + e, true); }
+}
+
+$('play').addEventListener('click', start);
+$('file').addEventListener('change', async e => { const f = e.target.files[0]; if (f) load(await f.arrayBuffer()); });
+const gate = $('gate');
+gate.addEventListener('dragover', e => { e.preventDefault(); gate.classList.add('drag'); });
+gate.addEventListener('dragleave', () => gate.classList.remove('drag'));
+gate.addEventListener('drop', async e => {
+  e.preventDefault();
+  gate.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f && !started) load(await f.arrayBuffer());
+});
+
+/* On-screen buttons: held while a finger is on them */
+for (const b of document.querySelectorAll('.pad button')) {
+  const i = Number(b.dataset.b);
+  const set = down => { b.classList.toggle('on', down); if (started && Module._web_button) Module._web_button(i, down ? 1 : 0); };
+  b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); set(true); });
+  for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => set(false));
+}
+
+const param = new URLSearchParams(location.search).get('game');
+if (param) {
+  const url = new URL(param, location.href);
+  if (url.protocol === 'http:' || url.protocol === 'https:') {
+    status('Descargando el juego…');
+    fetch(url).then(r => { if (!r.ok) throw new Error('No se pudo descargar el juego (' + r.status + ')'); return r.arrayBuffer(); })
+      .then(buf => load(buf, url.href)).catch(e => status(e.message, true));
+  } else status('Dirección de juego no válida', true);
+}
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>

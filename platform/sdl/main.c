@@ -1,7 +1,8 @@
 /* bp_sim: desktop simulator. Same core, same game folder as the console's microSD.
  *   bp_sim [--game DIR] [--saves DIR] [--scale N] [--mute] [--script FILE]
- * Keys: arrows/WASD move, Enter/E = A, Esc/Backspace = B, Tab/C = C, I = MENU (bag), J = notebook, P = START.
- * Mouse = touch. Built with Emscripten it is the web player: the game folder is preloaded at /game. */
+ * Keys: arrows/WASD move, Enter/E/Z = A, Esc/Backspace/X = B, Tab/C = C, I = MENU (bag), J = notebook, P = START.
+ * Mouse = touch. Built with Emscripten it is the web player: the game folder is at /game (packed in, or unzipped
+ * there by player.html), and the page's on-screen buttons press through web_button(). */
 #include <SDL.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -48,6 +49,17 @@ static void audio_cb(void *user, Uint8 *stream, int len) {
     audio_mix((int16_t *)stream, len / 2); /* SDL holds the device lock during the callback */
 }
 
+#ifdef __EMSCRIPTEN__
+static uint16_t web_held; /* the page's on-screen buttons */
+
+/* button: 0 up, 1 down, 2 left, 3 right, 4 A, 5 B, 6 C, 7 START, 8 MENU (the names btn() takes in Lua) */
+EMSCRIPTEN_KEEPALIVE void web_button(int button, int down) {
+    static const uint16_t bits[] = {ACT_UP, ACT_DOWN, ACT_LEFT, ACT_RIGHT, ACT_OK, ACT_BACK, ACT_NEXT, ACT_PAUSE, ACT_INV};
+    if (button < 0 || button >= (int)(sizeof bits / sizeof bits[0])) return;
+    web_held = down ? web_held | bits[button] : web_held & ~bits[button];
+}
+#endif
+
 static hal_input poll_input(void) {
     SDL_Event e;
     while (SDL_PollEvent(&e))
@@ -58,13 +70,16 @@ static hal_input poll_input(void) {
     if (k[SDL_SCANCODE_DOWN] || k[SDL_SCANCODE_S]) in.held |= ACT_DOWN;
     if (k[SDL_SCANCODE_LEFT] || k[SDL_SCANCODE_A]) in.held |= ACT_LEFT;
     if (k[SDL_SCANCODE_RIGHT] || k[SDL_SCANCODE_D]) in.held |= ACT_RIGHT;
-    if (k[SDL_SCANCODE_RETURN] || k[SDL_SCANCODE_E] || k[SDL_SCANCODE_SPACE]) in.held |= ACT_OK;
-    if (k[SDL_SCANCODE_ESCAPE] || k[SDL_SCANCODE_BACKSPACE]) in.held |= ACT_BACK;
+    if (k[SDL_SCANCODE_RETURN] || k[SDL_SCANCODE_E] || k[SDL_SCANCODE_SPACE] || k[SDL_SCANCODE_Z]) in.held |= ACT_OK;
+    if (k[SDL_SCANCODE_ESCAPE] || k[SDL_SCANCODE_BACKSPACE] || k[SDL_SCANCODE_X]) in.held |= ACT_BACK;
     if (k[SDL_SCANCODE_TAB] || k[SDL_SCANCODE_C]) in.held |= ACT_NEXT;
     if (k[SDL_SCANCODE_I]) in.held |= ACT_INV;
     if (k[SDL_SCANCODE_J]) in.held |= ACT_NOTES;
     if (k[SDL_SCANCODE_P]) in.held |= ACT_PAUSE;
     if (closed) in.held |= ACT_QUIT;
+#ifdef __EMSCRIPTEN__
+    in.held |= web_held;
+#endif
     int mx, my;
     Uint32 b = SDL_GetMouseState(&mx, &my);
     in.touch = (b & SDL_BUTTON_LMASK) != 0;

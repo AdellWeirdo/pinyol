@@ -205,3 +205,14 @@ shot name                        # save the screen to the saves folder (name.ppm
 
 Run it with `bp_headless --game DIR --fresh --script FILE --check-strips`, or name it `tests/<game>.script` next
 to `examples/<game>` and `ctest` runs it.
+
+## Sharing a game
+
+```
+python3 tools/pack_game.py games/mygame -o dist/      # -> dist/mygame.zip
+```
+
+The zip holds the folder `mygame/` with what the console reads (add `--sources` to include `art/` and `art.py`).
+Unzipped into the card's `games/` folder it shows in the console's list. The web player (`player.html`, built with
+Emscripten, see the README) plays it in a browser: `player.html?game=dist/mygame.zip`, or drop the zip on the page.
+Saves made in the browser stay in that browser.
