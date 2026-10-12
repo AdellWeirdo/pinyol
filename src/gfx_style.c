@@ -1,0 +1,173 @@
+/* A game's own look: styled text (outline, shadow, gradient, scale, wave), images turned, scaled and flipped, and
+ * frames cut from the game's own picture (nine-slice). Everything clips to the surface, so it draws the same on the
+ * console's strips as on a whole frame. */
+#include <math.h>
+#include <string.h>
+
+#include "bp.h"
+#include "gfx_px.h"
+
+/* ------------------------------------------------------------------ styled text */
+
+#define PAD 2          /* the ring around a glyph's cell: outline and shadow */
+#define CELL_MAX 64    /* fonts up to 64x64 pixels a glyph */
+#define MAP_W (CELL_MAX + 2 * PAD)
+
+enum { INK = 1, RING, SHADE };
+
+static uint16_t lerp565(uint16_t a, uint16_t b, int i, int n) { /* a at i = 0, b at i = n - 1 */
+    if (n <= 1) return a;
+    int ra = a >> 11, ga = a >> 5 & 63, ba = a & 31, rb = b >> 11, gb = b >> 5 & 63, bb = b & 31;
+    int r = ra + (rb - ra) * i / (n - 1), g = ga + (gb - ga) * i / (n - 1), bl = ba + (bb - ba) * i / (n - 1);
+    return (uint16_t)(r << 11 | g << 5 | bl);
+}
+
+/* One glyph: its ink, outline and shadow worked out on a small map in font pixels, then filled run by run, each font
+ * pixel a scale x scale block. */
+static void glyph(surface *sf, const font *f, int c, int x, int y, const text_style *st) {
+    const int k = st->scale, w = f->w, h = f->h, W = w + 2 * PAD, H = h + 2 * PAD;
+    if (x + (w + PAD) * k <= sf->x0 || x - PAD * k >= sf->x0 + sf->w || y + (h + PAD) * k <= sf->y0 ||
+        y - PAD * k >= sf->y0 + sf->h)
+        return; /* not in this window: most glyphs, most strips */
+    const uint8_t *g = f->bits + (size_t)c * h * f->stride, *b = f->box + 4 * c;
+    if (b[1] <= b[0]) return; /* a space */
+    static uint8_t m[MAP_W * MAP_W];
+    memset(m, 0, (size_t)W * H);
+    for (int j = b[2]; j < b[3]; j++)
+        for (int i = b[0]; i < b[1]; i++)
+            if (g[j * f->stride + (i >> 3)] & (0x80 >> (i & 7))) m[(j + PAD) * W + i + PAD] = INK;
+    if (st->has_outline)
+        for (int j = 1; j < H - 1; j++)
+            for (int i = 1; i < W - 1; i++)
+                if (!m[j * W + i])
+                    for (int d = 0; d < 9; d++)
+                        if (m[(j + d / 3 - 1) * W + i + d % 3 - 1] == INK) {
+                            m[j * W + i] = RING;
+                            break;
+                        }
+    if (st->has_shadow) /* under what is there: the ink and its outline, moved */
+        for (int j = H - 1; j >= 0; j--)
+            for (int i = W - 1; i >= 0; i--) {
+                int sj = j - st->sdy, si = i - st->sdx;
+                if (!m[j * W + i] && sj >= 0 && sj < H && si >= 0 && si < W && m[sj * W + si] && m[sj * W + si] != SHADE)
+                    m[j * W + i] = SHADE;
+            }
+    for (int j = 0; j < H; j++) {
+        int yy = y + (j - PAD) * k;
+        if (yy + k <= sf->y0 || yy >= sf->y0 + sf->h) continue;
+        uint16_t ink = st->gradient ? lerp565(st->color, st->bottom, j < PAD ? 0 : j - PAD, h) : st->color;
+        const uint8_t *row = m + j * W;
+        for (int i = 0; i < W;) {
+            int v = row[i], r = i + 1;
+            if (!v) {
+                i++;
+                continue;
+            }
+            while (r < W && row[r] == v) r++;
+            gfx_fill(sf, x + (i - PAD) * k, yy, (r - i) * k, k, v == INK ? ink : v == RING ? st->outline : st->shadow);
+            i = r;
+        }
+    }
+}
+
+static int jitter(int n, uint32_t t, int amp) { /* the same for a letter for a few frames, then another */
+    uint32_t h = (uint32_t)n * 2654435761u ^ (t / 3) * 40503u;
+    h ^= h >> 15;
+    h *= 2246822519u;
+    h ^= h >> 13;
+    return (int)(h % (2u * amp + 1)) - amp;
+}
+
+int font_draw_styled(surface *sf, const font *f, int x, int y, const char *s, int nbytes, int maxchars,
+                     const text_style *st) {
+    if (!s || !f->bits || f->w > CELL_MAX || f->h > CELL_MAX) return 0;
+    if (nbytes < 0) nbytes = (int)strlen(s);
+    const char *e = s + nbytes;
+    const int k = st->scale < 1 ? 1 : st->scale;
+    text_style one = *st;
+    one.scale = (uint8_t)k;
+    int x0 = x;
+    for (int n = 0; s < e && (maxchars < 0 || n < maxchars); n++) {
+        int c = utf8_cp1252(&s, e);
+        if (c < 0) c = '?';
+        int dx = 0, dy = 0;
+        if (st->wave) dy = (int)lroundf(sinf((float)st->tick * 0.12f + (float)n * 0.7f) * st->wave);
+        if (st->shake) dx = jitter(n, st->tick, st->shake), dy += jitter(n + 977, st->tick, st->shake);
+        glyph(sf, f, c, x + dx, y + dy, &one);
+        x += (f->adv[c] + st->spacing) * k;
+    }
+    return x - x0;
+}
+
+/* ------------------------------------------------------------------ images turned, scaled, flipped */
+
+/* Each pixel of the window the picture may cover is looked up in the picture (nearest), from its centre: a turned
+ * picture has no gaps, at the cost of a little arithmetic per pixel. Fixed point, 16 bits of fraction. */
+void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, float sy, float degrees) {
+    if (frame < 0 || frame >= a->frames) frame = 0;
+    if (!(fabsf(sx) >= 1 / 64.0f && fabsf(sy) >= 1 / 64.0f && isfinite(sx) && isfinite(sy) && isfinite(degrees))) return; /* too small to see; and fixed point stays in range */
+    float r = degrees * 3.14159265f / 180.0f, cs = cosf(r), sn = sinf(r), ax = fabsf(sx), ay = fabsf(sy);
+    float cx = (float)x + a->w * ax / 2, cy = (float)y + a->h * ay / 2; /* turned about its centre */
+    float ex = (fabsf(cs) * a->w * ax + fabsf(sn) * a->h * ay) / 2 + 1, ey = (fabsf(sn) * a->w * ax + fabsf(cs) * a->h * ay) / 2 + 1;
+    const int ox = (int)floorf(cx - ex), oy = (int)floorf(cy - ey); /* the whole picture's corner: the same in every strip */
+    int bx0 = ox, by0 = oy, bx1 = (int)ceilf(cx + ex), by1 = (int)ceilf(cy + ey);
+    if (bx0 < s->x0) bx0 = s->x0;
+    if (by0 < s->y0) by0 = s->y0;
+    if (bx1 > s->x0 + s->w) bx1 = s->x0 + s->w;
+    if (by1 > s->y0 + s->h) by1 = s->y0 + s->h;
+    if (bx0 >= bx1 || by0 >= by1) return;
+    const float F = 65536.0f;
+    /* picture coordinates of a screen point p: u = ((p - c) . (cos, sin)) / sx + w / 2, v = ((p - c) . (-sin, cos)) / sy + h / 2,
+     * worked out at the corner, then stepped in whole fixed-point units: a strip lands on exactly the same pixels */
+    int32_t du_dx = (int32_t)(cs / sx * F), dv_dx = (int32_t)(-sn / sy * F);
+    int32_t du_dy = (int32_t)(sn / sx * F), dv_dy = (int32_t)(cs / sy * F);
+    float px = (float)ox + 0.5f - cx, py = (float)oy + 0.5f - cy;
+    int32_t u_row = (int32_t)(((px * cs + py * sn) / sx + a->w / 2.0f) * F), v_row = (int32_t)(((-px * sn + py * cs) / sy + a->h / 2.0f) * F);
+    u_row += (bx0 - ox) * du_dx + (by0 - oy) * du_dy, v_row += (bx0 - ox) * dv_dx + (by0 - oy) * dv_dy;
+    const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
+    const int32_t wf = a->w << 16, hf = a->h << 16;
+    for (int py2 = by0; py2 < by1; py2++, u_row += du_dy, v_row += dv_dy) {
+        int32_t u = u_row, v = v_row;
+        for (int px2 = bx0; px2 < bx1; px2++, u += du_dx, v += dv_dx) {
+            if (u < 0 || v < 0 || u >= wf || v >= hf) continue;
+            int iu = u >> 16, iv = v >> 16;
+            if (gfx_opaque(a, frame, iu, iv)) *at(s, px2, py2) = stored(s, src[iv * a->w + iu]);
+        }
+    }
+}
+
+/* ------------------------------------------------------------------ frames from the game's picture */
+
+/* Picture rectangle (u, v, pw, ph) at (x, y), each pixel k x k, inside s. */
+static void part(surface *s, const asset *a, int frame, int u, int v, int pw, int ph, int x, int y, int k) {
+    int i0, j0, n = CLIP_X(s, x, pw * k, &i0), m = CLIP_Y(s, y, ph * k, &j0);
+    if (n <= 0 || m <= 0) return;
+    const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
+    for (int j = j0; j < j0 + m; j++) {
+        int sv = v + j / k;
+        for (int i = i0; i < i0 + n; i++) {
+            int su = u + i / k;
+            if (gfx_opaque(a, frame, su, sv)) *at(s, x + i, y + j) = stored(s, src[sv * a->w + su]);
+        }
+    }
+}
+
+/* The picture in thirds: corners once, edges and middle repeated to fill w x h (the last copy cut short). */
+void gfx_nine(surface *s, const asset *a, int frame, int x, int y, int w, int h, int k) {
+    if (frame < 0 || frame >= a->frames) frame = 0;
+    if (k < 1) k = 1;
+    surface in = gfx_clip(s, x, y, w, h);
+    if (in.w <= 0 || in.h <= 0) return;
+    const int tw = a->w / 3, th = a->h / 3, cw = tw * k, ch = th * k;
+    if (tw < 1 || th < 1) return;
+    const int xs[3] = {x, x + cw, x + w - cw}, ys[3] = {y, y + ch, y + h - ch};
+    const int ws[3] = {cw, w - 2 * cw, cw}, hs[3] = {ch, h - 2 * ch, ch};
+    for (int r = 0; r < 3; r++)
+        for (int q = 0; q < 3; q++) {
+            if (ws[q] <= 0 || hs[r] <= 0) continue;
+            surface cell = gfx_clip(&in, xs[q], ys[r], ws[q], hs[r]);
+            if (cell.w <= 0 || cell.h <= 0) continue;
+            for (int yy = ys[r]; yy < ys[r] + hs[r]; yy += th * k)
+                for (int xx = xs[q]; xx < xs[q] + ws[q]; xx += tw * k) part(&cell, a, frame, q * tw, r * th, tw, th, xx, yy, k);
+        }
+}

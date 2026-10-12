@@ -132,6 +132,23 @@ int font_width(const font *f, const char *s, int nbytes);
 int font_draw(surface *sf, const font *f, int x, int y, const char *s, int nbytes, int maxchars,
               uint16_t col);
 int text_wrap(const font *f, const char *s, int max_w, uint16_t *starts, uint16_t *lens, int max_lines);
+
+/* ------------------------------------------------------------------ gfx_style.c: a game's own look */
+typedef struct {
+    uint16_t color, bottom, outline, shadow; /* bottom: the colour at the foot of the letters (a vertical gradient) */
+    bool gradient, has_outline, has_shadow;
+    int8_t sdx, sdy;     /* the shadow's offset in font pixels, -2..2 */
+    uint8_t scale;       /* each font pixel k x k screen pixels */
+    int8_t spacing;      /* font pixels added after each letter */
+    uint8_t wave, shake; /* screen pixels: letters along a moving sine, or jittering */
+    uint32_t tick;       /* when it was drawn: wave and jitter move with it */
+} text_style;
+int font_draw_styled(surface *sf, const font *f, int x, int y, const char *s, int nbytes, int maxchars,
+                     const text_style *st);
+/* The picture scaled (sx, sy; negative flips), turned by degrees about its centre; (x, y) is where its top-left
+ * corner would be unturned. */
+void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, float sy, float degrees);
+void gfx_nine(surface *s, const asset *a, int frame, int x, int y, int w, int h, int k); /* a frame from the picture's thirds */
 int utf8_count(const char *s, int nbytes);
 
 /* ------------------------------------------------------------------ state.c */

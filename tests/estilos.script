@@ -1,0 +1,28 @@
+# Estilos: the four pages draw (fonts of the game's own, styled text, frames, turned pictures); measuring styled
+# text; a font the game does not have is an error
+new
+tick 3
+expect_lua page == 1
+shot fuentes
+expect_lua select(1, textw("ABC", {font = "arcade", scale = 2})) == 2 * select(1, textw("ABC", "arcade"))
+expect_lua select(2, textw("ABC", {font = "arcade", scale = 3})) == 3 * select(2, textw("ABC", "arcade"))
+expect_lua select(1, textw("AB", {font = "arcade", spacing = 2})) == select(1, textw("AB", "arcade")) + 2 * 2
+expect_lua_error text("x", 0, 0, {font = "nofont"})
+expect_lua_error text("x", 0, 0, {font = "../hola"})
+press RIGHT
+tick 90
+expect_lua page == 2
+shot texto
+press RIGHT
+tick 60
+expect_lua page == 3
+shot marcos
+press RIGHT
+tick 30
+expect_lua page == 4
+shot imagenes
+press RIGHT
+expect_lua page == 1
+press LEFT
+expect_lua page == 4
+expect_ok

@@ -1,0 +1,8 @@
+{
+  "id": "estilos",
+  "title": "Estilos",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "np2d examples",
+  "description": "Lo que hace que cada juego se vea suyo: fuentes propias, texto con contorno, sombra, degradado, onda y temblor, marcos sacados de una imagen del juego y dibujos girados y escalados."
+}

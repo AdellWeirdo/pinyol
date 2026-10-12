@@ -12,12 +12,13 @@ games/mygame/
   *.lua          more code, loaded with require("name")
   assets/        indexed tiles, maps, palettes and sprites (tools/png2asset.py)
   audio/         WAV (PCM 16-bit mono at 22,050 Hz) and tracker music (.mod)
-  fonts/         FONT_MAIN.fnt, FONT_BOLD.fnt, FONT_MAIN_L.fnt, FONT_BOLD_L.fnt (copy them from an example)
+  fonts/         FONT_MAIN.fnt, FONT_BOLD.fnt, FONT_MAIN_L.fnt, FONT_BOLD_L.fnt (copy them from an example),
+                 and any of the game's own: fonts/<name>.fnt, used as text(..., {font = "<name>"})
 ```
 
 The examples are the best way in: `examples/plataformas` (a platformer), `naves` (a shoot-'em-up), `carreras`
-(Mode 7 racing), `puzle` (a touch puzzle with synthesised music) and `aldea` (a top-down adventure made in Tiled,
-with dialogue). Each has an
+(Mode 7 racing), `puzle` (a touch puzzle with synthesised music), `aldea` (a top-down adventure made in Tiled,
+with dialogue) and `estilos` (a game's own look: fonts, text styles, frames, turned pictures). Each has an
 `art.py` that draws its art by code and converts it, so you can start from its PNGs in `art/`.
 
 ## The loop
@@ -172,14 +173,50 @@ Drawn over the world, in screen pixels (480×320), every frame in `_draw()`.
 
 | Call | Does |
 |---|---|
-| `text(str, x, y [, colour [, font [, align [, width [, chars]]]]])` | returns its width and height. Fonts: `"main" "bold" "large" "large_bold"`; align `"left" "center" "right"`; `width` wraps it into lines that fit; `chars` shows only the first ones (dialogue typed out letter by letter) |
-| `textw(str [, font])` | width and height |
+| `text(str, x, y [, colour [, font [, align [, width [, chars]]]]])` | returns its width and height. Fonts: `"main" "bold" "large" "large_bold"` or one of the game's own; align `"left" "center" "right"`; `width` wraps it into lines that fit; `chars` shows only the first ones (dialogue typed out letter by letter) |
+| `text(str, x, y, {options})` | the same with a style: see below |
+| `textw(str [, font or {options}])` | width and height |
 | `rect(x, y, w, h, colour)`, `box(x, y, w, h, colour)` | filled, outline |
 | `shade(x, y, w, h)` | darken what is under it |
 | `panel(x, y, w, h)`, `plate(x, y, w, h, colour)` | a card and a small sign, in the game's theme (`game.json` "theme") |
 | `img(id, x, y [, frame [, scale]])` | a direct-colour runtime asset, scale 1 or 2 |
+| `img(id, x, y, {frame, scale, scale_x, scale_y, flip_x, flip_y, angle})` | the same turned (degrees, about its centre), scaled by any amount (negative flips) or flipped; `(x, y)` is where its top-left corner would be unturned |
+| `frame(id, x, y, w, h [, scale [, frame]])` | a box of any size cut from a picture of the game: its thirds are the corners (drawn once), the edges and the middle (repeated). A 24×24 picture gives 8×8 corners; `scale` makes each pixel bigger |
 
 Text is UTF-8 limited to the characters of Windows-1252 (Spanish, French, German... yes; emoji no).
+
+### A game's own look
+
+Every game starts with the same four fonts and the same panels. What makes one look like itself:
+
+- **Its own fonts.** Any number, `fonts/<name>.fnt`, loaded the first time `text` or `textw` asks for them (16 at
+  most). `tools/font2fnt.py` makes them from a TTF or OTF (a pixel font is drawn at its own pixel size, found for
+  you), a BDF, a PNG sheet of glyphs (16 a row, as GB Studio's), or one of the fonts that come with np2d
+  (`font2fnt.py --list`: Press Start 2P, Silkscreen, VT323, Jersey, Micro 5, Jacquard, Bytesized, DotGothic16...,
+  all SIL Open Font License, in `third_party/fonts`). Replacing the four `FONT_*.fnt` changes the game's
+  everyday text too.
+- **Text styles**, as `text`'s fourth argument:
+
+  | Option | Default | |
+  |---|---|---|
+  | `color` | `0xFFFFFF` | |
+  | `font`, `align`, `width`, `chars` | | as the arguments above |
+  | `outline` | none | a colour: a ring around each letter |
+  | `shadow`, `shadow_x`, `shadow_y` | none, 1, 1 | a colour, and its offset in font pixels (-2..2) |
+  | `gradient` | none | the colour at the foot of the letters; `color` is the top |
+  | `scale` | 1 | each pixel of the font 1..8 screen pixels: a small pixel font as a title |
+  | `spacing` | 0 | font pixels added after each letter |
+  | `wave`, `shake` | 0 | pixels: the letters move along a sine, or jitter |
+
+  ```lua
+  text("GAME OVER", 240, 120, {font = "arcade", scale = 3, align = "center", color = 0xFFE070,
+                               gradient = 0xFF5020, outline = 0x301010, shadow = 0x000000})
+  ```
+
+  A styled text costs more to draw than a plain one (each letter is worked out with its ring and shadow): fine for
+  titles, labels and dialogue, not for hundreds of them a frame. Styles need fonts up to 64×64 pixels a glyph.
+- **Frames from its own art**, with `frame()`: a wooden sign, a neon screen, a parchment, each a 24×24 PNG.
+- **Pictures that turn and scale** with `img(..., {angle = a, scale = s})`, at the screen's full resolution.
 
 ## Sound
 

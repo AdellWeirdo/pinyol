@@ -1281,8 +1281,10 @@ when the player turns on "Texto grande". All four are required, and the validato
 | 8 | 256 | advance width of each glyph, indexed by cp1252 code |
 | 264 | 256 × h × stride | glyph bitmaps, glyph after glyph, rows of `stride = (w + 7) / 8` bytes, MSB first, 1 = ink |
 
-The file size must be exactly `264 + 256 × h × stride`. `tools/ttf2fnt.py` converts a pixel TTF:
-`ttf2fnt.py in.ttf out.fnt --px 11 --scale 2 [--weight 700] [--spacing 1]`.
+The file size must be exactly `264 + 256 × h × stride`. `tools/font2fnt.py` makes one from a TTF/OTF, a BDF, a PNG
+sheet or a font of `third_party/fonts`: `font2fnt.py in.ttf out.fnt [--px 11] [--scale 2] [--weight 700]
+[--spacing 1]` (`ttf2fnt.py`, the old name, still works). np2d@2 games may also have any fonts of their own,
+`fonts/<name>.fnt` in the same format ([lua.md](lua.md#a-games-own-look)).
 
 ---
 

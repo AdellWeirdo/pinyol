@@ -66,7 +66,8 @@ uv run tools/new_game.py games/mygame --title "My Game"
   uv run tools/png2asset.py hero_walk.png games/mygame/assets PJ_WALK --frames 16 --ms 125 --anchor 12,29
   ```
 - **Sound**: WAV, PCM 16-bit mono at 22,050 Hz.
-- **Fonts**: `tools/ttf2fnt.py` turns a pixel TTF into the engine's FNT format.
+- **Fonts**: `tools/font2fnt.py` turns a TTF, OTF, BDF or PNG sheet into the engine's FNT format; twelve free pixel
+  fonts come with it (`third_party/fonts`), so each game can have its own letters.
 - **Tests**: a script plays the game with real input and checks flags, zones and screens. See [tests/hola.script](tests/hola.script); run it with `./build/bp_headless --game DIR --fresh --script FILE`, and `tools/record.sh` records the run as a video.
 
 ## A game in its own repo
@@ -136,8 +137,8 @@ firmware/        the console: ESP-IDF project, builds src/ unchanged
 examples/        games as they go on the microSD: five in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
 tests/           test scripts for the examples, and the PPU's own tests
-tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, ttf2fnt.py, ...
-third_party/     cJSON, Lua 5.4, pocketmod, the Pixelify Sans font
+tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, font2fnt.py, ...
+third_party/     cJSON, Lua 5.4, pocketmod, the Pixelify Sans font and a library of pixel fonts (fonts/)
 ```
 
 The world is 240×160 logical pixels drawn at 2× into a 480×320 frame; text and UI use the full resolution. Logic runs at 60 ticks per second on every platform. On the console the frame goes to the panel in 32-row strips drawn straight from the game while the previous strip is sent, in step with the panel's refresh; a Lua game's picture is drawn by both cores. How it got fast enough, measured: [docs/measurements.md](docs/measurements.md).
@@ -153,4 +154,4 @@ np2d was written for two games, *Bajo Pueblo* and *Geumgye*, and then opened up 
 
 ## License
 
-np2d is MIT licensed ([LICENSE](LICENSE)). It includes [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT) and the [Pixelify Sans](third_party/pixelify/OFL.txt) font (SIL Open Font License 1.1).
+np2d is MIT licensed ([LICENSE](LICENSE)). It includes [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT) the [Pixelify Sans](third_party/pixelify/OFL.txt) font and the pixel fonts in [third_party/fonts](third_party/fonts/README.md) (all SIL Open Font License 1.1).
