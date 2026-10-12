@@ -18,7 +18,7 @@
 
 #define MEM_QUOTA_KB 4096          /* game.json "lua_memory_kb" can ask for up to MEM_MAX_KB */
 #define MEM_MAX_KB 6144
-#define CALL_BUDGET 50000000L      /* VM instructions per _init/_update/_draw call before it is stopped */
+#define CALL_BUDGET 20000000L      /* VM instructions per _init/_update/_draw call before it is stopped */
 #define MAX_SHEETS 96
 #define MAX_TILEMAPS 24
 #define OV_MAX 768                 /* overlay commands per frame */
@@ -69,7 +69,12 @@ static cJSON *load_meta(const char *id) {
     return json_file(rel);
 }
 
+static bool safe_name(const char *s);
+/* An asset ID a game asks for: a file name inside the game folder, and short enough to be kept whole. */
+static bool asset_name(const char *id) { return safe_name(id) && strlen(id) < sizeof(sheets[0].id); }
+
 static int sheet_get(const char *id) { /* handle (1-based), 0 if it cannot be loaded */
+    if (!asset_name(id)) return 0;
     for (int i = 0; i < nsheets; i++)
         if (!strcmp(sheets[i].id, id)) return i + 1;
     if (nsheets == MAX_SHEETS) return 0;
@@ -82,7 +87,9 @@ static int sheet_get(const char *id) { /* handle (1-based), 0 if it cannot be lo
         s->w = jint(meta, "w", 0), s->h = jint(meta, "h", 0), s->frames = jint(meta, "frames", 1);
         long len = 0;
         s->idx = load_bytes(id, "idx", &len);
-        if (!s->idx || s->w <= 0 || s->h <= 0 || s->w > 255 || s->h > 255 || len != (long)s->w * s->h * s->frames) {
+        /* the sizes come from the game: bounded first, then checked in 64 bits (long is 32 on the console) */
+        if (!s->idx || s->w <= 0 || s->h <= 0 || s->w > 255 || s->h > 255 || s->frames <= 0 || s->frames > 1024 ||
+            (int64_t)len != (int64_t)s->w * s->h * s->frames) {
             hal_log("sheet %s: bad indexed pixels", id);
             free(s->idx);
             cJSON_Delete(meta);
@@ -101,6 +108,7 @@ static int sheet_get(const char *id) { /* handle (1-based), 0 if it cannot be lo
 }
 
 static tilemap *tilemap_get(const char *id) {
+    if (!asset_name(id)) return NULL;
     for (int i = 0; i < ntilemaps; i++)
         if (!strcmp(tilemaps[i].id, id)) return &tilemaps[i];
     if (ntilemaps == MAX_TILEMAPS) return NULL;
@@ -114,8 +122,9 @@ static tilemap *tilemap_get(const char *id) {
     long tl = 0, ml = 0;
     t->tiles = load_bytes(id, "tiles", &tl);
     t->map = load_bytes(id, "map", &ml);
-    if (!t->tiles || !t->map || t->ntiles <= 0 || tl != t->ntiles * 64L || t->map_w <= 0 || t->map_h <= 0 ||
-        ml != 2L * t->map_w * t->map_h) {
+    if (!t->tiles || !t->map || t->ntiles <= 0 || t->ntiles > 1024 || (int64_t)tl != t->ntiles * 64LL ||
+        t->map_w <= 0 || t->map_h <= 0 || t->map_w > 1024 || t->map_h > 1024 ||
+        (int64_t)ml != 2LL * t->map_w * t->map_h) { /* tile numbers are 10 bits; maps up to 1024x1024 tiles */
         hal_log("tilemap %s: missing or the wrong size", id);
         free(t->tiles);
         free(t->map);
@@ -132,6 +141,7 @@ static tilemap *tilemap_get(const char *id) {
 }
 
 static int palette_load(const char *id, uint16_t *pal, int offset) { /* entries loaded, 0 on failure */
+    if (!asset_name(id)) return 0;
     long len = 0;
     uint8_t *raw = load_bytes(id, "pal", &len);
     if (!raw || len < 2) {
@@ -228,7 +238,15 @@ static void *alloc(void *ud, void *p, size_t osize, size_t nsize) {
 
 static void hook(lua_State *L, lua_Debug *ar) {
     (void)ar;
-    if ((budget -= 1000) < 0) luaL_error(L, "the script ran too long without returning (an endless loop?)");
+    if ((budget -= 1000) >= 0) return;
+    /* Over: from now on every instruction fails, so a pcall in a loop cannot catch the error and carry on. */
+    lua_sethook(L, hook, LUA_MASKCOUNT, 1);
+    luaL_error(L, "the script ran too long without returning (an endless loop?)");
+}
+
+static void arm(void) { /* a fresh budget for one call from the engine */
+    budget = CALL_BUDGET;
+    lua_sethook(Ls, hook, LUA_MASKCOUNT, 1000);
 }
 
 static int msgh(lua_State *L) { /* the error with where it happened */
@@ -256,7 +274,7 @@ static bool call(const char *fn, int nargs) { /* args are on the stack; true if 
     lua_insert(Ls, -1 - nargs);
     lua_pushcfunction(Ls, msgh);
     lua_insert(Ls, -2 - nargs);
-    budget = CALL_BUDGET;
+    arm();
     int base = lua_gettop(Ls) - nargs - 1;
     int rc = lua_pcall(Ls, nargs, 0, base);
     lua_remove(Ls, base); /* msgh */
@@ -458,12 +476,13 @@ static int l_bg(lua_State *L) {
     b->prio = (uint8_t)(opt_int(L, 2, "prio", n) & 3);
     b->wrap = opt_bool(L, 2, "wrap", true);
     b->mosaic = opt_bool(L, 2, "mosaic", false);
-    b->scroll_x = (int)opt_int(L, 2, "x", 0), b->scroll_y = (int)opt_int(L, 2, "y", 0);
+    b->scroll_x = (int)fin((lua_Number)opt_int(L, 2, "x", 0)); /* within +-NUM_MAX, as scroll() keeps them */
+    b->scroll_y = (int)fin((lua_Number)opt_int(L, 2, "y", 0));
     b->pa = b->pd = 256;
     if (!strcmp(mode, "off")) return 0;
     if (!strcmp(mode, "bitmap")) {
         const char *id = opt_str(L, 2, "image");
-        asset *a = id ? gfx_asset(id) : NULL;
+        asset *a = id && asset_name(id) ? gfx_asset(id) : NULL;
         if (!a || a->missing) return luaL_error(L, "bg %d: no image '%s'", n, id ? id : "");
         b->mode = BG_BITMAP, b->bitmap = a->pixels, b->bitmap_mask = a->mask, b->bitmap_w = a->w, b->bitmap_h = a->h;
         return 0;
@@ -785,6 +804,7 @@ static int l_text(lua_State *L) {
     size_t n = 0;
     const char *s = luaL_checklstring(L, 1, &n);
     int x = num(L, 2), y = num(L, 3), f = font_arg(L, 5), wrap = optnum(L, 7, 0), chars = optnum(L, 8, 1 << 30);
+    if (wrap > 2 * SCREEN_W) wrap = 2 * SCREEN_W; /* wider is no use, and wrapping costs grow with the line's length */
     static const char *const aligns[] = {"left", "center", "right", NULL};
     int al = luaL_checkoption(L, 6, "left", aligns), lh = font_named(f)->h;
     uint16_t colour = to565(luaL_optinteger(L, 4, 0xFFFFFF));
@@ -929,21 +949,47 @@ static int l_quit(lua_State *L) {
 static cJSON *store;
 #define STORE_MAX_BYTES 65536 /* the whole file: a save, not a database */
 #define STORE_MAX_DEPTH 16
+#define STORE_MAX_VALUES 20000 /* in one store(): shared subtables would otherwise multiply (t = {u, u, u}, ...) */
+static int store_values;
 
 static void store_path(char *p, size_t n) { snprintf(p, n, "%s/v2.json", G.save_dir); }
 
+static cJSON *store_read(const char *path) {
+    char *txt = read_file(path, NULL);
+    cJSON *j = txt ? cJSON_Parse(txt) : NULL;
+    free(txt);
+    if (!cJSON_IsObject(j)) cJSON_Delete(j), j = NULL;
+    return j;
+}
+
 static cJSON *store_get(void) {
     if (store) return store;
-    char p[384];
+    char p[384], tmp[400];
     store_path(p, sizeof p);
-    char *txt = read_file(p, NULL);
-    store = txt ? cJSON_Parse(txt) : NULL;
-    free(txt);
-    if (!cJSON_IsObject(store)) cJSON_Delete(store), store = cJSON_CreateObject();
+    snprintf(tmp, sizeof tmp, "%s.tmp", p);
+    if (!(store = store_read(p)) && !(store = store_read(tmp))) store = cJSON_CreateObject(); /* tmp: cut mid-save */
     return store;
 }
 
+/* The saves to disk without ever leaving a half-written file: a new copy first, then it takes the old one's name. */
+static bool store_write(const char *txt) {
+    char p[384], tmp[400];
+    store_path(p, sizeof p);
+    snprintf(tmp, sizeof tmp, "%s.tmp", p);
+    FILE *f = fopen(tmp, "wb");
+    if (!f) return false;
+    bool ok = fputs(txt, f) >= 0;
+    ok = (fclose(f) == 0) && ok;
+    if (!ok) return remove(tmp), false;
+    remove(p); /* FAT cannot rename onto an existing file; if the power goes now, store_get reads tmp */
+    return rename(tmp, p) == 0;
+}
+
 static cJSON *to_json(lua_State *L, int i, int depth) { /* the value at stack index i; NULL with a message pushed */
+    if (++store_values > STORE_MAX_VALUES) {
+        lua_pushfstring(L, "store: more than %d values in one go", STORE_MAX_VALUES);
+        return NULL;
+    }
     switch (lua_type(L, i)) {
     case LUA_TNUMBER: return cJSON_CreateNumber(lua_tonumber(L, i));
     case LUA_TSTRING: return cJSON_CreateString(lua_tostring(L, i));
@@ -1009,6 +1055,7 @@ static void from_json(lua_State *L, const cJSON *v, int depth) {
 static int l_store(lua_State *L) {
     const char *k = luaL_checkstring(L, 1);
     cJSON *s = store_get(), *v = NULL;
+    store_values = 0;
     if (lua_isnoneornil(L, 2)) cJSON_DeleteItemFromObjectCaseSensitive(s, k);
     else if (!(v = to_json(L, 2, 0))) return lua_error(L);
     char *txt = NULL;
@@ -1024,11 +1071,9 @@ static int l_store(lua_State *L) {
         }
         cJSON_Delete(old);
     } else txt = cJSON_PrintUnformatted(s);
-    char p[384];
-    store_path(p, sizeof p);
-    FILE *f = txt ? fopen(p, "wb") : NULL;
-    if (f) fputs(txt, f), fclose(f);
+    bool ok = txt && store_write(txt);
     cJSON_free(txt);
+    if (!ok) return luaL_error(L, "store: the saves could not be written (card full or read-only?)");
     return 0;
 }
 
@@ -1117,7 +1162,7 @@ bool v2_load(void) {
         return false;
     }
     lua_pushcfunction(Ls, msgh);
-    budget = CALL_BUDGET;
+    arm();
     int rc;
     {
         char path[384];
@@ -1192,7 +1237,7 @@ bool v2_run(const char *code, bool expr, char *msg, int n) {
     if (!Ls) return snprintf(msg, (size_t)n, "no Lua state"), false;
     char buf[512];
     snprintf(buf, sizeof buf, expr ? "return (%s)" : "%s", code);
-    budget = CALL_BUDGET;
+    arm();
     if (luaL_loadbufferx(Ls, buf, strlen(buf), "=script", "t") != LUA_OK || lua_pcall(Ls, 0, 1, 0) != LUA_OK) {
         snprintf(msg, (size_t)n, "%s", lua_tostring(Ls, -1));
         lua_settop(Ls, 0);

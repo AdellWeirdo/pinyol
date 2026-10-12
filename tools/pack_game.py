@@ -41,7 +41,8 @@ def pack(folder: Path, out_dir: Path, sources: bool) -> Path:
     gid = game_id(folder)
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / f"{gid}.zip"
-    files = sorted(p for p in folder.rglob("*") if p.is_file() and not SKIP & set(p.relative_to(folder).parts))
+    files = sorted(p for p in folder.rglob("*")  # links are left out: a zip holds the game, not what it points to
+                   if p.is_file() and not p.is_symlink() and not SKIP & set(p.relative_to(folder).parts))
     n = 0
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
         for p in files:

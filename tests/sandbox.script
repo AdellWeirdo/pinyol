@@ -10,6 +10,8 @@ expect_lua load(string.char(27) .. "Lua") == nil
 expect_lua load("return 1 + 1")() == 2
 expect_lua_error require("../../etc/passwd")
 expect_lua_error spin()
+expect_lua_error escape()
+expect_lua helper_value() == 42
 expect_lua_error hog()
 lua store("best", 1234)
 expect_lua stored("best") == 1234
@@ -42,4 +44,7 @@ expect_lua_error store("big", string.rep("x", 70000))
 expect_lua stored("big") == nil and stored("loop") == nil and stored("inv").gold == 25
 lua store("inv", nil)
 expect_lua stored("inv", 7) == 7
+lua u = {1, 2, 3} for d = 1, 15 do u = {u, u, u} end
+expect_lua_error store("fan", u)
+expect_lua stored("fan") == nil and stored("best") == 1234
 expect_ok

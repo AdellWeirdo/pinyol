@@ -188,13 +188,30 @@ def render(m: dict, data: list[int]) -> Image.Image:
     return img
 
 
+LUA_KEYWORDS = {"and", "break", "do", "else", "elseif", "end", "false", "for", "function", "goto", "if", "in", "local",
+                "nil", "not", "or", "repeat", "return", "then", "true", "until", "while"}
+
+
+def lua_str(s: str) -> str:
+    """A Lua string literal: quotes, backslashes and control characters escaped as \\ddd; UTF-8 kept as it is."""
+    return '"' + "".join(f"\\{ord(c):03d}" if c in '"\\' or ord(c) < 32 or ord(c) == 127 else c for c in s) + '"'
+
+
+def lua_key(k) -> str:
+    if isinstance(k, int):
+        return f"[{k}]"
+    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", k) and k not in LUA_KEYWORDS:
+        return k
+    return f"[{lua_str(k)}]"
+
+
 def lua(v, indent: str = "") -> str:
     if isinstance(v, bool):
         return "true" if v else "false"
     if isinstance(v, (int, float)):
         return repr(int(v)) if float(v).is_integer() else repr(float(v))
     if isinstance(v, str):
-        return json.dumps(v, ensure_ascii=False)  # a JSON string is a valid Lua string
+        return lua_str(v)
     if isinstance(v, list):
         if all(isinstance(x, int) for x in v):
             rows = [", ".join(str(x) for x in v[k:k + 32]) for k in range(0, len(v), 32)]
@@ -203,8 +220,7 @@ def lua(v, indent: str = "") -> str:
     if isinstance(v, dict):
         if not v:
             return "{}"
-        keys = [f"[{k}]" if isinstance(k, int) else k if re.fullmatch(r"[A-Za-z_]\w*", k) else f"[{json.dumps(k)}]"
-                for k in v]
+        keys = [lua_key(k) for k in v]
         return "{\n" + "".join(f"{indent}  {k} = {lua(x, indent + '  ')},\n" for k, x in zip(keys, v.values())) + indent + "}"
     raise TypeError(type(v))
 
@@ -235,7 +251,7 @@ def main() -> None:
             render(m, data).save(png)
             cmd = [sys.executable, str(HERE / "png2asset.py"), str(png), str(assets), aid, "--tiles", "--palette", a.palette]
             subprocess.run(cmd + (["--affine"] if a.affine else []), check=True)
-            layers[re.sub(r"\W", "_", name)] = {"asset": aid, "data": [g & GID for g in data]}
+            layers[re.sub(r"[^A-Za-z0-9_]", "_", name)] = {"asset": aid, "data": [g & GID for g in data]}
     tiles = {ts.firstgid + k: v for ts in m["tilesets"] for k, v in ts.tile_props.items()}
     module = {"width": m["width"], "height": m["height"], "tile_w": m["tw"], "tile_h": m["th"], "layers": layers,
               "tiles": tiles, "objects": m["objects"], "props": m["props"]}

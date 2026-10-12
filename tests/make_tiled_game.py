@@ -37,7 +37,7 @@ ts.save(out / "maps" / "tiles.png")
 H = 0x80000000
 (out / "maps" / "level1.tmx").write_text(f"""<?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" orientation="orthogonal" width="4" height="3" tilewidth="16" tileheight="16" infinite="0">
- <properties><property name="music" value="MUS_1"/></properties>
+ <properties><property name="music" value="MUS_1"/><property name="end" value="say &quot;hi&quot;&#10;bye"/></properties>
  <tileset firstgid="1" source="tiles.tsx"/>
  <layer id="1" name="ground" width="4" height="3">
   <data encoding="csv">

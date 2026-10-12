@@ -292,7 +292,7 @@ static void _pocketmod_next_line(pocketmod_context *c)
 
         /* Set sample */
         if (sample) {
-            if (sample <= POCKETMOD_MAX_SAMPLES) {
+            if (sample <= c->num_samples) { /* np2d: a 15-sample module has no sample 16..31 (NULL data) */
                 unsigned char *sample_data = POCKETMOD_SAMPLE(c, sample);
                 ch->sample = sample;
                 ch->finetune = sample_data[2] & 0x0f;
@@ -748,7 +748,7 @@ int pocketmod_init(pocketmod_context *c, const void *data, int size, int rate)
 
     /* Check that each pattern in the order is within file bounds */
     for (i = 0; i < c->length; i++) {
-        if (header_bytes + 256 * c->num_channels * c->order[i] > size) {
+        if (header_bytes + 256 * c->num_channels * (c->order[i] + 1) > size) { /* np2d: its end, not its start */
             return 0; /* Reading this pattern would be a buffer over-read! */
         }
     }

@@ -3,6 +3,7 @@ new
 tick 2
 expect_ok
 expect_lua L1.width == 4 and L1.height == 3 and L1.tile_w == 16 and L1.props.music == "MUS_1"
+expect_lua L1.props["end"] == 'say "hi"\nbye'
 expect_lua L1.layers.ground.asset == "LEVEL1_GROUND" and L1.layers.ground.data[1] == 1 and L1.layers.ground.data[4] == 4
 expect_lua L1.tiles[2].solid == true and L1.tiles[1] == nil
 expect_lua L1.objects[1].name == "start" and L1.objects[1].type == "spawn" and L1.objects[1].x == 20

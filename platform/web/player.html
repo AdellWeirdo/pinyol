@@ -88,15 +88,35 @@
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
-const status = (text, error) => { $('status').textContent = text || ''; $('status').classList.toggle('error', !!error); };
+let pageMessage = false; /* the page's own message (an error, a step): the engine's loading notes must not erase it */
+const status = (text, error) => {
+  pageMessage = !!text;
+  $('status').textContent = text || '';
+  $('status').classList.toggle('error', !!error);
+};
 let runtimeReady, gameFiles = null, started = false;
 const ready = new Promise(r => { runtimeReady = r; });
 
 var Module = {
   canvas: $('canvas'),
-  setStatus: t => { if (!started) status(t); },
+  setStatus: t => { if (!started && !pageMessage) $('status').textContent = t || ''; },
   onRuntimeInitialized: () => runtimeReady(),
 };
+
+/* A deflated entry, never past the size it declares: a zip bomb's tiny entry that inflates to gigabytes stops here. */
+async function inflate(data, size, name) {
+  const reader = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader();
+  const out = new Uint8Array(size);
+  let n = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (n + value.length > size) { reader.cancel(); throw new Error('El .zip está dañado (' + name + ')'); }
+    out.set(value, n);
+    n += value.length;
+  }
+  return n === size ? out : out.subarray(0, n);
+}
 
 /* A .zip, read in the browser: stored or deflated entries, with limits (a game is small; a bomb is not). */
 const LIMITS = { files: 4000, bytes: 96 << 20 };
@@ -124,8 +144,7 @@ async function unzip(buf) {
     const data = u8.subarray(start, start + csize);
     let bytes;
     if (method === 0) bytes = data.slice();
-    else if (method === 8)
-      bytes = new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+    else if (method === 8) bytes = await inflate(data, size, name);
     else throw new Error('Compresión no soportada en ' + name);
     if (bytes.length !== size) throw new Error('El .zip está dañado (' + name + ')');
     out.set(name, bytes);
@@ -182,10 +201,15 @@ async function start() {
   status('Cargando el motor…');
   await ready;
   const FS = Module.FS;
-  for (const [name, bytes] of gameFiles.files) {
-    const path = '/game/' + name;
-    FS.mkdirTree(path.slice(0, path.lastIndexOf('/')));
-    FS.writeFile(path, bytes);
+  try {
+    for (const [name, bytes] of gameFiles.files) {
+      const path = '/game/' + name;
+      FS.mkdirTree(path.slice(0, path.lastIndexOf('/')));
+      FS.writeFile(path, bytes);
+    }
+  } catch (e) { /* a file and a folder with the same name, say */
+    status('El juego no se puede abrir: sus archivos no encajan', true);
+    return;
   }
   FS.mkdirTree('/persist'); /* the game's saves (store, stored) live in the browser's IndexedDB */
   FS.mount(FS.filesystems.IDBFS, {}, '/persist');

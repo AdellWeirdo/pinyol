@@ -4,6 +4,7 @@ frames = 0
 ticks_seen = 0
 
 function spin() while true do end end
+function escape() while true do pcall(function() while true do end end) end end -- pcall must not save it
 function hog() local t = {} for i = 1, 10000000 do t[i] = i end end
 function helper_value() return helper.answer end
 

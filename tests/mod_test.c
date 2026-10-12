@@ -61,6 +61,20 @@ int main(void) {
     for (int i = AUDIO_HZ / 4; i < AUDIO_HZ / 2; i++) tail += buf[i] < 0 ? -buf[i] : buf[i];
     CHECK(tail == 0 && !mod_playing());
 
+    /* two crafted modules: a 15-sample one whose note names sample 16, and an order pointing past the file */
+    static uint8_t old[600 + 1024 + 64];
+    memset(old, 0, sizeof old);
+    memcpy(old, "old mod", 7);
+    old[470] = 1;                                               /* one position, pattern 0 */
+    old[600] = 0x11, old[601] = 0xAC, old[602] = 0x00;          /* sample 16, period 428 */
+    put(old, sizeof old);
+    if (mod_play(PATH, 1)) run(AUDIO_HZ / 4);
+    static uint8_t far[1084 + 1024 * 131];
+    memcpy(far, mod, (size_t)n);
+    far[950] = 2, far[952] = 0, far[953] = 130;
+    put(far, 1084 + 1024 * 130 + 512);
+    CHECK(!mod_play(PATH, 1)); /* pattern 130 would end past the file */
+
     put((const uint8_t *)"not a module", 12);
     CHECK(!mod_play(PATH, 1));
 
