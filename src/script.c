@@ -277,6 +277,24 @@ static bool run_line(char *cmd, char *arg) {
         hal_log("expected error: %s", msg);
         return true;
     }
+    if (!strcmp(cmd, "link_from")) { /* np2d@2: link_from <hex id> <json>: a message as if that console sent it */
+        char *json = arg;
+        uint32_t from = (uint32_t)strtoul(arg, &json, 16);
+        while (*json == ' ') json++;
+        const char *id = jstr(G.game, "id");
+        if (!link_active() && !link_start(id && *id ? id : G.game_dir)) FAIL("link_from: no link");
+        link_inject(from, json);
+        return true;
+    }
+    if (!strcmp(cmd, "expect_link_sent")) { /* np2d@2: one of the last 8 messages this console sent contains it */
+        if (!link_sent_lately(arg)) FAIL("expect_link_sent %s: not in the last messages sent", arg);
+        return true;
+    }
+    if (!strcmp(cmd, "wait_ms")) { /* real time passing: two runs playing each other over BP_LINK=udp */
+        uint32_t t0 = hal_micros(), ms = (uint32_t)atoi(arg);
+        while (hal_micros() - t0 < ms * 1000) {}
+        return true;
+    }
     if (!strcmp(cmd, "expect_ok")) { /* np2d@2: the script has not stopped on an error */
         if (v2_error()) FAIL("the game's script failed: %s", v2_error());
         return true;

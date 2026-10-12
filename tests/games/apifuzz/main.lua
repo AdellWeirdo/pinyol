@@ -20,6 +20,7 @@ local VALUES = {0, 1, -1, 2, 3, 4, 7, 15, 16, 31, 127, 128, 255, 256, 1023, 1024
   "CANV", "CANV2", CLEAR, {1, 2, 3, 4, 5, 6}, {0, 0, 1e9, 1e9, -1e9, 5, 0 / 0, 1}, {1, 2, 3}, {"a", "b", "c", "d"}}
 local fns = {}
 for _, n in ipairs(NAMES) do fns[#fns + 1] = _G[n] end
+for _, f in ipairs({link.send, link.recv, link.peers, link.id}) do fns[#fns + 1] = f end
 calls, failures = 0, 0
 local ship
 

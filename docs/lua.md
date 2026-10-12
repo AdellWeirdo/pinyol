@@ -256,6 +256,30 @@ if pget(px, py + 4, "LAND") then    -- standing on something
 `noise(x [, y [, z]])` gives smooth noise between about -1 and 1 (Perlin's), the same everywhere: hills along `x`,
 clouds over `x, y`, the same clouds moving with time as `z`.
 
+## Playing together (link)
+
+Consoles near each other running the same game can send each other messages: no router, no internet. On the
+console they go by ESP-NOW, radio to radio (tens of metres); in the desktop simulator, between simulators on the
+same computer or network; in the browser player, between tabs of the same browser. Only consoles running the same
+game (the same `id` in game.json) hear each other.
+
+| Call | Returns |
+|---|---|
+| `link.send(value [, to])` | `true`, or `false` when this console has used up its share of the air for now (20 messages a second). `value` is a number, string, boolean or a table of them, as `store`, up to 220 bytes as JSON; `to` is one console's id, or everyone |
+| `link.recv()` | `from, value` of the oldest message waiting, or `nil`: `for from, m in link.recv do ... end` |
+| `link.peers()` | the ids of the consoles playing this game nearby (heard in the last 3 seconds), smallest first: every console sees the same order, so they can agree who is player 1 or who sits next to whom |
+| `link.id()` | this console's id (0 where there is no radio) |
+
+The radio comes on the first time a game uses `link` and goes off when it ends. Messages can be lost on the way
+and can come late: send what the state is, often (where you are, what you drew this moment), rather than one
+change once. What comes from another console may be anything: check its shape before using it
+(`type(m) == "table" and type(m.x) == "number"`). `examples/juntos` is a shared whiteboard and a ball passed from
+screen to screen. Its test plays the other consoles with `link_from <id> <json>` and checks what was sent with
+`expect_link_sent <text>`.
+
+A game runs the same on every console: Lua's numbers are 32-bit everywhere and `pairs()` walks a table in the same
+order, so consoles that get the same messages can compute the same thing.
+
 ## Sound
 
 | Call | Does |

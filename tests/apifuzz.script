@@ -1,5 +1,10 @@
 # The whole Lua API with odd arguments (tests/games/apifuzz): nothing crashes, the game keeps running
 new
-tick 600
+tick 300
+link_from 42 {"x":1e309,"s":[[[[[[[[[[[[[[[[[[[[[[1]]]]]]]]]]]]]]]]]]]]],"y":"\u0000"}
+link_from 43 {"a":
+link_from 7fffffff [1,2,3,true,false,null,"x"]
+link_from 0 {"from":"nobody"}
+tick 300
 expect_ok
 expect_lua calls > 40000 and failures > 1000

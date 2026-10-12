@@ -59,6 +59,23 @@ void audio_mix(int16_t *out, int n); /* AUDIO_HZ mono; caller holds the audio lo
 int script_run(const char *path, void (*frame)(void)); /* 0 = all expectations passed */
 int content_validate(void);                            /* number of errors, each logged */
 
+/* ------------------------------------------------------------------ link.c: consoles playing together */
+#define LINK_PAYLOAD 220 /* bytes of JSON a message carries */
+#define LINK_PEERS 16    /* consoles heard at once */
+#define LINK_QUEUE 64    /* messages waiting for the game; more and the oldest go */
+typedef struct { uint32_t from; uint16_t len; char data[LINK_PAYLOAD + 1]; } link_msg;
+enum { LINK_SENT, LINK_BUSY, LINK_TOO_BIG, LINK_OFF };
+bool link_start(const char *game_id); /* the radio on for this game; false if the platform has none */
+void link_stop(void);
+bool link_active(void);
+void link_tick(uint32_t ticks);       /* each game tick: what came in, hellos, consoles gone quiet */
+int link_send(const char *data, int len, uint32_t to); /* LINK_*: to 0 is everyone */
+bool link_recv(link_msg *m);          /* the oldest message waiting */
+int link_peers(uint32_t *ids, int max);
+uint32_t link_id(void);
+void link_inject(uint32_t from, const char *json); /* tests: a message as if another console had sent it */
+bool link_sent_lately(const char *text);           /* tests: one of the last 8 sent contains the text */
+
 /* ------------------------------------------------------------------ lua_game.c: np2d@2 games (docs/lua.md) */
 bool v2_load(void);                   /* a fresh Lua state running main.lua and _init(); false on an error */
 void v2_free(void);

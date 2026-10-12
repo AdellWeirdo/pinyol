@@ -1,0 +1,37 @@
+# Juntos: link between consoles, with the others played by the test (link_from). A stroke drawn here is sent; one
+# from another console is drawn; the ball leaves the screen for the next console and comes back from it.
+new
+tick 3
+expect_lua game == 1 and link.id() ~= 0 and rawlen(link.peers()) == 0
+lua cursor.x, cursor.y = 100, 100
+hold A+RIGHT 14
+expect_lua pget(120, 100, "BOARD") ~= nil
+expect_link_sent "s":[1
+# another console, 0x42: its cursor and a stroke of its own, in its colour
+link_from 42 {"x":300,"y":200,"s":[200,250,260,250]}
+tick 2
+expect_lua rawlen(link.peers()) == 1 and link.peers()[1] == 0x42 and others[0x42] and others[0x42].x == 300
+expect_lua pget(230, 250, "BOARD") ~= nil
+# what another console sends is not trusted: wrong shapes are ignored, the game goes on
+link_from 43 {"x":"a","s":"no"}
+link_from 44 not json at all
+link_from 45 [1,2,3]
+tick 2
+expect_ok
+shot pizarra
+# B clears the board here and on the others
+press B
+expect_lua pget(120, 100, "BOARD") == nil
+expect_link_sent "clear":true
+# the ball: out on the right, it goes to the next console in the row (by id), and comes back from it
+press C
+expect_lua game == 2
+lua ball.x, ball.vx = SCREEN_W - 2, 3
+tick 2
+expect_lua ball == nil
+expect_link_sent "b":[
+link_from 42 {"b":[150,-3,1]}
+tick 2
+expect_lua ball ~= nil and ball.vx == -3 and ball.x > SCREEN_W - 20
+shot pelota
+expect_ok

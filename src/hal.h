@@ -37,3 +37,12 @@ void hal_parallel(void (*fn)(int part, void *ctx), void *ctx);
 uint32_t hal_micros(void); /* a microsecond clock, for timing (wraps after ~71 minutes) */
 /* realloc for big or script data, in memory that may be slower (PSRAM on the console); free() releases it. */
 void *hal_realloc_slow(void *p, size_t n);
+
+/* A radio to other consoles nearby, for link.c: packets of up to HAL_LINK_MAX bytes sent to every console in range,
+ * which may be lost (ESP-NOW on the console, UDP on a desktop's network, a BroadcastChannel between browser tabs). */
+#define HAL_LINK_MAX 250
+bool hal_link_open(void);                    /* the radio on; false: this platform has none */
+void hal_link_close(void);
+bool hal_link_send(const uint8_t *p, int n); /* to everyone; false if it could not go */
+int hal_link_recv(uint8_t *p, int max);      /* one packet that came in (bytes), or 0 */
+uint32_t hal_link_id(void);                  /* this console's id: not 0, the same while it runs */

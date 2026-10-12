@@ -45,6 +45,47 @@ uint32_t hal_micros(void) { return (uint32_t)(SDL_GetPerformanceCounter() * 1000
 void hal_audio_lock(void) { if (audio_dev) SDL_LockAudioDevice(audio_dev); }
 void hal_audio_unlock(void) { if (audio_dev) SDL_UnlockAudioDevice(audio_dev); }
 
+/* The link between consoles (src/link.c). Desktop: UDP multicast on the local network (platform/link_udp.c), so
+ * simulators hear each other. Browser: a BroadcastChannel, so tabs of the same browser do. */
+#ifdef __EMSCRIPTEN__
+EM_JS(int, web_link_open, (void), {
+    if (typeof BroadcastChannel === "undefined") return 0;
+    if (!Module.np2dLink) {
+        Module.np2dLink = new BroadcastChannel("np2d-link");
+        Module.np2dLinkIn = [];
+        Module.np2dLink.onmessage = (e) => { if (Module.np2dLinkIn.length < 256) Module.np2dLinkIn.push(e.data); };
+    }
+    return 1;
+});
+EM_JS(void, web_link_send, (const uint8_t *p, int n), { Module.np2dLink.postMessage(HEAPU8.slice(p, p + n)); });
+EM_JS(int, web_link_recv, (uint8_t *p, int max), {
+    const q = Module.np2dLinkIn;
+    while (q && q.length) {
+        const d = q.shift();
+        if (!(d instanceof Uint8Array) || d.length > max) continue;
+        HEAPU8.set(d, p);
+        return d.length;
+    }
+    return 0;
+});
+EM_JS(uint32_t, web_link_id, (void), {
+    if (!Module.np2dLinkId) Module.np2dLinkId = (Math.random() * 0x7FFFFFFF | 0) + 1;
+    return Module.np2dLinkId;
+});
+bool hal_link_open(void) { return web_link_open(); }
+void hal_link_close(void) {}
+bool hal_link_send(const uint8_t *p, int n) { return web_link_send(p, n), true; }
+int hal_link_recv(uint8_t *p, int max) { return web_link_recv(p, max); }
+uint32_t hal_link_id(void) { return web_link_id(); }
+#else
+#include "../link_udp.h"
+bool hal_link_open(void) { return link_udp_open(); }
+void hal_link_close(void) { link_udp_close(); }
+bool hal_link_send(const uint8_t *p, int n) { return link_udp_send(p, n); }
+int hal_link_recv(uint8_t *p, int max) { return link_udp_recv(p, max); }
+uint32_t hal_link_id(void) { return link_udp_id(); }
+#endif
+
 static bool muted; /* the web page's mute button: the game plays on, silent (its own fades are left alone) */
 
 static void audio_cb(void *user, Uint8 *stream, int len) {

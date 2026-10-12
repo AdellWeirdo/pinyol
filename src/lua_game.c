@@ -801,7 +801,6 @@ static cJSON *store;
 #define STORE_MAX_BYTES 65536 /* the whole file: a save, not a database */
 #define STORE_MAX_DEPTH 16
 #define STORE_MAX_VALUES 20000 /* in one store(): shared subtables would otherwise multiply (t = {u, u, u}, ...) */
-static int store_values;
 
 static void store_path(char *p, size_t n) { snprintf(p, n, "%s/v2.json", G.save_dir); }
 
@@ -836,32 +835,42 @@ static bool store_write(const char *txt) {
     return rename(tmp, p) == 0;
 }
 
-static cJSON *to_json(lua_State *L, int i, int depth) { /* the value at stack index i; NULL with a message pushed */
-    if (++store_values > STORE_MAX_VALUES) {
-        lua_pushfstring(L, "store: more than %d values in one go", STORE_MAX_VALUES);
+/* A game's value as JSON (store, link.send): numbers, strings, booleans and tables of them, lists or string keys.
+ * NULL with a message pushed ("who: ..."). *count counts the values against STORE_MAX_VALUES: tables shared inside
+ * one value would otherwise multiply. */
+cJSON *json_from_lua(lua_State *L, int i, int depth, const char *who, int *count) {
+    if (++*count > STORE_MAX_VALUES) {
+        lua_pushfstring(L, "%s: more than %d values in one go", who, STORE_MAX_VALUES);
         return NULL;
     }
     switch (lua_type(L, i)) {
-    case LUA_TNUMBER: return cJSON_CreateNumber(lua_tonumber(L, i));
+    case LUA_TNUMBER: {
+        lua_Number d = lua_tonumber(L, i);
+        if (d != d || d - d != 0) { /* NaN or an infinity: JSON has no such numbers */
+            lua_pushfstring(L, "%s: a number that is not finite (nan or inf) cannot be kept", who);
+            return NULL;
+        }
+        return cJSON_CreateNumber(d);
+    }
     case LUA_TSTRING: return cJSON_CreateString(lua_tostring(L, i));
     case LUA_TBOOLEAN: return cJSON_CreateBool(lua_toboolean(L, i));
     case LUA_TTABLE: break;
-    default: lua_pushfstring(L, "store: a %s cannot be saved", luaL_typename(L, i)); return NULL;
+    default: lua_pushfstring(L, "%s: a %s cannot be kept", who, luaL_typename(L, i)); return NULL;
     }
     if (depth > STORE_MAX_DEPTH || !lua_checkstack(L, 4)) {
-        lua_pushstring(L, "store: tables nested too deep (or one inside itself)");
+        lua_pushfstring(L, "%s: tables nested too deep (or one inside itself)", who);
         return NULL;
     }
     i = lua_absindex(L, i);
-    lua_Integer n = (lua_Integer)lua_rawlen(L, i), count = 0;
+    lua_Integer n = (lua_Integer)lua_rawlen(L, i), keys = 0;
     lua_pushnil(L);
-    while (lua_next(L, i)) count++, lua_pop(L, 1);
-    bool list = count == n; /* keys 1..n and nothing else */
+    while (lua_next(L, i)) keys++, lua_pop(L, 1);
+    bool list = keys == n; /* keys 1..n and nothing else */
     cJSON *t = list ? cJSON_CreateArray() : cJSON_CreateObject();
     if (list)
         for (lua_Integer k = 1; k <= n; k++) {
             lua_rawgeti(L, i, k);
-            cJSON *v = to_json(L, -1, depth + 1);
+            cJSON *v = json_from_lua(L, -1, depth + 1, who, count);
             if (!v) return cJSON_Delete(t), lua_remove(L, -2), NULL; /* keep the message, drop the element */
             lua_pop(L, 1);
             cJSON_AddItemToArray(t, v);
@@ -872,10 +881,10 @@ static cJSON *to_json(lua_State *L, int i, int depth) { /* the value at stack in
             if (lua_type(L, -2) != LUA_TSTRING) {
                 lua_pop(L, 2);
                 cJSON_Delete(t);
-                lua_pushstring(L, "store: a table's keys must be strings, or it must be a list");
+                lua_pushfstring(L, "%s: a table's keys must be strings, or it must be a list", who);
                 return NULL;
             }
-            cJSON *v = to_json(L, -1, depth + 1);
+            cJSON *v = json_from_lua(L, -1, depth + 1, who, count);
             if (!v) return cJSON_Delete(t), lua_remove(L, -2), lua_remove(L, -2), NULL;
             cJSON_AddItemToObject(t, lua_tostring(L, -2), v);
             lua_pop(L, 1);
@@ -884,7 +893,7 @@ static cJSON *to_json(lua_State *L, int i, int depth) { /* the value at stack in
     return t;
 }
 
-static void from_json(lua_State *L, const cJSON *v, int depth) {
+void json_to_lua(lua_State *L, const cJSON *v, int depth) { /* the value pushed; nil past STORE_MAX_DEPTH */
     if (depth > STORE_MAX_DEPTH || !lua_checkstack(L, 3)) lua_pushnil(L);
     else if (cJSON_IsNumber(v)) {
         double d = v->valuedouble;
@@ -896,7 +905,7 @@ static void from_json(lua_State *L, const cJSON *v, int depth) {
         lua_newtable(L);
         int k = 1;
         for (const cJSON *e = v->child; e; e = e->next) {
-            from_json(L, e, depth + 1);
+            json_to_lua(L, e, depth + 1);
             if (cJSON_IsArray(v)) lua_rawseti(L, -2, k++);
             else lua_setfield(L, -2, e->string ? e->string : "");
         }
@@ -906,9 +915,9 @@ static void from_json(lua_State *L, const cJSON *v, int depth) {
 static int l_store(lua_State *L) {
     const char *k = luaL_checkstring(L, 1);
     cJSON *s = store_get(), *v = NULL;
-    store_values = 0;
+    int count = 0;
     if (lua_isnoneornil(L, 2)) cJSON_DeleteItemFromObjectCaseSensitive(s, k);
-    else if (!(v = to_json(L, 2, 0))) return lua_error(L);
+    else if (!(v = json_from_lua(L, 2, 0, "store", &count))) return lua_error(L);
     char *txt = NULL;
     if (v) {
         cJSON *old = cJSON_DetachItemFromObjectCaseSensitive(s, k);
@@ -930,7 +939,7 @@ static int l_store(lua_State *L) {
 
 static int l_stored(lua_State *L) {
     cJSON *v = jget(store_get(), luaL_checkstring(L, 1));
-    if (v) from_json(L, v, 0);
+    if (v) json_to_lua(L, v, 0);
     else lua_pushvalue(L, 2); /* the default */
     return 1;
 }
@@ -951,6 +960,7 @@ static void api(lua_State *L) {
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);
     draw_register(L); /* text, shapes, pictures, canvases: lua_draw.c */
+    link_register(L); /* consoles playing together: lua_link.c */
     static const struct { const char *n; int v; } K[] = {
         {"BG0", PPU_BG0}, {"BG1", PPU_BG1}, {"BG2", PPU_BG2}, {"BG3", PPU_BG3}, {"OBJ", PPU_OBJ}, {"BACK", PPU_BACK},
         {"FX", PPU_FX}, {"ALL", 0x3F}, {"FLIP_X", F_FLIPX}, {"FLIP_Y", F_FLIPY}, {"BLEND", F_BLEND},
@@ -963,6 +973,7 @@ static void api(lua_State *L) {
 /* ------------------------------------------------------------------ lifecycle */
 
 void v2_free(void) {
+    link_stop();
     if (Ls) lua_close(Ls);
     Ls = NULL;
     assets_free();
@@ -1043,6 +1054,7 @@ void v2_tick(void) {
     if (G.in.held & ACT_QUIT) G.quit = true;
     menu_held = (G.in.held & ACT_INV) ? menu_held + 1 : 0;
     if (menu_held == 2 * TICK_HZ && hal_can_switch_game()) hal_switch_game(); /* MENU held 2 s: back to the list */
+    link_tick((uint32_t)G.ticks); /* what other consoles sent, before the game looks */
     uint32_t t = hal_micros();
     call("_update", 0);
     us_update = hal_micros() - t;

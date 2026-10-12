@@ -50,6 +50,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [aldea](examples/aldea) | a top-down adventure: a village drawn in Tiled, people with typed-out dialogue, tree tops you walk behind |
 | [estilos](examples/estilos) | a game's own look: fonts from the library, outlined and wavy text, frames cut from a picture, turned pictures |
 | [inventos](examples/inventos) | toys of no genre, from code alone: painting, land that breaks, generative trails, 3D triangles, a split screen |
+| [juntos](examples/juntos) | consoles playing together over the air (ESP-NOW, no router): a shared whiteboard, a ball passed from screen to screen |
 
 ### As an adventure made of data
 
@@ -136,7 +137,7 @@ platform/sdl/    desktop simulator, and the web players when built with Emscript
 platform/null/   bp_headless: validator and test runner without a window
 platform/web/    the web pages around the players
 firmware/        the console: ESP-IDF project, builds src/ unchanged
-examples/        games as they go on the microSD: seven in Lua, hola as data
+examples/        games as they go on the microSD: eight in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
 tests/           test scripts for the examples, and the PPU's own tests
 tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, font2fnt.py, ...

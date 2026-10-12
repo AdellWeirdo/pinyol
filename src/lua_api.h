@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "bp.h"
+#include "cJSON.h"
 #include "lauxlib.h"
 #include "lua.h"
 
@@ -70,3 +71,10 @@ void draw_overlay(surface *s);    /* the list, onto s (a window of the screen or
 bool draw_covers_screen(void);    /* the list starts with a full-screen opaque picture: the world need not be drawn */
 void draw_free(void);             /* the game's fonts, when its Lua state goes */
 void draw_flush(void);            /* after each call into the game: the masks of the canvases it drew on */
+
+/* lua_game.c: a game's values as JSON and back (store, link) */
+cJSON *json_from_lua(lua_State *L, int i, int depth, const char *who, int *count);
+void json_to_lua(lua_State *L, const cJSON *v, int depth);
+
+/* lua_link.c: link.send, link.recv, link.peers, link.id */
+void link_register(lua_State *L);
