@@ -18,7 +18,8 @@ games/mygame/
 
 The examples are the best way in: `examples/plataformas` (a platformer), `naves` (a shoot-'em-up), `carreras`
 (Mode 7 racing), `puzle` (a touch puzzle with synthesised music), `aldea` (a top-down adventure made in Tiled,
-with dialogue) and `estilos` (a game's own look: fonts, text styles, frames, turned pictures). Each has an
+with dialogue), `estilos` (a game's own look: fonts, text styles, frames, turned pictures) and `inventos` (toys of
+no genre, drawn with nothing but code: painting, land that breaks, generative trails, 3D, a split screen). Each has an
 `art.py` that draws its art by code and converts it, so you can start from its PNGs in `art/`.
 
 ## The loop
@@ -217,6 +218,43 @@ Every game starts with the same four fonts and the same panels. What makes one l
   titles, labels and dialogue, not for hundreds of them a frame. Styles need fonts up to 64×64 pixels a glyph.
 - **Frames from its own art**, with `frame()`: a wooden sign, a neon screen, a parchment, each a 24×24 PNG.
 - **Pictures that turn and scale** with `img(..., {angle = a, scale = s})`, at the screen's full resolution.
+
+## Drawing anything
+
+For games no template has thought of: free drawing at the screen's full resolution, and canvases, pictures the game
+makes and changes while it runs. Colours are `0xRRGGBB`; `CLEAR` is see-through (it erases, on a canvas).
+
+| Call | Does |
+|---|---|
+| `pset(x, y [, colour])` | one pixel |
+| `line(x0, y0, x1, y1 [, colour])` | a line |
+| `circ(x, y, r [, colour [, filled]])` | a circle, filled unless `filled` is `false` |
+| `tri(x0, y0, x1, y1, x2, y2 [, colour [, filled]])` | a triangle: the piece of 3D, of shapes, of light cones |
+| `poly({x0, y0, x1, y1, ...} [, colour [, filled]])` | a polygon of up to 64 corners (one that crosses itself has holes) |
+| `cls([colour])` | clears: the screen to black, a canvas to see-through (or to the colour) |
+| `camera([x, y])` | everything drawn after it moves by -x, -y: a world bigger than the screen; `camera()` back |
+| `clip([x, y, w, h])` | only that rectangle is drawn on: split screens, windows, masks; `clip()` everywhere again |
+| `canvas(id, w, h)` | a canvas, up to 1024×1024, see-through; again with the same size, cleared |
+| `canvas(id, picture)` | a canvas that starts as a copy of a picture of the game (land drawn by hand, to be broken) |
+| `target(id)`, `target()` | from now on draw on that canvas, at once; then on the screen again. Each target starts with no camera and no clip, and every `_draw` starts on the screen |
+| `pget(x, y [, picture])` | the colour of a pixel of a canvas (the target, or the one named) or any picture; `nil` where it is see-through or outside: collisions with anything drawn |
+| `imgsize(picture)` | its width, height and frames, or `nil` |
+
+Everything else draws on a canvas too: `text`, `rect`, `img`, `frame`, `shade`... A canvas is shown like any
+picture, with `img`, `frame`, or as a background layer (`bg(n, {image = "CANVAS"})`); what it holds when the frame
+is drawn is what is seen. A game's canvases share 3 MB (a 480×320 one takes 300 KB). Drawing `0xFF00FF` on a canvas
+gives a colour one step from it: that exact colour is how a canvas keeps its see-through pixels.
+
+```lua
+canvas("LAND", 240, 160)            -- in _init
+target("LAND")
+circ(x, y, 14, CLEAR)               -- a bomb: a hole in the land
+target()
+if pget(px, py + 4, "LAND") then    -- standing on something
+```
+
+`noise(x [, y [, z]])` gives smooth noise between about -1 and 1 (Perlin's), the same everywhere: hills along `x`,
+clouds over `x, y`, the same clouds moving with time as `z`.
 
 ## Sound
 

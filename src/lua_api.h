@@ -69,3 +69,4 @@ void draw_frame_begin(void);      /* before _draw: a new list */
 void draw_overlay(surface *s);    /* the list, onto s (a window of the screen or all of it) */
 bool draw_covers_screen(void);    /* the list starts with a full-screen opaque picture: the world need not be drawn */
 void draw_free(void);             /* the game's fonts, when its Lua state goes */
+void draw_flush(void);            /* after each call into the game: the masks of the canvases it drew on */

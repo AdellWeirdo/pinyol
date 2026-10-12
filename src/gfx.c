@@ -12,6 +12,7 @@ static asset assets[MAX_ASSETS];
 static int16_t slot[SLOTS]; /* index into assets + 1; 0 = empty */
 static uint16_t oom_pixel = 0xF81F; /* stand-in if even a placeholder cannot be allocated */
 static int nassets;
+static size_t canvas_px; /* all the canvases' pixels: CANVAS_MAX_PX at most */
 static char forced[16][32];
 static int nforced;
 
@@ -22,6 +23,7 @@ void gfx_reset(void) {
     }
     nassets = 0;
     nforced = 0;
+    canvas_px = 0;
     memset(slot, 0, sizeof slot);
 }
 
@@ -98,14 +100,20 @@ static bool load_asset(asset *a) {
     return true;
 }
 
+static unsigned slot_of(const char *key) { /* its slot, or the empty one where it would go */
+    unsigned h = 5381;
+    for (const char *c = key; *c; c++) h = h * 33 ^ (unsigned char)*c;
+    for (h &= SLOTS - 1; slot[h]; h = (h + 1) & (SLOTS - 1))
+        if (!strcmp(assets[slot[h] - 1].id, key)) break;
+    return h;
+}
+
 static asset *lookup(const char *id, bool quiet) {
     static asset none;
     char key[32];
     snprintf(key, sizeof key, "%s", id ? id : ""); /* compare truncated, so long ids still hit the cache */
-    unsigned h = 5381;
-    for (const char *c = key; *c; c++) h = h * 33 ^ (unsigned char)*c;
-    for (h &= SLOTS - 1; slot[h]; h = (h + 1) & (SLOTS - 1))
-        if (!strcmp(assets[slot[h] - 1].id, key)) return &assets[slot[h] - 1];
+    unsigned h = slot_of(key);
+    if (slot[h]) return &assets[slot[h] - 1];
     if (nassets == MAX_ASSETS) {
         if (!none.pixels) placeholder(&none, 16, 16, 1);
         return &none;
@@ -122,6 +130,51 @@ static asset *lookup(const char *id, bool quiet) {
 }
 
 asset *gfx_asset(const char *id) { return lookup(id, false); }
+
+asset *gfx_find(const char *id) {
+    char key[32];
+    snprintf(key, sizeof key, "%s", id ? id : "");
+    unsigned h = slot_of(key);
+    return slot[h] ? &assets[slot[h] - 1] : NULL;
+}
+
+const char *gfx_canvas(const char *id, int w, int h, const asset *from, asset **out) {
+    if (from) w = from->w, h = from->h;
+    if (w < 1 || h < 1 || w > 1024 || h > 1024) return "a canvas is 1 to 1024 pixels a side";
+    char key[32];
+    snprintf(key, sizeof key, "%s", id);
+    unsigned hs = slot_of(key);
+    asset *a = slot[hs] ? &assets[slot[hs] - 1] : NULL;
+    if (a && !a->canvas) return "that name is one of the game's pictures";
+    if (a && (a->w != w || a->h != h)) return "that canvas exists with another size";
+    int stride = (w + 7) / 8;
+    if (!a) {
+        if (canvas_px + (size_t)w * h > CANVAS_MAX_PX) return "no room for it: 3 MB of canvases in all";
+        if (nassets == MAX_ASSETS) return "too many pictures";
+        uint16_t *px = malloc((size_t)w * h * 2);
+        uint8_t *mask = malloc((size_t)stride * h);
+        if (!px || !mask) {
+            free(px), free(mask);
+            return "out of memory";
+        }
+        slot[hs] = (int16_t)(nassets + 1);
+        a = &assets[nassets++];
+        memset(a, 0, sizeof *a);
+        snprintf(a->id, sizeof a->id, "%s", key);
+        a->w = w, a->h = h, a->frames = 1, a->ax = w / 2, a->ay = h - 1, a->pixels = px, a->mask = mask, a->canvas = true;
+        canvas_px += (size_t)w * h;
+    }
+    for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++) {
+            uint16_t v = from ? from->pixels[y * w + x] : CANVAS_KEY;
+            if (from && v == CANVAS_KEY) v ^= 1;
+            a->pixels[y * w + x] = from && gfx_opaque(from, 0, x, y) ? v : CANVAS_KEY;
+        }
+    memset(a->mask, 0, (size_t)stride * h);
+    if (from) gfx_canvas_mask(a, 0, 0, w, h);
+    *out = a;
+    return NULL;
+}
 asset *gfx_asset_opt(const char *id) { return lookup(id, true); } /* a sprite a game may leave out: no log */
 
 bool gfx_opaque(const asset *a, int frame, int u, int v) {

@@ -95,6 +95,7 @@ typedef struct {
     uint16_t *pixels; /* frames * w * h */
     uint8_t *mask;    /* frames * stride * h, MSB first, 1 = opaque; NULL = opaque */
     bool missing;
+    bool canvas;      /* made by the game while it runs (gfx_canvas): its pixels change */
 } asset;
 
 typedef struct {
@@ -149,6 +150,18 @@ int font_draw_styled(surface *sf, const font *f, int x, int y, const char *s, in
  * corner would be unturned. */
 void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, float sy, float degrees);
 void gfx_nine(surface *s, const asset *a, int frame, int x, int y, int w, int h, int k); /* a frame from the picture's thirds */
+
+/* ------------------------------------------------------------------ gfx_draw.c: free drawing and canvases */
+#define GFX_POLY_MAX 64              /* corners of a polygon */
+#define CANVAS_KEY 0xF81F            /* a canvas's see-through pixels; a game drawing this colour gets 0xF81E */
+#define CANVAS_MAX_PX (1536 * 1024) /* pixels of all a game's canvases together: 3 MB */
+void gfx_line(surface *s, int x0, int y0, int x1, int y1, uint16_t c);
+void gfx_circ(surface *s, int cx, int cy, int r, uint16_t c, bool fill);
+void gfx_poly(surface *s, const int16_t *xy, int n, uint16_t c, bool fill); /* xy: x0, y0, x1, y1, ... */
+void gfx_canvas_mask(asset *a, int x, int y, int w, int h); /* after drawing on a canvas: its mask, there */
+asset *gfx_find(const char *id); /* a picture already in memory, or NULL; nothing is loaded */
+/* A canvas w x h (or a copy of from), see-through; one of that name and size is cleared instead. NULL, or why not. */
+const char *gfx_canvas(const char *id, int w, int h, const asset *from, asset **out);
 int utf8_count(const char *s, int nbytes);
 
 /* ------------------------------------------------------------------ state.c */

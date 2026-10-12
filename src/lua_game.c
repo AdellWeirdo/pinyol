@@ -226,6 +226,7 @@ static bool call(const char *fn, int nargs) { /* args are on the stack; true if 
     int base = lua_gettop(Ls) - nargs - 1;
     int rc = lua_pcall(Ls, nargs, 0, base);
     lua_remove(Ls, base); /* msgh */
+    draw_flush();         /* the canvases it drew on, ready to be shown */
     if (rc != LUA_OK) {
         fail(fn, lua_tostring(Ls, -1));
         lua_pop(Ls, 1);
@@ -741,6 +742,46 @@ static int l_note(lua_State *L) { /* note("C4") -> 261.63 Hz */
     return 1;
 }
 
+/* noise(x [, y [, z]]) -> about -1..1: Ken Perlin's improved gradient noise, smooth from one place to the next and
+ * the same on every machine (its shuffle is made from a fixed seed). For landscapes, clouds, wobbles. */
+static uint8_t perm[512];
+static bool perm_made;
+
+static float fade(float t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+static float lerp(float t, float a, float b) { return a + t * (b - a); }
+static float grad(int h, float x, float y, float z) {
+    h &= 15;
+    float u = h < 8 ? x : y, v = h < 4 ? y : (h == 12 || h == 14) ? x : z;
+    return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
+}
+
+static int l_noise(lua_State *L) {
+    if (!perm_made) { /* once: 0..255 shuffled by a fixed LCG, twice over */
+        for (int i = 0; i < 256; i++) perm[i] = (uint8_t)i;
+        uint32_t r = 2463534242u;
+        for (int i = 255; i > 0; i--) {
+            r = r * 1664525u + 1013904223u;
+            int j = (int)((r >> 8) % (uint32_t)(i + 1));
+            uint8_t t = perm[i];
+            perm[i] = perm[j], perm[j] = t;
+        }
+        for (int i = 0; i < 256; i++) perm[256 + i] = perm[i];
+        perm_made = true;
+    }
+    float x = fin(luaL_checknumber(L, 1)), y = fin(luaL_optnumber(L, 2, 0)), z = fin(luaL_optnumber(L, 3, 0));
+    float fx = floorf(x), fy = floorf(y), fz = floorf(z);
+    int X = (int)fx & 255, Y = (int)fy & 255, Z = (int)fz & 255;
+    x -= fx, y -= fy, z -= fz;
+    float u = fade(x), v = fade(y), w = fade(z);
+    int A = perm[X] + Y, AA = perm[A] + Z, AB = perm[A + 1] + Z, B = perm[X + 1] + Y, BA = perm[B] + Z, BB = perm[B + 1] + Z;
+    float n = lerp(w, lerp(v, lerp(u, grad(perm[AA], x, y, z), grad(perm[BA], x - 1, y, z)),
+                           lerp(u, grad(perm[AB], x, y - 1, z), grad(perm[BB], x - 1, y - 1, z))),
+                   lerp(v, lerp(u, grad(perm[AA + 1], x, y, z - 1), grad(perm[BA + 1], x - 1, y, z - 1)),
+                        lerp(u, grad(perm[AB + 1], x, y - 1, z - 1), grad(perm[BB + 1], x - 1, y - 1, z - 1))));
+    lua_pushnumber(L, n);
+    return 1;
+}
+
 static int l_perf(lua_State *L) { /* perf() -> ms of the last _update, _draw, picture, and KB of script memory */
     lua_pushnumber(L, us_update / 1000.0f), lua_pushnumber(L, us_draw / 1000.0f), lua_pushnumber(L, us_ppu / 1000.0f);
     lua_pushnumber(L, mem_used / 1024.0f);
@@ -904,7 +945,7 @@ static void api(lua_State *L) {
         {"spr_off", l_spr_off}, {"spr_clear", l_spr_clear}, {"prio", l_prio}, {"bank", l_bank}, {"spr_mat", l_spr_mat},
         {"mat", l_mat}, {"show", l_show}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off},
         {"window", l_window}, {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow},
-        {"mosaic", l_mosaic}, {"sfx", l_sfx}, {"music", l_music}, {"tone", l_tone}, {"note", l_note},
+        {"mosaic", l_mosaic}, {"noise", l_noise}, {"sfx", l_sfx}, {"music", l_music}, {"tone", l_tone}, {"note", l_note},
         {"quit", l_quit}, {"perf", l_perf}, {"store", l_store}, {"stored", l_stored}, {"load", l_load}, {"log", l_log},
         {"print", l_log}, {"require", l_require}, {NULL, NULL}};
     lua_pushglobaltable(L);
@@ -1047,7 +1088,9 @@ bool v2_run(const char *code, bool expr, char *msg, int n) {
     char buf[512];
     snprintf(buf, sizeof buf, expr ? "return (%s)" : "%s", code);
     arm();
-    if (luaL_loadbufferx(Ls, buf, strlen(buf), "=script", "t") != LUA_OK || lua_pcall(Ls, 0, 1, 0) != LUA_OK) {
+    bool ran = luaL_loadbufferx(Ls, buf, strlen(buf), "=script", "t") == LUA_OK && lua_pcall(Ls, 0, 1, 0) == LUA_OK;
+    draw_flush();
+    if (!ran) {
         snprintf(msg, (size_t)n, "%s", lua_tostring(Ls, -1));
         lua_settop(Ls, 0);
         return false;

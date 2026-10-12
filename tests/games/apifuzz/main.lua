@@ -5,7 +5,8 @@ local NAMES = {"btn", "btnp", "touch", "t", "ticks", "rgb", "pal", "palette", "b
   "rot", "mode7", "project", "mget", "mset", "mapsize", "line_scroll", "line_backdrop", "line_window", "line_off",
   "sheet", "spr", "spr_off", "spr_clear", "prio", "bank", "spr_mat", "mat", "show", "blend", "fade", "fx_off",
   "window", "window_off", "window_out", "objwindow", "mosaic", "text", "textw", "rect", "box", "shade", "panel",
-  "plate", "img", "frame", "sfx", "tone", "note", "perf"}
+  "plate", "img", "frame", "sfx", "tone", "note", "perf", "pset", "pget", "line", "circ", "tri", "poly", "cls", "canvas",
+  "target", "camera", "clip", "imgsize", "noise"}
 local VALUES = {0, 1, -1, 2, 3, 4, 7, 15, 16, 31, 127, 128, 255, 256, 1023, 1024, 32767, 65535, 1e9, -1e9, 0.5, -0.5,
   0 / 0, 1 / 0, -1 / 0, 2 ^ 31, -(2 ^ 31), 2 ^ 53, 0x7FFFFFFF, -0x7FFFFFFF - 1, "", "x", "STARS", "PLANET", "SHIP",
   "../x", "/etc", "C4", "light", "dark", "affine", "tiles", "bitmap", "off", true, false, {}, {map = "STARS"},
@@ -15,7 +16,8 @@ local VALUES = {0, 1, -1, 2, 3, 4, 7, 15, 16, 31, 127, 128, 255, 256, 1023, 1024
   spacing = -1e9, wave = 1e9, shake = 0 / 0, shadow_x = 1 / 0, width = 1e9, chars = -5},
   {font = "nofont"}, {font = "../x"}, {font = {}}, {align = "middle"}, {scale = 0.0001, angle = 0 / 0},
   {scale = 1e9, angle = 1e9, flip_x = true, flip_y = 1}, {scale_x = -16, scale_y = 1 / 0, frame = 1e9},
-  {scale = 3, angle = 45}, {font = "arcade", scale = 8, outline = 1, shadow = 1, wave = 32, shake = 16}}
+  {scale = 3, angle = 45}, {font = "arcade", scale = 8, outline = 1, shadow = 1, wave = 32, shake = 16},
+  "CANV", "CANV2", CLEAR, {1, 2, 3, 4, 5, 6}, {0, 0, 1e9, 1e9, -1e9, 5, 0 / 0, 1}, {1, 2, 3}, {"a", "b", "c", "d"}}
 local fns = {}
 for _, n in ipairs(NAMES) do fns[#fns + 1] = _G[n] end
 calls, failures = 0, 0
@@ -38,6 +40,8 @@ local function storm(n)
 end
 
 function _init()
+  canvas("CANV", 64, 48)
+  canvas("CANV2", "STAR")
   palette("OBJ", true)
   ship = sheet("SHIP")
   bg(3, {map = "STARS"})

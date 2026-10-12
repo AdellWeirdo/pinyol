@@ -1,0 +1,44 @@
+# Inventos: a canvas painted on, land carved see-through and read back (pget), trails on a canvas, triangles in
+# 3D, a split screen by camera and clip; and the canvas API's limits
+new
+tick 3
+expect_lua toy == 1 and pget(100, 100, "PAPER") == nil
+lua brush.x, brush.y = 100, 100
+hold A 10
+expect_lua pget(100, 100, "PAPER") ~= nil and pget(100 + 20, 100, "PAPER") == nil
+expect_lua select(1, imgsize("PAPER")) == SCREEN_W and select(2, imgsize("PAPER")) == SCREEN_H
+shot pintar
+# the land: solid at the bottom; a CLEAR circle makes a hole there
+press C
+expect_lua toy == 2 and pget(120, 159, "LAND") ~= nil
+lua target("LAND") circ(120, 159, 5, CLEAR) target()
+expect_lua pget(120, 159, "LAND") == nil and pget(130, 159, "LAND") ~= nil
+# clip and camera work on a canvas too
+lua target("LAND") clip(0, 0, 10, 10) circ(60, 150, 4, CLEAR) clip() camera(-100, 0) circ(30, 150, 3, CLEAR) target()
+expect_lua pget(60, 150, "LAND") ~= nil and pget(130, 150, "LAND") == nil
+tick 60
+press A
+tick 20
+shot terreno
+press C
+tick 120
+expect_lua toy == 3
+shot estela
+press C
+tick 30
+expect_lua toy == 4
+shot tresde
+press C
+hold RIGHT 30
+expect_lua toy == 5 and p1.x > 150
+shot dos
+# limits
+expect_lua_error canvas("X", 0, 10)
+expect_lua_error canvas("X", 2000, 10)
+expect_lua_error canvas("PAPER", 10, 10)
+expect_lua_error canvas("../x", 1, 1)
+expect_lua_error canvas("Y", "NOPICTURE")
+expect_lua_error target("NOCANVAS")
+expect_lua_error for i = 1, 40 do canvas("BIG" .. i, 1024, 1024) end
+expect_lua imgsize("NOPICTURE") == nil and pget(0, 0) == nil
+expect_ok
