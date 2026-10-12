@@ -832,13 +832,27 @@ static int l_sfx(lua_State *L) {
     return 0;
 }
 
-static int l_music(lua_State *L) { /* music(id) loops a WAV; music() or music(nil) stops it */
+/* music(id [, fade_ms]) loops audio/<id>.mod (a tracker module) or audio/<id>.wav; music() stops it */
+static int l_music(lua_State *L) {
+    int fade = (int)luaL_optinteger(L, 2, lua_isnoneornil(L, 1) ? 500 : 300);
     if (lua_isnoneornil(L, 1)) {
-        audio_music_stop((int)luaL_optinteger(L, 2, 500));
+        audio_music_stop(fade);
+        mod_stop(fade);
+        return 0;
+    }
+    const char *id = luaL_checkstring(L, 1);
+    char path[384];
+    snprintf(path, sizeof path, "%s/audio/%s.mod", G.game_dir, id);
+    FILE *f = safe_name(id) ? fopen(path, "rb") : NULL;
+    if (f) { /* a module: it replaces any music */
+        fclose(f);
+        audio_music_stop(fade);
+        mod_play(path, 1);
         return 0;
     }
     static const float all[8] = {1, 1, 1, 1, 1, 1, 1, 1};
-    audio_music_start(luaL_checkstring(L, 1), 0, 0, all, (int)luaL_optinteger(L, 2, 300));
+    mod_stop(fade);
+    audio_music_start(id, 0, 0, all, fade);
     return 0;
 }
 

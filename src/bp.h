@@ -271,6 +271,13 @@ void psg_reset(void);
 void psg_mix(float *acc, int m); /* audio thread, lock held */
 float psg_note_hz(const char *name); /* "A4" = 440, "C#3", "Eb5"; 0 if not a note */
 
+/* Tracker music (modplay.c): a ProTracker .mod, looped. */
+bool mod_play(const char *path, float gain); /* false if it cannot be read or played */
+void mod_stop(int fade_ms);
+bool mod_playing(void);
+void mod_reset(void);
+void mod_mix(float *acc, int m); /* audio thread, lock held, m <= 256 */
+
 /* ------------------------------------------------------------------ music.c */
 void music_tick(void);
 void music_force(const char *cue); /* sequence override until the next zone */

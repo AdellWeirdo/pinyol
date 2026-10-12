@@ -398,6 +398,7 @@ void audio_reset(void) {
     lp_state = 0;
     hal_audio_unlock();
     psg_reset();
+    mod_reset();
     for (int i = 0; i < ncache; i++)
         for (int k = 0; k < cache[i].count; k++) free(cache[i].pcm[k]);
     ncache = 0;
@@ -481,6 +482,7 @@ void audio_mix(int16_t *out, int n) {
             if (x->pos >= x->n) x->pcm = NULL;
         }
         psg_mix(acc, m);
+        if (!paused) mod_mix(acc, m);
         for (int i = 0; i < m; i++) out[off + i] = limit(acc[i] * ramp_next(&master));
     }
 }

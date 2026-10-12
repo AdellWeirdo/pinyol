@@ -11,7 +11,7 @@ games/mygame/
   main.lua       _init(), _update(), _draw()
   *.lua          more code, loaded with require("name")
   assets/        indexed tiles, maps, palettes and sprites (tools/png2asset.py)
-  audio/         WAV, PCM 16-bit mono at 22,050 Hz
+  audio/         WAV (PCM 16-bit mono at 22,050 Hz) and tracker music (.mod)
   fonts/         FONT_MAIN.fnt, FONT_BOLD.fnt, FONT_MAIN_L.fnt, FONT_BOLD_L.fnt (copy them from an example)
 ```
 
@@ -185,7 +185,7 @@ Text is UTF-8 limited to the characters of Windows-1252 (Spanish, French, German
 | Call | Does |
 |---|---|
 | `sfx(id [, gain])` | plays `audio/<id>.wav` once |
-| `music(id)` / `music()` | loops `audio/<id>.wav`; no id stops it |
+| `music(id)` / `music()` | loops `audio/<id>.mod` (a tracker module) or else `audio/<id>.wav`; no id stops it |
 | `tone(voice, pitch [, options])` | plays a synthesised note on voice 0-3, replacing what it played |
 | `tone(voice)` | lets the voice's note go (it fades with its release) |
 | `note(name)` | the frequency of a note: `note("A4")` is 440, also `"C#3"`, `"Eb5"` |
@@ -210,6 +210,9 @@ tone(0, "C5", {wave = "square", duty = 0.25, decay = 0.08})           -- a blip
 tone(1, 900, {wave = "noise", decay = 0.2})                            -- a hit
 tone(2, 1200, {wave = "saw", sustain = 1, len = 0.15, slide = -6000})  -- a laser
 ```
+
+Music made in a tracker (MilkyTracker, OpenMPT, ProTracker...) saved as a ProTracker `.mod`, up to 32 channels and
+4 MB, plays with `music(id)` like a WAV, in far less space; on the console it takes about 3 % of a core.
 
 A tune is notes played from `_update` on a beat: keep a step counter and call `tone` when it changes. The `puzle`
 example does its music this way.
