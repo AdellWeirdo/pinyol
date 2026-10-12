@@ -74,6 +74,7 @@ EMSCRIPTEN_KEEPALIVE void web_button(int button, int down) {
 
 static bp_config game_cfg;
 static bool reload_req;
+static struct stat saves_dir; /* --saves, if it lies inside the game folder: the game's own writes are not edits */
 
 /* The newest change among the game's files, one folder deep; saves/ (the game writes there) and art/ (sources, the
  * game reads assets/) left out. */
@@ -88,6 +89,7 @@ static time_t newest(const char *dir, int depth) {
         struct stat st;
         snprintf(p, sizeof p, "%s/%s", dir, e->d_name);
         if (stat(p, &st)) continue;
+        if (S_ISDIR(st.st_mode) && st.st_ino == saves_dir.st_ino && st.st_dev == saves_dir.st_dev) continue;
         time_t u = S_ISDIR(st.st_mode) ? (depth > 0 ? newest(p, depth - 1) : 0) : st.st_mtime;
         if (u > t) t = u;
     }
@@ -99,6 +101,7 @@ static void hot_reload(void) { /* twice a second: a file saved since the last lo
     static time_t seen;
     static unsigned n;
     if (n++ % (TICK_HZ / 2) == 0) {
+        if (n == 1 && game_cfg.save_dir) stat(game_cfg.save_dir, &saves_dir); /* (game_init has made it) */
         time_t t = newest(game_cfg.game_dir, 1);
         if (seen && t > seen) reload_req = true;
         if (t > seen) seen = t;

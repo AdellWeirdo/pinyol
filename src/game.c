@@ -376,7 +376,7 @@ static void draw_stack(surface *s, surface *world) {
         if (i == 0) draw_in(s, &reg[0], world, 0, false);
         else draw_layer(s, world, i, false);
     }
-    for (int i = n; i < G.nstack; i++) draw_layer(s, world, i, true); /* (never: the stack holds fewer than 8) */
+    for (int i = n; i < G.nstack; i++) draw_layer(s, world, i, true); /* past 8 layers (rare): whole, as before */
 }
 
 /* The frame onto s, which may be a window of it: everything below draws through gfx.c, clipped to s, so drawing the
