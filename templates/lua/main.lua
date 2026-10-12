@@ -1,5 +1,5 @@
 -- A starting point: walk around a room bigger than the screen and pick up the gems.
--- Everything np2d@2 can do is in docs/lua.md; the examples (plataformas, naves, carreras) show more of it.
+-- Everything np2d@2 can do is in docs/lua.md, step by step in docs/tutorial.md; the examples show more of it.
 --
 --   room.lua  the room, as text: what is solid comes from it, and art.py draws the picture from it
 --   art.py    draws art/*.png and audio/*.wav by code (--draw) and converts them into assets/
