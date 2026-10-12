@@ -8,7 +8,8 @@
 
 Steps, in order:
     tap:X,Y          a finger at (X, Y) on the 480x320 screen
-    key:NAME         A, B, C, UP, DOWN, LEFT, RIGHT, START or MENU
+    key:NAME[,N]     A, B, C, UP, DOWN, LEFT, RIGHT, START or MENU, held N polls (a few by default)
+    lua:CODE         np2d@2: runs CODE in the game; print() answers in the log (until: can wait for it)
     wait:SECONDS     let it run
     until:TEXT[,S]   wait for a log line containing TEXT (at most S seconds, 60 by default); fails if it never comes
     shot:FILE.png    the frame on the panel
@@ -109,8 +110,12 @@ def main() -> int:
             con.send(f"tap {int(x)} {int(y)}")
             con.wait(0.5)
         elif kind == "key":
-            con.send(f"key {arg.upper()}")
+            name, _, n = arg.partition(",")
+            con.send(f"key {name.upper()} {n}".rstrip())
             con.wait(0.5)
+        elif kind == "lua":
+            con.send(f"lua {arg}")
+            con.wait(0.2)
         elif kind == "wait":
             con.wait(float(arg))
         elif kind == "until":

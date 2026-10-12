@@ -126,15 +126,18 @@ static void draw_strip(int p0, uint16_t *out, void *ctx) {
     *(p0 == 0 ? &strip_us.first : &strip_us.rest) += esp_timer_get_time() - a;
 }
 
+#ifdef BP_REMOTE
+static bool playing;
+/* A remote shot (remote.c): in a game the strips leave no whole frame behind, so one is drawn for it. */
+const uint16_t *remote_picture(void) {
+    if (!playing) return display_last();
+    game_render(frames[0]);
+    return frames[0];
+}
+#endif
+
 static void draw(void) {
     int64_t a = esp_timer_get_time();
-#ifdef BP_REMOTE /* remote screenshots read a whole frame: draw one and hand it to the presenting task, as before */
-    static int cur;
-    frame = frames[cur];
-    game_render(frame);
-    display_submit(frame);
-    cur ^= 1;
-#else
     int64_t w = esp_timer_get_time();
     game_draw_world();
     strip_us.world += esp_timer_get_time() - w;
@@ -143,7 +146,6 @@ static void draw(void) {
     display_wait_scan();
     strip_us.wait += esp_timer_get_time() - w;
     display_present_strips(draw_strip, NULL);
-#endif
     int64_t us = esp_timer_get_time() - a;
     if (us > SLOW_RENDER_US) /* which screen is expensive: the layer stack, bottom first (layer_id in bp.h) */
         hal_log("slow frame: %.0f ms, layers %d %d %d %d (%s)", us / 1000.0, G.nstack > 0 ? G.stack[0] : -1,
@@ -197,6 +199,9 @@ static void play(void) {
     hal_input in = {0}, was = {0};
     int64_t next = esp_timer_get_time();
     int since_draw = TICKS_PER_FRAME;
+#ifdef BP_REMOTE
+    playing = true;
+#endif
     while (!game_quit_requested() && !switch_req) {
         if (power_critical()) { /* the battery is nearly flat: keep the game, then sleep */
             hal_log("power: battery critical (%.2f V)", power_volts());
@@ -223,6 +228,9 @@ static void play(void) {
         }
         perf_report();
     }
+#ifdef BP_REMOTE
+    playing = false;
+#endif
 }
 
 static void fatal_screen(void) { /* no card and no flash games: a plain dark red screen, the reason is in the log */
