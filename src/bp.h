@@ -84,6 +84,7 @@ typedef struct surface {
 } surface;
 void v2_draw(surface *s); /* np2d@2: the world 2x and the script's text and shapes, onto s (lua_game.c) */
 void game_draw(surface *s, bool world_pass); /* the frame onto s, a window of it or all (game.c) */
+surface gfx_clip(const surface *s, int x, int y, int w, int h); /* the part of s inside a rectangle (maybe empty) */
 void game_draw_world(void);                  /* only the zone into G.world: game_draw(s, true) starts with it */
 
 typedef struct {
@@ -294,8 +295,8 @@ void ui_toast_tick(void);
 void ui_toast_clear(void);
 void title_tick(void), title_render(surface *s);
 void pause_tick(void), pause_render(surface *s);
-void inv_tick(void), inv_render(surface *s);
-void notes_tick(void), notes_render(surface *s);
+void inv_tick(void), inv_render(surface *s, bool shade);
+void notes_tick(void), notes_render(surface *s, bool shade);
 void end_tick(void), end_render(surface *s);
 void error_tick(void), error_render(surface *s);
 void hud_tick(void), hud_render(surface *s);

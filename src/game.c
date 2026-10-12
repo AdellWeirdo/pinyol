@@ -260,6 +260,32 @@ void game_draw_world(void) {
     else world_render(&world);
 }
 
+/* Layers from..to-1 of the stack onto s (0: the zone, or the fight). The panel layers (bag, notebook) shade what is
+ * under them unless they are the first drawn here: then game_draw has shaded only where it shows. */
+static void draw_layers(surface *s, surface *world, int from, int to) {
+    for (int i = from; i < to; i++) {
+        if (i == 0) {
+            if (layer_has(L_ARENA)) arena_render_screen(world, s); /* the fight covers the zone it was entered from */
+            else {
+                gfx_upscale2x(world, s);
+                world_render_marker(s);
+            }
+            continue;
+        }
+        bool covered = false; /* a dialogue waiting under a sequence/listen/puzzle stays hidden */
+        for (int j = i + 1; j < G.nstack; j++) covered |= G.stack[j] == L_SEQ || G.stack[j] == L_LISTEN || G.stack[j] == L_PUZZLE;
+        switch (G.stack[i]) {
+        case L_DLG: if (!covered) dlg_render(s); break;
+        case L_INV: inv_render(s, i > from); break;
+        case L_NOTES: notes_render(s, i > from); break;
+        case L_PUZZLE: puzzle_render(s); break;
+        case L_LISTEN: listen_render(s); break;
+        case L_PAUSE: pause_render(s); break;
+        default: break;
+        }
+    }
+}
+
 /* The frame onto s, which may be a window of it: everything below draws through gfx.c, clipped to s, so drawing the
  * frame window by window gives the same pixels (the console draws its panel strips this way). world_pass: draw the
  * zone into G.world first (game_draw_world); once a frame is enough, the windows after the first reuse it. */
@@ -275,23 +301,22 @@ void game_draw(surface *s, bool world_pass) {
     if (base == L_END) { end_render(&scr); return; }
     if (base == L_ERROR) { error_render(&scr); return; }
 
-    if (layer_has(L_ARENA)) arena_render_screen(&world, &scr); /* the fight covers the zone it was entered from */
+    /* The bag and the notebook are opaque panels over almost all the screen: what is under them (the zone, layers
+     * below, their shade) is drawn only around the panel's middle, in four bands that miss its corners. */
+    int cover = 0;
+    for (int i = 1; i < G.nstack; i++)
+        if (G.stack[i] == L_INV || G.stack[i] == L_NOTES) cover = i;
+    if (!cover) draw_layers(&scr, &world, 0, G.nstack);
     else {
-        gfx_upscale2x(&world, &scr);
-        world_render_marker(&scr);
-    }
-    for (int i = 1; i < G.nstack; i++) {
-        bool covered = false; /* a dialogue waiting under a sequence/listen/puzzle stays hidden */
-        for (int j = i + 1; j < G.nstack; j++) covered |= G.stack[j] == L_SEQ || G.stack[j] == L_LISTEN || G.stack[j] == L_PUZZLE;
-        switch (G.stack[i]) {
-        case L_DLG: if (!covered) dlg_render(&scr); break;
-        case L_INV: inv_render(&scr); break;
-        case L_NOTES: notes_render(&scr); break;
-        case L_PUZZLE: puzzle_render(&scr); break;
-        case L_LISTEN: listen_render(&scr); break;
-        case L_PAUSE: pause_render(&scr); break;
-        default: break;
+        static const struct { int16_t x, y, w, h; } around[4] = { /* the panel is (8, 24, 464, 288), corners 8 */
+            {0, 0, SCREEN_W, 36}, {0, 300, SCREEN_W, SCREEN_H - 300}, {0, 36, 8, 264}, {SCREEN_W - 8, 36, 8, 264}};
+        for (int k = 0; k < 4; k++) {
+            surface part = gfx_clip(&scr, around[k].x, around[k].y, around[k].w, around[k].h);
+            if (part.w <= 0) continue;
+            draw_layers(&part, &world, 0, cover);
+            gfx_shade(&part, 0, 0, SCREEN_W, SCREEN_H);
         }
+        draw_layers(&scr, &world, cover, G.nstack);
     }
     if (G.seq.fade > 0) {
         if (G.seq.fade >= 1) gfx_fill(&scr, 0, 0, SCREEN_W, SCREEN_H, C_BLACK);

@@ -293,11 +293,11 @@ void inv_tick(void) {
 
 #define BAG_TEXT_W (SCREEN_W - 52) /* the item's name and description, under the icons */
 
-void inv_render(surface *s) {
+void inv_render(surface *s, bool shade) { /* shade: darken what is under it (game_draw may have done it) */
     const font *f = ui_font(), *b = ui_bold();
     const char *items[6];
     int n = inv_items(items);
-    gfx_shade(s, 0, 0, SCREEN_W, SCREEN_H);
+    if (shade) gfx_shade(s, 0, 0, SCREEN_W, SCREEN_H);
     gfx_panel(s, 8, 24, SCREEN_W - 16, SCREEN_H - 32);
     title_plate(s, 20, 10, content_bag_label(), C_TERRA);
     if (!n) font_draw(s, f, 28, 80, "Todavía no llevo nada.", -1, -1, C_DIM);
@@ -364,10 +364,10 @@ static const char *kind_label(const char *k) {
     return !strcmp(k, "obs") ? "Observación" : !strcmp(k, "test") ? "Testimonio" : !strcmp(k, "heard") ? "Oí" : "Pregunta";
 }
 
-void notes_render(surface *s) {
+void notes_render(surface *s, bool shade) {
     const font *f = ui_font(), *b = ui_bold();
     int lh = f->h + 2;
-    gfx_shade(s, 0, 0, SCREEN_W, SCREEN_H);
+    if (shade) gfx_shade(s, 0, 0, SCREEN_W, SCREEN_H);
     gfx_panel(s, 8, 24, SCREEN_W - 16, SCREEN_H - 32);
     title_plate(s, 20, 10, "Cuaderno", C_GREEN);
     const cJSON *q;

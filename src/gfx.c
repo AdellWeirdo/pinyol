@@ -150,6 +150,20 @@ static inline int clip(int x, int len, int lo, int hi, int *first) {
 #define CLIP_X(s, x, len, first) clip(x, len, (s)->x0, (s)->x0 + (s)->w, first)
 #define CLIP_Y(s, y, len, first) clip(y, len, (s)->y0, (s)->y0 + (s)->h, first)
 
+surface gfx_clip(const surface *s, int x, int y, int w, int h) {
+    surface c = *s;
+    if (!c.xs) c.xs = 1, c.ys = s->w, c.fw = s->w, c.fh = s->h; /* a plain buffer, as a window of itself */
+    int xa = x > c.x0 ? x : c.x0, ya = y > c.y0 ? y : c.y0;
+    int xb = x + w < c.x0 + c.w ? x + w : c.x0 + c.w, yb = y + h < c.y0 + c.h ? y + h : c.y0 + c.h;
+    if (xb <= xa || yb <= ya) {
+        c.w = c.h = 0;
+        return c;
+    }
+    c.px += (ptrdiff_t)(xa - c.x0) * c.xs + (ptrdiff_t)(ya - c.y0) * c.ys;
+    c.x0 = xa, c.y0 = ya, c.w = xb - xa, c.h = yb - ya;
+    return c;
+}
+
 surface gfx_turned(uint16_t *out, int row0, int rows, int fw, int fh, bool flip, bool swap) {
     surface s = {.w = rows, .h = fh, .fw = fw, .fh = fh, .swap = swap};
     if (!flip) { /* frame pixel (x, y) is panel row x, pixel fh-1-y */
