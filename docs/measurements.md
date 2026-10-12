@@ -129,3 +129,18 @@ What it took, in order of what it gave:
 All of it pixel-identical: the 48 Bajo Pueblo and Geumgye scripts and the four Lua scripts give the same CRC on every
 frame, and `tests/ppu_test.c` checks the shortcuts against the plain path and the clipped affine path against the
 formula on 200 random matrices.
+
+## The bag screens (2026-10-12)
+
+Bajo Pueblo and Geumgye's bag and notebook are opaque panels over 87% of the screen. Drawing the zone (scaled 2×),
+the layers below and the shade only in the four bands around the panel's middle (`game_draw`, `gfx_clip`), per
+screen with the strips (`-DBP_BENCH=v1`):
+
+| Screen | Before | After |
+|---|---|---|
+| Bajo Pueblo, the bag | 14.7 ms | 10.4 ms |
+| Bajo Pueblo, the bag with a dialogue | 20.2 ms | 14.2 ms |
+| Geumgye, the bag | 13.9 ms | 9.9 ms |
+
+Pixel-identical on the 48 scripts. An item's close-up over the bag (a second full-screen shade and a large 2×
+picture) still takes ~32 ms a frame on the console.

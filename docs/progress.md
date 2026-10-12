@@ -82,3 +82,23 @@ serial data received"); it needs the cable unplugged and plugged back in. Until 
   end screen with a full-screen fade: 51-54 fps). Bajo Pueblo and Geumgye's play bench after the IRAM and cache
   changes: no regression (55-61 fps in play, Geumgye a steady 60-61; Bajo Pueblo's bag with a dialogue over it is
   still ~32 ms a frame, as before).
+
+## 2026-10-12 · A fifth genre, safety, and the slow screens again
+
+- **aldea**, a top-down adventure: a village drawn as a Tiled map (three layers: ground, what stands on it, tree tops
+  in front of the characters), people with dialogue typed out in a box, a key and a chest, a waltz in notes. 60 fps on
+  the console. The five Lua examples now cover platformer, shoot-'em-up, Mode 7 racing, touch puzzle and adventure.
+- **Saved games:** `store()` keeps tables (inventories, progress), written through a temporary file so a power cut
+  never leaves half a save. Games installed in the flash save on the card when there is one (a flash write stalled
+  the console ~0.3 s).
+- **Safety:** an API fuzzer (every Lua function with NaN, infinities, huge numbers, wrong types and bad names, under
+  ASan/UBSan), a damaged-assets fuzzer (`tests/fuzz_assets.py`) and a damaged-modules fuzzer, plus a code review of
+  the night's work, found and fixed: float and integer overflows at the API boundary, asset sizes that wrapped on
+  32-bit targets, an instruction limit that `pcall` in a loop could escape, two over-reads in pocketmod, a zip bomb
+  in the web player, names that could reach outside the game folder. Known limit: a game can still stall itself
+  inside one C call (a pathological Lua string pattern); on the console the watchdog restarts it.
+- **The web:** `tools/make_gallery.py` builds a shelf of games (each playable and downloadable) for the site.
+- **Bajo Pueblo and Geumgye's bag:** what lies under the bag and the notebook is drawn only where it shows. Per
+  screen on the console: Bajo Pueblo's bag 14.7 → 10.4 ms, bag with a dialogue 20.2 → 14.2 ms, Geumgye's bag
+  13.9 → 9.9 ms. Still at ~30 fps: an item's close-up over the bag (a second full shade and a large 2× picture);
+  covering that needs occlusion per layer.
