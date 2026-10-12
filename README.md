@@ -38,7 +38,7 @@ uv run tools/new_game.py games/mygame --lua --title "My Game"
 ./build/bp_sim --game games/mygame
 ```
 
-You get a small game to change: a room bigger than the screen, a character to walk around it, gems to pick up, sounds and a best time saved. `main.lua` is the game, `room.lua` the room as text, and `art.py` draws the art and converts it (replace its PNGs with your own and run it again). Everything else is in [docs/lua.md](docs/lua.md), and the examples show more:
+You get a small game to change: a room bigger than the screen, a character to walk around it, gems to pick up, sounds and a best time saved. `main.lua` is the game, `room.lua` the room as text, and `art.py` draws the art and converts it (replace its PNGs with your own and run it again). Levels can be drawn in [Tiled](https://www.mapeditor.org) and imported with `tools/tiled2asset.py`. Everything else is in [docs/lua.md](docs/lua.md), and the examples show more:
 
 | Example | What it shows |
 |---|---|
@@ -127,7 +127,7 @@ firmware/        the console: ESP-IDF project, builds src/ unchanged
 examples/        games as they go on the microSD: four in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
 tests/           test scripts for the examples, and the PPU's own tests
-tools/           new_game.py, png2asset.py, pack_game.py, ttf2fnt.py, record.sh, remote.py
+tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, ttf2fnt.py, record.sh, remote.py
 third_party/     cJSON, Lua 5.4, the Pixelify Sans font
 ```
 

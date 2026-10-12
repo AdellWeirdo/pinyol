@@ -1,0 +1,14 @@
+# Levels from Tiled (tools/tiled2asset.py): the game tests/make_tiled_game.py makes, checked from Lua
+new
+tick 2
+expect_ok
+expect_lua L1.width == 4 and L1.height == 3 and L1.tile_w == 16 and L1.props.music == "MUS_1"
+expect_lua L1.layers.ground.asset == "LEVEL1_GROUND" and L1.layers.ground.data[1] == 1 and L1.layers.ground.data[4] == 4
+expect_lua L1.tiles[2].solid == true and L1.tiles[1] == nil
+expect_lua L1.objects[1].name == "start" and L1.objects[1].type == "spawn" and L1.objects[1].x == 20
+expect_lua L1.objects[2].props.to == "level2" and L1.objects[2].props.locked == true and L1.objects[2].w == 16
+expect_lua L2.layers.Back_Wall.data[5] == 1 and L2.objects[1].type == "pickup"
+# the pictures: each 16x16 tile is 2x2 PPU tiles
+expect_lua select(1, mapsize(1)) == 8 and select(2, mapsize(1)) == 6 and select(1, mapsize(2)) == 8
+expect_lua mget(1, 0, 0) ~= 0 and mget(1, 4, 2) == 0
+shot tiled

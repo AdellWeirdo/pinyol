@@ -142,6 +142,29 @@ Each of the 160 lines can have its own values: wavy water, parallax bands, gradi
 | `line_window(k, y, x1, x2)` | window k's span on line y (a circle, a cone of light) |
 | `line_off()` | back to the layers' own values (a `mode7` floor stays) |
 
+## Levels from Tiled
+
+[Tiled](https://www.mapeditor.org) is a free map editor. Draw a level there with any tile size, then import it:
+
+```
+python3 tools/tiled2asset.py maps/level1.tmx games/mygame LEVEL1
+```
+
+Each visible tile layer becomes a background, `LEVEL1_<LAYER>` (`bg(1, {map = "LEVEL1_GROUND"})`), and the rest
+goes into `level1.lua` in the game folder:
+
+```lua
+local level = require("level1")
+level.width, level.height, level.tile_w, level.tile_h  -- the map in tiles, and its tile size in pixels
+level.layers.ground.data[ty * level.width + tx + 1]   -- the tile id in a cell (0: empty)
+level.tiles[id].solid                                 -- the tile's custom properties in Tiled
+level.objects                                         -- {name, type, x, y, w, h, props} from object layers
+level.props                                           -- the map's own properties
+```
+
+Collisions come from tile properties (`solid` on the wall tiles, say) or from a layer drawn only for them. Maps are
+`.tmx` or Tiled's JSON, tilesets embedded or separate; infinite maps and image-collection tilesets are not supported.
+
 ## Text and shapes at full resolution
 
 Drawn over the world, in screen pixels (480×320), every frame in `_draw()`.
