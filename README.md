@@ -100,6 +100,13 @@ python3 -m http.server -d build-web     # open http://localhost:8000/player.html
 
 The `np2d_web` target makes `index.html` instead, with one game (`-DGAME_DIR=...`) packed inside.
 
+A whole shelf of games, each playable and downloadable, with a picture of its title screen:
+
+```sh
+python3 tools/make_gallery.py gallery/ --player build-web --headless build/bp_headless examples/*
+python3 -m http.server -d gallery       # open http://localhost:8000
+```
+
 ## Run it on the console
 
 The firmware in [firmware/](firmware/) is the console's platform: screen, touch, buttons, audio, microSD, a game list, battery and updates over the card. It needs [ESP-IDF 5.4](https://docs.espressif.com/projects/esp-idf/en/v5.4.2/esp32s3/get-started/).
@@ -128,7 +135,7 @@ firmware/        the console: ESP-IDF project, builds src/ unchanged
 examples/        games as they go on the microSD: five in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
 tests/           test scripts for the examples, and the PPU's own tests
-tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, ttf2fnt.py, record.sh, remote.py
+tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, ttf2fnt.py, ...
 third_party/     cJSON, Lua 5.4, pocketmod, the Pixelify Sans font
 ```
 

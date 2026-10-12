@@ -64,5 +64,6 @@
       ],
       "text": "Entra en casa y abre el cofre."
     }
-  ]
+  ],
+  "description": "La aventura de ejemplo hecha solo con datos (np2d@1): dos zonas, una amiga con la que hablar, una llave y un cofre."
 }
