@@ -1,7 +1,8 @@
 /* bp_sim: desktop simulator. Same core, same game folder as the console's microSD.
  *   bp_sim [--game DIR] [--saves DIR] [--scale N] [--mute] [--script FILE]
  * Keys: arrows/WASD move, Enter/E/Z = A, Esc/Backspace/X = B, Tab/C = C, I = MENU (bag), J = notebook, P = START.
- * Mouse = touch. Built with Emscripten it is the web player: the game folder is at /game (packed in, or unzipped
+ * Mouse = touch. F5 restarts the game, and so does saving any of its files (hot reload, to make games quickly).
+ * Built with Emscripten it is the web player: the game folder is at /game (packed in, or unzipped
  * there by player.html), and the page's on-screen buttons press through web_button(). */
 #include <SDL.h>
 #include <stdarg.h>
@@ -66,10 +67,58 @@ EMSCRIPTEN_KEEPALIVE void web_button(int button, int down) {
 }
 #endif
 
+#ifndef __EMSCRIPTEN__
+#include <dirent.h>
+#include <sys/stat.h>
+#include <time.h>
+
+static bp_config game_cfg;
+static bool reload_req;
+
+/* The newest change among the game's files, one folder deep; saves/ (the game writes there) and art/ (sources, the
+ * game reads assets/) left out. */
+static time_t newest(const char *dir, int depth) {
+    time_t t = 0;
+    DIR *d = opendir(dir);
+    if (!d) return 0;
+    struct dirent *e;
+    while ((e = readdir(d))) {
+        if (e->d_name[0] == '.' || !strcmp(e->d_name, "saves") || !strcmp(e->d_name, "art")) continue;
+        char p[1024];
+        struct stat st;
+        snprintf(p, sizeof p, "%s/%s", dir, e->d_name);
+        if (stat(p, &st)) continue;
+        time_t u = S_ISDIR(st.st_mode) ? (depth > 0 ? newest(p, depth - 1) : 0) : st.st_mtime;
+        if (u > t) t = u;
+    }
+    closedir(d);
+    return t;
+}
+
+static void hot_reload(void) { /* twice a second: a file saved since the last look restarts the game */
+    static time_t seen;
+    static unsigned n;
+    if (n++ % (TICK_HZ / 2) == 0) {
+        time_t t = newest(game_cfg.game_dir, 1);
+        if (seen && t > seen) reload_req = true;
+        if (t > seen) seen = t;
+    }
+    if (!reload_req) return;
+    reload_req = false;
+    game_shutdown();
+    if (game_init(&game_cfg)) hal_log("reloaded %s", game_cfg.game_dir);
+    else hal_log("reload: %s is incomplete (fix it and save again)", game_cfg.game_dir);
+}
+#endif
+
 static hal_input poll_input(void) {
     SDL_Event e;
-    while (SDL_PollEvent(&e))
+    while (SDL_PollEvent(&e)) {
         if (e.type == SDL_QUIT) closed = true;
+#ifndef __EMSCRIPTEN__
+        if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F5) reload_req = true;
+#endif
+    }
     const Uint8 *k = SDL_GetKeyboardState(NULL);
     hal_input in = {0};
     if (k[SDL_SCANCODE_UP] || k[SDL_SCANCODE_W]) in.held |= ACT_UP;
@@ -114,6 +163,9 @@ static Uint64 freq, last;
 static double acc;
 
 static void frame(void) {
+#ifndef __EMSCRIPTEN__
+    hot_reload();
+#endif
     Uint64 now = SDL_GetPerformanceCounter();
     acc += (double)(now - last) * 1000.0 / freq;
     last = now;
@@ -159,6 +211,9 @@ int main(int argc, char **argv) {
     ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_PRESENTVSYNC);
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
     tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, SCREEN_W, SCREEN_H);
+#ifndef __EMSCRIPTEN__
+    game_cfg = cfg;
+#endif
     if (!game_init(&cfg)) {
         fprintf(stderr, "game folder incomplete: %s\n", cfg.game_dir);
         SDL_Quit();

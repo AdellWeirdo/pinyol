@@ -28,6 +28,7 @@ ctest --test-dir build                       # validates every example and plays
 | Bag | I | MENU |
 | Pause | P | START |
 | Touch | Mouse | Screen |
+| Restart the game (the simulator also restarts it when you save one of its files) | F5 | |
 
 ## Make your own game
 

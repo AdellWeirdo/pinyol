@@ -35,7 +35,8 @@ assets/     what the engine reads: tiles, maps, palettes, sprite sheets
 audio/      sounds (WAV)
 ```
 
-Open `main.lua` in any editor. Each step below is a small change to it; save, and run `bp_sim` again to see it.
+Open `main.lua` in any editor and leave `bp_sim` running: each time you save a file of the game, it starts again
+with your change (F5 does it by hand). Each step below is a small change to `main.lua`.
 
 ## 3. Walk faster
 
