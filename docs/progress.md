@@ -61,3 +61,24 @@ serial data received"); it needs the cable unplugged and plugged back in. Until 
   [measurements.md](measurements.md#lua-games-on-the-ppu-2026-10-12). The firmware also gained: Lua in the core
   component, a scrolling game list (up to 32 games), games in the flash listed with those on the card, holding MENU
   for two seconds leaves a Lua game, and `-DFLASH_GAME` taking a list of folders (their tests run in autotest builds).
+
+## 2026-10-12 · Making games: tools, sound, a fourth example, the browser
+
+- **Start a game:** `tools/new_game.py games/mygame --lua` copies `templates/lua` (a room to walk with gems, a camera,
+  sounds, a best time) and draws its art; ctest makes one from scratch and plays it.
+- **Levels from Tiled:** `tools/tiled2asset.py` turns a `.tmx` or JSON map into PPU layers and a Lua module with the
+  cells, the tiles' properties and the objects.
+- **Sound:** four synthesised voices like the GBA's (`tone`, `note`: square, triangle, saw, sine, noise, with envelope
+  and slide), and tracker music (`music("SONG")` plays `audio/SONG.mod`, through pocketmod). On the console a module
+  takes 3 % of a core, the voices 4-5 %. Fuzzing pocketmod with 20,000 damaged modules under ASan/UBSan found two
+  bugs, both fixed.
+- **puzle**, a sliding puzzle for the touch screen: pieces as sprites, a ghost hint by blending, a mosaic reveal,
+  music made of notes; its picture was generated with an image model. 61 fps on the console.
+- **API:** `show(layers)` (the GBA's display control), `text()` wraps and types out, `perf()`; `textw()` without a
+  font no longer fails. Test scripts can `tap X Y`.
+- **Share and play in the browser:** `tools/pack_game.py` makes `<id>.zip`; `player.html` plays any game zip from a
+  URL or dropped on the page, with on-screen buttons on phones and saves in the browser.
+- **Checks on the console:** all five Lua examples pass their tests on the board at 60 fps in play (plataformas'
+  end screen with a full-screen fade: 51-54 fps). Bajo Pueblo and Geumgye's play bench after the IRAM and cache
+  changes: no regression (55-61 fps in play, Geumgye a steady 60-61; Bajo Pueblo's bag with a dialogue over it is
+  still ~32 ms a frame, as before).
