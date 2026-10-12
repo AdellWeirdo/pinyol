@@ -16,7 +16,8 @@ games/mygame/
 ```
 
 The examples are the best way in: `examples/plataformas` (a platformer), `naves` (a shoot-'em-up), `carreras`
-(Mode 7 racing) and `puzle` (a touch puzzle with synthesised music). Each has an
+(Mode 7 racing), `puzle` (a touch puzzle with synthesised music) and `aldea` (a top-down adventure made in Tiled,
+with dialogue). Each has an
 `art.py` that draws its art by code and converts it, so you can start from its PNGs in `art/`.
 
 ## The loop

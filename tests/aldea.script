@@ -1,0 +1,47 @@
+# Aldea: walking and walls from the Tiled map, talking, the key, the chest, the end
+new
+tick 5
+expect_lua state == "title"
+press A
+tick 2
+expect_lua state == "play"
+lua x0 = player.x
+hold RIGHT 40
+expect_lua player.x > x0 + 30
+shot aldea_walk
+# a wall: the first house's front, from below (the abuela's house is at tiles 4-8, 3-5)
+lua player.x, player.y, player.dir = 72, 86, 0
+hold UP 30
+expect_lua player.y > 70
+# the chest without the key
+lua player.x, player.y, player.dir = chest.x, chest.y + 14, 0
+press A
+expect_lua state == "talk" and dialog.lines[1] == "Está cerrado con llave."
+press A
+press A
+expect_lua state == "play" and not opened
+# Lucio gives the key: stand left of him, facing him
+lua n = npcs[2] player.x, player.y, player.dir = n.x - 14, n.y, 1
+press A
+expect_lua state == "talk" and dialog.name == "Lucio"
+tick 90
+shot aldea_talk
+# next line, all of it at once, and the box closes
+press A
+press A
+press A
+expect_lua state == "play" and has_key
+# and the chest opens
+lua player.x, player.y, player.dir = chest.x, chest.y + 14, 0
+press A
+press A
+press A
+press A
+press A
+expect_lua state == "fin" and opened and stored("best") ~= nil
+tick 70
+shot aldea_fin
+press A
+tick 2
+expect_lua state == "play" and not has_key and not opened
+expect_ok

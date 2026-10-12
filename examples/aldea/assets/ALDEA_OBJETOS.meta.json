@@ -1,0 +1,8 @@
+{
+  "asset": "ALDEA_OBJETOS",
+  "type": "tilemap",
+  "tiles": 26,
+  "map_w": 80,
+  "map_h": 60,
+  "palette": "WORLD"
+}

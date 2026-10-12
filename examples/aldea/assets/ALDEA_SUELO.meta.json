@@ -1,0 +1,8 @@
+{
+  "asset": "ALDEA_SUELO",
+  "type": "tilemap",
+  "tiles": 23,
+  "map_w": 80,
+  "map_h": 60,
+  "palette": "WORLD"
+}

@@ -1,0 +1,8 @@
+{
+  "id": "aldea",
+  "title": "La aldea",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "np2d examples",
+  "description": "A little top-down adventure: a village drawn in Tiled, people to talk to with typed-out dialogue, a key and a chest, walking behind tree tops."
+}

@@ -46,6 +46,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [naves](examples/naves) | a shoot-'em-up: a star field with a speed per line, a turning planet, blended explosions, a flash |
 | [carreras](examples/carreras) | a kart race in Mode 7: a perspective floor, rivals as scaled sprites, laps and positions |
 | [puzle](examples/puzle) | a sliding puzzle for the touch screen: a ghost hint by blending, a mosaic reveal, music made of notes |
+| [aldea](examples/aldea) | a top-down adventure: a village drawn in Tiled, people with typed-out dialogue, tree tops you walk behind |
 
 ### As an adventure made of data
 
@@ -124,7 +125,7 @@ platform/sdl/    desktop simulator, and the web players when built with Emscript
 platform/null/   bp_headless: validator and test runner without a window
 platform/web/    the web pages around the players
 firmware/        the console: ESP-IDF project, builds src/ unchanged
-examples/        games as they go on the microSD: four in Lua, hola as data
+examples/        games as they go on the microSD: five in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
 tests/           test scripts for the examples, and the PPU's own tests
 tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, ttf2fnt.py, record.sh, remote.py
