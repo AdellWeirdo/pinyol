@@ -430,7 +430,16 @@ static void line(lines *L, int y, uint16_t *out) {
     if (PPU.line.fx_ev) ea = ey = PPU.line.fx_ev[y], eb = 16 - ea;
     const int mode = PPU.fx.mode, first = PPU.fx.first, second = PPU.fx.second; /* out may alias PPU: read once */
     const bool win = L->win;
-    if (mode == FX_LIGHTEN || mode == FX_DARKEN) fade_tables(&L->fade, ey, mode == FX_LIGHTEN);
+    if (mode == FX_LIGHTEN || mode == FX_DARKEN) {
+        fade_tables(&L->fade, ey, mode == FX_LIGHTEN);
+        if (!win && !L->drew_blend) { /* a fade alone (a whole screen, often): the first target's pixels, nothing else */
+            for (int x = 0; x < PPU_W; x++) {
+                uint32_t top = L->top[x];
+                out[x] = (first >> ((top >> 16) & 7)) & 1 ? fade(&L->fade, (uint16_t)top) : (uint16_t)top;
+            }
+            return;
+        }
+    }
     for (int x = 0; x < PPU_W; x++) {
         uint32_t top = L->top[x];
         uint16_t c = (uint16_t)top;
