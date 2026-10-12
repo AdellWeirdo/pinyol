@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pillow>=10"]
+# dependencies = ["pillow>=10.1", "fonttools>=4"]
 # ///
 """The racing game's art and sound.
 
@@ -8,6 +8,8 @@
     uv run examples/carreras/art.py --draw    # first draw art/*.png and audio/*.wav by code, then convert
 
 The circuit's layout is track.lua: change it there and draw again.
+
+Its own look, made every time: Jersey 15 and 20 from np2d's font library, and FR_META, a chequered flag border for frame().
 """
 from __future__ import annotations
 
@@ -145,6 +147,23 @@ def convert() -> None:
                               "--palette", "OBJ"], check=True)
 
 
+def look() -> None:
+    sys.path.insert(0, str(ROOT / "tools"))
+    import font2fnt
+    for name, src, scale in (("marcador", "jersey15", 1), ("gran", "jersey20", 1),):
+        font2fnt.build(src, str(HERE / "fonts" / f"{name}.fnt"), None, scale)
+    im = Image.new("RGBA", (24, 24), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    for y in range(0, 24, 4):                                      # black and white squares all round
+        for x in range(0, 24, 4):
+            d.rectangle((x, y, x + 3, y + 3), fill=(250, 250, 250, 255) if (x + y) // 4 % 2 else (24, 24, 28, 255))
+    d.rectangle((7, 7, 16, 16), fill=(30, 34, 48, 255))        # a dark board inside
+    d.rectangle((6, 6, 17, 17), outline=(255, 210, 60, 255))
+    im.save(ART / "fr_meta.png")
+    subprocess.run([sys.executable, str(ROOT / "tools" / "png2asset.py"), str(ART / "fr_meta.png"), str(ASSETS),
+                    "FR_META"], check=True)
+
+
 def main() -> None:
     if "--draw" in sys.argv:
         ART.mkdir(exist_ok=True)
@@ -154,6 +173,7 @@ def main() -> None:
         draw_sounds()
     for f in ASSETS.glob("*.pal"):
         f.unlink()
+    look()
     convert()
 
 

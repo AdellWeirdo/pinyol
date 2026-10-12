@@ -221,23 +221,25 @@ function _draw()
   mosaic(1 + mosaic_t // 2, 1 + mosaic_t // 2)
   draw_sprites()
 
-  -- the HUD, at the screen's full resolution
-  local hud = "Monedas " .. coins .. "/" .. coins_total
-  plate(8, 8, textw(hud, "bold") + 24, 30, 0xFFF4D6)
-  text(hud, 20, 12, 0x3A2A1E, "bold")
+  -- the HUD, at the screen's full resolution, in its own look: sporty letters (fonts/marcador.fnt, titol.fnt) and
+  -- brick blocks (FR_BLOQUE), made by art.py
+  local hud = "MONEDAS " .. coins .. "/" .. coins_total
+  text(hud, 14, 6, {font = "marcador", color = 0xFFFFFF, outline = 0x3A2A1E})
   if state == "title" then
     shade(0, 0, SCREEN_W, SCREEN_H)
-    panel(60, 90, 360, 130)
-    text("PLATAFORMAS", SCREEN_W // 2, 106, 0x203040, "large_bold", "center")
-    text("Corre, salta, pisa a los limos", SCREEN_W // 2, 146, 0x506070, "main", "center")
-    text("Pulsa A para empezar", SCREEN_W // 2, 178, 0xC04030, "bold", "center")
+    frame("FR_BLOQUE", 60, 84, 360, 140, 2)
+    text("PLATAFORMAS", SCREEN_W // 2, 98, {font = "titol", align = "center", color = 0xFFE070, gradient = 0xFF8A20,
+                                            outline = 0x5A2A10, shadow = 0x000000})
+    text("Corre, salta, pisa a los limos", SCREEN_W // 2, 146, 0x5A3A20, "main", "center")
+    text("PULSA A", SCREEN_W // 2, 176, {font = "marcador", align = "center", color = 0xC04030, wave = 2})
     local best = stored("best_ticks")
     if best then text(string.format("Mejor tiempo: %.1f s", best / 60), SCREEN_W // 2, 240, 0xFFFFFF, "main", "center") end
   elseif state == "won" then
-    panel(60, 100, 360, 110)
-    text("¡Nivel completado!", SCREEN_W // 2, 116, 0x203040, "large_bold", "center")
-    text(string.format("%d monedas en %.1f s", coins, play_ticks / 60), SCREEN_W // 2, 154, 0x506070, "main", "center")
-    if timer > 60 then text("A: otra vez", SCREEN_W // 2, 182, 0xC04030, "bold", "center") end
+    frame("FR_BLOQUE", 60, 94, 360, 124, 2)
+    text("¡NIVEL COMPLETADO!", SCREEN_W // 2, 108, {font = "titol", align = "center", color = 0xFFE070,
+                                                   gradient = 0xFF8A20, outline = 0x5A2A10})
+    text(string.format("%d monedas en %.1f s", coins, play_ticks / 60), SCREEN_W // 2, 152, 0x5A3A20, "main", "center")
+    if timer > 60 then text("A: otra vez", SCREEN_W // 2, 180, 0xC04030, "marcador", "center") end
     fade("light", BG1 | BG2 | BG3 | BACK, math.min(timer // 4, 8))
   else
     blend(BG0, BG1 | BG2 | BG3 | OBJ | BACK, 10, 7)

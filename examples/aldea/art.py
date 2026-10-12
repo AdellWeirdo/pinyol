@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pillow>=10"]
+# dependencies = ["pillow>=10.1", "fonttools>=4"]
 # ///
 """The village's art: a 16x16 tileset, the map as a Tiled map, the characters and things, all drawn by code.
 
@@ -9,6 +9,9 @@
 
 art/aldea.tmx opens in Tiled (mapeditor.org): change the village there and run this without --draw to import it
 again (tools/tiled2asset.py). --draw would write the map anew from the plan below.
+
+Its own look, made every time: blackletter (Jacquarda Bastarda 9, Jacquard 12) from np2d's font library, a
+parchment (FR_PERGAMI) and a wooden sign (FR_MADERA) for frame().
 """
 from __future__ import annotations
 
@@ -293,6 +296,32 @@ def draw_things() -> None:  # 16x16: the chest closed, open, and the key
     sheet.save(ART / "things.png")
 
 
+def look() -> None:
+    sys.path.insert(0, str(ROOT / "tools"))
+    import font2fnt
+    for name, src, scale in (("bastarda", "jacquardabastarda9", 2), ("gotica", "jacquard12", 1)):
+        font2fnt.build(src, str(HERE / "fonts" / f"{name}.fnt"), None, scale)
+    im = Image.new("RGBA", (24, 24), (0, 0, 0, 0))  # parchment: rounded corners, brown ink, warm paper
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, 23, 23), radius=6, fill=(92, 58, 30, 255))
+    d.rounded_rectangle((1, 1, 22, 22), radius=5, fill=(236, 214, 160, 255))
+    d.rounded_rectangle((3, 3, 20, 20), radius=3, outline=(176, 128, 72, 255))
+    im.save(ART / "fr_pergami.png")
+    im = Image.new("RGBA", (24, 24), (0, 0, 0, 0))  # a wooden sign: dark rim, lit and shaded sides, nails, paper
+    d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, 23, 23), fill=(58, 34, 20, 255))
+    d.rectangle((1, 1, 22, 22), fill=(150, 96, 52, 255))
+    d.line((1, 1, 22, 1), fill=(196, 140, 84, 255))
+    d.line((1, 1, 1, 22), fill=(196, 140, 84, 255))
+    d.line((2, 22, 22, 22), fill=(102, 62, 32, 255))
+    d.line((22, 2, 22, 22), fill=(102, 62, 32, 255))
+    d.rectangle((5, 5, 18, 18), fill=(70, 40, 22, 255))
+    d.rectangle((6, 6, 17, 17), fill=(240, 226, 196, 255))
+    for x, y in ((3, 3), (19, 3), (3, 19), (19, 19)):
+        d.rectangle((x, y, x + 1, y + 1), fill=(220, 210, 180, 255))
+    im.save(ART / "fr_madera.png")
+
+
 def convert() -> None:
     py = sys.executable
     for f in ASSETS.glob("*.pal"):
@@ -301,6 +330,8 @@ def convert() -> None:
     for png, aid, n in (("people.png", "PEOPLE", 32), ("things.png", "THINGS", 3)):
         subprocess.run([py, str(ROOT / "tools" / "png2asset.py"), str(ART / png), str(ASSETS), aid, "--indexed",
                         "--frames", str(n), "--palette", "OBJ"], check=True)
+    for png, aid in (("fr_pergami.png", "FR_PERGAMI"), ("fr_madera.png", "FR_MADERA")):
+        subprocess.run([py, str(ROOT / "tools" / "png2asset.py"), str(ART / png), str(ASSETS), aid], check=True)
 
 
 def main() -> None:
@@ -311,6 +342,7 @@ def main() -> None:
         draw_map()
         draw_people()
         draw_things()
+    look()
     convert()
 
 

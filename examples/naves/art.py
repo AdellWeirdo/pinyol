@@ -1,11 +1,14 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pillow>=10"]
+# dependencies = ["pillow>=10.1", "fonttools>=4"]
 # ///
 """The shoot-'em-up's art and sound.
 
     uv run examples/naves/art.py           # art/*.png -> assets/
     uv run examples/naves/art.py --draw    # first draw art/*.png and audio/*.wav by code, then convert
+
+Its own look, made every time: arcade letters (Press Start 2P, Silkscreen) from np2d's font library, and FR_NEON,
+a neon frame for frame().
 """
 from __future__ import annotations
 
@@ -165,6 +168,23 @@ def draw_sounds() -> None:
     wav("MUS_SPACE", out)
 
 
+def look() -> None:
+    sys.path.insert(0, str(ROOT / "tools"))
+    import font2fnt
+    for name, src in (("arcade", "pressstart2p"), ("silk", "silkscreen")):
+        font2fnt.build(src, str(HERE / "fonts" / f"{name}.fnt"), None, 2)
+    im = Image.new("RGBA", (24, 24), (0, 0, 0, 0))  # a dark glassy middle, a cyan line and its glow, magenta corners
+    d = ImageDraw.Draw(im)
+    d.rectangle((2, 2, 21, 21), fill=(10, 14, 38, 255))
+    d.rectangle((2, 2, 21, 21), outline=(20, 90, 120, 255))
+    d.rectangle((3, 3, 20, 20), outline=(70, 240, 255, 255))
+    d.rectangle((4, 4, 19, 19), outline=(20, 90, 120, 255))
+    for x0, y0, dx, dy in ((0, 0, 1, 1), (23, 0, -1, 1), (0, 23, 1, -1), (23, 23, -1, -1)):
+        d.line((x0, y0, x0 + 5 * dx, y0), fill=(255, 60, 200, 255))
+        d.line((x0, y0, x0, y0 + 5 * dy), fill=(255, 60, 200, 255))
+    im.save(ART / "fr_neon.png")
+
+
 def convert() -> None:
     p2a = [sys.executable, str(ROOT / "tools" / "png2asset.py")]
     subprocess.run(p2a + [str(ART / "stars.png"), str(ASSETS), "STARS", "--tiles", "--palette", "SPACE"], check=True)
@@ -173,6 +193,7 @@ def convert() -> None:
                         ("boom", "BOOM", 5), ("power", "POWER", 1)]:
         subprocess.run(p2a + [str(ART / f"{png}.png"), str(ASSETS), aid, "--indexed", "--frames", str(n),
                               "--palette", "OBJ"], check=True)
+    subprocess.run(p2a + [str(ART / "fr_neon.png"), str(ASSETS), "FR_NEON"], check=True)
 
 
 def main() -> None:
@@ -189,6 +210,7 @@ def main() -> None:
         draw_sounds()
     for f in ASSETS.glob("*.pal"):
         f.unlink()
+    look()
     convert()
 
 

@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pillow>=10"]
+# dependencies = ["pillow>=10.1", "fonttools>=4"]
 # ///
 """The platformer's art and sound.
 
@@ -9,6 +9,8 @@
 
 Edit the PNGs in art/ with any paint program and run the first command again: the level layout comes from
 level.lua, so a new level needs no art changes.
+
+Its own look, made every time: Jersey 15 and 20 from np2d's font library, and FR_BLOQUE, a brick block for frame().
 """
 from __future__ import annotations
 
@@ -268,6 +270,24 @@ def convert() -> None:
                               "--palette", "OBJ"], check=True)
 
 
+def look() -> None:
+    sys.path.insert(0, str(ROOT / "tools"))
+    import font2fnt
+    for name, src, scale in (("marcador", "jersey15", 1), ("titol", "jersey20", 1),):
+        font2fnt.build(src, str(HERE / "fonts" / f"{name}.fnt"), None, scale)
+    im = Image.new("RGBA", (24, 24), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, 23, 23), fill=(74, 44, 26, 255))         # mortar
+    for y in range(0, 24, 6):                                      # rows of bricks, every other row shifted
+        for x in range(-6 if y % 12 else 0, 24, 12):
+            d.rectangle((x + 1, y + 1, x + 10, y + 4), fill=(196, 104, 60, 255))
+            d.line((x + 1, y + 1, x + 10, y + 1), fill=(232, 150, 96, 255))
+    d.rectangle((6, 6, 17, 17), fill=(255, 244, 214, 255))     # the paper inside
+    im.save(ART / "fr_bloque.png")
+    subprocess.run([sys.executable, str(ROOT / "tools" / "png2asset.py"), str(ART / "fr_bloque.png"), str(ASSETS),
+                    "FR_BLOQUE"], check=True)
+
+
 def main() -> None:
     if "--draw" in sys.argv:
         ART.mkdir(exist_ok=True)
@@ -278,6 +298,7 @@ def main() -> None:
         draw_sounds()
     for f in ASSETS.glob("*.pal"):  # the shared palettes are rebuilt from the PNGs
         f.unlink()
+    look()
     convert()
 
 

@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pillow>=10"]
+# dependencies = ["pillow>=10.1", "fonttools>=4"]
 # ///
 """The puzzle's art. Its sounds and music are synthesised in main.lua (tone), so there is no audio folder.
 
@@ -9,6 +9,8 @@
 
 art/picture.png is the picture to put together, 144x144 (generated with an image model at 1254x1254 and reduced).
 Any square picture works: --draw scales it to 144x144 and reduces it to 96 colours.
+
+Its own look, made every time: DotGothic16 from np2d's font library, and FR_SUAVE, a soft rounded frame for frame().
 """
 from __future__ import annotations
 
@@ -79,6 +81,21 @@ def convert() -> None:
                           "--palette", "OBJ"], check=True)
 
 
+def look() -> None:
+    sys.path.insert(0, str(ROOT / "tools"))
+    import font2fnt
+    for name, src, scale in (("dots", "dotgothic16", 1),):
+        font2fnt.build(src, str(HERE / "fonts" / f"{name}.fnt"), 16 if src == 'dotgothic16' else None, scale)
+    im = Image.new("RGBA", (24, 24), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, 23, 23), radius=7, fill=(90, 110, 160, 255))
+    d.rounded_rectangle((1, 1, 22, 22), radius=6, fill=(232, 238, 255, 255))
+    d.rounded_rectangle((3, 3, 20, 20), radius=4, outline=(190, 204, 240, 255))
+    im.save(ART / "fr_suave.png")
+    subprocess.run([sys.executable, str(ROOT / "tools" / "png2asset.py"), str(ART / "fr_suave.png"), str(ASSETS),
+                    "FR_SUAVE"], check=True)
+
+
 def main() -> None:
     ASSETS.mkdir(exist_ok=True)
     if "--draw" in sys.argv:
@@ -89,6 +106,7 @@ def main() -> None:
         draw_pieces(pic)
         draw_frame()
         draw_pattern()
+    look()
     convert()
 
 

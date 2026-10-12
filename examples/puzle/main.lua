@@ -183,31 +183,31 @@ function _draw()
   end
 
   -- the panel on the right, at full resolution
-  text("PUZLE", 400, 18, 0xFFE8B0, "large_bold", "center")
+  -- its own look: dot-matrix letters (fonts/dots.fnt) and soft rounded frames (FR_SUAVE), made by art.py
+  text("PUZLE", 400, 10, {font = "dots", scale = 2, align = "center", color = 0xFFE8B0, shadow = 0x3A3060})
   local best, fewest = stored("best_ticks"), stored("best_moves")
-  plate(336, 70, 128, 56, 0xFFF4D6)
-  text("Jugadas", 400, 74, 0x6A5040, "main", "center")
-  text(tostring(moves), 400, 98, 0x3A2A1E, "bold", "center")
-  plate(336, 134, 128, 56, 0xFFF4D6)
-  text("Tiempo", 400, 138, 0x6A5040, "main", "center")
-  text(clock(ticks_play), 400, 162, 0x3A2A1E, "bold", "center")
-  plate(336, 198, 128, 56, 0xE8F0FF)
-  text("Récord", 400, 202, 0x50607A, "main", "center")
-  text(best and string.format("%s · %d", clock(best), fewest) or "—", 400, 226, 0x2A3A5A, "bold", "center")
-  plate(336, 258, 128, 34, hint and 0xFFD070 or 0xF0E0C0)
-  text("Pista (C)", 400, 264, 0x5A4030, "bold", "center")
+  local function card(y, label, value, ink)
+    frame("FR_SUAVE", 336, y, 128, 60, 2)
+    text(label, 400, y + 9, 0x7080A8, "dots", "center")
+    text(value, 400, y + 31, ink, "dots", "center")
+  end
+  card(66, "Jugadas", tostring(moves), 0x2A3A5A)
+  card(130, "Tiempo", clock(ticks_play), 0x2A3A5A)
+  card(194, "Récord", best and string.format("%s · %d", clock(best), fewest) or "—", 0x5A3A7A)
+  frame("FR_SUAVE", 336, 258, 128, 36, 2)
+  text("Pista (C)", 400, 268, hint and 0xC06020 or 0x5A6A8A, "dots", "center")
 
   if state == "title" then
-    panel(26, 110, 280, 110)
-    text("Ordena la imagen", 166, 124, 0x203040, "large_bold", "center")
-    text("Desliza piezas al hueco", 166, 160, 0x506070, "main", "center")
-    text("A o toca para empezar", 166, 188, 0xC04030, "bold", "center")
+    frame("FR_SUAVE", 26, 106, 280, 118, 2)
+    text("Ordena la imagen", 166, 122, {font = "dots", align = "center", color = 0x2A3A5A, shadow = 0xC0CCF0})
+    text("Desliza piezas al hueco", 166, 158, 0x506080, "main", "center")
+    text("A o toca para empezar", 166, 188, 0xC04060, "dots", "center")
   elseif state == "solved" and reveal > 40 then
-    panel(36, 200, 260, 96)
-    text("¡Resuelto!", 166, 212, 0x203040, "large_bold", "center")
-    text(string.format("%d %s · %s", moves, moves == 1 and "jugada" or "jugadas", clock(ticks_play)), 166, 246, 0x506070,
+    frame("FR_SUAVE", 36, 196, 260, 102, 2)
+    text("¡Resuelto!", 166, 208, {font = "dots", scale = 2, align = "center", color = 0x5A3A7A, shadow = 0xC0CCF0})
+    text(string.format("%d %s · %s", moves, moves == 1 and "jugada" or "jugadas", clock(ticks_play)), 166, 248, 0x506080,
          "main", "center")
-    text("A: otra vez", 166, 270, 0xC04030, "bold", "center")
+    text("A: otra vez", 166, 272, 0xC04060, "dots", "center")
   end
   text(music_on and "START: música sí" or "START: música no", 472, 298, 0x8A90A0, "main", "right")
 end

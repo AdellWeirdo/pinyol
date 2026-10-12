@@ -213,18 +213,21 @@ function _draw()
   blend(0, ALL, 12, 8) -- only BLEND sprites (the explosions) mix with what is behind them
   if flash > 0 then fade("light", ALL, flash) end
 
-  text(string.format("%06d", score), 12, 6, 0xFFFFFF, "bold")
-  text("RÉCORD " .. string.format("%06d", math.max(hiscore, score)), SCREEN_W - 12, 6, 0xC8C8FF, "main", "right")
-  text("Vidas " .. lives .. "   Bombas " .. bombs .. "   Potencia " .. power, 12, SCREEN_H - 28, 0xA0FFC0, "main")
+  -- its own look: arcade letters (fonts/arcade.fnt, silk.fnt) and a neon frame (FR_NEON), made by art.py
+  text(string.format("%06d", score), 12, 8, 0xFFFFFF, "arcade")
+  text("RÉCORD " .. string.format("%06d", math.max(hiscore, score)), SCREEN_W - 12, 8, 0xC8C8FF, "silk", "right")
+  text("VIDAS " .. lives .. "   BOMBAS " .. bombs .. "   POTENCIA " .. power, 12, SCREEN_H - 26, 0xA0FFC0, "silk")
   if state == "title" then
-    panel(30, 100, 420, 120)
-    text("NAVES", SCREEN_W // 2, 114, 0x203040, "large_bold", "center")
-    text("A disparar · C bomba · cruceta mover", SCREEN_W // 2, 152, 0x506070, "main", "center")
-    text("Pulsa A para empezar", SCREEN_W // 2, 184, 0xC04030, "bold", "center")
+    frame("FR_NEON", 30, 92, 420, 136, 2)
+    text("NAVES", SCREEN_W // 2, 108, {font = "arcade", scale = 3, align = "center", color = 0x70F4FF,
+                                      gradient = 0xFF60C8, outline = 0x101030})
+    text("A disparar · C bomba · cruceta mover", SCREEN_W // 2, 166, 0x90A8C0, "silk", "center")
+    text("PULSA A", SCREEN_W // 2, 192, {font = "arcade", align = "center", color = 0xFFE070, wave = 2})
   elseif state == "over" then
     shade(0, 0, SCREEN_W, SCREEN_H)
-    panel(100, 110, 280, 100)
-    text("FIN DE LA PARTIDA", SCREEN_W // 2, 126, 0x203040, "large_bold", "center")
-    text("Puntos: " .. score, SCREEN_W // 2, 164, 0x506070, "main", "center")
+    frame("FR_NEON", 90, 104, 300, 112, 2)
+    text("FIN DE LA PARTIDA", SCREEN_W // 2, 126, {font = "arcade", align = "center", color = 0xFF60C8,
+                                                  outline = 0x101030, shake = 1})
+    text("PUNTOS " .. score, SCREEN_W // 2, 168, 0x70F4FF, "arcade", "center")
   end
 end

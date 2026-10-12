@@ -153,20 +153,26 @@ function _draw()
   end
 
   local secs = race_ticks / 60
-  text(string.format("Vuelta %d/%d", math.min(kart.lap + 1, LAPS), LAPS), 12, 8, 0xFFFFFF, "bold")
-  text(string.format("%d.º", place()), SCREEN_W // 2, 8, 0xFFE070, "large_bold", "center")
-  text(string.format("%d:%05.2f", math.floor(secs / 60), secs % 60), SCREEN_W - 12, 8, 0xFFFFFF, "bold", "right")
+  -- its own look: a scoreboard (fonts/marcador.fnt, gran.fnt) and a chequered flag (FR_META), made by art.py
+  local board = {font = "marcador", color = 0xFFFFFF, outline = 0x101018}
+  text(string.format("VUELTA %d/%d", math.min(kart.lap + 1, LAPS), LAPS), 12, 4, board)
+  text(string.format("POS %d", place()), SCREEN_W // 2, 0, {font = "gran", align = "center", color = 0xFFE070,
+                                                          gradient = 0xFF7A10, outline = 0x101018})
+  board.align = "right"
+  text(string.format("%d:%05.2f", math.floor(secs / 60), secs % 60), SCREEN_W - 12, 4, board)
   rect(12, SCREEN_H - 20, math.floor(kart.speed / 2.6 * 120), 8, 0xFFB040)
   box(12, SCREEN_H - 20, 120, 8, 0xFFFFFF)
   if state == "count" then
     local n = 3 - timer // 60
-    text(n > 0 and tostring(n) or "¡YA!", SCREEN_W // 2, 120, 0xFFFFFF, "large_bold", "center")
+    text(n > 0 and tostring(n) or "¡YA!", SCREEN_W // 2, 96, {font = "gran", scale = 2, align = "center",
+         color = 0xFFFFFF, gradient = 0xFFD040, outline = 0x101018, shadow = 0x000000, shadow_x = 2, shadow_y = 2})
   elseif state == "done" then
-    panel(100, 90, 280, 120)
-    text(string.format("Has llegado %d.º", place()), SCREEN_W // 2, 106, 0x203040, "large_bold", "center")
+    frame("FR_META", 72, 84, 336, 132, 2)
+    text(string.format("PUESTO %d", place()), SCREEN_W // 2, 100, {font = "gran", align = "center",
+                                                                          color = 0xFFE070, outline = 0x101018})
     local best = stored("best_race")
     text(string.format("Tiempo %.2f s · mejor %.2f s", race_ticks / 60, (best or race_ticks) / 60), SCREEN_W // 2, 146,
-         0x506070, "main", "center")
-    if timer > 60 then text("A: otra carrera", SCREEN_W // 2, 176, 0xC04030, "bold", "center") end
+         0xD0D8E8, "main", "center")
+    if timer > 60 then text("A: OTRA CARRERA", SCREEN_W // 2, 172, 0xFF8060, "marcador", "center") end
   end
 end

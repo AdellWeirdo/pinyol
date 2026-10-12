@@ -198,23 +198,26 @@ function _draw()
   end
   if has_key and not opened then spr(0, things, 2, 4, 4, prio(0)) end
 
+  -- its own look: blackletter (fonts/bastarda.fnt, gotica.fnt), a parchment and a wooden sign, made by art.py
   if state == "title" then
-    panel(110, 70, 260, 150)
-    text("La aldea", SCREEN_W // 2, 86, 0x203040, "large_bold", "center")
-    text("Habla con todos.", SCREEN_W // 2, 124, 0x506070, "main", "center")
-    text("Hay un cofre cerrado...", SCREEN_W // 2, 150, 0x506070, "main", "center")
-    text("A para empezar", SCREEN_W // 2, 186, 0xC04030, "bold", "center")
+    frame("FR_PERGAMI", 100, 58, 280, 174, 2)
+    text("La aldea", SCREEN_W // 2, 72, {font = "bastarda", align = "center", color = 0x6A2E10, shadow = 0xC8A060})
+    text("Habla con todos.", SCREEN_W // 2, 124, 0x5A3A20, "main", "center")
+    text("Hay un cofre cerrado...", SCREEN_W // 2, 150, 0x5A3A20, "main", "center")
+    text("A para empezar", SCREEN_W // 2, 188, 0xA03020, "gotica", "center")
   elseif dialog then
-    panel(12, 214, 456, 96)
-    if dialog.name then plate(24, 196, textw(dialog.name, "bold") + 24, 30, 0xFFE8B0) end
-    if dialog.name then text(dialog.name, 36, 200, 0x5A3A20, "bold") end
-    text(dialog.lines[dialog.i], 30, 232, 0x203040, "main", "left", 420, dialog.chars)
+    frame("FR_PERGAMI", 12, 212, 456, 98, 2)
+    if dialog.name then
+      frame("FR_MADERA", 22, 188, textw(dialog.name, "gotica") + 34, 40, 2)
+      text(dialog.name, 39, 199, 0x5A2A10, "gotica")
+    end
+    text(dialog.lines[dialog.i], 32, 234, 0x3A2410, "main", "left", 416, dialog.chars)
     if dialog.chars >= utf8.len(dialog.lines[dialog.i]) and (timer // 20) % 2 == 0 then
-      text("A", 446, 284, 0xC04030, "bold")
+      text("A", 444, 282, 0xA03020, "bold")
     end
   elseif state == "fin" then
-    panel(90, 90, 300, 130)
-    text("¡Fin!", SCREEN_W // 2, 104, 0x203040, "large_bold", "center")
+    frame("FR_PERGAMI", 90, 88, 300, 134, 2)
+    text("¡Fin!", SCREEN_W // 2, 100, {font = "bastarda", align = "center", color = 0x6A2E10, shadow = 0xC8A060})
     local best = stored("best", play_ticks)
     text(string.format("%.1f s · récord %.1f s", play_ticks / 60, best / 60), SCREEN_W // 2, 144, 0x506070, "main",
          "center")

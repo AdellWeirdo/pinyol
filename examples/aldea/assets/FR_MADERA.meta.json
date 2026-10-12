@@ -1,0 +1,28 @@
+{
+  "asset": "FR_MADERA",
+  "type": "sprite",
+  "w": 24,
+  "h": 24,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    12,
+    23
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "none"
+  },
+  "memory_bytes": {
+    "pixels": 1152,
+    "mask": 0,
+    "total": 1152
+  }
+}
