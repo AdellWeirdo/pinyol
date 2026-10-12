@@ -703,6 +703,11 @@ static int l_fade(lua_State *L) { /* fade("light" | "dark", layers, amount 0..16
     return 0;
 }
 
+static int l_show(lua_State *L) { /* show(layers): which of BG0..BG3 and OBJ are drawn */
+    PPU.layers = (uint8_t)(luaL_checkinteger(L, 1) & (PPU_BG0 | PPU_BG1 | PPU_BG2 | PPU_BG3 | PPU_OBJ));
+    return 0;
+}
+
 static int l_fx_off(lua_State *L) {
     (void)L;
     PPU.fx.mode = FX_NONE;
@@ -916,8 +921,9 @@ static void api(lua_State *L) {
         {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_backdrop", l_line_backdrop},
         {"line_window", l_line_window}, {"line_off", l_line_off}, {"sheet", l_sheet}, {"spr", l_spr},
         {"spr_off", l_spr_off}, {"spr_clear", l_spr_clear}, {"prio", l_prio}, {"bank", l_bank}, {"spr_mat", l_spr_mat},
-        {"mat", l_mat}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off}, {"window", l_window},
-        {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow}, {"mosaic", l_mosaic},
+        {"mat", l_mat}, {"show", l_show}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off},
+        {"window", l_window}, {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow},
+        {"mosaic", l_mosaic},
         {"text", l_text}, {"textw", l_textw}, {"rect", l_rect}, {"box", l_box}, {"shade", l_shade}, {"panel", l_panel},
         {"plate", l_plate}, {"img", l_img}, {"sfx", l_sfx}, {"music", l_music}, {"tone", l_tone}, {"note", l_note},
         {"quit", l_quit}, {"perf", l_perf}, {"store", l_store}, {"stored", l_stored}, {"load", l_load}, {"log", l_log},

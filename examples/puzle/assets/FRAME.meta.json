@@ -1,0 +1,8 @@
+{
+  "asset": "FRAME",
+  "type": "tilemap",
+  "tiles": 11,
+  "map_w": 30,
+  "map_h": 20,
+  "palette": "WORLD"
+}

@@ -293,6 +293,11 @@ static bool run_line(char *cmd, char *arg) {
         return true;
     }
     if (!strcmp(cmd, "press")) return press_named(arg, key_of(arg));
+    if (!strcmp(cmd, "tap")) { /* tap X Y: a finger down and up at screen pixel (X, Y) of the 480x320 screen */
+        int x, y;
+        if (sscanf(arg, "%d %d", &x, &y) != 2) FAIL("tap X Y");
+        return tick_input(0, true, x, y) && tick(0);
+    }
     if (!strcmp(cmd, "hold")) {
         char k[32];
         int n = 0;

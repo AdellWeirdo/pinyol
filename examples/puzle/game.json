@@ -1,0 +1,8 @@
+{
+  "id": "puzle",
+  "title": "Puzle",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "np2d examples",
+  "description": "A sliding-tile puzzle for the touch screen: pieces as sprites, a ghost hint with blending, a mosaic reveal, music and sounds synthesised."
+}

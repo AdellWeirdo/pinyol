@@ -15,7 +15,8 @@ games/mygame/
   fonts/         FONT_MAIN.fnt, FONT_BOLD.fnt, FONT_MAIN_L.fnt, FONT_BOLD_L.fnt (copy them from an example)
 ```
 
-The examples are the best way in: `examples/plataformas` (a platformer), and the others next to it. Each has an
+The examples are the best way in: `examples/plataformas` (a platformer), `naves` (a shoot-'em-up), `carreras`
+(Mode 7 racing) and `puzle` (a touch puzzle with synthesised music). Each has an
 `art.py` that draws its art by code and converts it, so you can start from its PNGs in `art/`.
 
 ## The loop
@@ -125,6 +126,7 @@ Sheets are indexed (`png2asset.py --indexed`) or a direct-colour runtime asset (
 | `objwindow(inside)` | the shapes of `WINDOW` sprites as a window; `objwindow(nil)` turns it off |
 | `window_off(k)` | |
 | `mosaic(bg_w, bg_h [, obj_w, obj_h])` | block size for layers and sprites with the mosaic option, 1 = off |
+| `show(layers)` | which of `BG0`-`BG3` and `OBJ` are drawn (all at the start): hide a layer without losing its setup, `show(ALL & ~BG1)` |
 
 Layer sets are added with `|`: `BG0 BG1 BG2 BG3 OBJ BACK` (the backdrop), and `FX` in a window's set lets effects
 happen inside it. `ALL` is every layer.
@@ -220,6 +222,7 @@ A test script plays the game with real input (see `tests/plataformas.script`):
 ```
 new                              # start (runs _init)
 press A                          # a button for one tick; hold RIGHT 30 holds it for 30
+tap 240 160                      # a finger down and up at that screen pixel (480x320)
 tick 20                          # let 20 ticks pass
 expect_lua state == "play"       # a Lua expression that must be true
 lua P.x = 100                    # run Lua in the game (set up a situation)

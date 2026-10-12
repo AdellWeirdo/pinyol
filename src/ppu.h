@@ -73,6 +73,7 @@ typedef struct { int32_t pa, pc, x, y; } ppu_line_affine; /* the line's start (2
 typedef struct { int16_t x1, x2; } ppu_line_span;
 
 typedef struct {
+    uint8_t layers;  /* the layers drawn, PPU_BG0..PPU_OBJ bits (the GBA's display control); ppu_reset: all */
     ppu_bg bg[PPU_BGS];
     ppu_obj obj[PPU_OBJS];
     ppu_affine affine[PPU_AFFINES];

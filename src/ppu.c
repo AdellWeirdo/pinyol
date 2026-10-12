@@ -49,6 +49,7 @@ static struct {
 
 void ppu_reset(void) {
     memset(&PPU, 0, sizeof PPU);
+    PPU.layers = PPU_BG0 | PPU_BG1 | PPU_BG2 | PPU_BG3 | PPU_OBJ;
     PPU.mosaic.bg_w = PPU.mosaic.bg_h = PPU.mosaic.obj_w = PPU.mosaic.obj_h = 1;
     for (int i = 0; i < PPU_OBJS; i++) PPU.obj[i].affine = -1;
     for (int i = 0; i < PPU_AFFINES; i++) PPU.affine[i] = (ppu_affine){256, 0, 0, 256};
@@ -335,7 +336,7 @@ static void obj_window_line(lines *L, const ppu_obj *o, int y) { /* an OBJ_WINDO
 ALWAYS void layers_x(lines *L, int p, int y, bool win, bool track) {
     for (int n = PPU_BGS - 1; n >= 0; n--) {
         const ppu_bg *b = &PPU.bg[n];
-        if ((b->prio & 3) != p) continue;
+        if ((b->prio & 3) != p || !(PPU.layers & (1 << n))) continue;
         if (b->mode == BG_TILES) bg_tiles_x(L, b, n, y, win, track);
         else if (b->mode == BG_AFFINE) bg_affine_x(L, b, n, y, win, track);
         else if (b->mode == BG_BITMAP) bg_bitmap_x(L, b, n, y, win, track);
@@ -373,7 +374,7 @@ static void prepare(void) {
     memset(F.count, 0, sizeof F.count);
     F.any_objwin = false;
     bool blend_obj = false;
-    for (int i = PPU_OBJS - 1; i >= 0; i--) { /* back to front: sprite 127 under sprite 0 */
+    for (int i = PPU_OBJS - 1; i >= 0 && (PPU.layers & PPU_OBJ); i--) { /* back to front: 127 under 0 */
         const ppu_obj *o = &PPU.obj[i];
         if (!o->on || !o->w || !o->h || (!o->idx && !o->rgb)) continue;
         if (o->mode == OBJ_WINDOW) {

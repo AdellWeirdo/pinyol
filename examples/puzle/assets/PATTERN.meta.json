@@ -1,0 +1,8 @@
+{
+  "asset": "PATTERN",
+  "type": "tilemap",
+  "tiles": 6,
+  "map_w": 4,
+  "map_h": 4,
+  "palette": "WORLD"
+}
