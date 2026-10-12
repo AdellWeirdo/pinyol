@@ -747,28 +747,58 @@ static int font_arg(lua_State *L, int arg) {
     return luaL_checkoption(L, arg, "main", names);
 }
 
-static int l_text(lua_State *L) { /* text(str, x, y [, color [, font [, align]]]) -> width; screen pixels (480x320) */
+static int utf8_prefix(const char *s, int n, int *chars) { /* bytes of up to *chars characters; *chars counts down */
+    int b = 0;
+    while (b < n && *chars > 0) {
+        b++;
+        while (b < n && (s[b] & 0xC0) == 0x80) b++;
+        (*chars)--;
+    }
+    return b;
+}
+
+static void text_line(const char *s, int n, int x, int y, int al, int f, uint16_t colour) {
+    ov_cmd *c = ntext + n <= OV_TEXT ? ov_add(OV_TEXT_OP) : NULL;
+    if (!c) return;
+    int w = font_width(font_named(f), s, n);
+    memcpy(ov_text + ntext, s, (size_t)n);
+    c->str = (uint16_t)ntext, c->len = (uint16_t)n, ntext += n;
+    c->x = (int16_t)(x - (al == 1 ? w / 2 : al == 2 ? w : 0)), c->y = (int16_t)y;
+    c->font = (uint8_t)f, c->color = colour;
+}
+
+/* text(str, x, y [, colour [, font [, align [, width [, chars]]]]]) -> width, height; screen pixels (480x320).
+ * width wraps the text into lines that fit it; chars shows only that many characters (a line typed out). */
+static int l_text(lua_State *L) {
     size_t n = 0;
     const char *s = luaL_checklstring(L, 1, &n);
-    int x = num(L, 2), y = num(L, 3), f = font_arg(L, 5);
+    int x = num(L, 2), y = num(L, 3), f = font_arg(L, 5), wrap = optnum(L, 7, 0), chars = optnum(L, 8, 1 << 30);
     static const char *const aligns[] = {"left", "center", "right", NULL};
-    int al = luaL_checkoption(L, 6, "left", aligns), w = font_width(font_named(f), s, (int)n);
-    ov_cmd *c = ntext + (int)n <= OV_TEXT ? ov_add(OV_TEXT_OP) : NULL;
-    if (c) {
-        memcpy(ov_text + ntext, s, n);
-        c->str = (uint16_t)ntext, c->len = (uint16_t)n, ntext += (int)n;
-        c->x = (int16_t)(x - (al == 1 ? w / 2 : al == 2 ? w : 0)), c->y = (int16_t)y;
-        c->font = (uint8_t)f, c->color = to565(luaL_optinteger(L, 4, 0xFFFFFF));
+    int al = luaL_checkoption(L, 6, "left", aligns), lh = font_named(f)->h;
+    uint16_t colour = to565(luaL_optinteger(L, 4, 0xFFFFFF));
+    if (wrap <= 0) { /* one line */
+        int w = font_width(font_named(f), s, (int)n);
+        text_line(s, utf8_prefix(s, (int)n, &chars), x, y, al, f, colour);
+        lua_pushinteger(L, w), lua_pushinteger(L, lh);
+        return 2;
     }
-    lua_pushinteger(L, w);
-    return 1;
+    uint16_t starts[32], lens[32];
+    int lines = text_wrap(font_named(f), s, wrap, starts, lens, 32), widest = 0;
+    for (int i = 0; i < lines; i++) {
+        int w = font_width(font_named(f), s + starts[i], lens[i]);
+        widest = w > widest ? w : widest;
+        if (chars > 0) text_line(s + starts[i], utf8_prefix(s + starts[i], lens[i], &chars), x, y + i * lh, al, f, colour);
+    }
+    lua_pushinteger(L, widest), lua_pushinteger(L, lines * lh);
+    return 2;
 }
 
 static int l_textw(lua_State *L) {
     size_t n = 0;
     const char *s = luaL_checklstring(L, 1, &n);
-    lua_pushinteger(L, font_width(font_named(font_arg(L, 2)), s, (int)n));
-    lua_pushinteger(L, font_named(font_arg(L, 2))->h);
+    const font *f = font_named(font_arg(L, 2)); /* before pushing: a pushed result would become argument 2 */
+    lua_pushinteger(L, font_width(f, s, (int)n));
+    lua_pushinteger(L, f->h);
     return 2;
 }
 

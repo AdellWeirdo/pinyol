@@ -148,7 +148,7 @@ Drawn over the world, in screen pixels (480×320), every frame in `_draw()`.
 
 | Call | Does |
 |---|---|
-| `text(str, x, y [, colour [, font [, align]]])` | returns its width. Fonts: `"main" "bold" "large" "large_bold"`; align `"left" "center" "right"` |
+| `text(str, x, y [, colour [, font [, align [, width [, chars]]]]])` | returns its width and height. Fonts: `"main" "bold" "large" "large_bold"`; align `"left" "center" "right"`; `width` wraps it into lines that fit; `chars` shows only the first ones (dialogue typed out letter by letter) |
 | `textw(str [, font])` | width and height |
 | `rect(x, y, w, h, colour)`, `box(x, y, w, h, colour)` | filled, outline |
 | `shade(x, y, w, h)` | darken what is under it |
