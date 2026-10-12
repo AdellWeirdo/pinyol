@@ -1,0 +1,5 @@
+# The whole Lua API with odd arguments (tests/games/apifuzz): nothing crashes, the game keeps running
+new
+tick 600
+expect_ok
+expect_lua calls > 40000 and failures > 1000

@@ -343,8 +343,17 @@ static int l_log(lua_State *L) {
 
 /* ------------------------------------------------------------------ the API */
 
+/* Numbers from a game are made finite and kept within +-NUM_MAX: far beyond any screen or map, and safe in the
+ * engine's int arithmetic (NaN, infinities and 1e30 from a buggy or hostile game must not reach it). */
+#define NUM_MAX 1000000.0f
+static float fin(lua_Number v) {
+    float f = (float)v;
+    return f != f ? 0 : f > NUM_MAX ? NUM_MAX : f < -NUM_MAX ? -NUM_MAX : f;
+}
+static int16_t i16(int v) { return (int16_t)(v < -32768 ? -32768 : v > 32767 ? 32767 : v); }
+
 /* A number argument as an int, rounded down: game code computes positions and colours with fractions. */
-static int num(lua_State *L, int arg) { return (int)floorf((float)luaL_checknumber(L, arg)); }
+static int num(lua_State *L, int arg) { return (int)floorf(fin(luaL_checknumber(L, arg))); }
 static int optnum(lua_State *L, int arg, int d) { return lua_isnoneornil(L, arg) ? d : num(L, arg); }
 
 static uint16_t to565(lua_Integer rgb) {
@@ -475,18 +484,21 @@ static int l_bg(lua_State *L) {
 
 static int l_scroll(lua_State *L) {
     int n = bg_index(L, 1);
-    PPU.bg[n].scroll_x = (int)floorf((float)luaL_checknumber(L, 2));
-    PPU.bg[n].scroll_y = (int)floorf((float)luaL_checknumber(L, 3));
+    PPU.bg[n].scroll_x = num(L, 2), PPU.bg[n].scroll_y = num(L, 3);
     return 0;
 }
 
-static int32_t fx8(lua_Number v) { return (int32_t)lroundf((float)v * 256.0f); }
+static int32_t fx8(lua_Number v) { return (int32_t)lroundf(fin(v) * 256.0f); } /* a position, 24.8 */
+static int32_t fx8m(lua_Number v) { /* a matrix coefficient, 8.8 as on the GBA: -128 to 127.99 */
+    float f = fin(v);
+    return (int32_t)lroundf((f > 127.99f ? 127.99f : f < -128 ? -128 : f) * 256.0f);
+}
 
 static int l_affine(lua_State *L) { /* affine(n, pa, pb, pc, pd, x0, y0): screen (x, y) shows map (x0 + pa x + pb y, ...) */
     int n = bg_index(L, 1);
     ppu_bg *b = &PPU.bg[n];
-    b->pa = fx8(luaL_checknumber(L, 2)), b->pb = fx8(luaL_checknumber(L, 3));
-    b->pc = fx8(luaL_checknumber(L, 4)), b->pd = fx8(luaL_checknumber(L, 5));
+    b->pa = fx8m(luaL_checknumber(L, 2)), b->pb = fx8m(luaL_checknumber(L, 3));
+    b->pc = fx8m(luaL_checknumber(L, 4)), b->pd = fx8m(luaL_checknumber(L, 5));
     b->x0 = fx8(luaL_checknumber(L, 6)), b->y0 = fx8(luaL_checknumber(L, 7));
     return 0;
 }
@@ -499,7 +511,7 @@ static int l_rot(lua_State *L) { /* rot(n, degrees, zoom, map_x, map_y, screen_x
     if (z == 0) z = 1;
     float pa = cosf(a) / z, pb = sinf(a) / z, pc = -sinf(a) / z, pd = cosf(a) / z;
     ppu_bg *b = &PPU.bg[n];
-    b->pa = fx8(pa), b->pb = fx8(pb), b->pc = fx8(pc), b->pd = fx8(pd);
+    b->pa = fx8m(pa), b->pb = fx8m(pb), b->pc = fx8m(pc), b->pd = fx8m(pd);
     b->x0 = fx8(cx - (pa * sx + pb * sy)), b->y0 = fx8(cy - (pc * sx + pd * sy));
     return 0;
 }
@@ -509,7 +521,8 @@ static int l_mode7(lua_State *L) {
     int n = bg_index(L, 1);
     float cx = (float)luaL_checknumber(L, 2), cy = (float)luaL_checknumber(L, 3);
     float a = (float)luaL_checknumber(L, 4) * 3.14159265f / 180.0f, h = (float)luaL_optnumber(L, 5, 32);
-    int hor = (int)luaL_optinteger(L, 6, 40);
+    int hor = optnum(L, 6, 40);
+    hor = hor < -10000 ? -10000 : hor > 10000 ? 10000 : hor; /* y - hor below must not overflow */
     float fov = (float)luaL_optnumber(L, 7, 120);
     float fx = sinf(a), fy = -cosf(a), rx = cosf(a), ry = sinf(a); /* forward and right on the map */
     for (int y = 0; y < PPU_H; y++) {
@@ -520,7 +533,7 @@ static int l_mode7(lua_State *L) {
         }
         float d = h * fov / (float)(y - hor), step = d / fov; /* distance to the line, map units per pixel */
         float mx = cx + fx * d - rx * step * (PPU_W / 2), my = cy + fy * d - ry * step * (PPU_W / 2);
-        *l = (ppu_line_affine){.pa = fx8(rx * step), .pc = fx8(ry * step), .x = fx8(mx), .y = fx8(my)};
+        *l = (ppu_line_affine){.pa = fx8m(rx * step), .pc = fx8m(ry * step), .x = fx8(mx), .y = fx8(my)};
     }
     PPU.line.affine[n] = line_affine_tab[n];
     layer[n].mx7_on = 1;
@@ -583,10 +596,10 @@ static int l_line_scroll(lua_State *L) { /* line_scroll(n, y, x, y_offset) */
     int n = bg_index(L, 1), y = line_index(L, 2);
     if (PPU.line.scroll[n] != line_scroll_tab[n]) { /* first use this frame: start from the layer's own scroll */
         for (int i = 0; i < PPU_H; i++)
-            line_scroll_tab[n][i] = (ppu_line_scroll){(int16_t)PPU.bg[n].scroll_x, (int16_t)PPU.bg[n].scroll_y};
+            line_scroll_tab[n][i] = (ppu_line_scroll){i16(PPU.bg[n].scroll_x), i16(PPU.bg[n].scroll_y)};
         PPU.line.scroll[n] = line_scroll_tab[n];
     }
-    line_scroll_tab[n][y] = (ppu_line_scroll){(int16_t)num(L, 3), (int16_t)optnum(L, 4, PPU.bg[n].scroll_y)};
+    line_scroll_tab[n][y] = (ppu_line_scroll){i16(num(L, 3)), i16(optnum(L, 4, PPU.bg[n].scroll_y))};
     return 0;
 }
 
@@ -606,7 +619,7 @@ static int l_line_window(lua_State *L) { /* line_window(k, y, x1, x2) */
         memset(line_win_tab[k], 0, sizeof line_win_tab[k]);
         PPU.line.win[k] = line_win_tab[k];
     }
-    line_win_tab[k][y] = (ppu_line_span){(int16_t)num(L, 3), (int16_t)num(L, 4)};
+    line_win_tab[k][y] = (ppu_line_span){i16(num(L, 3)), i16(num(L, 4))};
     return 0;
 }
 
@@ -648,8 +661,7 @@ static int l_spr(lua_State *L) {
     int f = (int)luaL_optinteger(L, 3, 0), fl = (int)luaL_optinteger(L, 6, 0);
     if (f < 0 || f >= s->frames) f = 0;
     ppu_obj *o = &PPU.obj[i];
-    *o = (ppu_obj){.on = true, .x = (int16_t)floorf((float)luaL_checknumber(L, 4)),
-                   .y = (int16_t)floorf((float)luaL_checknumber(L, 5)), .w = (uint8_t)s->w, .h = (uint8_t)s->h,
+    *o = (ppu_obj){.on = true, .x = i16(num(L, 4)), .y = i16(num(L, 5)), .w = (uint8_t)s->w, .h = (uint8_t)s->h,
                    .hflip = fl & F_FLIPX, .vflip = (fl & F_FLIPY) != 0, .mosaic = (fl & F_MOSAIC) != 0,
                    .mode = (uint8_t)(fl & F_WINDOW ? OBJ_WINDOW : fl & F_BLEND ? OBJ_BLEND : OBJ_NORMAL),
                    .dbl = (fl & F_DOUBLE) != 0, .prio = (uint8_t)((fl >> 8) & 3), .bank = (uint8_t)((fl >> 12) & 15),
@@ -680,8 +692,8 @@ static int l_mat(lua_State *L) { /* mat(m, degrees, scale_x [, scale_y]): sprite
     float sy = (float)luaL_optnumber(L, 4, sx);
     if (sx == 0) sx = 1;
     if (sy == 0) sy = 1;
-    PPU.affine[m] = (ppu_affine){(int16_t)fx8(cosf(a) / sx), (int16_t)fx8(sinf(a) / sx), (int16_t)fx8(-sinf(a) / sy),
-                                 (int16_t)fx8(cosf(a) / sy)};
+    PPU.affine[m] = (ppu_affine){(int16_t)fx8m(cosf(a) / sx), (int16_t)fx8m(sinf(a) / sx),
+                                 (int16_t)fx8m(-sinf(a) / sy), (int16_t)fx8m(cosf(a) / sy)};
     return 0;
 }
 
@@ -717,7 +729,7 @@ static int l_fx_off(lua_State *L) {
 static int l_window(lua_State *L) { /* window(k, x1, y1, x2, y2, inside) */
     int k = (int)luaL_checkinteger(L, 1) & 1;
     PPU.win.on[k] = true;
-    PPU.win.rect[k] = (ppu_rect){(int16_t)num(L, 2), (int16_t)num(L, 4), (int16_t)num(L, 3), (int16_t)num(L, 5)};
+    PPU.win.rect[k] = (ppu_rect){i16(num(L, 2)), i16(num(L, 4)), i16(num(L, 3)), i16(num(L, 5))};
     PPU.win.in[k] = (uint8_t)luaL_checkinteger(L, 6);
     return 0;
 }
@@ -763,7 +775,7 @@ static void text_line(const char *s, int n, int x, int y, int al, int f, uint16_
     int w = font_width(font_named(f), s, n);
     memcpy(ov_text + ntext, s, (size_t)n);
     c->str = (uint16_t)ntext, c->len = (uint16_t)n, ntext += n;
-    c->x = (int16_t)(x - (al == 1 ? w / 2 : al == 2 ? w : 0)), c->y = (int16_t)y;
+    c->x = i16(x - (al == 1 ? w / 2 : al == 2 ? w : 0)), c->y = i16(y);
     c->font = (uint8_t)f, c->color = colour;
 }
 
@@ -805,7 +817,7 @@ static int l_textw(lua_State *L) {
 static int shape(lua_State *L, int op, bool colour) {
     ov_cmd *c = ov_add(op);
     if (!c) return 0;
-    c->x = (int16_t)num(L, 1), c->y = (int16_t)num(L, 2), c->w = (int16_t)num(L, 3), c->h = (int16_t)num(L, 4);
+    c->x = i16(num(L, 1)), c->y = i16(num(L, 2)), c->w = i16(num(L, 3)), c->h = i16(num(L, 4));
     if (colour) c->color = to565(luaL_optinteger(L, 5, 0xFFFFFF));
     return 0;
 }
@@ -818,17 +830,21 @@ static int l_plate(lua_State *L) { return shape(L, OV_PLATE, true); }
 
 static int l_img(lua_State *L) { /* img(id, x, y [, frame [, scale 1|2]]): a runtime asset at screen resolution */
     const char *id = luaL_checkstring(L, 1);
-    asset *a = gfx_asset(id);
-    ov_cmd *c = a->missing ? NULL : ov_add(OV_IMG);
+    asset *a = safe_name(id) ? gfx_asset(id) : NULL;
+    ov_cmd *c = !a || a->missing ? NULL : ov_add(OV_IMG);
     if (c) {
-        c->a = a, c->x = (int16_t)num(L, 2), c->y = (int16_t)num(L, 3);
-        c->frame = (int16_t)luaL_optinteger(L, 4, 0), c->scale = (uint8_t)(luaL_optinteger(L, 5, 1) == 2 ? 2 : 1);
+        lua_Integer f = luaL_optinteger(L, 4, 0);
+        c->a = a, c->x = i16(num(L, 2)), c->y = i16(num(L, 3));
+        c->frame = (int16_t)(f < 0 || f >= a->frames ? 0 : f);
+        c->scale = (uint8_t)(luaL_optinteger(L, 5, 1) == 2 ? 2 : 1);
     }
     return 0;
 }
 
 static int l_sfx(lua_State *L) {
-    audio_sfx(luaL_checkstring(L, 1), (float)luaL_optnumber(L, 2, 1));
+    const char *id = luaL_checkstring(L, 1);
+    float gain = fin(luaL_optnumber(L, 2, 1));
+    if (safe_name(id)) audio_sfx(id, gain); /* audio_sfx keeps it in 0..1 */
     return 0;
 }
 
@@ -852,13 +868,13 @@ static int l_music(lua_State *L) {
     }
     static const float all[8] = {1, 1, 1, 1, 1, 1, 1, 1};
     mod_stop(fade);
-    audio_music_start(id, 0, 0, all, fade);
+    if (safe_name(id)) audio_music_start(id, 0, 0, all, fade);
     return 0;
 }
 
 static float opt_float(lua_State *L, int t, const char *k, float d, float lo, float hi) {
     lua_getfield(L, t, k);
-    float v = lua_isnil(L, -1) ? d : (float)luaL_checknumber(L, -1);
+    float v = lua_isnil(L, -1) ? d : fin(luaL_checknumber(L, -1));
     lua_pop(L, 1);
     return v < lo ? lo : v > hi ? hi : v;
 }
