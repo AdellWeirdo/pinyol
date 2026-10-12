@@ -924,9 +924,11 @@ static int l_quit(lua_State *L) {
     return 0;
 }
 
-/* store(key, value) / stored(key [, default]): numbers, strings and booleans kept in the game's saves folder
- * (v2.json), for high scores, options and progress. */
+/* store(key, value) / stored(key [, default]): numbers, strings, booleans and tables of them (lists, or string
+ * keys), kept in the game's saves folder (v2.json), for high scores, options and progress. */
 static cJSON *store;
+#define STORE_MAX_BYTES 65536 /* the whole file: a save, not a database */
+#define STORE_MAX_DEPTH 16
 
 static void store_path(char *p, size_t n) { snprintf(p, n, "%s/v2.json", G.save_dir); }
 
@@ -941,23 +943,89 @@ static cJSON *store_get(void) {
     return store;
 }
 
+static cJSON *to_json(lua_State *L, int i, int depth) { /* the value at stack index i; NULL with a message pushed */
+    switch (lua_type(L, i)) {
+    case LUA_TNUMBER: return cJSON_CreateNumber(lua_tonumber(L, i));
+    case LUA_TSTRING: return cJSON_CreateString(lua_tostring(L, i));
+    case LUA_TBOOLEAN: return cJSON_CreateBool(lua_toboolean(L, i));
+    case LUA_TTABLE: break;
+    default: lua_pushfstring(L, "store: a %s cannot be saved", luaL_typename(L, i)); return NULL;
+    }
+    if (depth > STORE_MAX_DEPTH || !lua_checkstack(L, 4)) {
+        lua_pushstring(L, "store: tables nested too deep (or one inside itself)");
+        return NULL;
+    }
+    i = lua_absindex(L, i);
+    lua_Integer n = (lua_Integer)lua_rawlen(L, i), count = 0;
+    lua_pushnil(L);
+    while (lua_next(L, i)) count++, lua_pop(L, 1);
+    bool list = count == n; /* keys 1..n and nothing else */
+    cJSON *t = list ? cJSON_CreateArray() : cJSON_CreateObject();
+    if (list)
+        for (lua_Integer k = 1; k <= n; k++) {
+            lua_rawgeti(L, i, k);
+            cJSON *v = to_json(L, -1, depth + 1);
+            if (!v) return cJSON_Delete(t), lua_remove(L, -2), NULL; /* keep the message, drop the element */
+            lua_pop(L, 1);
+            cJSON_AddItemToArray(t, v);
+        }
+    else {
+        lua_pushnil(L);
+        while (lua_next(L, i)) {
+            if (lua_type(L, -2) != LUA_TSTRING) {
+                lua_pop(L, 2);
+                cJSON_Delete(t);
+                lua_pushstring(L, "store: a table's keys must be strings, or it must be a list");
+                return NULL;
+            }
+            cJSON *v = to_json(L, -1, depth + 1);
+            if (!v) return cJSON_Delete(t), lua_remove(L, -2), lua_remove(L, -2), NULL;
+            cJSON_AddItemToObject(t, lua_tostring(L, -2), v);
+            lua_pop(L, 1);
+        }
+    }
+    return t;
+}
+
+static void from_json(lua_State *L, const cJSON *v, int depth) {
+    if (depth > STORE_MAX_DEPTH || !lua_checkstack(L, 3)) lua_pushnil(L);
+    else if (cJSON_IsNumber(v)) {
+        double d = v->valuedouble;
+        if (d == floor(d) && d >= -2147483648.0 && d < 2147483648.0) lua_pushinteger(L, (lua_Integer)d);
+        else lua_pushnumber(L, (lua_Number)d);
+    } else if (cJSON_IsString(v)) lua_pushstring(L, v->valuestring);
+    else if (cJSON_IsBool(v)) lua_pushboolean(L, cJSON_IsTrue(v));
+    else if (cJSON_IsArray(v) || cJSON_IsObject(v)) {
+        lua_newtable(L);
+        int k = 1;
+        for (const cJSON *e = v->child; e; e = e->next) {
+            from_json(L, e, depth + 1);
+            if (cJSON_IsArray(v)) lua_rawseti(L, -2, k++);
+            else lua_setfield(L, -2, e->string ? e->string : "");
+        }
+    } else lua_pushnil(L);
+}
+
 static int l_store(lua_State *L) {
     const char *k = luaL_checkstring(L, 1);
     cJSON *s = store_get(), *v = NULL;
-    switch (lua_type(L, 2)) {
-    case LUA_TNUMBER: v = cJSON_CreateNumber(lua_tonumber(L, 2)); break;
-    case LUA_TSTRING: v = cJSON_CreateString(lua_tostring(L, 2)); break;
-    case LUA_TBOOLEAN: v = cJSON_CreateBool(lua_toboolean(L, 2)); break;
-    case LUA_TNIL: cJSON_DeleteItemFromObjectCaseSensitive(s, k); break;
-    default: return luaL_error(L, "store: only numbers, strings and booleans");
-    }
+    if (lua_isnoneornil(L, 2)) cJSON_DeleteItemFromObjectCaseSensitive(s, k);
+    else if (!(v = to_json(L, 2, 0))) return lua_error(L);
+    char *txt = NULL;
     if (v) {
-        if (jget(s, k)) cJSON_ReplaceItemInObjectCaseSensitive(s, k, v);
-        else cJSON_AddItemToObject(s, k, v);
-    }
+        cJSON *old = cJSON_DetachItemFromObjectCaseSensitive(s, k);
+        cJSON_AddItemToObject(s, k, v);
+        txt = cJSON_PrintUnformatted(s);
+        if (txt && strlen(txt) > STORE_MAX_BYTES) { /* too big: put back what was there */
+            cJSON_DeleteItemFromObjectCaseSensitive(s, k);
+            if (old) cJSON_AddItemToObject(s, k, old);
+            cJSON_free(txt);
+            return luaL_error(L, "store: the saves would pass %d KB", STORE_MAX_BYTES / 1024);
+        }
+        cJSON_Delete(old);
+    } else txt = cJSON_PrintUnformatted(s);
     char p[384];
     store_path(p, sizeof p);
-    char *txt = cJSON_PrintUnformatted(s);
     FILE *f = txt ? fopen(p, "wb") : NULL;
     if (f) fputs(txt, f), fclose(f);
     cJSON_free(txt);
@@ -966,9 +1034,7 @@ static int l_store(lua_State *L) {
 
 static int l_stored(lua_State *L) {
     cJSON *v = jget(store_get(), luaL_checkstring(L, 1));
-    if (cJSON_IsNumber(v)) lua_pushnumber(L, v->valuedouble);
-    else if (cJSON_IsString(v)) lua_pushstring(L, v->valuestring);
-    else if (cJSON_IsBool(v)) lua_pushboolean(L, cJSON_IsTrue(v));
+    if (v) from_json(L, v, 0);
     else lua_pushvalue(L, 2); /* the default */
     return 1;
 }

@@ -30,4 +30,16 @@ expect_lua w <= 80 and w > 0 and h >= 3 * lh
 lua w1, h1 = text("una línea", 0, 0)
 expect_lua h1 == lh and w1 == textw("una línea")
 lua text("añadiendo letras", 0, 0, 0xFFFFFF, "main", "left", 0, 3)
+lua store("inv", {items = {"llave", "mapa"}, gold = 25, flags = {door = true}, empty = {}})
+lua inv = stored("inv")
+expect_lua inv.items[2] == "mapa" and inv.gold == 25 and inv.flags.door == true and next(inv.empty) == nil
+expect_lua math.type(stored("inv").gold) == "integer" and math.type(stored("best")) == "integer"
+lua loop = {} loop.self = loop
+expect_lua_error store("loop", loop)
+expect_lua_error store("bad", {[5] = 1, x = 2})
+expect_lua_error store("fn", {f = print})
+expect_lua_error store("big", string.rep("x", 70000))
+expect_lua stored("big") == nil and stored("loop") == nil and stored("inv").gold == 25
+lua store("inv", nil)
+expect_lua stored("inv", 7) == 7
 expect_ok

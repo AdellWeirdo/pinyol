@@ -220,8 +220,10 @@ example does its music this way.
 
 ## Saving
 
-`store(key, value)` keeps a number, string or boolean in the game's saves folder; `stored(key [, default])` reads it.
-For high scores, options and progress.
+`store(key, value)` keeps a value in the game's saves folder: a number, string, boolean, or a table of them (a list,
+or string keys), nested; `store(key, nil)` forgets it. `stored(key [, default])` reads it back. For high scores,
+options and progress (`store("save", {room = 3, items = {"key", "map"}})`), up to 64 KB in all. Each `store`
+writes the file at once: call it at moments like a level's end, not every frame.
 
 ## Other
 
