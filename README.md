@@ -38,8 +38,7 @@ uv run tools/new_game.py games/mygame --lua --title "My Game"
 ./build/bp_sim --game games/mygame
 ```
 
-[docs/tutorial.md](docs/tutorial.md) takes it from there step by step, to a game on the console and in the browser.
-You get a small game to change: a room bigger than the screen, a character to walk around it, gems to pick up, sounds and a best time saved. `main.lua` is the game, `room.lua` the room as text, and `art.py` draws the art and converts it (replace its PNGs with your own and run it again). Levels can be drawn in [Tiled](https://www.mapeditor.org) and imported with `tools/tiled2asset.py`. Everything else is in [docs/lua.md](docs/lua.md), and the examples show more:
+You get a small game to change: a room bigger than the screen, a character to walk around it, gems to pick up, sounds and a best time saved. `main.lua` is the game, `room.lua` the room as text, and `art.py` draws the art and converts it (replace its PNGs with your own and run it again). **[docs/tutorial.md](docs/tutorial.md) takes it from there step by step**, to a game on the console and in the browser. Levels can be drawn in [Tiled](https://www.mapeditor.org) and imported with `tools/tiled2asset.py`. Everything else is in [docs/lua.md](docs/lua.md), and the examples show more:
 
 | Example | What it shows |
 |---|---|
