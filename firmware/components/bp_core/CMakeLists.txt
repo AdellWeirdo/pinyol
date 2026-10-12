@@ -2,7 +2,9 @@
 set(ROOT ${CMAKE_CURRENT_LIST_DIR}/../../..)
 file(GLOB CORE_SRC ${ROOT}/src/*.c)
 file(GLOB LUA_SRC ${ROOT}/third_party/lua/*.c)
-idf_component_register(SRCS ${CORE_SRC} ${ROOT}/third_party/cjson/cJSON.c ${LUA_SRC}
+include(${ROOT}/cmake/embed_lib.cmake)
+np2d_embed_lib(${CMAKE_CURRENT_BINARY_DIR}/np2d_lib.c ${ROOT}/lib)
+idf_component_register(SRCS ${CORE_SRC} ${ROOT}/third_party/cjson/cJSON.c ${LUA_SRC} ${CMAKE_CURRENT_BINARY_DIR}/np2d_lib.c
                        INCLUDE_DIRS ${ROOT}/src ${ROOT}/third_party/cjson ${ROOT}/third_party/lua
                        PRIV_INCLUDE_DIRS ${ROOT}/third_party/pocketmod
                        LDFRAGMENTS linker.lf)

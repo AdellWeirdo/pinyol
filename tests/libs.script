@@ -1,0 +1,45 @@
+# The libraries every game can require: juice (tweens, shake, freeze, flash), particles, physics, keyboard
+new
+tick 2
+expect_lua type(juice.tween) == "function" and type(physics.world) == "function"
+# juice: a tween reaches its target with the ease's shape; freeze stops the game's tick; shake moves the camera
+lua juice.tween(door, {y = 100}, 0.5, "out_quad")
+tick 15
+expect_lua door.y > 60 and door.y < 100
+tick 20
+expect_lua door.y == 100 and not juice.busy(door)
+lua juice.freeze(10) before = ball.y
+tick 5
+expect_lua ball.y == before
+tick 10
+lua juice.shake(8) ox, oy = juice.offset()
+expect_lua math.abs(ox) <= 8 and math.abs(oy) <= 8
+expect_lua_error juice.tween(door, {y = 0}, 1, "no_such_ease")
+# particles: a burst, then they die out
+lua fx:burst(200, 100, 50, {speed = 3, colours = {0xFFFFFF, 0xFF8030}, life = 20, gravity = 0.1})
+expect_lua fx:count() == 50
+tick 45
+expect_lua fx:count() == 0
+# physics: the ball and the box fall onto the floor and rest there; the rope holds the bob within its length
+tick 200
+expect_lua math.abs(ball.y + ball.r - 300) < 2 and math.abs(box.y + box.h - 300) < 2 and math.abs(ball.vy) < 0.5
+expect_lua hits > 0
+expect_lua math.sqrt((bob.x - anchor.x) ^ 2 + (bob.y - anchor.y) ^ 2) < 62
+expect_lua world:at(ball.x, ball.y) == ball and world:at(5, 5) == nil
+lua world:remove(box)
+expect_lua world:at(170, 290) ~= box
+shot physics
+# keyboard: right twice from Q to E, A types it; B rubs out; START is done
+lua writing = true
+press RIGHT
+press RIGHT
+press A
+expect_lua kb.text == "E"
+press A
+press B
+expect_lua kb.text == "E"
+press START
+tick 2
+expect_lua result == "ok"
+shot keyboard
+expect_ok

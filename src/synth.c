@@ -10,6 +10,16 @@
 
 #define OVERSAMPLE 4 /* worked out at 88 kHz and averaged: high pitches without the grit of aliasing */
 #define NOISE_N 32   /* noise: new random values each period, so its pitch is heard */
+#define SINE_N 256
+
+static float sine[SINE_N + 1];
+
+static float sine_at(float phase) { /* sin(2 pi phase), phase 0..1, from a table: sinf is slow on the console */
+    float x = phase * SINE_N;
+    int i = (int)x;
+    i = i < 0 ? 0 : i >= SINE_N ? SINE_N - 1 : i;
+    return sine[i] + (sine[i + 1] - sine[i]) * (x - (float)i);
+}
 
 static uint32_t next(uint32_t *s) { /* xorshift32 */
     uint32_t x = *s ? *s : 1;
@@ -47,18 +57,29 @@ void synth_clamp(synth_params *p) { /* a game's numbers made safe: finite, in ra
 int synth_render(const synth_params *in, int16_t *out, int max) {
     synth_params p = *in;
     synth_clamp(&p);
+    if (sine[SINE_N / 4] == 0)
+        for (int i = 0; i <= SINE_N; i++) sine[i] = sinf(6.2831853f * (float)i / SINE_N);
     int total = (int)((p.attack + p.sustain + p.decay) * AUDIO_HZ);
     if (total > max) total = max;
     const float dt = 1.0f / (AUDIO_HZ * OVERSAMPLE);
     uint32_t seed = p.seed ? p.seed : 1;
     float noise[NOISE_N];
     for (int i = 0; i < NOISE_N; i++) noise[i] = rnd(&seed) * 2 - 1;
-    float freq = p.freq, slide = p.slide, duty = p.duty, phase = 0, t = 0, rep = 0, lp = p.lowpass, hp = p.highpass;
+    float freq = p.freq, slide = p.slide, duty = p.duty, phase = 0, rep = 0, lp = p.lowpass, hp = p.highpass;
     float fltp = 0, fltdp = 0, fltphp = 0;
     bool arped = false;
     int n = 0;
+    float vib_phase = 0;
     for (; n < total; n++) {
-        float acc = 0;
+        float acc = 0, vib = 1;
+        if (p.vibrato > 0) { /* once a sample: a wobble is slow */
+            vib = 1 + p.vibrato * 0.5f * sine_at(vib_phase);
+            vib_phase += p.vibrato_speed / AUDIO_HZ;
+            vib_phase -= floorf(vib_phase);
+        }
+        /* the filters' coefficients once a sample too: their sweeps are slow */
+        float w = lp * lp * lp * 0.1f, damp = 5 / (1 + p.resonance * p.resonance * 20) * (0.01f + w), hpk = hp * hp * 0.1f;
+        if (damp > 0.8f) damp = 0.8f;
         for (int o = 0; o < OVERSAMPLE; o++) {
             if (p.repeat > 0 && rep >= p.repeat) /* again from the start: an alarm, a power-up's climb */
                 freq = p.freq, slide = p.slide, duty = p.duty, arped = false, rep = 0;
@@ -68,7 +89,7 @@ int synth_render(const synth_params *in, int16_t *out, int max) {
             if (p.freq_min > 0 && freq < p.freq_min) goto done; /* slid below its floor: over */
             if (freq < 1) freq = 1;
             if (freq > 20000) freq = 20000;
-            float f = p.vibrato > 0 ? freq * (1 + p.vibrato * 0.5f * sinf(6.2831853f * p.vibrato_speed * t)) : freq;
+            float f = freq * vib;
             duty = clampf(duty + p.duty_sweep * dt, 0.02f, 0.98f);
             phase += f * dt;
             if (phase >= 1) {
@@ -81,25 +102,25 @@ int synth_render(const synth_params *in, int16_t *out, int max) {
             case PSG_SQUARE: x = phase < duty ? 0.5f : -0.5f; break;
             case PSG_TRIANGLE: x = phase < 0.5f ? 2 * phase - 0.5f : 1.5f - 2 * phase; break;
             case PSG_SAW: x = 0.5f - phase; break;
-            case PSG_SINE: x = 0.5f * sinf(6.2831853f * phase); break;
+            case PSG_SINE: x = 0.5f * sine_at(phase); break;
             default: x = 0.5f * noise[(int)(phase * NOISE_N) % NOISE_N]; break;
             }
             /* a resonant lowpass (open at 1) and a highpass after it, sweeping as they go */
-            lp = clampf(lp + p.lowpass_sweep * dt, 0, 1), hp = clampf(hp + p.highpass_sweep * dt, 0, 1);
             float old = fltp;
             if (lp < 1) {
-                float w = lp * lp * lp * 0.1f, damp = 5 / (1 + p.resonance * p.resonance * 20) * (0.01f + w);
                 fltdp += (x - fltp) * w;
-                fltdp -= fltdp * (damp > 0.8f ? 0.8f : damp);
+                fltdp -= fltdp * damp;
                 fltp += fltdp;
             } else {
                 fltp = x, fltdp = 0;
             }
             fltphp += fltp - old;
-            fltphp -= fltphp * hp * hp * 0.1f;
+            fltphp -= fltphp * hpk;
             acc += fltphp;
-            t += dt, rep += dt;
+            rep += dt;
         }
+        if (p.lowpass_sweep != 0) lp = clampf(lp + p.lowpass_sweep / AUDIO_HZ, 0, 1);
+        if (p.highpass_sweep != 0) hp = clampf(hp + p.highpass_sweep / AUDIO_HZ, 0, 1);
         float s = (float)n / AUDIO_HZ, env;
         if (s < p.attack) env = s / p.attack;
         else if (s < p.attack + p.sustain) env = 1 + (1 - (s - p.attack) / p.sustain) * 2 * p.punch;

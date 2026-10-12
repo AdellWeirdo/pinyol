@@ -1,0 +1,20 @@
+# The Lua libraries every game can require (lib/*.lua: juice, particles, physics, keyboard...), made into a C file
+# the engine is built with, so they are there on the console, the desktop and the web without copying them.
+# np2d_embed_lib(<out.c> <lib dir>) writes it at configure time; editing a library configures again.
+function(np2d_embed_lib out dir)
+  file(GLOB libs ${dir}/*.lua)
+  list(SORT libs)
+  set(c "/* Made by cmake/embed_lib.cmake from lib/<name>.lua: the libraries every game can require. */\n#include \"bp.h\"\n\n")
+  set(table "")
+  foreach(f ${libs})
+    get_filename_component(name ${f} NAME_WE)
+    file(READ ${f} hex HEX)
+    string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," bytes "${hex}")
+    string(APPEND c "static const char lib_${name}[] = {${bytes}0};\n")
+    string(APPEND table "    {\"${name}\", lib_${name}, sizeof lib_${name} - 1},\n")
+  endforeach()
+  string(APPEND c "\nconst np2d_lib_entry np2d_lib[] = {\n${table}    {0, 0, 0}};\n")
+  file(WRITE ${out}.new "${c}")
+  file(COPY_FILE ${out}.new ${out} ONLY_IF_DIFFERENT)
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${libs} ${dir})
+endfunction()

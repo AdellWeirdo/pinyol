@@ -142,6 +142,7 @@ examples/        games as they go on the microSD: nine in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
 tests/           test scripts for the examples, and the PPU's own tests
 tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, font2fnt.py, ...
+lib/             Lua libraries built into the engine, require()d by any game: juice, particles, physics, keyboard
 third_party/     cJSON, Lua 5.4, pocketmod, the Pixelify Sans font and a library of pixel fonts (fonts/)
 ```
 

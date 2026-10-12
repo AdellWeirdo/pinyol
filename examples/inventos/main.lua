@@ -97,7 +97,7 @@ local function trail_make()
   cls(0x0B0E1C)
   target()
   walkers = {}
-  for i = 1, 160 do walkers[i] = {x = math.random(0, 239), y = math.random(0, 159), c = i % 3} end
+  for i = 1, 50 do walkers[i] = {x = math.random(0, 239), y = math.random(0, 159), c = i % 3} end -- 50: about 4 ms of Lua a tick on the console
 end
 
 local TRAIL_INK = {[0] = 0x55E0FF, 0xFF5AC8, 0xFFE070}
@@ -211,7 +211,7 @@ function _init()
   canvas("PAPER", SCREEN_W, SCREEN_H)
   terrain_make()
   trail_make()
-  for i = 1, 200 do STARS[i] = {math.random(0, 600), math.random(0, 400), i % 5 == 0 and 0xFFE070 or 0x8090B0} end
+  for i = 1, 100 do STARS[i] = {math.random(0, 600), math.random(0, 400), i % 5 == 0 and 0xFFE070 or 0x8090B0} end
 end
 
 function _update()

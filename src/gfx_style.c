@@ -129,29 +129,77 @@ void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, 
     int32_t u_row = (int32_t)(((px * cs + py * sn) / sx + a->w / 2.0f) * F), v_row = (int32_t)(((-px * sn + py * cs) / sy + a->h / 2.0f) * F);
     u_row += (bx0 - ox) * du_dx + (by0 - oy) * du_dy, v_row += (bx0 - ox) * dv_dx + (by0 - oy) * dv_dy;
     const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
+    const int stride = (a->w + 7) / 8;
+    const uint8_t *mask = a->mask ? a->mask + (size_t)frame * stride * a->h : NULL;
     const int32_t wf = a->w << 16, hf = a->h << 16;
-    for (int py2 = by0; py2 < by1; py2++, u_row += du_dy, v_row += dv_dy) {
-        int32_t u = u_row, v = v_row;
-        for (int px2 = bx0; px2 < bx1; px2++, u += du_dx, v += dv_dx) {
-            if (u < 0 || v < 0 || u >= wf || v >= hf) continue;
+    /* lines along the way s keeps its pixels next to each other: rows on a plain frame, columns on the console's
+     * turned strips; a pixel's (u, v) is the same sum of whole steps either way */
+    const bool by_column = step_y(s) == 1 || step_y(s) == -1;
+    const int lines = by_column ? bx1 - bx0 : by1 - by0, len = by_column ? by1 - by0 : bx1 - bx0;
+    const int32_t du_line = by_column ? du_dx : du_dy, dv_line = by_column ? dv_dx : dv_dy;
+    const int32_t du = by_column ? du_dy : du_dx, dv = by_column ? dv_dy : dv_dx;
+    const int step = by_column ? step_y(s) : step_x(s);
+    int32_t u_line = u_row, v_line = v_row;
+    for (int l = 0; l < lines; l++, u_line += du_line, v_line += dv_line) {
+        /* the part of this line inside the picture, where 0 <= u + k du < wf and 0 <= v + k dv < hf, a pixel wider each
+         * side (each pixel is still checked): the turned picture's empty corners are not walked */
+        int k0 = 0, k1 = len;
+        const float uv[2] = {(float)u_line, (float)v_line}, dk[2] = {(float)du, (float)dv}, lim[2] = {(float)wf, (float)hf};
+        for (int c = 0; c < 2; c++) {
+            if (dk[c] == 0) {
+                if (uv[c] < 0 || uv[c] >= lim[c]) k1 = 0;
+                continue;
+            }
+            float lo = (0 - uv[c]) / dk[c], hi = (lim[c] - uv[c]) / dk[c]; /* float: the console has no double hardware */
+            if (lo > hi) {
+                float t = lo;
+                lo = hi, hi = t;
+            }
+            if (lo - 1 > k0) k0 = lo - 1 < k1 ? (int)(lo - 1) : k1;
+            if (hi + 1 < k1) k1 = hi + 1 > 0 ? (int)(hi + 1) : 0;
+        }
+        if (k0 >= k1) continue;
+        int32_t u = u_line + k0 * du, v = v_line + k0 * dv;
+        uint16_t *d = by_column ? at(s, bx0 + l, by0 + k0) : at(s, bx0 + k0, by0 + l);
+        for (int k = k0; k < k1; k++, u += du, v += dv, d += step) {
+            if (u < 0 || v < 0 || u >= wf || v >= hf) continue; /* the span is worked out generously: still checked */
             int iu = u >> 16, iv = v >> 16;
-            if (gfx_opaque(a, frame, iu, iv)) *at(s, px2, py2) = stored(s, src[iv * a->w + iu]);
+            if (!mask || mask[iv * stride + (iu >> 3)] & (0x80 >> (iu & 7))) *d = stored(s, src[iv * a->w + iu]);
         }
     }
 }
 
+void gfx_blit_ex_bounds(const asset *a, float sx, float sy, float degrees, int *x0, int *y0, int *w, int *h) {
+    float r = degrees * 3.14159265f / 180.0f, cs = cosf(r), sn = sinf(r), ax = fabsf(sx), ay = fabsf(sy);
+    float cx = a->w * ax / 2, cy = a->h * ay / 2; /* as gfx_blit_ex works it out, for x = y = 0 */
+    float ex = (fabsf(cs) * a->w * ax + fabsf(sn) * a->h * ay) / 2 + 1, ey = (fabsf(sn) * a->w * ax + fabsf(cs) * a->h * ay) / 2 + 1;
+    *x0 = (int)floorf(cx - ex), *y0 = (int)floorf(cy - ey);
+    *w = (int)ceilf(cx + ex) - *x0, *h = (int)ceilf(cy + ey) - *y0;
+}
+
 /* ------------------------------------------------------------------ frames from the game's picture */
 
-/* Picture rectangle (u, v, pw, ph) at (x, y), each pixel k x k, inside s. */
+/* Picture rectangle (u, v, pw, ph) at (x, y), each pixel k x k, inside s: along the way s keeps its pixels next to
+ * each other, the source position counted, not divided, pixel by pixel. */
 static void part(surface *s, const asset *a, int frame, int u, int v, int pw, int ph, int x, int y, int k) {
     int i0, j0, n = CLIP_X(s, x, pw * k, &i0), m = CLIP_Y(s, y, ph * k, &j0);
     if (n <= 0 || m <= 0) return;
     const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
-    for (int j = j0; j < j0 + m; j++) {
-        int sv = v + j / k;
-        for (int i = i0; i < i0 + n; i++) {
-            int su = u + i / k;
-            if (gfx_opaque(a, frame, su, sv)) *at(s, x + i, y + j) = stored(s, src[sv * a->w + su]);
+    const int stride = (a->w + 7) / 8;
+    const uint8_t *mask = a->mask ? a->mask + (size_t)frame * stride * a->h : NULL;
+    const bool by_column = step_y(s) == 1 || step_y(s) == -1;
+    const int lines = by_column ? n : m, len = by_column ? m : n, step = by_column ? step_y(s) : step_x(s);
+    for (int l = 0; l < lines; l++) {
+        int i = by_column ? i0 + l : i0, j = by_column ? j0 : j0 + l; /* where this line starts, in the part */
+        uint16_t *d = at(s, x + i, y + j);
+        int su = u + i / k, sv = v + j / k, sub = by_column ? j % k : i % k;
+        for (int t = 0; t < len; t++, d += step) {
+            if (!mask || mask[sv * stride + (su >> 3)] & (0x80 >> (su & 7))) *d = stored(s, src[sv * a->w + su]);
+            if (++sub == k) { /* the next source pixel along the line */
+                sub = 0;
+                if (by_column) sv++;
+                else su++;
+            }
         }
     }
 }

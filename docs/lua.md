@@ -356,6 +356,19 @@ A sound that stops dead (`decay = 0`) is meant to loop; one that decays fades it
 Making a sound takes a moment (a long one, some hundredths of a second on the console): make them in `_init` or
 between levels, not every frame. A game's made sounds share 1 MB (about 24 seconds).
 
+## Libraries built in
+
+Lua code every game can `require`, so a game does not start from nothing. They come inside the engine (the
+console, the simulator and the browser have them); a game with a file of the same name uses its own instead, so a
+library can be copied into a game and changed. Each file in `lib/` says how to use it at its top.
+
+| `require` | For |
+|---|---|
+| `"juice"` | what makes a game feel alive: `juice.tween(obj, {x = 100}, 0.5, "out_back")` moves fields with an ease (`linear`, `in_quad`, `out_quad`, `in_out_quad`, `in_cubic`, `out_cubic`, `in_out_cubic`, `in_back`, `out_back`, `out_elastic`, `out_bounce`, `in_bounce`); `juice.shake(px)`, `juice.freeze(ticks)`, `juice.flash(colour, ticks)`; `juice.update()` in `_update` (true while frozen), `camera(juice.offset())` and `juice.draw()` in `_draw` |
+| `"particles"` | sparks, smoke, dust, confetti: `fx = particles.new()`, `fx:burst(x, y, n, {speed, angle, spread, gravity, drag, life, size, colours, shape})`, `fx:update()`, `fx:draw()` |
+| `"physics"` | things that fall, bounce, slide and hit: `w = physics.world({gravity})`, `w:circle(x, y, r, {bounce, friction, static, mass})`, `w:box(x, y, w, h, {...})`, `w:rope(a, b, length, {stick})`, `w:step()`, `w:hits()`, `w:at(x, y)`, `w:remove(body)`. Circles and boxes that do not turn: toys, puzzles, arcade games, up to about 60 bodies on the console |
+| `"keyboard"` | writing with the d-pad or a finger: `kb = keyboard.new({title, text, max, colours})`, `kb:update()` returns `"ok"` or `"cancel"` when done, `kb:draw()`, `kb.text` |
+
 ## Saving
 
 `store(key, value)` keeps a value in the game's saves folder: a number, string, boolean, or a table of them (a list,

@@ -59,6 +59,10 @@ void audio_mix(int16_t *out, int n); /* AUDIO_HZ mono; caller holds the audio lo
 int script_run(const char *path, void (*frame)(void)); /* 0 = all expectations passed */
 int content_validate(void);                            /* number of errors, each logged */
 
+/* The Lua libraries built into the engine (lib/<name>.lua, made into np2d_lib.c by cmake/embed_lib.cmake) */
+typedef struct { const char *name, *src; size_t len; } np2d_lib_entry;
+extern const np2d_lib_entry np2d_lib[]; /* ends with a NULL name */
+
 /* ------------------------------------------------------------------ link.c: consoles playing together */
 #define LINK_PAYLOAD 220 /* bytes of JSON a message carries */
 #define LINK_PEERS 16    /* consoles heard at once */
@@ -167,6 +171,14 @@ int font_draw_styled(surface *sf, const font *f, int x, int y, const char *s, in
  * corner would be unturned. */
 void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, float sy, float degrees);
 void gfx_nine(surface *s, const asset *a, int frame, int x, int y, int w, int h, int k); /* a frame from the picture's thirds */
+
+/* ------------------------------------------------------------------ gfx_cache.c: pictures worked out once */
+asset *pic_find(const void *key, int len, uint32_t frame);             /* kept for that key, or NULL */
+asset *pic_make(const void *key, int len, int w, int h, uint32_t frame); /* a new see-through one to draw into */
+void pic_done(asset *a);                                                 /* drawn: its mask */
+void pic_reset(void);
+/* gfx_style.c: where a turned picture lands, for one whose unturned top-left corner is at 0, 0 */
+void gfx_blit_ex_bounds(const asset *a, float sx, float sy, float degrees, int *x0, int *y0, int *w, int *h);
 
 /* ------------------------------------------------------------------ gfx_draw.c: free drawing and canvases */
 #define GFX_POLY_MAX 64              /* corners of a polygon */

@@ -41,6 +41,7 @@ static int16_t ov_pts[OV_PTS];
 static screen_rect ov_clip[OV_CLIPS];
 static int npts, nclip;
 static asset *target;               /* NULL: the screen; else a canvas, drawn on at once */
+static uint32_t frame_no;           /* counts _draws: the picture cache keeps this frame's pictures */
 static int cam_x, cam_y;            /* camera(): subtracted from what is drawn */
 static bool clipping;               /* clip(): only inside clip_r */
 static screen_rect clip_r;
@@ -150,6 +151,90 @@ static void forget(const ov_cmd *c, int text_bytes, int corners) { /* the last c
     else if (c->ext) nxf--;
 }
 
+/* The costly commands (styled text, nine-slice frames, turned pictures) drawn once into a picture of their own,
+ * kept from frame to frame while they stay the same (gfx_cache.c); the command becomes "copy that picture", which
+ * every strip does the fast way. The same pixels as drawing them directly. */
+#define KEY_MAX 512
+
+static void key_add(uint8_t *k, int *n, const void *v, int len) {
+    if (*n + len <= KEY_MAX) memcpy(k + *n, v, (size_t)len);
+    *n += len;
+}
+
+#define SEEN 256
+static uint32_t seen[2][SEEN]; /* the keys asked for in this frame and the one before */
+static int nseen[2];
+
+static uint32_t key_hash(const uint8_t *k, int n) {
+    uint32_t h = 2166136261u;
+    for (int i = 0; i < n; i++) h = (h ^ k[i]) * 16777619u;
+    return h;
+}
+
+/* Kept, or made now (fresh). Only what is asked for again the next frame is made: a picture that turns or a frame
+ * that grows every frame would be made and thrown away each time, dearer than drawing it straight. NULL: draw it
+ * straight. */
+static asset *picture(const uint8_t *key, int n, int w, int h, bool *fresh) {
+    *fresh = false;
+    if (n > KEY_MAX) return NULL;
+    asset *a = pic_find(key, n, frame_no);
+    if (a) return a;
+    uint32_t hk = key_hash(key, n);
+    int now = frame_no & 1;
+    if (nseen[now] < SEEN) seen[now][nseen[now]++] = hk;
+    bool again = false;
+    for (int i = 0; i < nseen[!now] && !again; i++) again = seen[!now][i] == hk;
+    if (again && (a = pic_make(key, n, w, h, frame_no))) *fresh = true;
+    return a;
+}
+
+static uint16_t not_key(uint16_t c) { return c == CANVAS_KEY ? c ^ 1 : c; } /* the key colour is see-through there */
+
+static void as_picture(ov_cmd *c) {
+    uint8_t key[KEY_MAX];
+    int n = 0, w = 0, h = 0, ox = 0, oy = 0;
+    bool fresh;
+    asset *a = NULL;
+    key_add(key, &n, &c->op, 1);
+    if (c->op == OV_TEXT_OP && c->ext) {
+        text_style st = ov_style[c->ext - 1];
+        if (st.wave || st.shake) return; /* letters that move each frame: drawn directly */
+        const font *f = font_named(c->font);
+        int k = st.scale < 1 ? 1 : st.scale, m = 3 * k; /* room for the outline and the shadow */
+        st.color = not_key(st.color), st.bottom = not_key(st.bottom), st.outline = not_key(st.outline);
+        st.shadow = not_key(st.shadow), st.tick = 0;
+        key_add(key, &n, &f, sizeof f), key_add(key, &n, &st, sizeof st), key_add(key, &n, ov_text + c->str, c->len);
+        w = c->w + f->w * k + 2 * m, h = f->h * k + 2 * m, ox = oy = -m;
+        if (!(a = picture(key, n, w, h, &fresh))) return;
+        if (fresh) {
+            surface s = {.px = a->pixels, .w = w, .h = h};
+            font_draw_styled(&s, f, m, m, ov_text + c->str, c->len, -1, &st);
+        }
+    } else if (c->op == OV_NINE) {
+        key_add(key, &n, &c->a, sizeof c->a), key_add(key, &n, &c->frame, sizeof c->frame);
+        key_add(key, &n, &c->w, sizeof c->w), key_add(key, &n, &c->h, sizeof c->h), key_add(key, &n, &c->scale, 1);
+        w = c->w, h = c->h;
+        if (!(a = picture(key, n, w, h, &fresh))) return;
+        if (fresh) {
+            surface s = {.px = a->pixels, .w = w, .h = h};
+            gfx_nine(&s, c->a, c->frame, 0, 0, w, h, c->scale);
+        }
+    } else if (c->op == OV_IMG && c->ext) {
+        float t[3] = {ov_xf[c->ext - 1].sx, ov_xf[c->ext - 1].sy, ov_xf[c->ext - 1].deg};
+        key_add(key, &n, &c->a, sizeof c->a), key_add(key, &n, &c->frame, sizeof c->frame), key_add(key, &n, t, sizeof t);
+        gfx_blit_ex_bounds(c->a, t[0], t[1], t[2], &ox, &oy, &w, &h);
+        if (!(a = picture(key, n, w, h, &fresh))) return;
+        if (fresh) {
+            surface s = {.px = a->pixels, .w = w, .h = h};
+            gfx_blit_ex(&s, c->a, c->frame, -ox, -oy, t[0], t[1], t[2]);
+        }
+    } else {
+        return;
+    }
+    if (fresh) pic_done(a);
+    c->op = OV_IMG, c->a = a, c->x = i16(c->x + ox), c->y = i16(c->y + oy), c->scale = 1, c->ext = 0, c->frame = 0;
+}
+
 /* A drawing call's command, finished: moved by the camera; then kept for the screen's strips with the clip in force,
  * or, when the target is a canvas, drawn on it at once and taken off the list. */
 static void commit(ov_cmd *c, int text_bytes, int corners) {
@@ -158,6 +243,7 @@ static void commit(ov_cmd *c, int text_bytes, int corners) {
     for (int i = 0; c->op == OV_POLY && i < c->len; i++)
         ov_pts[c->str + 2 * i] = i16(ov_pts[c->str + 2 * i] - cam_x), ov_pts[c->str + 2 * i + 1] = i16(ov_pts[c->str + 2 * i + 1] - cam_y);
     if (!target) {
+        as_picture(c); /* the costly ones, once, then copied */
         if (!clipping) return;
         if (!nclip || memcmp(&ov_clip[nclip - 1], &clip_r, sizeof clip_r)) {
             if (nclip == OV_CLIPS) { /* better not drawn than drawn outside it */
@@ -539,6 +625,8 @@ static int l_imgsize(lua_State *L) { /* imgsize(picture) -> w, h, frames, or nil
 /* ------------------------------------------------------------------ the list's life */
 
 void draw_frame_begin(void) { /* each _draw starts on the screen, with no camera and no clip */
+    frame_no++;
+    nseen[frame_no & 1] = 0;
     nov = ntext = nstyle = nxf = npts = nclip = 0;
     target = NULL, cam_x = cam_y = 0, clipping = false;
 }
@@ -546,6 +634,7 @@ void draw_frame_begin(void) { /* each _draw starts on the screen, with no camera
 void draw_free(void) {
     draw_frame_begin();
     ndirty = 0;
+    pic_reset();
     for (int i = 0; i < nvfont; i++) free(vfont[i].f.bits);
     nvfont = 0;
 }

@@ -46,10 +46,10 @@ uint32_t hal_link_id(void) {
 
 bool hal_link_open(void) {
     if (up) return true;
-    if (!inbox && !(inbox = xQueueCreate(INBOX, sizeof(packet)))) return false;
+    size_t before = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    if (!inbox && !(inbox = xQueueCreateWithCaps(INBOX, sizeof(packet), MALLOC_CAP_SPIRAM))) return false; /* 4 KB, not internal */
     esp_err_t e = esp_event_loop_create_default(); /* the radio's driver reports to it */
     if (e != ESP_OK && e != ESP_ERR_INVALID_STATE) return false;
-    size_t before = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     if (esp_wifi_init(&cfg) != ESP_OK) {
         hal_log("link: the radio did not start");
@@ -77,9 +77,10 @@ void hal_link_close(void) {
     esp_now_deinit();
     esp_wifi_stop();
     esp_wifi_deinit();
+    esp_event_loop_delete_default(); /* its task and stack back to the games */
     xQueueReset(inbox);
     up = false;
-    hal_log("link: off");
+    hal_log("link: off; internal RAM %u KB", (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024));
 }
 
 bool hal_link_send(const uint8_t *p, int n) { return up && esp_now_send(EVERYONE, p, (size_t)n) == ESP_OK; }

@@ -260,7 +260,20 @@ static int l_require(lua_State *L) {
     char rel[128];
     snprintf(rel, sizeof rel, "%s.lua", mod);
     for (char *c = rel; *c && strcmp(c, ".lua"); c++) if (*c == '.') *c = '/'; /* "ui.menu" -> ui/menu.lua */
-    load_chunk(L, rel);
+    char path[384];
+    snprintf(path, sizeof path, "%s/%s", G.game_dir, rel);
+    FILE *own = fopen(path, "rb"); /* the game's own copy first: a library can be copied into a game and changed */
+    const np2d_lib_entry *lib = NULL;
+    for (int i = 0; !own && np2d_lib[i].name; i++)
+        if (!strcmp(np2d_lib[i].name, mod)) lib = &np2d_lib[i];
+    if (own) fclose(own);
+    if (lib) {
+        char name[48];
+        snprintf(name, sizeof name, "=np2d/%s.lua", mod);
+        if (luaL_loadbufferx(L, lib->src, lib->len, name, "t") != LUA_OK) return lua_error(L);
+    } else {
+        load_chunk(L, rel);
+    }
     lua_pushstring(L, mod);
     lua_call(L, 1, 1);
     if (lua_isnil(L, -1)) lua_pop(L, 1), lua_pushboolean(L, 1);
