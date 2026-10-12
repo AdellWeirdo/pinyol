@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "audio_out.h"
 #include "bench.h"
@@ -232,6 +233,10 @@ static void fatal_screen(void) { /* no card and no flash games: a plain dark red
 static bool start_game(const launcher_game *g) {
     static char save_dir[112];
     snprintf(save_dir, sizeof save_dir, "%s/saves", g->dir);
+    if (!strncmp(g->dir, "/flash/", 7) && storage_card()) { /* writing the flash stalls both cores for an erase */
+        mkdir("/sdcard/saves", 0755);                       /* (~0.3 s): a flash game saves on the card if there is one */
+        snprintf(save_dir, sizeof save_dir, "/sdcard/saves/%s", g->id);
+    }
     bp_config cfg = {g->dir, save_dir}; /* both outlive the game: the list is static */
     int64_t t0 = esp_timer_get_time();
     switch_req = false;

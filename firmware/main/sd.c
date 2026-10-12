@@ -72,8 +72,13 @@ static bool flash_mount(void) {
     return true;
 }
 
+static bool card_on;
+
 bool storage_mount(void) {
     bool sd = sd_mount(), flash = flash_mount(); /* both: the launcher lists the card's games, then the flash's */
     if (!sd) ESP_LOGI(TAG, "no card: games from flash (no music)");
+    card_on = sd;
     return sd || flash;
 }
+
+bool storage_card(void) { return card_on; }
