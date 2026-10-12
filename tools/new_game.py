@@ -4,17 +4,25 @@
 # ///
 """Create a new np2d game folder: a tiny but complete game you can play, validate and then make your own.
 
-    uv run tools/new_game.py games/mygame --title "My Game"
+    uv run tools/new_game.py games/mygame --lua --title "My Game"   # a game in Lua (np2d@2): any genre
+    uv run tools/new_game.py games/mygame --title "My Game"         # an adventure made of data (np2d@1)
 
-Two zones, a player, one NPC with a dialogue and a choice, an item, a locked door, a chest and the end screen.
-Every image is placeholder art drawn by code; replace any of them with tools/png2asset.py, keeping the ID.
+--lua copies templates/lua: a room bigger than the screen to walk around, gems to pick up, a camera, sounds and a
+best time saved; its art.py draws the art from code, to replace with your own (docs/lua.md).
+Without --lua: two zones, a player, one NPC with a dialogue and a choice, an item, a locked door, a chest and the end
+screen, all data (docs/game-format.md). Every image is placeholder art drawn by code; replace any of them with
+tools/png2asset.py, keeping the ID.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import math
+import os
+import re
+import shutil
 import struct
+import subprocess
 import sys
 import wave
 from pathlib import Path
@@ -231,14 +239,33 @@ def content(gid: str, title: str) -> dict[str, object]:
     }
 
 
+def lua_game(game: Path, title: str) -> None:
+    """templates/lua with this game's id and title, its art drawn and converted, and the fonts."""
+    shutil.copytree(ROOT / "templates" / "lua", game, dirs_exist_ok=True)
+    meta = {"id": game.name, "title": title, "engine": "np2d@2", "main": "main.lua", "author": "", "description": ""}
+    (game / "game.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    for sub in ("fonts", "saves"):
+        (game / sub).mkdir(exist_ok=True)
+    fonts(game)
+    subprocess.run([sys.executable, str(game / "art.py"), "--draw"], check=True, env={**os.environ, "NP2D": str(ROOT)})
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("dir", type=Path, help="new game folder, e.g. games/mygame (its name is the game id)")
-    p.add_argument("--title", default="Hola np2d")
+    p.add_argument("--title", default=None, help="the name shown in the game list (default: Hola np2d, or the id)")
+    p.add_argument("--lua", action="store_true", help="a Lua game (np2d@2) from templates/lua")
     args = p.parse_args()
     game: Path = args.dir
     if game.exists() and any(game.iterdir()):
         sys.exit(f"{game} already exists and is not empty")
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,40}", game.name):
+        sys.exit(f"{game.name}: a game's folder name is its id: 1-40 letters, digits, _ or -")
+    if args.lua:
+        lua_game(game, args.title or game.name)
+        print(f"{game}: ready. Try it: ./build/bp_sim --game {game}  (then edit {game}/main.lua)")
+        return
+    args.title = args.title or "Hola np2d"
     for sub in ("assets", "fonts", "zones", "dialogues", "audio", "saves"):
         (game / sub).mkdir(parents=True, exist_ok=True)
     for rel, data in content(game.name, args.title).items():

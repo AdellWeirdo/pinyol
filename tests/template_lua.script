@@ -1,0 +1,30 @@
+# templates/lua, as tools/new_game.py --lua makes it: walking, walls, the gems, the best time
+new
+tick 5
+expect_lua state == "play" and gems[5] ~= nil and gems[6] == nil
+lua x0 = player.x
+hold RIGHT 30
+expect_lua player.x > x0 + 20
+shot template_walk
+# into the room's left wall: it stops you
+lua player.x, player.y = 20, 30
+hold LEFT 40
+expect_lua player.x >= 4 and player.x < 20
+# every gem, one after the other
+lua player.x, player.y = gems[1].x - 4, gems[1].y - 6
+tick 2
+expect_lua gems[5] == nil and gems[4] ~= nil
+lua player.x, player.y = gems[1].x - 4, gems[1].y - 6
+tick 2
+lua player.x, player.y = gems[1].x - 4, gems[1].y - 6
+tick 2
+lua player.x, player.y = gems[1].x - 4, gems[1].y - 6
+tick 2
+lua player.x, player.y = gems[1].x - 4, gems[1].y - 6
+tick 2
+expect_lua state == "done" and stored("best") ~= nil
+shot template_done
+press A
+tick 2
+expect_lua state == "play" and gems[5] ~= nil
+expect_ok

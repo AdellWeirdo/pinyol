@@ -1,10 +1,13 @@
 # np2d
 
-A small C engine for 2D narrative games on the **RetroGo** console, an open-source handheld built on an ESP32-S3 (480×320 touch screen, buttons, speaker, microSD).
+A small C engine for 2D games on the **RetroGo** console, an open-source handheld built on an ESP32-S3 (480×320 touch screen, buttons, speaker, microSD).
 
-A game is **a folder of data**, not code: JSON for zones, dialogues, items and events, plus images, sounds and fonts. Copy the folder to the console's microSD under `games/<id>/` and it appears in the game list. The same folder runs in a desktop simulator and in the browser.
+A game is **a folder**: copy it to the console's microSD under `games/<id>/` and it appears in the game list. The same folder runs in a desktop simulator and in the browser. There are two kinds:
 
-![The example game: title, a street, a dialogue choice, the house](docs/hola.png)
+- **Lua games** (`"engine": "np2d@2"`), any genre. The engine gives them a virtual console modelled on the Game Boy Advance: four background layers (tiles, rotated and scaled, Mode 7), 128 sprites, palettes, transparency, windows, mosaic and per-line effects, with text drawn on top at full resolution. They hold 60 fps on the console. The API: [docs/lua.md](docs/lua.md).
+- **Adventures made of data** (`"engine": "np2d@1"`): JSON for zones, dialogues, items, puzzles and events, no code. Bajo Pueblo and Geumgye are made this way: [docs/game-format.md](docs/game-format.md).
+
+![Four Lua games: a platformer, a shoot-'em-up, a Mode 7 kart race and the starting template](docs/examples.png)
 
 ## Quick start
 
@@ -12,21 +15,38 @@ macOS: `brew install cmake sdl2 uv`. On Linux, install the same three with your 
 
 ```sh
 cmake -B build && cmake --build build
-./build/bp_sim                   # plays examples/hola
-ctest --test-dir build           # validates the example and plays it start to end
+./build/bp_sim --game examples/plataformas   # or naves, carreras, hola
+ctest --test-dir build                       # validates every example and plays its test script
 ```
 
 | Action | Keyboard | Console |
 |---|---|---|
 | Move | Arrows / WASD | D-pad |
-| Interact, advance | Enter, E, Space | A |
-| Back | Esc, Backspace | B |
+| A: interact, advance, jump, fire | Enter, E, Space, Z | A |
+| B: back | Esc, Backspace, X | B |
 | Cycle target, puzzle help | Tab, C | C |
 | Bag | I | MENU |
 | Pause | P | START |
 | Touch | Mouse | Screen |
 
 ## Make your own game
+
+### In Lua
+
+```sh
+uv run tools/new_game.py games/mygame --lua --title "My Game"
+./build/bp_sim --game games/mygame
+```
+
+You get a small game to change: a room bigger than the screen, a character to walk around it, gems to pick up, sounds and a best time saved. `main.lua` is the game, `room.lua` the room as text, and `art.py` draws the art and converts it (replace its PNGs with your own and run it again). Everything else is in [docs/lua.md](docs/lua.md), and the examples show more:
+
+| Example | What it shows |
+|---|---|
+| [plataformas](examples/plataformas) | a platformer: parallax layers, see-through water with a wavy per-line scroll, mosaic transitions |
+| [naves](examples/naves) | a shoot-'em-up: a star field with a speed per line, a turning planet, blended explosions, a flash |
+| [carreras](examples/carreras) | a kart race in Mode 7: a perspective floor, rivals as scaled sprites, laps and positions |
+
+### As an adventure made of data
 
 ```sh
 uv run tools/new_game.py games/mygame --title "My Game"
@@ -61,17 +81,22 @@ add_test(NAME validate COMMAND bp_headless --game ${GAME_DIR} --validate)
 
 Bajo Pueblo and Geumgye are built this way.
 
-## Play in the browser
-
-The simulator also builds with [Emscripten](https://emscripten.org) into a web page with the game packed inside.
+## Share a game, play it in the browser
 
 ```sh
-emcmake cmake -B build-web -DCMAKE_BUILD_TYPE=Release -DGAME_DIR=$PWD/examples/hola
-cmake --build build-web
-python3 -m http.server -d build-web     # open http://localhost:8000
+python3 tools/pack_game.py games/mygame -o dist/      # -> dist/mygame.zip, a folder mygame/ inside
 ```
 
-The game's files ship as one `index.data`, so its size is the game's size: about 1 MB for the example, more with music.
+Unzipped into the card's `games/` folder, the game is installed. The same zip plays in a browser: the simulator builds with [Emscripten](https://emscripten.org) into `player.html`, which plays any game's zip, given as `player.html?game=URL` or dropped on the page, with on-screen buttons on phones and saves kept in the browser.
+
+```sh
+emcmake cmake -B build-web -DCMAKE_BUILD_TYPE=Release
+cmake --build build-web --target np2d_player
+cp dist/mygame.zip build-web/
+python3 -m http.server -d build-web     # open http://localhost:8000/player.html?game=mygame.zip
+```
+
+The `np2d_web` target makes `index.html` instead, with one game (`-DGAME_DIR=...`) packed inside.
 
 ## Run it on the console
 
@@ -84,7 +109,7 @@ idf.py build
 idf.py -p /dev/cu.usbmodem1101 flash        # your board's port
 ```
 
-The firmware also bakes one game into the flash, so the console works without a card: `examples/hola` by default, or `idf.py -DFLASH_GAME=/abs/path/to/game build`. Every other game goes on the microSD (FAT32) as `games/<id>/`. To update the firmware later, copy `build/np2d_console.bin` to the card as `firmware.bin`.
+The firmware also bakes games into the flash, so the console works without a card: `examples/hola` by default, or a list, `idf.py -DFLASH_GAME="/abs/a;/abs/b" build` (then flash `build/game.bin` too, at 0x420000). Every other game goes on the microSD (FAT32) as `games/<id>/`. Holding MENU for two seconds leaves a Lua game for the list. To update the firmware later, copy `build/np2d_console.bin` to the card as `firmware.bin`.
 
 Pins and peripherals, each with its source: [docs/hardware.md](docs/hardware.md).
 
@@ -92,25 +117,30 @@ Pins and peripherals, each with its source: [docs/hardware.md](docs/hardware.md)
 
 ```
 src/             the engine, portable C11: no SDL or ESP-IDF headers (hal.h is the whole platform contract)
-platform/sdl/    desktop simulator, and the web player when built with Emscripten
+  ppu.c          the virtual picture processor (layers, sprites, effects) that Lua games draw with
+  lua_game.c     np2d@2: the Lua sandbox and its API
+platform/sdl/    desktop simulator, and the web players when built with Emscripten
 platform/null/   bp_headless: validator and test runner without a window
-platform/web/    the web page around the player
+platform/web/    the web pages around the players
 firmware/        the console: ESP-IDF project, builds src/ unchanged
-examples/hola/   the example game, as it goes on the microSD
-tests/           test scripts for the example
-tools/           new_game.py, png2asset.py, ttf2fnt.py, record.sh, remote.py
+examples/        games as they go on the microSD: three in Lua, hola as data
+templates/lua/   the game new_game.py --lua starts from
+tests/           test scripts for the examples, and the PPU's own tests
+tools/           new_game.py, png2asset.py, pack_game.py, ttf2fnt.py, record.sh, remote.py
+third_party/     cJSON, Lua 5.4, the Pixelify Sans font
 ```
 
-The world is 240×160 logical pixels drawn at 2× into a 480×320 frame; text and UI use the full resolution. Logic runs at 60 ticks per second on every platform. Every persistent fact is a named flag, so saving is writing flags and loading is setting them and entering a zone.
+The world is 240×160 logical pixels drawn at 2× into a 480×320 frame; text and UI use the full resolution. Logic runs at 60 ticks per second on every platform. On the console the frame goes to the panel in 32-row strips drawn straight from the game while the previous strip is sent, in step with the panel's refresh; a Lua game's picture is drawn by both cores. How it got fast enough, measured: [docs/measurements.md](docs/measurements.md).
 
 ## Status
 
-np2d was written for two games, *Bajo Pueblo* and *Geumgye*, and it shows:
+np2d was written for two games, *Bajo Pueblo* and *Geumgye*, and then opened up with Lua for any genre. What to know:
 
-- The built-in interface text (menus, pause, bag) is in Spanish.
-- Some defaults come from the first game: without a `"player"` in `game.json` the player is `KLAUS` with sprite prefix `KL`, and the start zone defaults to `Z01`. Set them in your `game.json`.
-- The engine's data format is versioned as `"engine": "np2d@1"` in `game.json` and may still change.
+- The Lua API (`np2d@2`) is new and may still change; the data format (`np2d@1`) is stable.
+- The built-in interface text of data adventures (menus, pause, bag) is in Spanish.
+- Some np2d@1 defaults come from the first game: without a `"player"` in `game.json` the player is `KLAUS` with sprite prefix `KL`, and the start zone defaults to `Z01`. Set them in your `game.json`.
+- What was done and measured, step by step: [docs/progress.md](docs/progress.md).
 
 ## License
 
-np2d is MIT licensed ([LICENSE](LICENSE)). It includes [cJSON](third_party/cjson/LICENSE) (MIT) and the [Pixelify Sans](third_party/pixelify/OFL.txt) font (SIL Open Font License 1.1).
+np2d is MIT licensed ([LICENSE](LICENSE)). It includes [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT) and the [Pixelify Sans](third_party/pixelify/OFL.txt) font (SIL Open Font License 1.1).
