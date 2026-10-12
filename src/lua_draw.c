@@ -172,7 +172,8 @@ static void commit(ov_cmd *c, int text_bytes, int corners) {
     surface whole = {.px = target->pixels, .w = target->w, .h = target->h};
     surface s = clipping ? gfx_clip(&whole, clip_r.x, clip_r.y, clip_r.w, clip_r.h) : whole;
     if (s.w > 0 && s.h > 0) {
-        draw_one(&s, c);
+        if (c->op == OV_SHADE) gfx_canvas_shade(&s, c->x, c->y, c->w, c->h); /* see-through stays so */
+        else draw_one(&s, c);
         int x0, y0, x1, y1;
         bounds(c, &x0, &y0, &x1, &y1);
         touched(target, x0, y0, x1, y1);

@@ -6,7 +6,7 @@ local NAMES = {"btn", "btnp", "touch", "t", "ticks", "rgb", "pal", "palette", "b
   "sheet", "spr", "spr_off", "spr_clear", "prio", "bank", "spr_mat", "mat", "show", "blend", "fade", "fx_off",
   "window", "window_off", "window_out", "objwindow", "mosaic", "text", "textw", "rect", "box", "shade", "panel",
   "plate", "img", "frame", "sfx", "tone", "note", "perf", "pset", "pget", "line", "circ", "tri", "poly", "cls", "canvas",
-  "target", "camera", "clip", "imgsize", "noise"}
+  "target", "camera", "clip", "imgsize", "noise", "sound", "sfx_set", "sfx_stop", "sfx_on", "music_layer"}
 local VALUES = {0, 1, -1, 2, 3, 4, 7, 15, 16, 31, 127, 128, 255, 256, 1023, 1024, 32767, 65535, 1e9, -1e9, 0.5, -0.5,
   0 / 0, 1 / 0, -1 / 0, 2 ^ 31, -(2 ^ 31), 2 ^ 53, 0x7FFFFFFF, -0x7FFFFFFF - 1, "", "x", "STARS", "PLANET", "SHIP",
   "../x", "/etc", "C4", "light", "dark", "affine", "tiles", "bitmap", "off", true, false, {}, {map = "STARS"},
@@ -17,7 +17,9 @@ local VALUES = {0, 1, -1, 2, 3, 4, 7, 15, 16, 31, 127, 128, 255, 256, 1023, 1024
   {font = "nofont"}, {font = "../x"}, {font = {}}, {align = "middle"}, {scale = 0.0001, angle = 0 / 0},
   {scale = 1e9, angle = 1e9, flip_x = true, flip_y = 1}, {scale_x = -16, scale_y = 1 / 0, frame = 1e9},
   {scale = 3, angle = 45}, {font = "arcade", scale = 8, outline = 1, shadow = 1, wave = 32, shake = 16},
-  "CANV", "CANV2", CLEAR, {1, 2, 3, 4, 5, 6}, {0, 0, 1e9, 1e9, -1e9, 5, 0 / 0, 1}, {1, 2, 3}, {"a", "b", "c", "d"}}
+  "CANV", "CANV2", CLEAR, {1, 2, 3, 4, 5, 6}, {0, 0, 1e9, 1e9, -1e9, 5, 0 / 0, 1}, {1, 2, 3}, {"a", "b", "c", "d"},
+  "coin", "laser", "random", "SND", {wave = "noise", freq = 1e9, slide = -1e9, sustain = 1e9, lowpass = 0 / 0,
+  resonance = 1, again = 0.0001, arp = 0, volume = 2}, {pitch = 1e9, loop = true, gain = -5}, {pitch = 0 / 0}}
 local fns = {}
 for _, n in ipairs(NAMES) do fns[#fns + 1] = _G[n] end
 for _, f in ipairs({link.send, link.recv, link.peers, link.id}) do fns[#fns + 1] = f end
@@ -41,6 +43,7 @@ local function storm(n)
 end
 
 function _init()
+  sound("SND", "coin", 3)
   canvas("CANV", 64, 48)
   canvas("CANV2", "STAR")
   palette("OBJ", true)

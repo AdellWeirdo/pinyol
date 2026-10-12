@@ -102,3 +102,14 @@ void gfx_canvas_mask(asset *a, int x, int y, int w, int h) {
         }
     }
 }
+
+/* shade() on a canvas: darker by half, but its see-through pixels stay see-through (halved, a colour never comes
+ * out as CANVAS_KEY, so what was opaque stays opaque) */
+void gfx_canvas_shade(surface *s, int x, int y, int w, int h) {
+    int i0, j0, n = CLIP_X(s, x, w, &i0), m = CLIP_Y(s, y, h, &j0);
+    for (int j = 0; j < m; j++)
+        for (int i = 0; i < n; i++) {
+            uint16_t *d = at(s, x + i0 + i, y + j0 + j);
+            if (*d != CANVAS_KEY) *d = (uint16_t)((*d & 0xF7DE) >> 1);
+        }
+}

@@ -176,6 +176,7 @@ void gfx_line(surface *s, int x0, int y0, int x1, int y1, uint16_t c);
 void gfx_circ(surface *s, int cx, int cy, int r, uint16_t c, bool fill);
 void gfx_poly(surface *s, const int16_t *xy, int n, uint16_t c, bool fill); /* xy: x0, y0, x1, y1, ... */
 void gfx_canvas_mask(asset *a, int x, int y, int w, int h); /* after drawing on a canvas: its mask, there */
+void gfx_canvas_shade(surface *s, int x, int y, int w, int h); /* darker, keeping see-through pixels */
 asset *gfx_find(const char *id); /* a picture already in memory, or NULL; nothing is loaded */
 /* A canvas w x h (or a copy of from), see-through; one of that name and size is cleared instead. NULL, or why not. */
 const char *gfx_canvas(const char *id, int w, int h, const asset *from, asset **out);
@@ -295,6 +296,12 @@ bool audio_music_playing(void);
 void audio_voice(const char *id); /* listening clips and spoken lines */
 void audio_voice_stop(int fade_ms);
 void audio_sfx(const char *id, float gain);
+int audio_sfx_play(const char *id, float gain, float pitch, bool loop); /* a handle, or 0 */
+void audio_sfx_adjust(int handle, float gain, float pitch); /* negative: unchanged */
+void audio_sfx_stop(int handle);
+bool audio_sfx_playing(int handle);
+bool audio_sfx_set(const char *id, int16_t *pcm, int n); /* a clip the game made; takes pcm (malloc'd) */
+long audio_made_bytes(void);
 void audio_preload(const char *id);
 long audio_cache_bytes(void); /* RAM held by cached SFX: stays under a fixed budget */
 void audio_bus(float amb, float mus, float amb_lowpass_hz, int fade_ms); /* ducking; lowpass 0 = open */
@@ -321,6 +328,26 @@ void psg_release(int voice);
 void psg_reset(void);
 void psg_mix(float *acc, int m); /* audio thread, lock held */
 float psg_note_hz(const char *name); /* "A4" = 440, "C#3", "Eb5"; 0 if not a note */
+
+/* Sounds made from numbers (synth.c), in the spirit of sfxr: rendered into a clip, played by sfx(). */
+#define SYNTH_MAX_S 4.0f /* seconds a made sound lasts at most */
+typedef struct {
+    int wave;                             /* PSG_* */
+    float freq, freq_min;                 /* Hz: the start, and the floor where a falling sound ends (0: none) */
+    float slide, slide_accel;             /* Hz per second the pitch moves, and per second squared */
+    float vibrato, vibrato_speed;         /* depth 0..1, Hz */
+    float arp, arp_time;                  /* the pitch times arp after arp_time seconds (a coin's jump) */
+    float duty, duty_sweep;               /* square: its high part 0..1, and how it moves per second */
+    float attack, sustain, punch, decay;  /* seconds, and punch 0..1: louder at the start of the sustain */
+    float lowpass, lowpass_sweep, resonance; /* 0..1 (1 open), per second, 0..1 */
+    float highpass, highpass_sweep;       /* 0..1 (0 open), per second */
+    float repeat, volume;                 /* seconds before it starts again (0: never), 0..1 */
+    uint32_t seed;                        /* the noise's */
+} synth_params;
+void synth_defaults(synth_params *p);
+void synth_clamp(synth_params *p);
+int synth_render(const synth_params *p, int16_t *out, int max); /* samples at AUDIO_HZ */
+bool synth_recipe(const char *kind, uint32_t seed, synth_params *p); /* coin, laser, explosion, powerup, hit, jump, blip, random */
 
 /* Tracker music (modplay.c): a ProTracker .mod, looped. */
 bool mod_play(const char *path, float gain); /* false if it cannot be read or played */

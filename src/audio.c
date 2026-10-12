@@ -45,12 +45,16 @@ typedef struct {
     int n[4], count, last;
     long bytes;
     unsigned used; /* use_clock at its last play: the oldest goes first when the budget is full */
+    bool made;     /* by the game (audio_sfx_set): there is no file to load it again, so it stays */
 } clip;
 
 typedef struct {
     const int16_t *pcm;
     int n, pos;
-    float gain;
+    uint32_t frac;     /* pitch != 1: the fraction of a sample past pos, 16 bits */
+    float gain, pitch; /* pitch: 1 as recorded, 2 an octave up */
+    bool loop;
+    uint16_t gen;      /* counts the sounds this voice has started: a handle names one of them */
 } sfx_voice;
 
 enum { S_AMB0, S_MUS = S_AMB0 + NAMB, S_VOICE0, S_VOICE1, NSTREAMS };
@@ -325,7 +329,7 @@ static bool evict_one(int keep) {
     hal_audio_lock();
     int old = -1;
     for (int i = 0; i < ncache; i++)
-        if (i != keep && !playing(&cache[i]) && (old < 0 || cache[i].used < cache[old].used)) old = i;
+        if (i != keep && !cache[i].made && !playing(&cache[i]) && (old < 0 || cache[i].used < cache[old].used)) old = i;
     if (old >= 0) {
         for (int k = 0; k < cache[old].count; k++) free(cache[old].pcm[k]);
         cache_bytes -= cache[old].bytes;
@@ -370,22 +374,88 @@ void audio_preload(const char *id) {
     if (id) clip_get(id);
 }
 
-/* One-shot from RAM; a variant different from the last one, so repeats never sound identical. */
-void audio_sfx(const char *id, float gain) {
-    if (!id) return;
+/* From RAM, a variant different from the last one, so repeats never sound identical; at a pitch (1 as recorded),
+ * looping or once. Returns a handle for audio_sfx_adjust / audio_sfx_stop, 0 if nothing plays. */
+int audio_sfx_play(const char *id, float gain, float pitch, bool loop) {
+    if (!id) return 0;
     clip *c = clip_get(id);
-    if (!c) return;
+    if (!c) return 0;
     int k = c->count > 1 ? rand() % (c->count - 1) : 0;
     if (c->count > 1 && k >= c->last) k++;
     c->last = k;
+    pitch = pitch > 0.0625f && pitch < 16 ? pitch : pitch >= 16 ? 16 : 0.0625f; /* NaN too: the lowest */
     hal_audio_lock();
-    int v = 0;
-    for (int i = 0; i < SFX_VOICES; i++) { /* a free voice, else steal the one closest to its end */
-        if (!sfx[i].pcm) { v = i; break; }
-        if (sfx[i].n - sfx[i].pos < sfx[v].n - sfx[v].pos) v = i;
-    }
-    sfx[v] = (sfx_voice){c->pcm[k], c->n[k], 0, gain < 0 ? 0 : gain > 1 ? 1 : gain};
+    int v = -1;
+    for (int i = 0; i < SFX_VOICES && v < 0; i++) /* a free voice */
+        if (!sfx[i].pcm) v = i;
+    for (int i = 0; i < SFX_VOICES && v < 0; i++) /* else steal one: the one-shot closest to its end, else voice 0 */
+        if (!sfx[i].loop && (v < 0 || sfx[i].n - sfx[i].pos < sfx[v].n - sfx[v].pos)) v = i;
+    if (v < 0) v = 0;
+    uint16_t gen = (uint16_t)(sfx[v].gen + 1);
+    sfx[v] = (sfx_voice){c->pcm[k], c->n[k], 0, 0, gain < 0 ? 0 : gain > 1 ? 1 : gain, pitch, loop, gen};
     hal_audio_unlock();
+    return (gen & 0x7FFF) << 4 | (v + 1); /* never 0 */
+}
+
+void audio_sfx(const char *id, float gain) { audio_sfx_play(id, gain, 1, false); }
+
+static sfx_voice *by_handle(int h) { /* under the lock: the voice still playing that sound, or NULL */
+    int v = (h & 15) - 1;
+    if (v < 0 || v >= SFX_VOICES || !sfx[v].pcm || (sfx[v].gen & 0x7FFF) != (h >> 4)) return NULL;
+    return &sfx[v];
+}
+
+void audio_sfx_adjust(int h, float gain, float pitch) { /* a negative value leaves that one as it is */
+    hal_audio_lock();
+    sfx_voice *x = by_handle(h);
+    if (x && gain >= 0) x->gain = gain > 1 ? 1 : gain;
+    if (x && pitch > 0) x->pitch = pitch > 0.0625f ? (pitch < 16 ? pitch : 16) : 0.0625f;
+    hal_audio_unlock();
+}
+
+void audio_sfx_stop(int h) {
+    hal_audio_lock();
+    sfx_voice *x = by_handle(h);
+    if (x) x->pcm = NULL;
+    hal_audio_unlock();
+}
+
+bool audio_sfx_playing(int h) {
+    hal_audio_lock();
+    bool on = by_handle(h) != NULL;
+    hal_audio_unlock();
+    return on;
+}
+
+/* A clip the game made (synth.c): kept under id, taking the place of one of that name; pcm becomes the cache's. */
+bool audio_sfx_set(const char *id, int16_t *pcm, int n) {
+    clip *c = NULL;
+    for (int i = 0; i < ncache && !c; i++)
+        if (!strcmp(cache[i].id, id)) c = &cache[i];
+    if (!c && ncache == SFX_CACHE && !evict_one(-1)) return free(pcm), false;
+    hal_audio_lock();
+    if (c) { /* the old sound goes: voices playing it stop first */
+        for (int v = 0; v < SFX_VOICES; v++)
+            for (int k = 0; k < c->count; k++)
+                if (sfx[v].pcm == c->pcm[k]) sfx[v].pcm = NULL;
+        for (int k = 0; k < c->count; k++) free(c->pcm[k]);
+        cache_bytes -= c->bytes;
+    } else {
+        c = &cache[ncache++];
+    }
+    memset(c, 0, sizeof *c);
+    snprintf(c->id, sizeof c->id, "%s", id);
+    c->pcm[0] = pcm, c->n[0] = n, c->count = 1, c->last = -1, c->made = true;
+    c->bytes = (long)n * (long)sizeof(int16_t), c->used = ++use_clock;
+    cache_bytes += c->bytes;
+    hal_audio_unlock();
+    return true;
+}
+
+long audio_made_bytes(void) { /* the game's own sounds, which are never evicted */
+    long b = 0;
+    for (int i = 0; i < ncache; i++) b += cache[i].made ? cache[i].bytes : 0;
+    return b;
 }
 
 void audio_pause(bool p) { paused = p; }
@@ -475,11 +545,26 @@ void audio_mix(int16_t *out, int n) {
         }
         for (int v = 0; v < SFX_VOICES; v++) {
             sfx_voice *x = &sfx[v];
-            if (!x->pcm) continue;
-            int k = x->n - x->pos < m ? x->n - x->pos : m;
-            for (int i = 0; i < k; i++) acc[i] += x->pcm[x->pos + i] * x->gain;
-            x->pos += k;
-            if (x->pos >= x->n) x->pcm = NULL;
+            if (x->pitch == 1) /* as recorded: sample after sample, round again if it loops */
+                for (int i = 0; i < m && x->pcm;) {
+                    int k = x->n - x->pos < m - i ? x->n - x->pos : m - i;
+                    for (int j = 0; j < k; j++) acc[i + j] += x->pcm[x->pos + j] * x->gain;
+                    x->pos += k, i += k;
+                    if (x->pos >= x->n) x->pos = 0, x->pcm = x->loop ? x->pcm : NULL;
+                }
+            else { /* faster or slower: between two samples, by the fraction */
+                uint32_t step = (uint32_t)(x->pitch * 65536.0f);
+                for (int i = 0; i < m && x->pcm; i++) {
+                    int a = x->pos, b = a + 1 < x->n ? a + 1 : (x->loop ? 0 : a);
+                    acc[i] += (x->pcm[a] + (float)(x->pcm[b] - x->pcm[a]) * (float)x->frac / 65536.0f) * x->gain;
+                    x->frac += step;
+                    x->pos += (int)(x->frac >> 16), x->frac &= 0xFFFF;
+                    if (x->pos >= x->n) {
+                        if (x->loop) x->pos %= x->n;
+                        else x->pcm = NULL;
+                    }
+                }
+            }
         }
         psg_mix(acc, m);
         if (!paused) mod_mix(acc, m);

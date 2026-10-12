@@ -678,70 +678,6 @@ static int l_mosaic(lua_State *L) {
     return 0;
 }
 
-static int l_sfx(lua_State *L) {
-    const char *id = luaL_checkstring(L, 1);
-    float gain = fin(luaL_optnumber(L, 2, 1));
-    if (safe_name(id)) audio_sfx(id, gain); /* audio_sfx keeps it in 0..1 */
-    return 0;
-}
-
-/* music(id [, fade_ms]) loops audio/<id>.mod (a tracker module) or audio/<id>.wav; music() stops it */
-static int l_music(lua_State *L) {
-    int fade = (int)luaL_optinteger(L, 2, lua_isnoneornil(L, 1) ? 500 : 300);
-    if (lua_isnoneornil(L, 1)) {
-        audio_music_stop(fade);
-        mod_stop(fade);
-        return 0;
-    }
-    const char *id = luaL_checkstring(L, 1);
-    char path[384];
-    snprintf(path, sizeof path, "%s/audio/%s.mod", G.game_dir, id);
-    FILE *f = safe_name(id) ? fopen(path, "rb") : NULL;
-    if (f) { /* a module: it replaces any music */
-        fclose(f);
-        audio_music_stop(fade);
-        mod_play(path, 1);
-        return 0;
-    }
-    static const float all[8] = {1, 1, 1, 1, 1, 1, 1, 1};
-    mod_stop(fade);
-    if (safe_name(id)) audio_music_start(id, 0, 0, all, fade);
-    return 0;
-}
-
-
-/* tone(voice, freq or "C4" [, {wave, vol, duty, attack, decay, sustain, len, release, slide}]); tone(voice) lets go */
-static int l_tone(lua_State *L) {
-    int ch = (int)luaL_checkinteger(L, 1);
-    if (ch < 0 || ch >= PSG_VOICES) return luaL_error(L, "tone: voice %d does not exist (0 to %d)", ch, PSG_VOICES - 1);
-    if (lua_isnoneornil(L, 2)) {
-        psg_release(ch);
-        return 0;
-    }
-    float hz = lua_type(L, 2) == LUA_TSTRING ? psg_note_hz(lua_tostring(L, 2)) : (float)luaL_checknumber(L, 2);
-    if (!(hz > 0 && hz < AUDIO_HZ / 2)) return luaL_error(L, "tone: '%s' is not a note or a frequency", luaL_tolstring(L, 2, NULL));
-    psg_note n = {.wave = PSG_SQUARE, .freq = hz, .vol = 0.5f, .duty = 0.5f, .attack = 0.005f, .decay = 0.25f,
-                  .release = 0.03f};
-    if (!lua_isnoneornil(L, 3)) {
-        luaL_checktype(L, 3, LUA_TTABLE);
-        static const char *const waves[] = {"square", "triangle", "saw", "sine", "noise", NULL};
-        lua_getfield(L, 3, "wave");
-        if (!lua_isnil(L, -1)) n.wave = (uint8_t)luaL_checkoption(L, -1, NULL, waves);
-        lua_pop(L, 1);
-        n.vol = opt_float(L, 3, "vol", n.vol, 0, 1), n.duty = opt_float(L, 3, "duty", n.duty, 0.01f, 0.99f);
-        n.attack = opt_float(L, 3, "attack", n.attack, 0, 60), n.decay = opt_float(L, 3, "decay", n.decay, 0, 60);
-        n.sustain = opt_float(L, 3, "sustain", 0, 0, 1), n.len = opt_float(L, 3, "len", 0, 0, 600);
-        n.release = opt_float(L, 3, "release", n.release, 0, 60), n.slide = opt_float(L, 3, "slide", 0, -1e5f, 1e5f);
-    }
-    psg_play(ch, &n);
-    return 0;
-}
-
-static int l_note(lua_State *L) { /* note("C4") -> 261.63 Hz */
-    lua_pushnumber(L, psg_note_hz(luaL_checkstring(L, 1)));
-    return 1;
-}
-
 /* noise(x [, y [, z]]) -> about -1..1: Ken Perlin's improved gradient noise, smooth from one place to the next and
  * the same on every machine (its shuffle is made from a fixed seed). For landscapes, clouds, wobbles. */
 static uint8_t perm[512];
@@ -954,13 +890,14 @@ static void api(lua_State *L) {
         {"spr_off", l_spr_off}, {"spr_clear", l_spr_clear}, {"prio", l_prio}, {"bank", l_bank}, {"spr_mat", l_spr_mat},
         {"mat", l_mat}, {"show", l_show}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off},
         {"window", l_window}, {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow},
-        {"mosaic", l_mosaic}, {"noise", l_noise}, {"sfx", l_sfx}, {"music", l_music}, {"tone", l_tone}, {"note", l_note},
+        {"mosaic", l_mosaic}, {"noise", l_noise},
         {"quit", l_quit}, {"perf", l_perf}, {"store", l_store}, {"stored", l_stored}, {"load", l_load}, {"log", l_log},
         {"print", l_log}, {"require", l_require}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);
     draw_register(L); /* text, shapes, pictures, canvases: lua_draw.c */
     link_register(L); /* consoles playing together: lua_link.c */
+    sound_register(L); /* sounds, music, notes: lua_sound.c */
     static const struct { const char *n; int v; } K[] = {
         {"BG0", PPU_BG0}, {"BG1", PPU_BG1}, {"BG2", PPU_BG2}, {"BG3", PPU_BG3}, {"OBJ", PPU_OBJ}, {"BACK", PPU_BACK},
         {"FX", PPU_FX}, {"ALL", 0x3F}, {"FLIP_X", F_FLIPX}, {"FLIP_Y", F_FLIPY}, {"BLEND", F_BLEND},

@@ -284,8 +284,13 @@ order, so consoles that get the same messages can compute the same thing.
 
 | Call | Does |
 |---|---|
-| `sfx(id [, gain])` | plays `audio/<id>.wav` once |
+| `sfx(id [, gain [, {pitch, loop}]])` | plays `audio/<id>.wav` (or a sound made with `sound`) once, or looping; `pitch` 1 as recorded, 2 an octave up, 0.5 down. Returns a handle |
+| `sfx_set(handle, {gain, pitch})` | changes a sound while it plays: an engine that follows the speed, a theremin |
+| `sfx_stop(handle)`, `sfx_on(handle)` | stops it; is it still playing? |
+| `sound(id, recipe [, seed])` | makes a sound from a recipe: `"coin"`, `"laser"`, `"explosion"`, `"powerup"`, `"hit"`, `"jump"`, `"blip"` or `"random"`; each seed gives another. Returns its numbers |
+| `sound(id, {numbers})` | makes a sound from its numbers (below), played with `sfx(id)`. Returns them, completed |
 | `music(id)` / `music()` | loops `audio/<id>.mod` (a tracker module) or else `audio/<id>.wav`; no id stops it |
+| `music_layer(stem, gain [, fade_ms])` | a WAV's channels are layers (drums, bass, melody... up to 3): each comes in or goes out, so the music follows the game |
 | `tone(voice, pitch [, options])` | plays a synthesised note on voice 0-3, replacing what it played |
 | `tone(voice)` | lets the voice's note go (it fades with its release) |
 | `note(name)` | the frequency of a note: `note("A4")` is 440, also `"C#3"`, `"Eb5"` |
@@ -316,6 +321,40 @@ Music made in a tracker (MilkyTracker, OpenMPT, ProTracker...) saved as a ProTra
 
 A tune is notes played from `_update` on a beat: keep a step counter and call `tone` when it changes. The `puzle`
 example does its music this way.
+
+### Sounds made from numbers
+
+`sound` makes a sound the way sfxr did (and every jam game since): a wave whose pitch slides, wobbles or jumps,
+shaped by an envelope and filters. A game can make a hundred of them with no files, a different one for each enemy,
+or a new one each level (`sound("ZAP", "laser", level)`). The numbers, all optional:
+
+| Number | Default | |
+|---|---|---|
+| `wave` | `"square"` | `"square"`, `"triangle"`, `"saw"`, `"sine"` or `"noise"` |
+| `freq`, `freq_min` | 440, 0 | Hz at the start; a falling sound ends when it gets below `freq_min` |
+| `slide`, `slide_accel` | 0, 0 | Hz per second the pitch moves (negative falls), and how that changes per second |
+| `vibrato`, `vibrato_speed` | 0, 6 | a wobble, 0 to 1 deep, Hz fast |
+| `arp`, `arp_time` | 1, 0 | after `arp_time` seconds the pitch is multiplied by `arp` (a coin's jump) |
+| `duty`, `duty_sweep` | 0.5, 0 | square: the high part of each period, and how it moves per second |
+| `attack`, `sustain`, `decay` | 0, 0.1, 0.2 | seconds: rising, holding, falling (4 s in all at most) |
+| `punch` | 0 | 0 to 1: louder at the start of the sustain |
+| `lowpass`, `lowpass_sweep`, `resonance` | 1, 0, 0 | 0 to 1 (1 lets everything through), its move per second, how it rings |
+| `highpass`, `highpass_sweep` | 0, 0 | 0 to 1 (0 lets everything through), its move per second |
+| `again` | 0 | seconds after which it starts over (an alarm, a climbing power-up) |
+| `volume`, `seed` | 0.5, 1 | how loud; the noise's seed |
+
+```lua
+local zap = sound("ZAP", "laser", 7)      -- a laser, the seventh of its kind
+zap.slide = zap.slide * 2                 -- falls twice as fast
+sound("ZAP2", zap)
+sound("HUM", {wave = "sine", freq = 220, sustain = 1, decay = 0})   -- whole cycles in a second: it loops cleanly
+local h = sfx("HUM", 0.5, {loop = true})
+sfx_set(h, {pitch = 1 + speed / 10})      -- in _update
+```
+
+A sound that stops dead (`decay = 0`) is meant to loop; one that decays fades its last moment so it never clicks.
+Making a sound takes a moment (a long one, some hundredths of a second on the console): make them in `_init` or
+between levels, not every frame. A game's made sounds share 1 MB (about 24 seconds).
 
 ## Saving
 
