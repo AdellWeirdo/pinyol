@@ -23,7 +23,8 @@ static uint16_t lerp565(uint16_t a, uint16_t b, int i, int n) { /* a at i = 0, b
 }
 
 /* One glyph: its ink, outline and shadow worked out on a small map in font pixels, then filled run by run, each font
- * pixel a scale x scale block. */
+ * pixel a scale x scale block. Only the map's columns this window shows are worked out (and the few around them an
+ * outline or a shadow reaches from): on the console's 32-pixel strips, a big glyph costs a strip's share of it. */
 static void glyph(surface *sf, const font *f, int c, int x, int y, const text_style *st) {
     const int k = st->scale, w = f->w, h = f->h, W = w + 2 * PAD, H = h + 2 * PAD;
     if (x + (w + PAD) * k <= sf->x0 || x - PAD * k >= sf->x0 + sf->w || y + (h + PAD) * k <= sf->y0 ||
@@ -31,23 +32,26 @@ static void glyph(surface *sf, const font *f, int c, int x, int y, const text_st
         return; /* not in this window: most glyphs, most strips */
     const uint8_t *g = f->bits + (size_t)c * h * f->stride, *b = f->box + 4 * c;
     if (b[1] <= b[0]) return; /* a space */
+    int lo = (sf->x0 - x) / k + PAD - 1, hi = (sf->x0 + sf->w - x) / k + PAD + 2; /* the columns shown, map units */
+    if (lo < 0) lo = 0;
+    if (hi > W) hi = W;
+    const int ilo = lo - 3 < 0 ? 0 : lo - 3, ihi = hi + 3 > W ? W : hi + 3; /* ink: what a ring or a shadow comes from */
     static uint8_t m[MAP_W * MAP_W];
     memset(m, 0, (size_t)W * H);
     for (int j = b[2]; j < b[3]; j++)
-        for (int i = b[0]; i < b[1]; i++)
+        for (int i = b[0] > ilo - PAD ? b[0] : ilo - PAD; i < b[1] && i + PAD < ihi; i++)
             if (g[j * f->stride + (i >> 3)] & (0x80 >> (i & 7))) m[(j + PAD) * W + i + PAD] = INK;
-    if (st->has_outline)
+    if (st->has_outline) /* each inked cell rings its empty neighbours */
         for (int j = 1; j < H - 1; j++)
-            for (int i = 1; i < W - 1; i++)
-                if (!m[j * W + i])
-                    for (int d = 0; d < 9; d++)
-                        if (m[(j + d / 3 - 1) * W + i + d % 3 - 1] == INK) {
-                            m[j * W + i] = RING;
-                            break;
-                        }
+            for (int i = ilo > 1 ? ilo : 1; i < ihi && i < W - 1; i++)
+                if (m[j * W + i] == INK)
+                    for (int d = 0; d < 9; d++) {
+                        uint8_t *n = &m[(j + d / 3 - 1) * W + i + d % 3 - 1];
+                        if (!*n) *n = RING;
+                    }
     if (st->has_shadow) /* under what is there: the ink and its outline, moved */
         for (int j = H - 1; j >= 0; j--)
-            for (int i = W - 1; i >= 0; i--) {
+            for (int i = hi - 1; i >= lo; i--) {
                 int sj = j - st->sdy, si = i - st->sdx;
                 if (!m[j * W + i] && sj >= 0 && sj < H && si >= 0 && si < W && m[sj * W + si] && m[sj * W + si] != SHADE)
                     m[j * W + i] = SHADE;
@@ -57,13 +61,13 @@ static void glyph(surface *sf, const font *f, int c, int x, int y, const text_st
         if (yy + k <= sf->y0 || yy >= sf->y0 + sf->h) continue;
         uint16_t ink = st->gradient ? lerp565(st->color, st->bottom, j < PAD ? 0 : j - PAD, h) : st->color;
         const uint8_t *row = m + j * W;
-        for (int i = 0; i < W;) {
+        for (int i = lo; i < hi;) {
             int v = row[i], r = i + 1;
             if (!v) {
                 i++;
                 continue;
             }
-            while (r < W && row[r] == v) r++;
+            while (r < hi && row[r] == v) r++;
             gfx_fill(sf, x + (i - PAD) * k, yy, (r - i) * k, k, v == INK ? ink : v == RING ? st->outline : st->shadow);
             i = r;
         }
