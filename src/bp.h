@@ -253,6 +253,24 @@ void audio_pause(bool paused);
 void audio_reset(void);
 void audio_force_missing(const char *id);
 
+/* Synthesised voices (psg.c), mixed with the rest: notes instead of recordings. */
+#define PSG_VOICES 4
+enum { PSG_SQUARE, PSG_TRIANGLE, PSG_SAW, PSG_SINE, PSG_NOISE };
+typedef struct {
+    uint8_t wave;        /* PSG_* */
+    float freq, vol;     /* Hz; 0..1 */
+    float duty;          /* square: the high part of each period, 0..1 */
+    float attack, decay; /* seconds: up to full volume, then the time constant towards sustain */
+    float sustain;       /* 0..1 of vol held after the decay; 0: the note ends by itself (a pluck) */
+    float len, release;  /* seconds: when the note is let go (0: never by itself), and its fade after */
+    float slide;         /* Hz per second added to the pitch (a laser, a drop) */
+} psg_note;
+void psg_play(int voice, const psg_note *n); /* starts at once, replacing what the voice played */
+void psg_release(int voice);
+void psg_reset(void);
+void psg_mix(float *acc, int m); /* audio thread, lock held */
+float psg_note_hz(const char *name); /* "A4" = 440, "C#3", "Eb5"; 0 if not a note */
+
 /* ------------------------------------------------------------------ music.c */
 void music_tick(void);
 void music_force(const char *cue); /* sequence override until the next zone */

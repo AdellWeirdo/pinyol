@@ -17,4 +17,11 @@ expect_lua stored("missing", "x") == "x"
 lua math.randomseed(7) first = math.random(1000)
 lua math.randomseed(7)
 expect_lua math.random(1000) == first
+lua tone(0, "C4", {wave = "triangle", decay = 0.1})
+lua tone(1, 880, {wave = "noise", sustain = 1, len = 0.05})
+lua tone(0)
+expect_lua math.abs(note("A4") - 440) < 0.01 and note("Q4") == 0
+expect_lua_error tone(4, 440)
+expect_lua_error tone(0, "X9")
+expect_lua_error tone(0, 440, {wave = "piano"})
 expect_ok

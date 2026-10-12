@@ -161,6 +161,33 @@ Text is UTF-8 limited to the characters of Windows-1252 (Spanish, French, German
 |---|---|
 | `sfx(id [, gain])` | plays `audio/<id>.wav` once |
 | `music(id)` / `music()` | loops `audio/<id>.wav`; no id stops it |
+| `tone(voice, pitch [, options])` | plays a synthesised note on voice 0-3, replacing what it played |
+| `tone(voice)` | lets the voice's note go (it fades with its release) |
+| `note(name)` | the frequency of a note: `note("A4")` is 440, also `"C#3"`, `"Eb5"` |
+
+Recordings are not the only way: like the GBA's sound channels, four voices make notes from waveforms, for music
+and effects written in Lua. `pitch` is a frequency in Hz or a note name. The options, all optional:
+
+| Option | Default | |
+|---|---|---|
+| `wave` | `"square"` | `"square"`, `"triangle"`, `"saw"`, `"sine"` or `"noise"` |
+| `vol` | 0.5 | 0 to 1 |
+| `duty` | 0.5 | square only: the high part of each period (0.125 and 0.25 sound thinner) |
+| `attack` | 0.005 | seconds to reach full volume |
+| `decay` | 0.25 | seconds (time constant) to fall towards `sustain` |
+| `sustain` | 0 | the level held after the decay; 0 makes a plucked note that ends by itself |
+| `len` | 0 | seconds until the note is let go; 0 waits for `tone(voice)` (or for the pluck to end) |
+| `release` | 0.03 | seconds to fade once let go |
+| `slide` | 0 | Hz per second added to the pitch: negative for a drop, positive for a rising zap |
+
+```lua
+tone(0, "C5", {wave = "square", duty = 0.25, decay = 0.08})           -- a blip
+tone(1, 900, {wave = "noise", decay = 0.2})                            -- a hit
+tone(2, 1200, {wave = "saw", sustain = 1, len = 0.15, slide = -6000})  -- a laser
+```
+
+A tune is notes played from `_update` on a beat: keep a step counter and call `tone` when it changes. The `puzle`
+example does its music this way.
 
 ## Saving
 
