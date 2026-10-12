@@ -100,5 +100,5 @@ serial data received"); it needs the cable unplugged and plugged back in. Until 
 - **The web:** `tools/make_gallery.py` builds a shelf of games (each playable and downloadable) for the site.
 - **Bajo Pueblo and Geumgye's bag:** what lies under the bag and the notebook is drawn only where it shows. Per
   screen on the console: Bajo Pueblo's bag 14.7 → 10.4 ms, bag with a dialogue 20.2 → 14.2 ms, Geumgye's bag
-  13.9 → 9.9 ms. Still at ~30 fps: an item's close-up over the bag (a second full shade and a large 2× picture);
-  covering that needs occlusion per layer.
+  13.9 → 9.9 ms. Then occlusion for the whole stack and a faster 2× blit: an item's close-up 14.8 → 11.6 ms (60 fps),
+  over the bag 27.2 → 18.5 ms (still ~30 fps there).

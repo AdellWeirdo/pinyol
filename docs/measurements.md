@@ -142,5 +142,14 @@ screen with the strips (`-DBP_BENCH=v1`):
 | Bajo Pueblo, the bag with a dialogue | 20.2 ms | 14.2 ms |
 | Geumgye, the bag | 13.9 ms | 9.9 ms |
 
-Pixel-identical on the 48 scripts. An item's close-up over the bag (a second full-screen shade and a large 2×
-picture) still takes ~32 ms a frame on the console.
+Then the same for the whole layer stack (each layer says which opaque panels it leaves; the zone and the shades are
+drawn only where they show, the panel layers whole) and a 2× blit that writes whole blocks on the strips:
+
+| Screen | Before tonight | Now |
+|---|---|---|
+| A dialogue | 7.9 ms | 7.6 ms |
+| An item's close-up | 14.8 ms | 11.6 ms |
+| A close-up over the bag | 27.2 ms | 18.5 ms (still ~30 fps) |
+
+Pixel-identical on the 48 scripts. The close-up over the bag would need the bag drawn only around the card, which
+costs more than it saves while the bag lays its text out again for every piece.
