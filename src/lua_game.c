@@ -1219,7 +1219,11 @@ void v2_timing(v2_times *t) {
 
 void v2_draw(surface *s) {
     surface world = {.px = G.world, .w = WORLD_W, .h = WORLD_H};
-    gfx_upscale2x(&world, s);
+    const ov_cmd *c = nov ? &ov[0] : NULL;
+    int k = c && c->op == OV_IMG ? c->scale : 0;
+    bool covered = k && !c->a->mask && c->x <= 0 && c->y <= 0 && c->x + k * c->a->w >= SCREEN_W &&
+                   c->y + k * c->a->h >= SCREEN_H; /* a full-screen opaque picture drawn first: the world is under it */
+    if (!covered) gfx_upscale2x(&world, s);
     overlay_draw(s);
     if (failed) { /* the error, readable, over whatever was drawn */
         gfx_fill(s, 0, 0, SCREEN_W, 64, C_INK);

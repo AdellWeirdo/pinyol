@@ -182,6 +182,24 @@ static void blit_plain(surface *s, const asset *a, int frame, int x, int y, int 
     const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
     int stride = (a->w + 7) / 8, xs = step_x(s);
     const uint8_t *mask = a->mask ? a->mask + (size_t)frame * stride * a->h : NULL;
+    const int ys = step_y(s);
+    if (!half && (ys == 1 || ys == -1) && xs != 1 && xs != -1) { /* a turned strip: column by column, each contiguous */
+        for (int u = u0; u < u0 + n; u++) {
+            uint16_t *d = at(s, x + u, y + v0);
+            const uint16_t *sp = src + v0 * a->w + u;
+            if (!mask) {
+                if (s->swap)
+                    for (int j = 0; j < m; j++, d += ys, sp += a->w) *d = bswap16(*sp);
+                else
+                    for (int j = 0; j < m; j++, d += ys, sp += a->w) *d = *sp;
+                continue;
+            }
+            const uint8_t *mp = mask + v0 * stride + (u >> 3), bit = (uint8_t)(0x80 >> (u & 7));
+            for (int j = 0; j < m; j++, d += ys, sp += a->w, mp += stride)
+                if (*mp & bit) *d = stored(s, *sp);
+        }
+        return;
+    }
     for (int v = v0; v < v0 + m; v++) {
         const uint16_t *sp = src + v * a->w + u0;
         uint16_t *d = at(s, x + u0, y + v);
