@@ -23,9 +23,10 @@
 #define ADDR_CODEC 0x18
 #define BLOCK 256 /* samples per mix, 11.6 ms */
 #define I2C_MS 10
-/* ponytail: calibration knobs, measured on the board (docs/measurements.md): the microphone's analog gain, 0..7 =
- * 0..42 dB in 6 dB steps (REG16), and the PGA (REG14 low bits) */
-#define MIC_GAIN 4
+/* ponytail: calibration knobs, measured on the board 2026-10-13: the microphone's analog gain, 0..7 = 0..42 dB in
+ * 6 dB steps (REG16), and the PGA (REG14 low bits, its most). At 42 dB the speaker's 880 Hz square right next to the
+ * microphone reads level 0.76 and silence 0: a voice at arm's length should read about 0.3. */
+#define MIC_GAIN 7
 #define MIC_PGA 0x0A
 #define MIC_RING 4096
 
