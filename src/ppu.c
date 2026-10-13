@@ -498,6 +498,11 @@ static void render_part(int part, void *frame) { /* every other line, from line 
     for (int y = part; y < PPU_H; y += 2) line(&LB[part], y, out + y * PPU_W);
 }
 
+bool ppu_blank(uint16_t *colour) {
+    *colour = PPU.bg_pal[0];
+    return !PPU.layers && !PPU.line.backdrop && PPU.fx.mode == FX_NONE;
+}
+
 void ppu_render(uint16_t *out) {
     prepare();
     hal_parallel(render_part, out);

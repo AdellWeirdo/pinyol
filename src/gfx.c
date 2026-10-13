@@ -13,6 +13,8 @@ static int16_t slot[SLOTS]; /* index into assets + 1; 0 = empty */
 static uint16_t oom_pixel = 0xF81F; /* stand-in if even a placeholder cannot be allocated */
 static int nassets;
 static size_t canvas_px; /* all the canvases' pixels: CANVAS_MAX_PX at most */
+static size_t pic_bytes, pic_budget = PIC_BUDGET, budget_set; /* the pictures' data in memory, how much may be */
+static uint32_t pic_frame;                         /* counts gfx_new_frame: 0 for ever in v1 games, nothing goes */
 static char forced[16][32];
 static int nforced;
 
@@ -25,6 +27,7 @@ void gfx_reset(void) {
     nassets = 0;
     nforced = 0;
     canvas_px = 0;
+    pic_bytes = 0, pic_budget = budget_set ? budget_set : PIC_BUDGET, pic_frame = 0;
     memset(slot, 0, sizeof slot);
 }
 
@@ -56,6 +59,60 @@ static void placeholder(asset *a, int w, int h, int frames) {
     a->missing = true;
 }
 
+/* ------------------------------------------------------------------ the pictures' memory */
+
+void gfx_new_frame(void) { pic_frame++; }
+void gfx_pin(asset *a) { a->pinned = true; }
+void gfx_set_budget(size_t bytes) { pic_budget = budget_set = bytes; } /* for every game from now on */
+size_t gfx_picture_bytes(void) { return pic_bytes; }
+
+static void let_go(asset *a) { /* its data freed; the rest (its name, size, anchor) stays for when it comes back */
+    free(a->pixels), free(a->mask), free(a->pk);
+    a->pixels = NULL, a->mask = NULL, a->pk = NULL, a->pal = NULL, a->cols = NULL;
+    pic_bytes -= a->bytes;
+    a->bytes = 0, a->out = true;
+}
+
+/* Lets pictures go, least recently asked for first, until `need` more bytes fit the budget (all = true: every one it
+ * can, as when memory itself ran out). Never one asked for in this frame (its commands draw from it), one pinned, a
+ * canvas or `keep`. ponytail: a scan of every picture per one let go; a list in order of use if hundreds go a frame. */
+static void make_room(size_t need, const asset *keep, bool all) {
+    while (all || pic_bytes + need > pic_budget) {
+        asset *lru = NULL;
+        for (int i = 0; i < nassets; i++) {
+            asset *a = &assets[i];
+            if (a == keep || a->pinned || a->canvas || a->out || !a->bytes || a->used == pic_frame) continue;
+            if (!lru || a->used < lru->used) lru = a;
+        }
+        if (!lru) return;
+        let_go(lru);
+    }
+}
+
+/* read_file for a picture's data, with room made for it first (and everything that can go let go, then once more,
+ * when memory itself runs out) */
+static char *read_picture(const char *path, long *len, const asset *keep) {
+    FILE *f = fopen(path, "rb");
+    if (!f) return NULL;
+    fseek(f, 0, SEEK_END);
+    long n = ftell(f);
+    fclose(f);
+    make_room(n > 0 ? (size_t)n : 0, keep, false);
+    char *d = read_file(path, len);
+    if (!d && n >= 0) {
+        make_room(0, keep, true);
+        d = read_file(path, len);
+    }
+    return d;
+}
+
+static void *alloc_picture(size_t n, const asset *keep) { /* malloc, with room made the same way */
+    make_room(n, keep, false);
+    void *p = malloc(n);
+    if (!p) make_room(0, keep, true), p = malloc(n);
+    return p;
+}
+
 static inline unsigned rd16(const uint8_t *p) { return p[0] | p[1] << 8; }
 static inline unsigned index_at(const uint8_t *ids, int j, int bpp) {
     return bpp == 8 ? ids[j] : (j & 1 ? ids[j >> 1] & 15 : ids[j >> 1] >> 4);
@@ -67,7 +124,7 @@ static bool load_packed(asset *a) {
     char path[384];
     long len = 0;
     snprintf(path, sizeof path, "%s/assets/%s.pk", G.game_dir, a->id);
-    uint8_t *pk = (uint8_t *)read_file(path, &len);
+    uint8_t *pk = (uint8_t *)read_picture(path, &len, a);
     const char *why = NULL;
     if (!pk || len < 16 || memcmp(pk, "NP2K", 4) || pk[4] != 1 || (pk[5] != 4 && pk[5] != 8)) why = "not a packed picture";
     unsigned ncol = why ? 0 : rd16(pk + 6), w = why ? 0 : rd16(pk + 8), h = why ? 0 : rd16(pk + 10), nf = why ? 0 : rd16(pk + 12);
@@ -106,6 +163,7 @@ static bool load_packed(asset *a) {
     }
     a->pk = pk, a->bpp = pk[5], a->pal = (const uint16_t *)(pk + 16), a->cols = (const uint32_t *)(pk + table);
     a->pk_opaque = opaque;
+    a->bytes = (size_t)len, pic_bytes += a->bytes;
     return true;
 }
 
@@ -137,27 +195,23 @@ static bool load_asset(asset *a) {
     long len = 0;
     size_t npx = (size_t)a->w * a->h * a->frames;
     snprintf(path, sizeof path, "%s/assets/%s.rgb565", G.game_dir, a->id);
-    uint8_t *raw = (uint8_t *)read_file(path, &len);
+    uint8_t *raw = (uint8_t *)read_picture(path, &len, a);
     if (!raw || (size_t)len != npx * 2) {
         hal_log("asset %s: pixel file size %ld, expected %zu", a->id, len, npx * 2);
         free(raw);
         placeholder(a, a->w, a->h, a->frames);
         return true; /* keep the declared geometry */
     }
-    a->pixels = malloc(npx * 2);
-    if (!a->pixels) {
-        free(raw);
-        return false;
-    }
-    for (size_t i = 0; i < npx; i++) a->pixels[i] = (uint16_t)(raw[2 * i] | (raw[2 * i + 1] << 8)); /* LE */
-    free(raw);
+    for (size_t i = 0; i < npx; i++) ((uint16_t *)raw)[i] = (uint16_t)(raw[2 * i] | (raw[2 * i + 1] << 8)); /* LE, in place */
+    a->pixels = (uint16_t *)raw; /* (read_file's memory: malloc'd, aligned for any type) */
     snprintf(path, sizeof path, "%s/assets/%s.mask", G.game_dir, a->id);
-    a->mask = (uint8_t *)read_file(path, &len);
+    a->mask = (uint8_t *)read_picture(path, &len, a);
     if (a->mask && (size_t)len != (size_t)((a->w + 7) / 8) * a->h * a->frames) {
         hal_log("asset %s: bad mask size, drawing opaque", a->id);
         free(a->mask);
         a->mask = NULL;
     }
+    a->bytes = npx * 2 + (a->mask ? (size_t)len : 0), pic_bytes += a->bytes;
     return true;
 }
 
@@ -174,7 +228,15 @@ static asset *lookup(const char *id, bool quiet) {
     char key[32];
     snprintf(key, sizeof key, "%s", id ? id : ""); /* compare truncated, so long ids still hit the cache */
     unsigned h = slot_of(key);
-    if (slot[h]) return &assets[slot[h] - 1];
+    if (slot[h]) {
+        asset *a = &assets[slot[h] - 1];
+        a->used = pic_frame;
+        if (a->out) { /* let go earlier: back from the card, as it was */
+            a->out = false;
+            if (!load_asset(a)) placeholder(a, a->w, a->h, a->frames);
+        }
+        return a;
+    }
     if (nassets == MAX_ASSETS) {
         if (!none.pixels) placeholder(&none, 16, 16, 1);
         return &none;
@@ -183,6 +245,7 @@ static asset *lookup(const char *id, bool quiet) {
     asset *a = &assets[nassets++];
     memset(a, 0, sizeof *a);
     snprintf(a->id, sizeof a->id, "%s", key);
+    a->used = pic_frame;
     if (!load_asset(a)) {
         if (!quiet) hal_log("asset %s missing, using placeholder", key);
         placeholder(a, 16, 16, 1);
@@ -256,9 +319,11 @@ uint16_t *gfx_pixels(asset *a) {
     if (a->pixels || !a->pk) return a->pixels;
     size_t npx = (size_t)a->w * a->h * a->frames;
     int stride = (a->w + 7) / 8;
-    uint16_t *px = malloc(npx * 2);
-    uint8_t *mask = a->pk_opaque ? NULL : calloc((size_t)stride * a->h * a->frames, 1);
-    if (!px || (!a->pk_opaque && !mask)) {
+    size_t nmask = a->pk_opaque ? 0 : (size_t)stride * a->h * a->frames;
+    make_room(nmask, a, false);
+    uint16_t *px = alloc_picture(npx * 2, a);
+    uint8_t *mask = nmask ? calloc(nmask, 1) : NULL;
+    if (!px || (nmask && !mask)) {
         free(px), free(mask);
         return NULL;
     }
@@ -273,6 +338,7 @@ uint16_t *gfx_pixels(asset *a) {
                 }
             });
     a->pixels = px, a->mask = mask;
+    a->bytes += npx * 2 + nmask, pic_bytes += npx * 2 + nmask;
     return px;
 }
 

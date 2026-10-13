@@ -2,10 +2,12 @@
  *   bp_headless --game examples/hola [--saves DIR] [--fresh] (--validate | --script FILE)
  *               [--audio FILE.pcm] [--video FILE.mp4]   (tools/record.sh joins the two)
  *               [--crc FILE]   a CRC-32 of every other frame, to check that a change draws the same pixels
- *               [--check-strips]   every frame also drawn as the console's panel strips, which must match */
+ *               [--check-strips]   every frame also drawn as the console's panel strips, which must match
+ *               [--pictures KB]   the pictures' memory budget (PIC_BUDGET): small, they are let go and come back */
 #include <dirent.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -124,12 +126,13 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--audio") && i + 1 < argc) dump = fopen(argv[++i], "wb");
         else if (!strcmp(argv[i], "--crc") && i + 1 < argc) crcs = fopen(argv[++i], "w");
         else if (!strcmp(argv[i], "--check-strips")) check_strips = true;
+        else if (!strcmp(argv[i], "--pictures") && i + 1 < argc) gfx_set_budget((size_t)atoi(argv[++i]) * 1024);
         else if (!strcmp(argv[i], "--video") && i + 1 < argc) {
             if (!(video = open_video(argv[++i]))) return 2;
         }
         else {
             fprintf(stderr, "usage: %s --game DIR [--saves DIR] [--fresh] (--validate | --script FILE) "
-                            "[--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips]\n", argv[0]);
+                            "[--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--pictures KB]\n", argv[0]);
             return 2;
         }
     }

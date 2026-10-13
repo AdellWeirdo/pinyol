@@ -13,4 +13,6 @@ tick 20
 lua mode = 5
 tick 20
 shot scales
+lua mode = 6
+tick 24
 expect_ok

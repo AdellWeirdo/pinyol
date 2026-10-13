@@ -21,10 +21,10 @@ def make(name, *opts):
                    stdout=subprocess.DEVNULL)
 
 
-def play(name):
-    crc = out / f"{name}.crc"
+def play(name, *opts):
+    crc = out / f"{name}{len(opts)}.crc"
     subprocess.run([headless, "--game", str(out / name), "--saves", str(out / f"{name}_saves"), "--fresh", "--script",
-                    str(ROOT / "tests" / "neo.script"), "--crc", str(crc), "--check-strips"], check=True,
+                    str(ROOT / "tests" / "neo.script"), "--crc", str(crc), "--check-strips", *opts], check=True,
                    stdout=subprocess.DEVNULL)
     return crc
 
@@ -32,6 +32,9 @@ def play(name):
 make("plain")
 make("packed", "--packed")
 assert filecmp.cmp(play("plain"), play("packed"), shallow=False), "packed pictures drew differently"
+# a budget smaller than the pictures: they are let go and come back from the card, and draw the same
+assert filecmp.cmp(play("packed"), play("packed", "--pictures", "300"), shallow=False), "pictures let go drew differently"
+assert filecmp.cmp(play("plain"), play("plain", "--pictures", "300"), shallow=False), "pictures let go drew differently"
 sizes = {n: sum(f.stat().st_size for f in (out / n / "assets").iterdir()) for n in ("plain", "packed")}
 print(f"packed: the same frames in {sizes['packed'] // 1024} KB instead of {sizes['plain'] // 1024} KB")
 

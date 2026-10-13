@@ -101,5 +101,8 @@ extern ppu_state PPU;
 
 void ppu_reset(void);           /* everything off, palettes black, mosaic 1, identity matrices, no tables */
 void ppu_render(uint16_t *out); /* the frame, PPU_W x PPU_H RGB565, row after row */
+/* True when ppu_render would give only the backdrop, one colour everywhere (no layer shown, no line backdrop, no
+ * effect): *colour is it, and the frame need not be worked out. */
+bool ppu_blank(uint16_t *colour);
 /* For each of ntiles tiles: bit y set when its row y is all transparent, bit 8 + y when it has no transparent pixel. */
 void ppu_tile_rows(const uint8_t *tiles, int ntiles, uint16_t *rows);

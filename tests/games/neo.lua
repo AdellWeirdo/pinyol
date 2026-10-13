@@ -1,7 +1,8 @@
 -- A fighting-game scene at the screen's full resolution, with examples/duelo's pictures (tests/make_neo_game.py
 -- converts them): the measure of how much np2d draws in a frame, the way a Neo Geo game does. `mode` (set by
 -- tests/neo.script or the benchmark): 1 the stage without fighters, 2 with two, 3 two at 1.25 (a zoomed camera),
--- 4 six of them, 5 at odd scales (small, stretched, upside down, three times as big off the screen's edges).
+-- 4 six of them, 5 at odd scales (small, stretched, upside down, three times as big off the screen's edges), 6 one
+-- picture a frame, each in turn (with a small picture budget, each comes back from the card every time).
 mode = 2
 local t = 0
 
@@ -15,6 +16,12 @@ local function fighter(id, x, frame, flip, k)
 end
 
 function _draw()
+  if mode == 6 then -- (counted in frames drawn: a test may draw only every other one)
+    drawn = (drawn or 0) + 1
+    local id = ({"BG_FAR", "BG_NEAR", "SPR_F1", "SPR_F2"})[drawn % 4 + 1]
+    img(id, 0, 0, {frame = drawn % 11, angle = drawn % 8 == 2 and 10 or 0}) -- (turned now and then: unpacked, let go)
+    return
+  end
   local cam = math.floor(46 + 46 * math.sin(t / 60)) -- the camera sweeping the stage
   img("BG_FAR", -57 - cam // 2, 0)
   img("BG_NEAR", -cam, 145)

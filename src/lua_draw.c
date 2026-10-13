@@ -660,6 +660,7 @@ static int l_imgsize(lua_State *L) { /* imgsize(picture) -> w, h, frames, or nil
 
 void draw_frame_begin(void) { /* each _draw starts on the screen, with no camera and no clip */
     frame_no++;
+    gfx_new_frame(); /* the pictures this frame asks for stay in memory while it is drawn */
     nseen[frame_no & 1] = 0;
     nov = ntext = nstyle = nxf = npts = nclip = nlook = 0;
     target = NULL, cam_x = cam_y = 0, clipping = false;

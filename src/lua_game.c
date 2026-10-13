@@ -25,6 +25,8 @@
 
 static lua_State *Ls;
 static uint32_t us_update, us_draw, us_ppu; /* the last tick's _update, the last frame's _draw and picture (perf()) */
+static bool blank;          /* the world this frame is the backdrop alone (ppu_blank): drawn as a fill */
+static uint16_t backdrop;
 static struct { uint64_t update, draw, ppu; uint32_t ppu_max; int ticks, frames; } acc; /* since v2_timing */
 static size_t mem_used, mem_quota;
 static long budget;
@@ -99,6 +101,7 @@ static int sheet_get(const char *id) { /* handle (1-based), 0 if it cannot be lo
             cJSON_Delete(meta);
             return 0;
         }
+        gfx_pin(a); /* its sprites point into its pixels from frame to frame */
         s->a = a, s->w = a->w, s->h = a->h, s->frames = a->frames;
     }
     cJSON_Delete(meta);
@@ -403,6 +406,7 @@ static int l_bg(lua_State *L) {
         asset *a = id && asset_name(id) ? gfx_asset(id) : NULL;
         if (!a || a->missing) return luaL_error(L, "bg %d: no image '%s'", n, id ? id : "");
         if (!gfx_pixels(a)) return luaL_error(L, "bg %d: no memory to unpack '%s'", n, id);
+        gfx_pin(a); /* the layer points into its pixels */
         b->mode = BG_BITMAP, b->bitmap = a->pixels, b->bitmap_mask = a->mask, b->bitmap_w = a->w, b->bitmap_h = a->h;
         return 0;
     }
@@ -1017,7 +1021,7 @@ void v2_draw_world(void) {
     uint32_t t = hal_micros();
     call("_draw", 0);
     uint32_t u = hal_micros();
-    ppu_render(G.world);
+    if (!(blank = ppu_blank(&backdrop))) ppu_render(G.world); /* nothing of the world shown: one colour, not worked out */
     us_draw = u - t, us_ppu = hal_micros() - u;
     acc.draw += us_draw, acc.ppu += us_ppu, acc.frames++;
     if (us_ppu > acc.ppu_max) acc.ppu_max = us_ppu;
@@ -1032,7 +1036,9 @@ void v2_timing(v2_times *t) {
 
 void v2_draw(surface *s) {
     surface world = {.px = G.world, .w = WORLD_W, .h = WORLD_H};
-    if (!draw_covers_screen()) gfx_upscale2x(&world, s); /* else a full-screen opaque picture comes first: no world */
+    if (draw_covers_screen()) {} /* a full-screen opaque picture comes first: no world */
+    else if (blank) gfx_fill(s, 0, 0, SCREEN_W, SCREEN_H, backdrop); /* (the same pixels as the world doubled) */
+    else gfx_upscale2x(&world, s);
     draw_overlay(s);
     if (failed) { /* the error, readable, over whatever was drawn */
         gfx_fill(s, 0, 0, SCREEN_W, 64, C_INK);

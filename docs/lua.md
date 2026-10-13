@@ -192,6 +192,12 @@ the screen, all drawn at 60 fps on the console. `examples/duelo` is a fighting g
 stage, two fighters of eleven frames each, mirrored, flashing white when hit. Mirrored (`flip_x`) a packed picture
 costs the same as plain; scaled, the same per pixel drawn.
 
+A game's pictures share 4 MB of memory. Past it, those not drawn in the frame being made are let go, the least
+recently drawn first, and come back from the card by themselves the next time they are drawn (a moment's load: a
+level's pictures are best drawn once when it starts). So a game's art can be far bigger than the console's memory,
+as long as what one frame draws fits. Pictures used by the 240x160 world (sprite sheets, bitmap layers) and canvases
+always stay.
+
 ### A game's own look
 
 Every game starts with the same four fonts and the same panels. What makes one look like itself:

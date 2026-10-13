@@ -125,6 +125,11 @@ typedef struct {
     const uint32_t *cols;   /* frames * w: where each column starts in pk */
     uint8_t bpp;            /* 4 or 8; 0: not packed */
     bool pk_opaque;         /* every column of every frame one run, top to bottom (no see-through) */
+    /* in memory or not (gfx.c: the least recently drawn go when the pictures pass their budget) */
+    bool pinned;            /* never let go: the PPU or a canvas keeps pointers into it */
+    bool out;               /* let go: its data comes back from the card the next time it is asked for */
+    uint32_t used;          /* the last frame it was asked for (gfx_new_frame) */
+    size_t bytes;           /* its data in memory: file, pixels, mask */
 } asset;
 
 typedef struct {
@@ -135,6 +140,14 @@ typedef struct {
 } font;
 
 asset *gfx_asset(const char *id); /* cached, never NULL; missing files give a checkerboard */
+/* A game's pictures share PIC_BUDGET bytes of memory. Past it, those not asked for in the frame being made go,
+ * least recently asked for first, and come back by themselves when asked for again (a moment's load from the card):
+ * a game's art can be far bigger than the console's memory, as long as each frame's fits. */
+#define PIC_BUDGET (4u << 20)
+void gfx_new_frame(void);           /* a frame starts: what it asks for stays in memory until the next one */
+void gfx_pin(asset *a);             /* keep it: something holds pointers into its pixels */
+void gfx_set_budget(size_t bytes);  /* (tests: a small budget, to let pictures go all the time) */
+size_t gfx_picture_bytes(void);     /* the pictures in memory now */
 asset *gfx_asset_opt(const char *id); /* the same, silent when the game leaves it out */
 void gfx_reset(void);
 void gfx_force_missing(const char *id);
