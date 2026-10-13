@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "bp.h"
+#include "gfx_px.h"
 
 /* Bulgasari's patterns, then the Custodian's (Geumgye chapter 2 §06): a raised plate that stops frontal blows, a
  * guardable sweep, a containment pulse on the player's floor sector and three marks swept left to right. */
@@ -506,8 +507,11 @@ void arena_free(void) {
     memset(&A, 0, sizeof A);
 }
 
+static void hd_reset(void); /* (render section) */
+
 void arena_start(const char *id) {
     arena_free();
+    hd_reset(); /* a new fight: the camera starts where it should, the HD pictures are looked up again */
     A.practice = false; /* the effect turns it on after the start */
     A.doc = json_file("arena.json");
     A.def = jget(A.doc, id ? id : "");
@@ -593,16 +597,52 @@ void arena_tick(void) {
 }
 
 /* ------------------------------------------------------------------ render */
-static const char *sprite_id(int who, const char *suffix) {
-    static char buf[2][32];
+/* HD: when the arena's background has a <bg>_HD picture, the fight is drawn straight onto the screen's strips at full
+ * resolution, from <sprite>_HD pictures (made at HD_K pixels per world pixel), through a camera that comes closer when
+ * the fighters do (zoom 1 to ZOOM_MAX, as the Neo Geo's fighting games). The world-pixel drawing below goes through
+ * this transform: identity when R.hd is off, so a game without HD pictures draws exactly as before. R is worked out
+ * once a frame (arena_render_world), before the strips. */
+#define HD_K 3.2f
+#define ZOOM_MAX 1.6f
+static struct { bool hd, covers; float z, cx; asset *bg; } R; /* covers: the background fills the screen */
+
+static void hd_reset(void) { R.hd = false, R.z = 0; }
+
+static int sx_(float x) { return R.hd ? (int)floorf(SCREEN_W / 2 + (x - R.cx) * 2 * R.z) : (int)x; }
+static int sy_(float y) { return R.hd ? (int)floorf(2 * K.floor_y + (y - K.floor_y) * 2 * R.z) : (int)y; }
+
+static void wfill(surface *s, int x, int y, int w, int h, uint16_t c) { /* a world box, through the camera */
+    if (!R.hd) {
+        gfx_fill(s, x, y, w, h, c);
+        return;
+    }
+    int x0 = sx_((float)x), y0 = sy_((float)y), x1 = sx_((float)(x + w)), y1 = sy_((float)(y + h));
+    if (x1 < x0 + 1) x1 = x0 + 1;
+    if (y1 < y0 + 1) y1 = y0 + 1;
+    if (x1 <= s->x0 || x0 >= s->x0 + s->w || y1 <= s->y0 || y0 >= s->y0 + s->h) return; /* not in this strip */
+    gfx_fill(s, x0, y0, x1 - x0, y1 - y0, c);
+}
+
+static const char *sprite_id(char buf[32], int who, const char *suffix) { /* (into the caller's buffer: the HD
+                                                                           * scene is drawn by both cores at once) */
     const char *pre = jstr(jget(A.def, who ? "boss" : "player"), "sprite");
-    snprintf(buf[who], sizeof buf[who], "%s_%s", pre ? pre : who ? "BU" : "GG", suffix);
-    return buf[who];
+    snprintf(buf, 32, "%s_%s", pre ? pre : who ? "BU" : "GG", suffix);
+    return buf;
 }
 
 static void sprite(surface *s, const char *id, int frame, float x) {
     asset *a = gfx_asset(id);
-    gfx_blit(s, a, frame, (int)x - a->ax, K.floor_y - a->ay, 0, false);
+    if (!R.hd) {
+        gfx_blit(s, a, frame, (int)x - a->ax, K.floor_y - a->ay, 0, false);
+        return;
+    }
+    char hd[40];
+    snprintf(hd, sizeof hd, "%s_HD", id);
+    asset *h = gfx_asset_opt(hd);
+    float k = h->missing ? 2 * R.z : 2 * R.z / HD_K; /* (no HD picture: the world's, enlarged) */
+    if (h->missing) h = a;
+    if (frame >= h->frames) frame = h->frames - 1;
+    gfx_blit_ex(s, h, frame, (int)floorf(sx_(x) - h->ax * k), (int)floorf(sy_((float)K.floor_y) - h->ay * k), k, k, 0, NULL, -1);
 }
 
 /* Frames by state (Geumgye §22). An action's frames are split over its phases by arena.json "frames": how many
@@ -631,6 +671,7 @@ static void pose(surface *s, const char *id, int frame, float x) { /* clamps to 
 }
 
 static void draw_player(surface *s) {
+    char sb[32];
     const cJSON *pl = jget(A.def, "player");
     bool impact = A.immune > K.immunity - 14 && A.ps == P_FREE && has_pose(0, "IMPACT");
     if (A.immune && !impact && (A.immune / 3) % 2) return; /* hit flicker */
@@ -642,24 +683,24 @@ static void draw_player(surface *s) {
         const cJSON *sp = jget(jget(pl, "attack"), "frames");
         int ph = A.pt <= K.atk_windup ? 0 : A.pt <= K.atk_windup + K.atk_active ? 1 : 2;
         int t = ph == 0 ? A.pt : ph == 1 ? A.pt - K.atk_windup : A.pt - K.atk_windup - K.atk_active;
-        pose(s, sprite_id(0, "ATTACK"), phased(sp, ATK, ph, t, ph == 0 ? K.atk_windup : ph == 1 ? K.atk_active : K.atk_recover), A.px);
+        pose(s, sprite_id(sb, 0, "ATTACK"), phased(sp, ATK, ph, t, ph == 0 ? K.atk_windup : ph == 1 ? K.atk_active : K.atk_recover), A.px);
         break;
     }
     case P_GUARD:
         f = phased(jget(jget(pl, "guard"), "frames"), GUARD, A.pt < K.guard_start ? 0 : 1, 0, 1);
-        pose(s, sprite_id(0, "GUARD"), f < 0 ? 0 : f, A.px);
+        pose(s, sprite_id(sb, 0, "GUARD"), f < 0 ? 0 : f, A.px);
         break;
     case P_DODGE: {
         bool rec = A.pt >= K.dodge_time;
         f = phased(jget(jget(pl, "dodge"), "frames"), DODGE, rec, rec ? A.pt - K.dodge_time : A.pt, rec ? K.dodge_recover : K.dodge_time);
-        pose(s, sprite_id(0, "DODGE"), f < 0 ? gfx_asset(sprite_id(0, "DODGE"))->frames - 1 : f, A.px);
+        pose(s, sprite_id(sb, 0, "DODGE"), f < 0 ? gfx_asset(sprite_id(sb, 0, "DODGE"))->frames - 1 : f, A.px);
         break;
     }
-    case P_KNEEL: id = sprite_id(0, "KNEEL"); pose(s, id, upto(gfx_asset(id), A.pt, 30), A.px); break;
-    case P_CANTO: pose(s, sprite_id(0, "CANTO"), releasing() ? 99 : A.canto_i, A.px); break; /* opens a step a pulse */
+    case P_KNEEL: id = sprite_id(sb, 0, "KNEEL"); pose(s, id, upto(gfx_asset(id), A.pt, 30), A.px); break;
+    case P_CANTO: pose(s, sprite_id(sb, 0, "CANTO"), releasing() ? 99 : A.canto_i, A.px); break; /* opens a step a pulse */
     default:
-        if (impact) { id = sprite_id(0, "IMPACT"); pose(s, id, upto(gfx_asset(id), K.immunity - A.immune, 14), A.px); break; }
-        id = sprite_id(0, A.walking ? "WALK" : "IDLE");
+        if (impact) { id = sprite_id(sb, 0, "IMPACT"); pose(s, id, upto(gfx_asset(id), K.immunity - A.immune, 14), A.px); break; }
+        id = sprite_id(sb, 0, A.walking ? "WALK" : "IDLE");
         pose(s, id, loop(gfx_asset(id), A.walking ? 125 : 400), A.px);
     }
 }
@@ -667,6 +708,26 @@ static void draw_player(surface *s) {
 /* Put the background back over a box in a 4x4 ordered dither: level 0..16 of it. */
 static void dissolve(surface *s, const asset *bg, int x0, int y0, int w, int h, int level) {
     static const uint8_t bayer[16] = {0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
+    if (R.hd) { /* the same, at full resolution: each screen pixel's own background pixel, in 2x2 dither cells */
+        if (!R.bg->pixels) return; /* (unpacked when the release began: arena_render_world) */
+        const int32_t step = (int32_t)(HD_K / (2 * R.z) * 65536); /* screen pixels to the HD picture's, 16.16 */
+        int X0 = sx_((float)x0), Y0 = sy_((float)y0), X1 = sx_((float)(x0 + w)), Y1 = sy_((float)(y0 + h));
+        const int ox = sx_(0), oy = sy_(0), ys = step_y(s);
+        int xa = X0 > s->x0 ? X0 : s->x0, xb = X1 < s->x0 + s->w ? X1 : s->x0 + s->w;
+        int ya = Y0 > s->y0 ? Y0 : s->y0, yb = Y1 < s->y0 + s->h ? Y1 : s->y0 + s->h;
+        for (int X = xa; X < xb; X++) { /* column by column, stepping: the console's strips keep columns together */
+            int u = (int)(((int64_t)(X - ox) * step) >> 16);
+            if (u < 0 || u >= R.bg->w || ya >= yb) continue;
+            const uint8_t *row = bayer + ((X >> 1) & 3);
+            uint16_t *d = at(s, X, ya);
+            int32_t v = (ya - oy) * step;
+            for (int Y = ya; Y < yb; Y++, d += ys, v += step) {
+                int vi = v >> 16;
+                if (row[((Y >> 1) & 3) * 4] < level && vi >= 0 && vi < R.bg->h) *d = stored(s, R.bg->pixels[vi * R.bg->w + u]);
+            }
+        }
+        return;
+    }
     for (int y = y0 < 0 ? 0 : y0; y < y0 + h && y < s->h; y++)
         for (int x = x0 < 0 ? 0 : x0; x < x0 + w && x < s->w; x++)
             if (bayer[(y & 3) * 4 + (x & 3)] < level)
@@ -681,29 +742,36 @@ static void draw_spit(surface *s) {
     if (t < 0) return; /* still inside: the boss is retching */
     float p = t >= 30 ? 1 : t / 30.0f; /* 30 ticks of flight, then it lies there */
     int x = x0 - (int)(44 * p), y = y0 + (int)(24 * p) - (int)(28 * p * (1 - p));
-    gfx_blit(s, a, p >= 1 && a->frames > 1 ? 1 : 0, x - a->ax, y - a->ay, 0, false);
+    int f = p >= 1 && a->frames > 1 ? 1 : 0;
+    if (R.hd) { /* (no HD picture of its own: the world's, enlarged) */
+        float k = 2 * R.z;
+        gfx_blit_ex(s, a, f, (int)floorf(sx_((float)x) - a->ax * k), (int)floorf(sy_((float)y) - a->ay * k), k, k, 0, NULL, -1);
+        return;
+    }
+    gfx_blit(s, a, f, x - a->ax, y - a->ay, 0, false);
 }
 
 static void draw_boss(surface *s) {
+    char sb[32];
     bool hurt = A.flash && has_pose(1, "HURT");
     if (A.flash && !hurt && (A.flash / 2) % 2) return;
     float x = A.bx + (A.bs == B_SHAKE || (spitting() && A.spit_t < 24) ? ((int)(G.anim_ms / 50) % 2 ? 1.0f : -1.0f) : 0.0f);
-    const char *id = sprite_id(1, "IDLE");
+    const char *id = sprite_id(sb, 1, "IDLE");
     int frame = loop(gfx_asset(id), 500);
-    if (A.bs == B_FREED && has_pose(1, "FREE")) id = sprite_id(1, "FREE"), frame = upto(gfx_asset(id), A.fade, 120);
-    else if (A.bs == B_STABLE && has_pose(1, "STABLE")) id = sprite_id(1, "STABLE"), frame = loop(gfx_asset(id), 600);
-    else if (K.repair && plate_open() && has_pose(1, "OPEN")) id = sprite_id(1, "OPEN"), frame = loop(gfx_asset(id), 300);
-    else if (A.bs == B_EXPOSED || A.bs == B_FREED) id = sprite_id(1, "EXPOSED"), frame = loop(gfx_asset(id), 700);
-    else if (A.bs == B_INTERLUDE) id = sprite_id(1, has_pose(1, "KNEEL") ? "KNEEL" : "EXPOSED"), frame = loop(gfx_asset(id), 700);
-    else if (hurt) id = sprite_id(1, "HURT"), frame = upto(gfx_asset(id), 12 - A.flash, 12);
-    else if (A.bs == B_APPROACH && has_pose(1, "WALK")) id = sprite_id(1, "WALK"), frame = loop(gfx_asset(id), 150);
+    if (A.bs == B_FREED && has_pose(1, "FREE")) id = sprite_id(sb, 1, "FREE"), frame = upto(gfx_asset(id), A.fade, 120);
+    else if (A.bs == B_STABLE && has_pose(1, "STABLE")) id = sprite_id(sb, 1, "STABLE"), frame = loop(gfx_asset(id), 600);
+    else if (K.repair && plate_open() && has_pose(1, "OPEN")) id = sprite_id(sb, 1, "OPEN"), frame = loop(gfx_asset(id), 300);
+    else if (A.bs == B_EXPOSED || A.bs == B_FREED) id = sprite_id(sb, 1, "EXPOSED"), frame = loop(gfx_asset(id), 700);
+    else if (A.bs == B_INTERLUDE) id = sprite_id(sb, 1, has_pose(1, "KNEEL") ? "KNEEL" : "EXPOSED"), frame = loop(gfx_asset(id), 700);
+    else if (hurt) id = sprite_id(sb, 1, "HURT"), frame = upto(gfx_asset(id), 12 - A.flash, 12);
+    else if (A.bs == B_APPROACH && has_pose(1, "WALK")) id = sprite_id(sb, 1, "WALK"), frame = loop(gfx_asset(id), 150);
     else if (A.bs == B_TELL || A.bs == B_ACTIVE || A.bs == B_RECOVER) {
         static const char *const POSE[NPAT] = {"CHARGE", "BITE", "SLAM", "SHIELD", "SWEEP", "PULSE", "PULSE"};
         static const int DEF[3] = {1, 1, 0}; /* tell, active; recovery shows the idle pose */
         const pattern *pt = &K.pat[A.pat];
         int ph = A.bs == B_TELL ? 0 : A.bs == B_ACTIVE ? 1 : 2, len = ph == 0 ? tell_ticks(A.pat) : ph == 1 ? pt->active : pt->recover;
         int f = phased(jget(jget(jget(A.def, "boss"), PAT_KEY[A.pat]), "frames"), DEF, ph, len - A.bt, len);
-        if (f >= 0 && has_pose(1, POSE[A.pat])) id = sprite_id(1, POSE[A.pat]), frame = f;
+        if (f >= 0 && has_pose(1, POSE[A.pat])) id = sprite_id(sb, 1, POSE[A.pat]), frame = f;
     }
     if (releasing() && A.fade > 40) x += (A.fade - 40) * 0.2f;
     pose(s, id, frame, x);
@@ -717,10 +785,10 @@ static void draw_boss(surface *s) {
 /* Warnings by shape as well as colour (§05): arrow, teeth, ring on the floor. */
 static void sector_mark(surface *s, int k, bool strike) { /* a red frame on the floor, hatched when it strikes */
     int w = (K.max_x - K.min_x) / 3, x = K.min_x + k * w, y = K.floor_y + 1;
-    gfx_fill(s, x + 2, y, w - 4, 2, C_TERRA), gfx_fill(s, x + 2, y + 8, w - 4, 2, C_TERRA);
-    gfx_fill(s, x + 2, y, 2, 10, C_TERRA), gfx_fill(s, x + w - 4, y, 2, 10, C_TERRA);
+    wfill(s, x + 2, y, w - 4, 2, C_TERRA), wfill(s, x + 2, y + 8, w - 4, 2, C_TERRA);
+    wfill(s, x + 2, y, 2, 10, C_TERRA), wfill(s, x + w - 4, y, 2, 10, C_TERRA);
     if (strike)
-        for (int i = x + 6; i < x + w - 6; i += 4) gfx_fill(s, i, y + 3, 2, 4, C_TERRA);
+        for (int i = x + 6; i < x + w - 6; i += 4) wfill(s, i, y + 3, 2, 4, C_TERRA);
 }
 
 static void draw_tell(surface *s) {
@@ -736,30 +804,30 @@ static void draw_tell(surface *s) {
     if (A.bs != B_TELL || (A.bt / 6) % 2) return;
     int x = (int)A.bx, top = K.floor_y - 52;
     if (A.pat == PAT_SHIELD) { /* a shield: the plate is up */
-        gfx_fill(s, x - 7, top - 2, 14, 2, C_PAPER), gfx_fill(s, x - 7, top - 2, 2, 12, C_PAPER);
-        gfx_fill(s, x + 5, top - 2, 2, 12, C_PAPER);
-        for (int r = 0; r < 5; r++) gfx_fill(s, x - 6 + r, top + 10 + r, 12 - 2 * r, 1, C_PAPER);
+        wfill(s, x - 7, top - 2, 14, 2, C_PAPER), wfill(s, x - 7, top - 2, 2, 12, C_PAPER);
+        wfill(s, x + 5, top - 2, 2, 12, C_PAPER);
+        for (int r = 0; r < 5; r++) wfill(s, x - 6 + r, top + 10 + r, 12 - 2 * r, 1, C_PAPER);
         return;
     }
     if (A.pat == PAT_SWEEP) { /* the plate tilts: a slanted bar and the sweep's reach */
-        for (int k = 0; k < 14; k++) gfx_fill(s, x - 24 + k, top + 12 - k / 2, 2, 3, C_TERRA);
+        for (int k = 0; k < 14; k++) wfill(s, x - 24 + k, top + 12 - k / 2, 2, 3, C_TERRA);
         int r = K.boss_half + K.pat[PAT_SWEEP].reach;
-        gfx_fill(s, x - r, K.floor_y, r - K.boss_half, 2, C_TERRA);
+        wfill(s, x - r, K.floor_y, r - K.boss_half, 2, C_TERRA);
         return;
     }
     if (A.pat == PAT_CHARGE) {
-        gfx_fill(s, x - 22, top + 4, 14, 4, C_TERRA);
-        for (int k = 0; k < 6; k++) gfx_fill(s, x - 28 + k, top + 6 - k, 1, 2 * k, C_TERRA); /* head of the arrow */
+        wfill(s, x - 22, top + 4, 14, 4, C_TERRA);
+        for (int k = 0; k < 6; k++) wfill(s, x - 28 + k, top + 6 - k, 1, 2 * k, C_TERRA); /* head of the arrow */
     } else if (A.pat == PAT_BITE) {
         for (int k = 0; k < 4; k++) {
-            for (int r = 0; r < 4; r++) gfx_fill(s, x - 10 + k * 5 + r / 2, top + r, 4 - r, 1, C_PAPER);
-            for (int r = 0; r < 4; r++) gfx_fill(s, x - 10 + k * 5 + r / 2, top + 10 - r, 4 - r, 1, C_PAPER);
+            for (int r = 0; r < 4; r++) wfill(s, x - 10 + k * 5 + r / 2, top + r, 4 - r, 1, C_PAPER);
+            for (int r = 0; r < 4; r++) wfill(s, x - 10 + k * 5 + r / 2, top + 10 - r, 4 - r, 1, C_PAPER);
         }
     } else {
         int r = K.boss_half + K.pat[PAT_SLAM].reach;
-        gfx_fill(s, x - r, K.floor_y, 2 * r, 2, C_TERRA);
-        gfx_fill(s, x - r, K.floor_y - 4, 2, 6, C_TERRA);
-        gfx_fill(s, x + r - 2, K.floor_y - 4, 2, 6, C_TERRA);
+        wfill(s, x - r, K.floor_y, 2 * r, 2, C_TERRA);
+        wfill(s, x - r, K.floor_y - 4, 2, 6, C_TERRA);
+        wfill(s, x + r - 2, K.floor_y - 4, 2, 6, C_TERRA);
     }
 }
 
@@ -804,12 +872,25 @@ static void draw_canto(surface *s) {
 #define RUST RGB(0x9B, 0x55, 0x47)
 
 static void dot(surface *s, int x, int y, uint16_t c) {
-    if (x >= 0 && y >= 0 && x < s->w && y < s->h) s->px[y * s->w + x] = c;
+    if (R.hd) wfill(s, x, y, 1, 1, c); /* a world pixel through the camera: a block of the screen's */
+    else if (x >= 0 && y >= 0 && x < s->w && y < s->h) s->px[y * s->w + x] = c;
 }
 
 /* "Cambio de paleta": each pulse pulls the scene towards the core's amber; darks stay dark. */
 static void warm(surface *s, int level) {
     int f = level * 3; /* of 16 */
+    if (R.hd) { /* the strip's own pixels, as it keeps them: column by column, stepping (contiguous on the panel) */
+        const int ys = step_y(s);
+        for (int x = s->x0; x < s->x0 + s->w; x++) {
+            uint16_t *d = at(s, x, s->y0);
+            for (int y = 0; y < s->h; y++, d += ys) {
+                int c = stored(s, *d), r = c >> 11, g = (c >> 5) & 63, b = c & 31;
+                r += (31 - r) * f / 24, g += (63 - g) * f / 120, b -= b * f / 20;
+                *d = stored(s, (uint16_t)(r << 11 | g << 5 | b));
+            }
+        }
+        return;
+    }
     for (int i = 0; i < s->w * s->h; i++) {
         int c = s->px[i], r = c >> 11, g = (c >> 5) & 63, b = c & 31;
         r += (31 - r) * f / 24, g += (63 - g) * f / 120, b -= b * f / 20;
@@ -831,6 +912,7 @@ static void bands(surface *s, int x0, int t) { /* two bands of pixel light cross
     for (int k = 0; k < 2; k++) {
         int x = x0 + (t - k * 10) * 5;
         if (t < k * 10) continue;
+        if (R.hd && (sx_((float)(x + 6)) <= s->x0 || sx_((float)x) >= s->x0 + s->w)) continue; /* not this strip's */
         for (int y = 0; y < K.floor_y; y++)
             for (int i = 0; i < 6; i++) if (((x + i + y) & 1) == 0) dot(s, x + i, y, k ? AMBER : AMBER_HI);
     }
@@ -842,7 +924,7 @@ static void falling_iron(surface *s, int bx, int t) { /* Bulgasari lets go of th
         if (t < t0) continue;
         y += (t - t0) * (t - t0) / 24;
         if (y > K.floor_y - 2) y = K.floor_y - 2;
-        gfx_fill(s, x, y, 3, 2, STEEL);
+        wfill(s, x, y, 3, 2, STEEL);
         dot(s, x + 2, y + 1, RUST);
     }
 }
@@ -860,7 +942,7 @@ static void draw_fx(surface *s) {
                 float th = d * 0.785398f;
                 for (int q = r / 2; q <= r; q++) dot(s, x + (int)lroundf(q * cosf(th)), y + (int)lroundf(q * sinf(th)), k ? AMBER : AMBER_HI);
             }
-            if (!k) gfx_fill(s, x - 1, y - 1, 3, 3, C_WHITE);
+            if (!k) wfill(s, x - 1, y - 1, 3, 3, C_WHITE);
         } else if (FX[i].kind == FX_SPARK) { /* short streaks thrown up and back off the guard */
             for (int j = 0; j < 4 + 2 * big; j++) {
                 int dx = -(2 + j % 3) * (k + 1), dy = -(1 + j) * (k + 1) / 2, len = 3 - k;
@@ -881,10 +963,10 @@ static void draw_release(surface *s) {
     const cJSON *core = jget(jget(A.def, "player"), "core"); /* [dx, dy] from the feet, in the Canto pose */
     int cx = (int)A.px + jai(core, 0, 3), cy = K.floor_y - jai(core, 1, 25);
     bool freed = releasing();
-    warm(s, freed ? 3 : A.canto_i);
+    if (!R.hd) warm(s, freed ? 3 : A.canto_i); /* (HD: in the palettes, arena_render_screen) */
     wave(s, cx, cy, freed ? A.fade - 1 : A.wave - 1);
     if (freed) falling_iron(s, (int)A.bx, A.fade), bands(s, cx, A.fade);
-    if (A.canto_i > 0) gfx_fill(s, cx - 1, cy - 1, 3, 3, AMBER); /* the core turns amber */
+    if (A.canto_i > 0) wfill(s, cx - 1, cy - 1, 3, 3, AMBER); /* the core turns amber */
     if (freed || (canto_open() && (int)(G.anim_ms / 120) % 2)) {
         dot(s, cx, cy, AMBER_HI);
         for (int k = 0; k < 4; k++) dot(s, cx + (k < 2 ? (k ? 2 : -2) : 0), cy + (k >= 2 ? (k == 3 ? 2 : -2) : 0), AMBER);
@@ -969,20 +1051,78 @@ static void draw_hud(surface *s) {
     if (A.menu) draw_menu(s);
 }
 
+static void scene(surface *s) { /* the fight without its HUD: into the world, or (HD) onto a strip */
+    draw_tell(s);
+    draw_spit(s);
+    draw_boss(s);
+    draw_player(s);
+    draw_fx(s);
+    if (A.ps == P_CANTO) draw_release(s);
+}
+
+/* The camera, once a frame: between the fighters, closer the closer they are, eased; never past the arena's edges. */
+static void camera_update(void) {
+    float gap = fabsf(A.bx - A.px), want = WORLD_W / (gap + K.boss_half + K.half + 48);
+    want = want < 1 ? 1 : want > ZOOM_MAX ? ZOOM_MAX : want;
+    R.z = R.z < 1 ? want : R.z + (want - R.z) * 0.08f;
+    float half = SCREEN_W / (4 * R.z), mid = (A.px + A.bx) / 2; /* half the view, in world pixels */
+    R.cx = mid < half ? half : mid > WORLD_W - half ? WORLD_W - half : mid;
+    R.covers = sx_(0) <= 0 && sx_(WORLD_W) >= SCREEN_W && sy_(0) <= 0 && sy_(WORLD_H) >= SCREEN_H;
+}
+
 void arena_render_world(surface *world) {
+    char hd[40];
+    snprintf(hd, sizeof hd, "%s_HD", jstr(A.def, "bg") ? jstr(A.def, "bg") : "");
+    R.bg = gfx_asset_opt(hd);
+    bool was = R.hd;
+    R.hd = !R.bg->missing;
+    if (R.hd && !was) { /* every picture of both fighters, now: loaded on first use they would stall a strip */
+        char sb[32];
+        static const char *const POSES[] = {"IDLE", "WALK", "GUARD", "IMPACT", "ATTACK", "DODGE", "KNEEL", "CANTO",
+                                            "HURT", "EXPOSED", "CHARGE", "BITE", "SLAM", "FREE", "SHIELD", "SWEEP",
+                                            "PULSE", "STABLE", "OPEN"};
+        if (jstr(jget(A.def, "intro_spit"), "sprite")) gfx_asset(jstr(jget(A.def, "intro_spit"), "sprite"));
+        for (int who = 0; who < 2; who++)
+            for (size_t i = 0; i < sizeof POSES / sizeof *POSES; i++) { /* the world's too: they say which poses
+                                                                         * there are and how many frames each has */
+                gfx_asset_opt(sprite_id(sb, who, POSES[i]));
+                snprintf(hd, sizeof hd, "%s_HD", sb);
+                gfx_asset_opt(hd);
+            }
+    }
+    if (R.hd) { /* drawn on the strips (arena_render_screen); here only what must be worked out once */
+        camera_update();
+        if (releasing() && !R.bg->pixels) gfx_pixels(R.bg); /* the dissolve reads it pixel by pixel */
+        return;
+    }
+    R.z = 0;
     asset *bg = gfx_asset(jstr(A.def, "bg"));
     if (bg->missing) gfx_fill(world, 0, 0, WORLD_W, WORLD_H, C_INK);
     else gfx_blit(world, bg, 0, 0, 0, 0, false);
-    draw_tell(world);
-    draw_spit(world);
-    draw_boss(world);
-    draw_player(world);
-    draw_fx(world);
-    if (A.ps == P_CANTO) draw_release(world);
+    scene(world);
+}
+
+/* Half of the window's columns (part 0 the left, 1 the right): the HD background and the fight, on one core each.
+ * Both only read the fight's state and the pictures (all loaded before the strips), and write their own pixels. */
+static void hd_half(int part, void *ctx) {
+    surface *scr = ctx;
+    int w0 = scr->w / 2;
+    surface half = gfx_clip(scr, scr->x0 + (part ? w0 : 0), scr->y0, part ? scr->w - w0 : w0, scr->h);
+    if (half.w <= 0 || half.h <= 0) return;
+    half.part = (uint8_t)part;
+    float k = 2 * R.z / HD_K;
+    if (!R.covers) gfx_fill(&half, 0, 0, SCREEN_W, SCREEN_H, C_INK);
+    gfx_blit_ex(&half, R.bg, 0, sx_(0), sy_(0), k, k, 0, NULL, -1);
+    scene(&half);
 }
 
 void arena_render_screen(surface *world, surface *scr) {
-    gfx_upscale2x(world, scr);
+    if (R.hd) {
+        gfx_light_warm(A.ps == P_CANTO ? (releasing() ? 3 : A.canto_i) : 0);
+        hal_parallel(hd_half, scr); /* (the HUD after, on one core: the UI's code is not made for two) */
+        gfx_light_warm(0);
+    }
+    else gfx_upscale2x(world, scr);
     draw_hud(scr);
     int f = A.fade ? A.fade - (end_ticks() - 60) : A.ps == P_KNEEL ? A.pt * 2 / 3 : 0; /* to black; defeat: dim */
     for (int k = 0; k < (f > 40 ? 3 : f > 20 ? 2 : f > 0 ? 1 : 0); k++) gfx_shade(scr, 0, 0, SCREEN_W, SCREEN_H);

@@ -6,6 +6,7 @@
 #include <strings.h>
 
 #include "bp.h"
+#include "gfx_px.h"
 
 #define SPEED (60.0f / TICK_HZ) /* 60 px/s = 1 px per tick (dossier p.28 proposed 48, "ajustar con prueba") */
 #define REACH 20.0f             /* dossier p.05: interaction distance from the feet anchor */
@@ -13,6 +14,59 @@
 
 static zone_rt *Z = &G.zone;
 static float cam_x, cam_y;
+/* HD (a zone whose background has a <bg>_HD picture, twice its size): the world is drawn as always, but with the key
+ * colour where the background would be; each strip draws the HD background first, shaded and tinted as the world
+ * was, and the world doubled over it, its key left out (world_render_hd). Set once a frame by world_render. */
+static struct { asset *bg; int shade; bool dusk; } hd;
+/* Where the HD world is not the key: per world column, its runs of drawn pixels (start, length), found once a frame
+ * (hd_spans) so that each strip copies only them; SPAN_FULL: too many, the strip goes down the whole column. */
+#define SPANS 6
+#define SPAN_FULL 255
+static struct { uint8_t n[WORLD_W], run[WORLD_W][SPANS][2]; } *spans;
+
+static void hd_spans(const surface *w) {
+    if (!spans && !(spans = hal_realloc_slow(NULL, sizeof *spans))) return;
+    static uint8_t start[WORLD_W];
+    memset(spans->n, 0, sizeof spans->n);
+    memset(start, SPAN_FULL, sizeof start); /* SPAN_FULL as a start: not in a run */
+    for (int v = 0; v <= WORLD_H; v++) { /* row by row, as the world is kept; a last pass closes the open runs */
+        const uint16_t *row = w->px + v * WORLD_W;
+        for (int u = 0; u < WORLD_W; u++) {
+            bool in = v < WORLD_H && row[u] != WORLD_KEY;
+            if (in && start[u] == SPAN_FULL) start[u] = (uint8_t)v;
+            else if (!in && start[u] != SPAN_FULL) {
+                uint8_t *n = &spans->n[u];
+                if (*n < SPANS) spans->run[u][*n][0] = start[u], spans->run[u][*n][1] = (uint8_t)(v - start[u]), (*n)++;
+                else *n = SPAN_FULL;
+                start[u] = SPAN_FULL;
+            }
+        }
+    }
+}
+
+/* The world doubled over the strip, only its drawn runs (the rest is the HD background, already there). */
+static void world_over(surface *s, const surface *w) {
+    if (!spans) {
+        gfx_upscale2x_key(w, s, WORLD_KEY);
+        return;
+    }
+    const int ys = step_y(s), y0 = s->y0, y1 = s->y0 + s->h;
+    for (int x = s->x0; x < s->x0 + s->w && x < 2 * WORLD_W; x++) {
+        int u = x >> 1, n = spans->n[u];
+        if (n == SPAN_FULL) {
+            surface col = gfx_clip(s, x, y0, 1, s->h);
+            gfx_upscale2x_key(w, &col, WORLD_KEY);
+            continue;
+        }
+        for (int k = 0; k < n; k++) {
+            int ya = 2 * spans->run[u][k][0], yb = 2 * (spans->run[u][k][0] + spans->run[u][k][1]);
+            if (ya < y0) ya = y0;
+            if (yb > y1) yb = y1;
+            uint16_t *d = ya < yb ? at(s, x, ya) : NULL;
+            for (int y = ya; y < yb; y++, d += ys) *d = stored(s, w->px[(y >> 1) * WORLD_W + u]);
+        }
+    }
+}
 static const cJSON *last_blocked;
 
 /* ------------------------------------------------------------------ zone loading */
@@ -546,10 +600,16 @@ void world_render(surface *s) {
     cam_y = mh <= 0 ? mh / 2 : cam_y < 0 ? 0 : cam_y > mh ? mh : cam_y;
     cam_x = floorf(cam_x);
     cam_y = floorf(cam_y);
-    gfx_fill(s, 0, 0, s->w, s->h, C_INK);
     const char *bg_id = jstr(Z->def, "bg");
     asset *bg = bg_id ? gfx_asset(bg_id) : NULL;
-    if (bg && !bg->missing) { /* painted background (approved art); tiles stay as the fallback */
+    char hd_id[40];
+    snprintf(hd_id, sizeof hd_id, "%s_HD", bg_id ? bg_id : "");
+    hd.bg = bg && !bg->missing ? gfx_asset_opt(hd_id) : NULL;
+    if (hd.bg && hd.bg->missing) hd.bg = NULL;
+    hd.shade = 0, hd.dusk = false;
+    gfx_fill(s, 0, 0, s->w, s->h, hd.bg ? WORLD_KEY : C_INK);
+    if (hd.bg) {
+    } else if (bg && !bg->missing) { /* painted background (approved art); tiles stay as the fallback */
         gfx_blit(s, bg, 0, -(int)cam_x, -(int)cam_y, 0, false);
     } else {
         draw_tiles(s, Z->layer[0]);
@@ -593,7 +653,7 @@ void world_render(surface *s) {
             for (int v = oy < 0 ? 0 : oy; v < oy + oh && v < bg->h; v++)
                 for (int u = ox < 0 ? 0 : ox; u < ox + ow && u < bg->w; u++) {
                     int dx = u - (int)cam_x, dy = v - (int)cam_y;
-                    if (dx >= 0 && dy >= 0 && dx < s->w && dy < s->h) s->px[dy * s->w + dx] = bg->pixels[v * bg->w + u];
+                    if (dx >= 0 && dy >= 0 && dx < s->w && dy < s->h) s->px[dy * s->w + dx] = hd.bg ? WORLD_KEY : bg->pixels[v * bg->w + u];
                 }
         }
     }
@@ -607,7 +667,10 @@ void world_render(surface *s) {
     draw_tiles(s, Z->layer[2]);
     draw_props(s, "front");
     cJSON_ArrayForEach(o, jget(Z->def, "shade")) if (cond_eval(cJSON_GetArrayItem(o, 0))) { /* [[cond, n]]: halve the light n times */
-        for (int k = jai(o, 1, 1); k > 0; k--) gfx_shade(s, 0, 0, s->w, s->h);
+        for (int k = jai(o, 1, 1); k > 0; k--) {
+            if (hd.bg) gfx_shade_except(s, WORLD_KEY), hd.shade++; /* the HD background is darkened on the strips */
+            else gfx_shade(s, 0, 0, s->w, s->h);
+        }
         break;
     }
     cJSON_ArrayForEach(o, jget(Z->def, "fx")) { /* ambient loops, phase-shifted per entry */
@@ -617,7 +680,34 @@ void world_render(surface *s) {
         draw_prop(s, o, (int)((G.anim_ms + jint(o, "phase", 0)) / fms) % a->frames);
     }
     draw_props(s, "lit"); /* what a light picks out of the shade, and full-screen memories */
-    if (Z->exterior && flag_get("time_segment") == 1) gfx_tint_dusk(s);
+    if (Z->exterior && flag_get("time_segment") == 1) {
+        if (hd.bg) gfx_tint_dusk_except(s, WORLD_KEY), hd.dusk = true;
+        else gfx_tint_dusk(s);
+    }
+    if (hd.bg) hd_spans(s);
+}
+
+typedef struct { surface *s; const surface *world; } hd_job;
+
+static void hd_half(int part, void *ctx) { /* half of the window's columns, on one core each: they only read */
+    const hd_job *j = ctx;
+    int w0 = j->s->w / 2, x = -2 * (int)cam_x, y = -2 * (int)cam_y;
+    surface s = gfx_clip(j->s, j->s->x0 + (part ? w0 : 0), j->s->y0, part ? j->s->w - w0 : w0, j->s->h);
+    if (s.w <= 0 || s.h <= 0) return;
+    if (x > 0 || y > 0 || x + hd.bg->w < SCREEN_W || y + hd.bg->h < SCREEN_H) { /* (the ink around: shaded too) */
+        gfx_fill(&s, 0, 0, SCREEN_W, SCREEN_H, C_INK);
+        for (int k = 0; k < hd.shade; k++) gfx_shade(&s, 0, 0, SCREEN_W, SCREEN_H);
+        if (hd.dusk) gfx_tint_dusk(&s);
+    }
+    gfx_blit_lit(&s, hd.bg, x, y, hd.shade, hd.dusk);
+    world_over(&s, j->world);
+}
+
+bool world_render_hd(surface *s, const surface *world) {
+    if (!hd.bg || layer_top() == L_TITLE) return false;
+    hd_job j = {s, world};
+    hal_parallel(hd_half, &j);
+    return true;
 }
 
 /* HUD over the world: location sign, arrival card, pointer over the target and the "A" action prompt. */

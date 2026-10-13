@@ -156,6 +156,12 @@ uint16_t *gfx_pixels(asset *a); /* its pixels (and mask) as RGB565: a packed pic
 /* At 1x, maybe mirrored; pal: another packed picture's colours for this one's (a variant), or NULL; tint >= 0: every
  * pixel that colour (RGB565: a flash, a shadow), else -1. */
 void gfx_blit_flip(surface *s, const asset *a, int frame, int x, int y, bool flip_x, const asset *pal, int tint);
+/* Frame 0, then halved `shade` times (gfx_shade) and tinted to dusk (gfx_tint_dusk): for a packed picture, in its
+ * palette, the same pixels without going over them again */
+void gfx_blit_lit(surface *s, const asset *a, int x, int y, int shade, bool dusk);
+/* From now on every packed picture is drawn pulled towards amber (0: not; 1-3: more): the Canto's light, in the
+ * palettes, set before the strips and back to 0 after them */
+void gfx_light_warm(int level);
 void gfx_blit(surface *s, const asset *a, int frame, int x, int y, int rot, bool half);
 void gfx_blit2x(surface *s, const asset *a, int frame, int x, int y);
 void gfx_blit2x_look(surface *s, const asset *a, int frame, int x, int y, const asset *pal, int tint); /* (pal, tint: packed) */
@@ -164,11 +170,15 @@ void gfx_fill(surface *s, int x, int y, int w, int h, uint16_t c);
 void gfx_frame(surface *s, int x, int y, int w, int h, uint16_t c);
 void gfx_shade(surface *s, int x, int y, int w, int h); /* darken by half */
 void gfx_upscale2x(const surface *src, surface *dst);
+/* The same, leaving dst as it is wherever src has the key colour: a world drawn over a full-resolution background */
+void gfx_upscale2x_key(const surface *src, surface *dst, uint16_t key);
+void gfx_shade_except(surface *s, uint16_t key); /* a plain buffer darkened, but its key-coloured pixels */
 /* Panel rows row0..row0+rows-1 of a portrait panel showing a fw x fh frame turned a quarter (the console's ST77922,
  * which cannot swap rows and columns): panel row r is frame column r (flip: fw-1-r), panel pixel p is frame row fh-1-p
  * (flip: p). out holds rows x fh pixels, row after row, as the panel takes them, with bytes swapped if swap. */
 surface gfx_turned(uint16_t *out, int row0, int rows, int fw, int fh, bool flip, bool swap);
 void gfx_tint_dusk(surface *s);
+void gfx_tint_dusk_except(surface *s, uint16_t key); /* (a plain buffer: its key-coloured pixels stay) */
 void gfx_panel(surface *s, int x, int y, int w, int h);               /* paper card: shadow, rounded ink border */
 void gfx_plate(surface *s, int x, int y, int w, int h, uint16_t fill); /* small sign / name tag */
 void gfx_disc(surface *s, int cx, int cy, int r, uint16_t c);
@@ -212,6 +222,7 @@ void gfx_blit_ex_bounds(const asset *a, float sx, float sy, float degrees, int *
 /* ------------------------------------------------------------------ gfx_draw.c: free drawing and canvases */
 #define GFX_POLY_MAX 64              /* corners of a polygon */
 #define CANVAS_KEY 0xF81F            /* a canvas's see-through pixels; a game drawing this colour gets 0xF81E */
+#define WORLD_KEY CANVAS_KEY         /* where an HD zone's world leaves its background to the HD picture (world.c) */
 #define CANVAS_MAX_PX (1536 * 1024) /* pixels of all a game's canvases together: 3 MB */
 void gfx_line(surface *s, int x0, int y0, int x1, int y1, uint16_t c);
 void gfx_circ(surface *s, int cx, int cy, int r, uint16_t c, bool fill);
@@ -276,6 +287,7 @@ const char *dlg_text(void); /* text of the current line, for scripts */
 bool world_enter(const char *zone, const char *spawn);
 void world_tick(void);
 void world_render(surface *world);
+bool world_render_hd(surface *s, const surface *world); /* an HD zone onto a strip: false if the zone is not */
 void world_render_marker(surface *native);
 bool world_box_free(float x, float y);
 bool world_collides_at(float x, float y);

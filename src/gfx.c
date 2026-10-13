@@ -390,18 +390,39 @@ surface gfx_turned(uint16_t *out, int row0, int rows, int fw, int fh, bool flip,
  * and the screen's are contiguous), only the opaque runs, each pixel its palette's colour. rows: the top ones only. */
 /* A packed picture's colours as the surface keeps them, here in internal memory (no PSRAM read per pixel): a
  * variant's colours where it has them (alt), or one colour for a flash (tint >= 0) */
-static void look_pal(const surface *s, const asset *a, const asset *alt, int tint, uint16_t pal[256]) {
+static uint16_t dusk(uint16_t c) { /* gfx_tint_dusk's per-channel scale, on one colour */
+    int r = (c >> 11) * 5 / 8, g = ((c >> 5) & 63) * 11 / 16, b = (c & 31) * 13 / 16 + 2;
+    return (uint16_t)((r << 11) | (g << 5) | (b > 31 ? 31 : b));
+}
+
+/* light: LIGHT_DUSK and a number of times halved (gfx_shade), applied to the palette: the same pixels as shading and
+ * tinting the picture once drawn, without going over them again */
+#define LIGHT_DUSK 0x10
+static int warm_level; /* gfx_light_warm: every packed picture's palette pulled towards amber */
+void gfx_light_warm(int level) { warm_level = level; }
+
+static void look_pal(const surface *s, const asset *a, const asset *alt, int tint, int light, uint16_t pal[256]) {
     const int ncol = (int)rd16(a->pk + 6), nalt = alt && alt->pk ? (int)rd16(alt->pk + 6) : 0;
-    for (int i = 0; i < ncol; i++) pal[i] = stored(s, tint >= 0 ? (uint16_t)tint : i < nalt ? alt->pal[i] : a->pal[i]);
+    for (int i = 0; i < ncol; i++) {
+        uint16_t c = tint >= 0 ? (uint16_t)tint : i < nalt ? alt->pal[i] : a->pal[i];
+        for (int k = light & 0xF; k > 0; k--) c = (uint16_t)((c & 0xF7DE) >> 1);
+        if (light & LIGHT_DUSK) c = dusk(c);
+        if (warm_level) { /* (as arena.c's warm, on one colour) */
+            int f = warm_level * 3, r = c >> 11, g = (c >> 5) & 63, b = c & 31;
+            r += (31 - r) * f / 24, g += (63 - g) * f / 120, b -= b * f / 20;
+            c = (uint16_t)(r << 11 | g << 5 | b);
+        }
+        pal[i] = stored(s, c);
+    }
 }
 
 static void blit_packed(surface *s, const asset *a, int frame, int x, int y, int rows, bool flip, const asset *alt,
-                        int tint) {
+                        int tint, int light) {
     int u0, v0, n = CLIP_X(s, x, a->w, &u0), m = CLIP_Y(s, y, rows < a->h ? rows : a->h, &v0);
     if (n <= 0 || m <= 0) return;
     const int ys = step_y(s), lo = v0, hi = v0 + m, bpp = a->bpp;
     uint16_t pal[256];
-    look_pal(s, a, alt, tint, pal);
+    look_pal(s, a, alt, tint, light, pal);
     for (int k = 0; k < n; k++) {
         int u = u0 + k;
         EACH_RUN(a, frame, flip ? a->w - 1 - u : u, ry, rn, ids, {
@@ -439,7 +460,7 @@ static inline int64_t floor_div(int64_t a, int64_t b) {
 void gfx_blit_scaled(surface *s, const asset *a, int frame, int bx0, int bx1, int by0, int by1, int32_t u, int32_t du,
                      int32_t v, int32_t dv, const asset *alt, int tint) {
     uint16_t pal[256];
-    look_pal(s, a, alt, tint, pal);
+    look_pal(s, a, alt, tint, 0, pal);
     const int ys = step_y(s), len = by1 - by0, bpp = a->bpp;
     const int64_t m = dv < 0 ? -(int64_t)dv : dv;
     for (int x = bx0; x < bx1; x++, u += du) {
@@ -451,16 +472,23 @@ void gfx_blit_scaled(surface *s, const asset *a, int frame, int bx0, int bx1, in
             int64_t k1 = dv > 0 ? -floor_div(-hi, m) : floor_div(-lo, m) + 1;
             if (k0 < 0) k0 = 0;
             if (k1 > len) k1 = len;
-            int32_t vv = v + (int32_t)k0 * dv;
-            uint16_t *d = col + k0 * ys;
-            for (int k = (int)k0; k < k1; k++, vv += dv, d += ys) *d = pal[index_at(ids, (vv >> 16) - ry, bpp)];
+            const int n0 = (int)k0, n1 = (int)k1; /* (32-bit from here: the console's loops are its words) */
+            int32_t vv = v + n0 * dv;
+            uint16_t *d = col + n0 * ys;
+            if (bpp == 8)
+                for (int k = n0; k < n1; k++, vv += dv, d += ys) *d = pal[ids[(vv >> 16) - ry]];
+            else
+                for (int k = n0; k < n1; k++, vv += dv, d += ys) {
+                    int j = (vv >> 16) - ry;
+                    *d = pal[j & 1 ? ids[j >> 1] & 15 : ids[j >> 1] >> 4];
+                }
         });
     }
 }
 
 static void blit_plain(surface *s, const asset *a, int frame, int x, int y, int rows, bool half) {
     if (a->pk && (!half || !a->pixels)) { /* (half see-through is the v1 games', whose pictures are not packed) */
-        blit_packed(s, a, frame, x, y, rows, false, NULL, -1);
+        blit_packed(s, a, frame, x, y, rows, false, NULL, -1, 0);
         return;
     }
     int u0, v0, n = CLIP_X(s, x, a->w, &u0), m = CLIP_Y(s, y, rows < a->h ? rows : a->h, &v0);
@@ -518,10 +546,21 @@ static void blit_plain(surface *s, const asset *a, int frame, int x, int y, int 
 }
 
 /* At 1x, mirrored left to right when flip_x: a fighter facing the other way without the general (scaled, turned) path. */
+void gfx_blit_lit(surface *s, const asset *a, int x, int y, int shade, bool dusk_tint) {
+    if (!a->pk) { /* (as it was: drawn, then shaded and tinted where it is) */
+        gfx_blit(s, a, 0, x, y, 0, false);
+        surface in = gfx_clip(s, x, y, a->w, a->h);
+        for (int k = 0; k < shade; k++) gfx_shade(&in, 0, 0, SCREEN_W, SCREEN_H);
+        if (dusk_tint) gfx_tint_dusk(&in);
+        return;
+    }
+    blit_packed(s, a, 0, x, y, a->h, false, NULL, -1, (shade > 15 ? 15 : shade) | (dusk_tint ? LIGHT_DUSK : 0));
+}
+
 void gfx_blit_flip(surface *s, const asset *a, int frame, int x, int y, bool flip_x, const asset *pal, int tint) {
     if (frame < 0 || frame >= a->frames) frame = 0;
     if (a->pk) {
-        blit_packed(s, a, frame, x, y, a->h, flip_x, pal, tint);
+        blit_packed(s, a, frame, x, y, a->h, flip_x, pal, tint, 0);
         return;
     }
     if (!flip_x && tint < 0) {
@@ -773,6 +812,38 @@ void gfx_upscale2x(const surface *src, surface *dst) {
     for (int x = xa; x < xb; x++) { /* any other window, pixel by pixel */
         uint16_t *d = at(dst, x, ya);
         for (int y = ya; y < yb; y++, d += ys) *d = stored(dst, src->px[(y >> 1) * src->w + x / 2]);
+    }
+}
+
+void gfx_upscale2x_key(const surface *src, surface *dst, uint16_t key) {
+    int xa = dst->x0, xb = dst->x0 + dst->w, ya = dst->y0, yb = dst->y0 + dst->h, ys = step_y(dst);
+    if (xb > 2 * src->w) xb = 2 * src->w;
+    if (yb > 2 * src->h) yb = 2 * src->h;
+    for (int x = xa; x < xb; x++) { /* column by column: on the console's turned strips a column is contiguous */
+        uint16_t *d = at(dst, x, ya);
+        const uint16_t *sp = src->px + (ya >> 1) * src->w + x / 2;
+        int y = ya;
+        if (y & 1) { /* an odd first row: the second half of its source pixel */
+            if (*sp != key) *d = stored(dst, *sp);
+            d += ys, sp += src->w, y++;
+        }
+        for (; y + 1 < yb; y += 2, d += 2 * ys, sp += src->w)
+            if (*sp != key) d[0] = d[ys] = stored(dst, *sp);
+        if (y < yb && *sp != key) *d = stored(dst, *sp);
+    }
+}
+
+void gfx_shade_except(surface *s, uint16_t key) {
+    for (int i = 0; i < s->w * s->h; i++)
+        if (s->px[i] != key) s->px[i] = (uint16_t)((s->px[i] & 0xF7DE) >> 1);
+}
+
+void gfx_tint_dusk_except(surface *s, uint16_t key) {
+    for (int i = 0; i < s->w * s->h; i++) {
+        uint16_t c = s->px[i];
+        if (c == key) continue;
+        int r = (c >> 11) * 5 / 8, g = ((c >> 5) & 63) * 11 / 16, b = (c & 31) * 13 / 16 + 2;
+        s->px[i] = (uint16_t)((r << 11) | (g << 5) | (b > 31 ? 31 : b));
     }
 }
 

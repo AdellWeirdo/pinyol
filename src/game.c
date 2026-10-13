@@ -317,7 +317,7 @@ static void draw_layer(surface *s, surface *world, int i, bool shade) {
     if (i == 0) {
         if (layer_has(L_ARENA)) arena_render_screen(world, s); /* the fight covers the zone it was entered from */
         else {
-            gfx_upscale2x(world, s);
+            if (!world_render_hd(s, world)) gfx_upscale2x(world, s);
             world_render_marker(s);
         }
         return;
