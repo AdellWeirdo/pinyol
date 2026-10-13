@@ -285,6 +285,27 @@ static int l_require(lua_State *L) {
     return 1;
 }
 
+#define FILE_MAX (1024 * 1024)
+
+/* file(name) -> the text of one of the game's files ("story/es.txt", "maps/metro.csv"), or nil if it has none */
+static int l_file(lua_State *L) {
+    const char *rel = luaL_checkstring(L, 1);
+    if (!safe_name(rel)) return luaL_error(L, "file: bad file name '%s'", rel);
+    char path[384];
+    snprintf(path, sizeof path, "%s/%s", G.game_dir, rel);
+    FILE *f = fopen(path, "rb");
+    if (!f) return lua_pushnil(L), 1;
+    long n = fseek(f, 0, SEEK_END) ? -1 : ftell(f);
+    fclose(f);
+    if (n > FILE_MAX) return luaL_error(L, "file: %s is bigger than %d KB", rel, FILE_MAX / 1024);
+    long len = 0;
+    char *txt = n >= 0 ? read_file(path, &len) : NULL;
+    if (!txt) return lua_pushnil(L), 1;
+    lua_pushlstring(L, txt, (size_t)len);
+    free(txt);
+    return 1;
+}
+
 static int l_load(lua_State *L) { /* load(chunk [, name [, mode [, env]]]) with source only, never bytecode */
     size_t n = 0;
     const char *s = luaL_checklstring(L, 1, &n);
@@ -910,7 +931,7 @@ static void api(lua_State *L) {
         {"window", l_window}, {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow},
         {"mosaic", l_mosaic}, {"noise", l_noise},
         {"quit", l_quit}, {"perf", l_perf}, {"store", l_store}, {"stored", l_stored}, {"load", l_load}, {"log", l_log},
-        {"print", l_log}, {"require", l_require}, {NULL, NULL}};
+        {"print", l_log}, {"require", l_require}, {"file", l_file}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);
     draw_register(L); /* text, shapes, pictures, canvases: lua_draw.c */

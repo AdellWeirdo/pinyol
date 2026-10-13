@@ -1,0 +1,32 @@
+// Bajopueblo, una escena de prueba (tests/story.script)
+[var confianza = 0]
+[var nombre = "Klaus"]
+[var llave = false]
+
+== inicio
+Abuela: Buenas noches, {nombre}.
+El suelo cruje bajo los pies.
+-> preguntas
+
+== preguntas
+[if confianza >= 2] Abuela (seria): Ya sabes demasiado.
+* Preguntar por la Raíz -> raiz
+* Preguntar por el pueblo
+  Abuela: Este pueblo está encima de otro.
+  [do confianza = confianza + 1]
+  -> preguntas
++ [if llave] Abrir la trampilla -> trampilla
++ Irse -> fin
+
+== raiz
+[do confianza = confianza + 1]
+[do avisar("raiz")]
+Abuela: La Raíz guarda lo que el pueblo olvida. Has venido {seen.raiz} vez.
+-> preguntas
+
+== trampilla
+Klaus: Está abierta. Huele a tierra mojada.
+-> END
+
+== fin
+Abuela: Vuelve cuando quieras.

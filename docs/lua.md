@@ -439,6 +439,67 @@ library can be copied into a game and changed. Each file in `lib/` says how to u
 | `"physics"` | things that fall, bounce, slide and hit: `w = physics.world({gravity})`, `w:circle(x, y, r, {bounce, friction, static, mass})`, `w:box(x, y, w, h, {...})`, `w:rope(a, b, length, {stick})`, `w:step()`, `w:hits()`, `w:at(x, y)`, `w:remove(body)`. Circles and boxes that do not turn: toys, puzzles, arcade games, up to about 60 bodies on the console |
 | `"kit"` | a whole game from data and events, as the [editor](../README.md#without-code-the-editor) makes them: `kit.setup(data)` with levels (each a map of tiles and objects, played in order: `kit.next_level()`, `kit.goto_level(id)`; a `cover` before them, an `ending` after), objects and their kinds (`"platformer"`, `"topdown"`, `"grid"`, `"patrol"`, `"chase"`, `"shot"`, `"push"`, `"still"`); `kit.on("touch", "heroe", "moneda", function(este, otro) ... end)` and `"start"`, `"level"`, `"out"`, `"tick"`, `"press"`, `"hold"`, `"tile"`, `"every"`, `"tap"`; `kit.spawn`, `kit.destroy`, `kit.count_on(kind, tile)`, `kit.retry()`, `kit.music(id)` (each level and the cover may have their own), `kit.label`, `kit.sound`, `kit.win`, `kit.lose`; `kit.init()`, `kit.update()`, `kit.draw()` in the three callbacks; up to three pictures behind the map, repeated, each moving with the camera by its parallax (`backdrops`). All of it at the top of [lib/kit.lua](../lib/kit.lua) |
 | `"keyboard"` | writing with the d-pad or a finger: `kb = keyboard.new({title, text, max, colours})`, `kb:update()` returns `"ok"` or `"cancel"` when done, `kb:draw()`, `kb.text` |
+| `"story"` | conversations and stories that branch, written as plain text: [below](#stories) |
+
+### Stories
+
+Who says what, the choices the player makes, what they change and what comes back later: written in a text file
+of the game, in any language (one file each: `story/es.txt`, `story/ca.txt`), not in code.
+
+```
+// story/es.txt
+[var confianza = 0]
+
+== inicio
+Abuela: Buenas noches, {nombre}.
+El suelo cruje bajo los pies.
+-> preguntas
+
+== preguntas
+[if confianza >= 2] Abuela (seria): Ya sabes demasiado.
+* Preguntar por la Raíz -> raiz
+* Preguntar por el pueblo
+    Abuela: Este pueblo está encima de otro.
+    [do confianza = confianza + 1]
+    -> preguntas
++ [if llave] Abrir la trampilla -> trampilla
++ Irse -> END
+
+== raiz
+[do sfx("RAIZ")]
+Abuela: La Raíz guarda lo que el pueblo olvida.
+-> preguntas
+```
+
+| Line | Is |
+|---|---|
+| `== name` | a knot: a place in the story to go to. Running into the next knot ends the story |
+| `Name: text` | a line said, with who says it (30 letters at most before the `: `); `Name (mood): text` also gives a mood, for a portrait |
+| `text` | a line nobody says |
+| `{expr}` | inside a text: the value of a variable or expression |
+| `* text -> knot` | a choice, once: taken, it is not offered again. `+` is offered always. The lines indented under it happen when it is taken; then the story goes on after the choices, or to `knot` |
+| `-> knot`, `-> END` | go to that knot; the end |
+| `[if expr] line` | that line (or choice) only when `expr` is true |
+| `[do code]` | Lua: the story's variables are its globals, and the game's functions are there too (`sfx`, `music`, its own) |
+| `[var name = expr]` | a variable and its first value, unless a saved story has it already |
+| `// text` | a comment |
+
+```lua
+local story = require("story")
+local lang = stored("lang", "es")
+s = story.new(file("story/" .. lang .. ".txt"), {name = lang .. ".txt", vars = stored("story")})
+s:go("inicio")                               -- in _update: s:update() returns "done" at the end; in _draw: s:draw()
+store("story", s.vars)                       -- the story's variables, knots seen and choices taken
+```
+
+`s:update()` and `s:draw()` are a box at the foot of the screen: the letters come one by one, A (or a tap) shows the
+line whole and then goes on, up and down pick a choice, A or a tap on it takes it. `story.new`'s `ui` option changes
+it: `font`, `color`, `name_color`, `choice_color`, `pick_color`, `speed` (letters a tick), `x`, `y`, `w`, `h`, `pad`,
+`box` and `border` (colours), `frame` (a picture of the game, as `frame()` draws it), `panel = true` (the theme's),
+`portraits` (`{Abuela = "FACE_ABUELA", Abuela_seria = "FACE_ABUELA_2"}`, drawn standing on the box's left) and
+`blip` (a sound every `blip_every` letters). A game that draws its own: `s:line()` is `{who, mood, text}` or nil,
+`s:choices()` the texts offered or nil, `s:next()`, `s:choose(i)`, `s:running()`. `s.vars.seen.raiz` counts the
+visits to a knot. A mistake in the text stops the game with its file and line.
 
 ## Saving
 
@@ -452,7 +513,8 @@ writes the file at once: call it at moments like a level's end, not every frame.
 `log(...)` (and `print`) writes to the log. `quit()` goes back to the console's game list (holding MENU for two
 seconds does too). `perf()` returns the milliseconds the last `_update`, `_draw` and picture took, and the script's
 memory in KB, to see where a frame goes. `require("name")`
-loads `name.lua` from the game folder (`"ui.menu"` is `ui/menu.lua`).
+loads `name.lua` from the game folder (`"ui.menu"` is `ui/menu.lua`). `file("story/es.txt")` returns the text of any
+file of the game (1 MB at most), or nil: stories, levels written by hand, a metro's stations as CSV.
 
 ## Limits (the sandbox)
 

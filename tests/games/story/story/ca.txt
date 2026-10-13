@@ -1,0 +1,3 @@
+== inici
+L·lúcia (contenta): Bon dia! Què tal l'àvia?
+* Molt bé, gràcies -> END

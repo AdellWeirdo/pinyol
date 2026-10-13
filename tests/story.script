@@ -1,0 +1,71 @@
+# Stories (lib/story.lua): lines with who says them, variables in the text, choices once or always, conditions,
+# code, knots seen, the end; a saved story keeps its variables; the box types letters out and takes A and taps;
+# a story with a mistake says where
+new
+tick 1
+expect_lua s:line().who == "Abuela" and s:line().text == "Buenas noches, Klaus."
+expect_lua s.shown < s.total
+tick 5
+shot story_typing
+press A
+expect_lua s.shown == s.total
+press A
+expect_lua s:line().who == nil and s:line().text == "El suelo cruje bajo los pies."
+press A
+press A
+tick 1
+expect_lua s:line() == nil and nch() == 3 and s:choices()[1] == "Preguntar por la Raíz"
+shot story_choices
+# the second choice continues after the choices, its lines then back to the knot
+press DOWN
+press A
+tick 1
+expect_lua s:line().text == "Este pueblo está encima de otro."
+lua s.shown = s.total
+press A
+tick 1
+expect_lua confianza == nil and s.vars.confianza == 1 and nch() == 2
+# once-choices go; the Raíz bumps confianza again, calls the game, counts the visit
+lua s:choose(1)
+expect_lua s:line().text == "La Raíz guarda lo que el pueblo olvida. Has venido 1 vez." and events[1] == "raiz"
+lua s:next()
+expect_lua s:line().who == "Abuela" and s:line().mood == "seria" and s.vars.confianza == 2
+lua s:next()
+expect_lua nch() == 1 and s:choices()[1] == "Irse"
+# a condition opens a choice
+lua s.vars.llave = true s:go("preguntas") s:next()
+expect_lua nch() == 2 and s:choices()[1] == "Abrir la trampilla"
+# a tap on a choice takes it
+tap 60 228
+tick 1
+expect_lua s:line().who == "Klaus"
+lua s:next()
+tick 1
+expect_lua not s:running() and ended == true
+# saved and loaded: the variables and the choices already taken
+lua store("story", s.vars)
+new
+tick 1
+expect_lua s.vars.confianza == 2 and s.vars.llave == true and s.vars.seen.raiz == 1
+lua s:go("preguntas") s:next()
+expect_lua nch() == 2 and s:choices()[1] == "Abrir la trampilla"
+# Catalan letters, and a story with no knots goes from the first line
+lua c = story.new(file("story/ca.txt"), {name = "ca.txt"}) c:go("inici")
+expect_lua c:line().who == "L·lúcia" and c:line().mood == "contenta"
+lua s = c
+tick 30
+shot story_ca
+lua t = story.new("Una línea.\nOtra.") t:go()
+expect_lua t:line().text == "Una línea." 
+lua t:next() t:next()
+expect_lua not t:running()
+# mistakes, with the line
+expect_lua_error story.new("== a\n-> b", {name = "x.txt"})
+lua ok, err = pcall(story.new, "== a\n\n* Hola -> nada", {name = "x.txt"})
+expect_lua not ok and err:find("x.txt:3: there is no knot 'nada'", 1, true)
+lua ok, err = pcall(story.new, "[if confianza >] Hola", {name = "y.txt"})
+expect_lua not ok and err:find("y.txt:1:", 1, true)
+expect_lua_error story.new(nil)
+expect_lua file("nope.txt") == nil
+expect_lua_error file("../secret")
+expect_ok
