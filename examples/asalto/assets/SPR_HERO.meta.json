@@ -1,0 +1,45 @@
+{
+  "asset": "SPR_HERO",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 63,
+  "w": 128,
+  "h": 96,
+  "frames": 11,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "anchor": [
+    50,
+    94
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 46752,
+    "as_rgb565": 270336
+  }
+}

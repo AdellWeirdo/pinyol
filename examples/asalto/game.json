@@ -1,0 +1,8 @@
+{
+  "id": "asalto",
+  "title": "Asalto al cañón",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "np2d examples",
+  "description": "Correr y disparar a la manera de la Neo Geo: una heroína con ametralladora, robots de chatarra que explotan, un tanque araña al final; todo a 480x320 con imágenes empaquetadas."
+}

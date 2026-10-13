@@ -1,0 +1,35 @@
+{
+  "asset": "SPR_ROBOT",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 46,
+  "w": 96,
+  "h": 80,
+  "frames": 6,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "anchor": [
+    52,
+    78
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 20529,
+    "as_rgb565": 92160
+  }
+}

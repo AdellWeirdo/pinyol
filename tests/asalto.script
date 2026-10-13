@@ -1,0 +1,30 @@
+# Asalto: the title, the start, running and firing into the first robots (they lose life, flash, explode, score),
+# a robot's shot hurting the heroine, the walking tank at the end of the street, beating it: the mission cleared
+tick 30
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "intro"
+tick 100
+expect_lua state == "play"
+hold RIGHT 200
+shot correr
+hold A 150
+shot fuego
+expect_lua score > 0
+lua hero.hurt = 0 hp0 = hero.hp
+lua foes[#foes + 1] = {x = hero.x + 4, y = hero.y - 40, vx = -1, vy = 0}
+tick 2
+expect_lua hero.hp == hp0 - 1
+lua hero.x = 6200 cam = 5970
+tick 2
+expect_lua boss ~= nil
+tick 120
+shot jefe
+lua boss.hp = 0
+tick 60
+shot explota
+tick 100
+expect_lua state == "clear" and score >= 5000
+shot cumplida
+expect_ok
