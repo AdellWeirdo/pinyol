@@ -1,8 +1,8 @@
 // The Drawings tab: pixel by pixel in the console's colours (a palette at hand, or any other), with frames for
 // animation; pictures brought in from files; and what each drawing is for (a tile of the map, solid or not, an
 // object that moves in some way, or a picture behind the map).
-import { PALETTE, COLOUR_NAMES, BEHAVIOURS, SHOT_DIRS, DRIFTS, DRAWING, SIZES, MAX_SIDE, MAX_PIXELS, blankFrame, safeName, uniqueName, rgb565, hex565, rgbOf, hexOf,
-         pixelsOf } from './project.js';
+import { PALETTE, COLOUR_NAMES, BEHAVIOURS, SHOT_DIRS, DRIFTS, DRAWING, SIZES, MAX_SIDE, MAX_BYTES, blankFrame, safeName, uniqueName, rgb565, hex565, rgbOf, hexOf, } from './project.js';
+import { sizeOf, bytesOf } from './build.js';
 
 const $ = id => document.getElementById(id);
 let app, cur = 0, frame = 0, tool = 'pen', colour = hex565(PALETTE[19]);
@@ -39,7 +39,7 @@ export function thumbnail(d, size = 32) {
 }
 
 const drawing = () => app.project.drawings[cur];
-const fits = more => pixelsOf(app.project.drawings) + more <= MAX_PIXELS;
+const fits = (next, prev) => bytesOf(app.project.drawings) - (prev ? sizeOf(prev) : 0) + sizeOf(next) <= MAX_BYTES; // with next in prev's place
 const TOO_BIG = 'No cabe: la memoria de la consola está casi llena. Quita fotogramas o dibujos que no uses, o hazlos más pequeños.';
 let kb = { x: 0, y: 0 }; // the keyboard's cursor on the canvas
 
@@ -157,9 +157,9 @@ function renderList() {
     ul.append(li);
   });
   if (focused) ul.querySelector('[aria-current="true"]')?.focus(); // still where it was
-  const used = pixelsOf(app.project.drawings), m = $('d-memory');
-  m.textContent = `Memoria de la consola: ${used * 2 >> 10} de ${MAX_PIXELS * 2 >> 10} KB`;
-  m.classList.toggle('warn', used > MAX_PIXELS * 0.9);
+  const used = bytesOf(app.project.drawings), m = $('d-memory');
+  m.textContent = `Memoria de la consola: ${used >> 10} de ${MAX_BYTES >> 10} KB`;
+  m.classList.toggle('warn', used > MAX_BYTES * 0.9);
 }
 
 function renderFrames() {
@@ -281,7 +281,7 @@ function importPixels() {
 }
 
 function importPreview() {
-  const pic = importPixels(), c = $('import-preview'), ok = fits(pic.w * pic.h * pic.frames.length);
+  const pic = importPixels(), c = $('import-preview'), ok = fits({ ...pic, use: useOf(pic) });
   const s = Math.min(240 / pic.w, 160 / pic.h, 8);
   c.width = Math.max(1, Math.round(pic.w * s)), c.height = Math.max(1, Math.round(pic.h * s));
   drawPixels(c, pic, 0, s);
@@ -318,11 +318,13 @@ async function openImport(file) {
   $('import').showModal();
 }
 
+const useOf = pic => pic.w === 16 && pic.h === 16 ? 'tile' : pic.w >= 120 || pic.h >= 120 ? 'backdrop' : 'object';
+
 function finishImport() {
   if ($('import').returnValue !== 'ok' || !incoming) { incoming = null; return; }
   const pic = importPixels(), names = new Set(app.project.drawings.map(d => d.name));
-  if (!fits(pic.w * pic.h * pic.frames.length)) { incoming = null; app.toast(TOO_BIG); return; }
-  const use = pic.w === 16 && pic.h === 16 ? 'tile' : pic.w >= 120 || pic.h >= 120 ? 'backdrop' : 'object';
+  const use = useOf(pic);
+  if (!fits({ ...pic, use })) { incoming = null; app.toast(TOO_BIG); return; }
   app.project.drawings.push({ ...DRAWING, name: uniqueName(safeName(incoming.name, 'imagen'), names), ...pic, use,
                               parallax: 0 }); // a picture is rarely made to repeat: still, until asked to move
   incoming.bmp.close();
@@ -399,7 +401,7 @@ export function initDrawings(ctx) {
   $('frame-add').addEventListener('click', () => {
     const d = drawing();
     if (d.frames.length >= 8) return;
-    if (!fits(d.w * d.h)) { app.toast(TOO_BIG); return; }
+    if (!fits({ ...d, frames: [...d.frames, d.frames[frame]] }, d)) { app.toast(TOO_BIG); return; }
     snapshot();
     d.frames.splice(frame + 1, 0, d.frames[frame].slice());
     frame++;
@@ -415,7 +417,7 @@ export function initDrawings(ctx) {
   });
   $('drawing-add').addEventListener('click', () => {
     const names = new Set(app.project.drawings.map(d => d.name));
-    if (!fits(256)) { app.toast(TOO_BIG); return; }
+    if (!fits({ ...DRAWING, w: 16, h: 16, frames: [blankFrame(16, 16)] })) { app.toast(TOO_BIG); return; }
     app.project.drawings.push({ ...DRAWING, name: uniqueName('dibujo', names), w: 16, h: 16, frames: [blankFrame(16, 16)] });
     select(app.project.drawings.length - 1);
     app.changed();
@@ -438,7 +440,9 @@ export function initDrawings(ctx) {
   $('d-size').addEventListener('change', e => {
     const size = Number(e.target.value), d = drawing();
     if (!SIZES.includes(size)) return;
-    if (!fits((size * size - d.w * d.h) * d.frames.length)) { app.toast(TOO_BIG); renderProps(); return; }
+    const next = { ...d };
+    resize(next, size); // (on a copy: d changes after the snapshot)
+    if (!fits(next, d)) { app.toast(TOO_BIG); renderProps(); return; }
     snapshot();
     resize(d, size);
     changed();

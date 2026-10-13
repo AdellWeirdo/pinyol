@@ -1,7 +1,7 @@
 // From a project to a game folder np2d plays: game.json, data.lua (the drawings' sizes, kinds, the map, the objects,
 // the sounds), main.lua (kit and the blocks' code), assets/SPR_<name> (each drawing in the engine's own format) and
 // the four fonts. The same files go in the browser's player and in the .zip for the console's card.
-import { TILE, MAX_PIXELS, pixelsOf } from './project.js';
+import { TILE, MAX_BYTES } from './project.js';
 import { fileOf } from './audio.js';
 
 // ------------------------------------------------------------------ pictures in the engine's format
@@ -18,7 +18,67 @@ export function cropOf(d) {
   return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
 }
 
-function picture(d) { // -> {rgb565, mask|null, meta}
+// A drawing as a packed picture (the engine's .pk, as tools/png2asset.py --packed writes it: docs/game-format.md):
+// its own palette and each column's runs of drawn pixels, 4 bits a pixel when 16 colours are enough. A quarter of
+// the memory of RGB565 or less, and drawn faster. null for a backdrop (the engine unpacks layers: they stay RGB565)
+// and for more than 256 colours (a photo).
+export function packed(d) {
+  if (d.use === 'backdrop') return null;
+  const c = cropOf(d), at = (f, x, y) => f[(y + c.y) * d.w + x + c.x], index = new Map();
+  for (const f of d.frames)
+    for (let y = 0; y < c.h; y++)
+      for (let x = 0; x < c.w; x++) {
+        const p = at(f, x, y);
+        if (p < 0 || index.has(p)) continue;
+        if (index.size === 256) return null;
+        index.set(p, index.size);
+      }
+  const pal = index.size ? [...index.keys()] : [0], bpp = pal.length <= 16 ? 4 : 8, head = [], data = [];
+  const u16 = (a, v) => a.push(v & 255, v >> 8 & 255);
+  head.push(78, 80, 50, 75, 1, bpp); // "NP2K", version 1
+  for (const v of [pal.length, c.w, c.h, d.frames.length, 0, ...pal]) u16(head, v);
+  while (head.length % 4) head.push(0);
+  const dataAt = head.length + 4 * c.w * d.frames.length, table = [];
+  for (const f of d.frames)
+    for (let x = 0; x < c.w; x++) {
+      table.push(dataAt + data.length);
+      const runs = [];
+      for (let y = 0; y < c.h;) {
+        if (at(f, x, y) < 0) { y++; continue; }
+        const y0 = y;
+        while (y < c.h && at(f, x, y) >= 0) y++;
+        runs.push([y0, y - y0]);
+      }
+      u16(data, runs.length);
+      for (const [y0, n] of runs) {
+        u16(data, y0), u16(data, n);
+        for (let j = 0; j < n; j += bpp === 8 ? 1 : 2) {
+          const a = index.get(at(f, x, y0 + j)) ?? 0;
+          if (bpp === 8) data.push(a);
+          else data.push(a << 4 | (j + 1 < n ? index.get(at(f, x, y0 + j + 1)) : 0));
+        }
+      }
+    }
+  const bytes = new Uint8Array(dataAt + data.length), view = new DataView(bytes.buffer);
+  bytes.set(head);
+  table.forEach((v, i) => view.setUint32(head.length + 4 * i, v, true));
+  bytes.set(data, dataAt);
+  return { bytes, bpp, colours: pal.length, crop: c };
+}
+
+// What a drawing takes in the console's memory, built: packed, or RGB565 and its mask.
+// ponytail: packs every drawing each time it is asked (~20 ms for a full 1.5 MB project); keep sizes if it shows.
+export const sizeOf = d => packed(d)?.bytes.length ?? d.w * d.h * d.frames.length * 2 + ((d.w + 7) >> 3) * d.h * d.frames.length;
+export const bytesOf = drawings => drawings.reduce((n, d) => n + sizeOf(d), 0);
+
+function picture(d) { // -> {rgb565, mask|null, meta} or {pk, meta}
+  const pk = packed(d);
+  if (pk) {
+    const c = pk.crop, n = d.frames.length;
+    return { pk: pk.bytes, crop: c, meta: { asset: 'SPR_' + d.name, type: 'sprite', w: c.w, h: c.h, frames: n,
+      frame_ms: new Array(n).fill(0), order: [...Array(n).keys()], anchor: [c.w >> 1, c.h - 1], tile: null,
+      format: 'packed', bpp: pk.bpp, colours: pk.colours } };
+  }
   const c = cropOf(d), n = d.frames.length, stride = (c.w + 7) >> 3;
   const px = new Uint8Array(c.w * c.h * n * 2), mask = new Uint8Array(stride * c.h * n);
   let seeThrough = false, i = 0;
@@ -112,15 +172,16 @@ function _draw() kit.draw() end
 
 // -> Map of path -> Uint8Array, the game's files; `carried`: [[path, bytes]] every game has (fonts, kit), already read
 export function buildFiles(p, blocksCode, carried, { start, audio = [] } = {}) {
-  const used = pixelsOf(p.drawings);
-  if (used > MAX_PIXELS)
-    throw new Error(`los dibujos no caben en la consola (${used * 2 >> 10} de ${MAX_PIXELS * 2 >> 10} KB): ` +
+  const used = bytesOf(p.drawings);
+  if (used > MAX_BYTES)
+    throw new Error(`los dibujos no caben en la consola (${used >> 10} de ${MAX_BYTES >> 10} KB): ` +
                     'quita fotogramas o haz más pequeños los dibujos grandes');
   const enc = new TextEncoder(), files = new Map(), crops = {};
   for (const d of p.drawings) {
     const pic = picture(d);
     crops[d.name] = pic.crop;
-    files.set(`assets/SPR_${d.name}.rgb565`, pic.rgb565);
+    if (pic.pk) files.set(`assets/SPR_${d.name}.pk`, pic.pk);
+    else files.set(`assets/SPR_${d.name}.rgb565`, pic.rgb565);
     if (pic.mask) files.set(`assets/SPR_${d.name}.mask`, pic.mask);
     files.set(`assets/SPR_${d.name}.meta.json`, enc.encode(JSON.stringify(pic.meta, null, 2) + '\n'));
   }

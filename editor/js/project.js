@@ -8,7 +8,7 @@ export const MAP_MAX = 64; // tiles a side: the map is drawn once into a canvas 
 export const LEVELS_MAX = 32;
 const FILE_MAX = 24 << 20; // a sound file kept in the project, as base64: songs of a few minutes
 export const MAX_SIDE = 512; // a drawing's width or height (a background two screens wide)
-export const MAX_PIXELS = 768 * 1024; // all drawings' frames together: 1.5 MB of the console's memory
+export const MAX_BYTES = 1536 * 1024; // all drawings together, as built (build.js sizeOf): 1.5 MB of the console's memory
 const SEE_THROUGH = 0xF81F; // a saved frame's see-through pixel; a real colour that is this one becomes 0xF81E
 
 // 16 of PICO-8's colours and 8 more: colours at hand that go together (any other can be picked)
@@ -70,7 +70,6 @@ export function rgbOf(v) { // back to 8 bits a channel, as the screen shows it
 }
 export function hexOf(v) { return '#' + rgbOf(v).map(c => c.toString(16).padStart(2, '0')).join(''); }
 
-export function pixelsOf(drawings) { return drawings.reduce((n, d) => n + d.w * d.h * d.frames.length, 0); }
 
 // a frame saved as text: two bytes a pixel, little-endian, SEE_THROUGH for -1 (a quarter of a list of numbers)
 export function encodeFrame(f) {
