@@ -1,0 +1,25 @@
+# Sobre las nubes: the title, the ship firing into the first wave of drones (they flash, explode, score), a bomb that
+# clears every orb, the battleship's rings and spirals of orbs, beating it: the stage cleared
+tick 30
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "play"
+hold UP 20
+hold A 200
+shot drones
+expect_lua score > 0
+lua orbs:add(300, 100)
+press B
+expect_lua orbs:hit(-99, -99, 999, 999, true) == 0 and ship.bombs == 2
+lua ship.hurt = 100000 t = 2700
+hold A 400
+shot jefe
+expect_lua boss ~= nil and orbs:hit(-99, -99, 999, 999, true) > 20
+lua boss.hp = 0
+tick 60
+shot explota
+tick 140
+expect_lua state == "clear" and score >= 10000
+shot superada
+expect_ok

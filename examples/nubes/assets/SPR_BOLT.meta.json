@@ -1,0 +1,25 @@
+{
+  "asset": "SPR_BOLT",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 3,
+  "w": 26,
+  "h": 8,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    13,
+    7
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 382,
+    "as_rgb565": 416
+  }
+}

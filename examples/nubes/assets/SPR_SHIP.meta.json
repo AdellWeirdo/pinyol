@@ -1,0 +1,25 @@
+{
+  "asset": "SPR_SHIP",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 64,
+  "w": 112,
+  "h": 40,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    56,
+    39
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 3113,
+    "as_rgb565": 8960
+  }
+}

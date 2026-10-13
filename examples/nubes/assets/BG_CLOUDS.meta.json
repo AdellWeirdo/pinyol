@@ -1,0 +1,25 @@
+{
+  "asset": "BG_CLOUDS",
+  "type": "background",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 160,
+  "w": 960,
+  "h": 200,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    480,
+    199
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 89401,
+    "as_rgb565": 384000
+  }
+}

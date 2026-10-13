@@ -1,0 +1,8 @@
+{
+  "id": "nubes",
+  "title": "Sobre las nubes",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "np2d examples",
+  "description": "Un matamarcianos horizontal a la manera de la Neo Geo: una nave sobre un mar de nubes al atardecer, drones en formación, un acorazado que llena el cielo de balas; todo a 480x320."
+}
