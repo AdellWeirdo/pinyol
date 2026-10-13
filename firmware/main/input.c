@@ -2,6 +2,7 @@
  * P0-P3 the d-pad up/down/left/right, P4-P7 A, B, MENU, START, all to ground), the panel's touch (0x55) and
  * the codec (0x18). C is on IO44. On a bare board without the PCF8574, BOOT (IO0) stands in for A. */
 #include "input.h"
+#include "cable.h"
 #include "remote.h"
 
 #include "driver/gpio.h"
@@ -113,8 +114,6 @@ hal_input input_poll(void) {
     }
     if (!gpio_get_level(PIN_C)) in.held |= ACT_NEXT;
     poll_touch(&in);
-#ifdef BP_REMOTE
-    remote_poll(&in);
-#endif
+    cable_poll(&in); /* a game sent over the cable; in test builds, remote.c's taps and keys */
     return in;
 }

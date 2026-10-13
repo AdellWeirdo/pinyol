@@ -16,7 +16,9 @@ typedef struct {
 
 /* The games on the card (/sdcard/games/<id>/game.json), then those only in the flash image; loads the list's font. */
 int launcher_scan(launcher_game *g, int max);
-/* The console's game list until a row is chosen: its index, or -1 for "Apagar". Returns once nothing is held. */
+#define LAUNCHER_CABLE -3 /* launcher_choose: a game is coming over the cable (cable.c) */
+/* The console's game list until a row is chosen: its index, -1 for "Apagar" or LAUNCHER_CABLE. Returns once nothing
+ * is held. */
 int launcher_choose(uint16_t *frames[2], const launcher_game *g, int n);
 /* One line of text and, when percent >= 0, a progress bar: the screen for a firmware update. */
 void launcher_message(uint16_t *frame, const char *text, int percent);

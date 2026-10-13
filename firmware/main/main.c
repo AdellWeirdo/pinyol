@@ -19,6 +19,7 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "input.h"
+#include "cable.h"
 #include "launcher.h"
 #include "ota.h"
 #include "remote.h"
@@ -202,7 +203,7 @@ static void play(void) {
 #ifdef BP_REMOTE
     playing = true;
 #endif
-    while (!game_quit_requested() && !switch_req) {
+    while (!game_quit_requested() && !switch_req && !cable_wanted()) {
         if (power_critical()) { /* the battery is nearly flat: keep the game, then sleep */
             hal_log("power: battery critical (%.2f V)", power_volts());
             if (layer_top() == L_PLAY) save_write("auto");
@@ -261,6 +262,20 @@ static bool start_game(const launcher_game *g) {
 }
 
 static int by_name(const void *a, const void *b) { return strcmp(a, b); }
+
+/* A game coming over the cable: received, the list read again; its index in it, or -1 (said on screen). */
+static int receive(launcher_game *games, int *n) {
+    char id[32];
+    if (!cable_receive(frames[0], id, sizeof id)) {
+        launcher_message(frames[0], "El juego no ha llegado entero", -1);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        return -1;
+    }
+    *n = launcher_scan(games, LAUNCHER_MAX);
+    for (int k = 0; k < *n; k++)
+        if (!strcmp(games[k].id, id)) return k;
+    return -1;
+}
 
 /* Autotest builds: every game's scripts in turn, each on a fresh game_init; with /flash/autotest/loop (BP_SOAK)
  * all of it again while everything passes, the heap logged after each script. */
@@ -357,6 +372,7 @@ void app_main(void) {
 #endif
     for (;;) vTaskDelay(portMAX_DELAY); /* the last frame stays on screen */
 #endif
+    cable_init(); /* a game sent from np2d's editor over the USB cable */
 #ifdef BP_REMOTE
     remote_init();
 #endif
@@ -380,8 +396,13 @@ void app_main(void) {
     for (;;) vTaskDelay(portMAX_DELAY);
 #endif
     run_tests(games, n);
-    for (;;) {
-        int i = launcher_choose(frames, games, n);
+    for (int next = -1;;) { /* next: a game to start without the list, the one that just came over the cable */
+        int i = next >= 0 ? next : launcher_choose(frames, games, n);
+        next = -1;
+        if (i == LAUNCHER_CABLE) {
+            next = receive(games, &n);
+            continue;
+        }
         if (i < 0) power_off();
         if (!start_game(&games[i])) { /* a broken folder: said on screen, then the list again */
             launcher_message(frames[0], "No se puede abrir este juego", -1);
@@ -390,5 +411,6 @@ void app_main(void) {
         }
         play();
         game_shutdown();
+        if (cable_wanted()) next = receive(games, &n);
     }
 }

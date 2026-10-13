@@ -3,6 +3,8 @@
  * (BOOT, while the buttons are not wired). Drawn with the engine's gfx, in a font borrowed from the first game. */
 #include "launcher.h"
 
+#include "cable.h"
+
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,6 +84,10 @@ static void add_games(const char *root, bool flash, launcher_game *g, int *n, in
 
 int launcher_scan(launcher_game *g, int max) {
     int n = 0;
+    for (int i = 0; i < max; i++) { /* scanned again (a game came over the cable): the old thumbnails go */
+        free(g[i].thumb);
+        g[i].thumb = NULL;
+    }
     add_games("/sdcard", false, g, &n, max);
     add_games("/flash", true, g, &n, max);
     char path[160];
@@ -159,6 +165,7 @@ int launcher_choose(uint16_t *frames[2], const launcher_game *g, int n) {
         if (hit >= 0) sel = hit, dirty = true;
         if (hit >= 0 || (pressed & ACT_OK)) chosen = sel;
         if (power_critical()) chosen = n;
+        if (cable_wanted()) return LAUNCHER_CABLE; /* the editor sends a game: it is played as soon as it is here */
         if (sel < n && sel < first) first = sel; /* the window follows the selection */
         if (sel < n && sel >= first + shown(n)) first = sel - shown(n) + 1;
         if (dirty) {

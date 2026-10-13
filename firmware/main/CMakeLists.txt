@@ -3,7 +3,7 @@ if(BP_BENCH STREQUAL "play") # the end-to-end tests the play bench runs (main.c,
   set(EMBED EMBED_TXTFILES ${CMAKE_CURRENT_LIST_DIR}/../../../Bajopueblo-ESP/tests/scripts/e2e_full.script
                            ${CMAKE_CURRENT_LIST_DIR}/../../../Geumgye-ESP/tests/scripts/e2e_lectura.script)
 endif()
-idf_component_register(SRCS main.c display.c sd.c input.c audio_out.c power.c launcher.c ota.c remote.c bench.c link_radio.c
+idf_component_register(SRCS main.c display.c sd.c input.c audio_out.c power.c launcher.c ota.c cable.c remote.c bench.c link_radio.c
                        INCLUDE_DIRS .
                        REQUIRES bp_core esp_timer esp_psram esp_driver_spi esp_driver_ledc esp_driver_gpio
                                 esp_driver_sdmmc esp_driver_i2c esp_driver_i2s esp_adc fatfs sdmmc vfs wear_levelling app_update

@@ -148,6 +148,13 @@ idf.py build
 idf.py -p /dev/cu.usbmodem1101 flash        # your board's port
 ```
 
+A game can also go over the USB cable, straight from the editor (Chrome or Edge) or from a terminal: the console
+writes it to the card (or, with none, its flash) and starts it.
+
+```sh
+uv run --with pyserial tools/send_game.py games/mygame     # a game folder, or a game's .zip
+```
+
 The firmware also bakes games into the flash, so the console works without a card: `examples/hola` by default, or a list, `idf.py -DFLASH_GAME="/abs/a;/abs/b" build` (then flash `build/game.bin` too, at 0x420000). Every other game goes on the microSD (FAT32) as `games/<id>/`. Holding MENU for two seconds leaves a Lua game for the list. To update the firmware later, copy `build/np2d_console.bin` to the card as `firmware.bin`.
 
 Pins and peripherals, each with its source: [docs/hardware.md](docs/hardware.md).

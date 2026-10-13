@@ -1,5 +1,5 @@
 /* Test builds only (-DBP_REMOTE=ON): the console driven over its USB cable while nobody is at it, by
- * tools/remote.py. One command per line on the serial port:
+ * tools/remote.py. One command per line on the serial port (read by cable.c, which hands over what is not its own):
  *   tap X Y    a finger down at (X, Y) for a few polls, then lifted
  *   key NAME [N]  A, B, C, UP, DOWN, LEFT, RIGHT, START or MENU, held for N polls (a few by default)
  *   lua CODE   np2d@2: runs CODE in the game (print() answers in the log), as a test script's lua line
@@ -11,28 +11,17 @@
 
 #include "bp.h"
 #include "display.h"
-#include "driver/usb_serial_jtag.h"
-#include "driver/usb_serial_jtag_vfs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "mbedtls/base64.h"
 
 #define HOLD 4 /* polls an injected input lasts: long enough for the game's edge detection */
 
-static char line[160]; /* room for a lua line */
-static int len;
-static bool overlong; /* a line longer than the buffer is dropped whole, not run cut short */
 static hal_input inject;
 static int hold;
 static bool ready;
 
-void remote_init(void) {
-    usb_serial_jtag_driver_config_t cfg = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
-    if (usb_serial_jtag_driver_install(&cfg) != ESP_OK) return;
-    usb_serial_jtag_vfs_use_driver(); /* the log goes through the driver too, so both directions share it */
-    ready = true;
-    hal_log("remote: listening (tap, key, lua, shot)");
-}
+void remote_init(void) { ready = true; hal_log("remote: listening (tap, key, lua, shot)"); }
 
 static void shot(void) {
     const uint16_t *px = remote_picture();
@@ -50,7 +39,7 @@ static void shot(void) {
     fflush(stdout);
 }
 
-static void run(const char *cmd) {
+void remote_line(const char *cmd) {
     static const struct { const char *name; uint16_t act; } keys[] = {
         {"A", ACT_OK}, {"B", ACT_BACK}, {"C", ACT_NEXT}, {"UP", ACT_UP}, {"DOWN", ACT_DOWN},
         {"LEFT", ACT_LEFT}, {"RIGHT", ACT_RIGHT}, {"START", ACT_PAUSE}, {"MENU", ACT_INV}};
@@ -70,22 +59,9 @@ static void run(const char *cmd) {
     hal_log("remote: %s", cmd);
 }
 
-void remote_poll(hal_input *in) {
-    if (!ready) return;
-    char buf[32];
-    int n = usb_serial_jtag_read_bytes(buf, sizeof buf, 0);
-    for (int i = 0; i < n; i++) {
-        if (buf[i] == '\n' || buf[i] == '\r') {
-            line[len] = 0;
-            if (len && !overlong) run(line);
-            len = 0;
-            overlong = false;
-        } else if (len < (int)sizeof line - 1) line[len++] = buf[i];
-        else overlong = true;
-    }
-    if (hold > 0) {
-        hold--;
-        in->held |= inject.held;
-        if (inject.touch) in->touch = true, in->px = inject.px, in->py = inject.py;
-    }
+void remote_input(hal_input *in) {
+    if (!ready || hold <= 0) return;
+    hold--;
+    in->held |= inject.held;
+    if (inject.touch) in->touch = true, in->px = inject.px, in->py = inject.py;
 }
