@@ -101,20 +101,43 @@
   <!-- Mapa -->
   <section class="tab" id="tab-map" role="tabpanel" hidden>
     <aside class="list">
-      <h2>Baldosas</h2>
-      <div id="map-tiles" class="pieces"></div>
-      <h2>Objetos</h2>
-      <div id="map-objects" class="pieces"></div>
-      <p class="hint">Clic para poner. Clic sobre un objeto para quitarlo. Botón derecho o la goma para borrar.</p>
+      <h2>Niveles</h2>
+      <ul id="levels" aria-label="Niveles, en el orden en que se juegan"></ul>
+      <button id="level-add" class="add">+ Nuevo nivel</button>
+      <div id="map-palette">
+        <h2>Baldosas</h2>
+        <div id="map-tiles" class="pieces"></div>
+        <h2>Objetos</h2>
+        <div id="map-objects" class="pieces"></div>
+        <p class="hint">Clic para poner. Clic sobre un objeto para quitarlo. Botón derecho o la goma para borrar.</p>
+      </div>
     </aside>
-    <div class="work map-work">
+    <div class="work map-work" id="level-work">
+      <div class="tools">
+        <label>Nombre <input id="level-name" maxlength="40" spellcheck="false"></label>
+        <button id="level-up" title="Jugarlo antes">↑</button>
+        <button id="level-down" title="Jugarlo después">↓</button>
+        <button id="level-del" class="danger">Quitar nivel</button>
+      </div>
       <div class="tools">
         <label>Ancho <input type="number" id="map-w" min="15" max="64"></label>
         <label>Alto <input type="number" id="map-h" min="10" max="64"></label>
         <label>Fondo <input type="color" id="map-bg"></label>
         <label>La cámara sigue a <select id="map-camera"></select></label>
+        <span id="map-backdrops" class="backdrops"></span>
       </div>
-      <div class="map-scroll"><canvas id="map" aria-label="El mapa"></canvas></div>
+      <div class="map-scroll"><canvas id="map" aria-label="El mapa del nivel"></canvas></div>
+    </div>
+    <div class="work cover-work" id="cover-work" hidden>
+      <canvas id="cover-preview" width="480" height="320" aria-label="Así se verá la portada"></canvas>
+      <div class="cover-form">
+        <label class="check"><input type="checkbox" id="cover-on"> Mostrar una portada antes del primer nivel</label>
+        <p class="hint">El título es el nombre del juego, arriba del todo.</p>
+        <label>Debajo del título <input id="cover-subtitle" maxlength="60"></label>
+        <label>Imagen <select id="cover-picture"></select></label>
+        <label>Color de fondo <input type="color" id="cover-bg"></label>
+        <label>Al pasar el último nivel se gana y se lee <input id="ending" maxlength="60"></label>
+      </div>
     </div>
   </section>
 
@@ -148,6 +171,7 @@
   <section class="tab" id="tab-game" role="tabpanel" hidden>
     <div class="game-bar">
       <button id="restart" class="primary">↻ Volver a empezar</button>
+      <label class="inline">Empezar en <select id="play-start"></select></label>
       <span id="game-status" role="status"></span>
     </div>
     <iframe id="player" title="El juego" allow="autoplay; fullscreen"></iframe>

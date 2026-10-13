@@ -59,7 +59,17 @@ export function lua(v, indent = '') { // a value as a Lua literal
     lua(v[k], indent + '  ')).join(',\n') + '\n' + indent + '}';
 }
 
-function dataLua(p, crops) {
+const hex = c => parseInt(c.slice(1), 16);
+
+function levelData(p, l, crops) {
+  const backdrops = p.drawings.filter(d => d.use === 'backdrop' && !l.hide.includes(d.name)).slice(0, 3) // layers 1-3
+    .map(d => ({ sprite: d.name, parallax: d.parallax }));
+  return { id: l.id, name: l.name, background: hex(l.background), camera: l.camera || null, backdrops,
+           objects: l.objects.filter(o => crops[o.kind]).map(o => ({ kind: o.kind, x: o.x + crops[o.kind].x, y: o.y + crops[o.kind].y })),
+           map: l.map.tiles.length ? { w: l.map.w, h: l.map.h, tiles: l.map.tiles, cells: l.map.cells } : null };
+}
+
+function dataLua(p, crops, start) {
   const sprites = {}, kinds = {}, solid = {}, sounds = {};
   for (const d of p.drawings) {
     const c = crops[d.name];
@@ -68,18 +78,18 @@ function dataLua(p, crops) {
     else if (d.use === 'tile' && d.solid) solid[d.name] = true;
   }
   for (const s of p.sounds) sounds[s.name] = s.params ? s.params : { recipe: s.recipe, seed: s.seed };
-  const objects = p.objects.filter(o => crops[o.kind]).map(o => ({ kind: o.kind, x: o.x + crops[o.kind].x, y: o.y + crops[o.kind].y }));
-  const backdrops = p.drawings.filter(d => d.use === 'backdrop').slice(0, 3) // layers 1 to 3, the first nearest
-    .map(d => ({ sprite: d.name, parallax: d.parallax }));
-  const data = { title: p.title, tile: TILE, background: parseInt(p.background.slice(1), 16), camera: p.camera || null,
-                 sprites, kinds, solid, sounds, objects, backdrops,
-                 map: p.map.tiles.length ? { w: p.map.w, h: p.map.h, tiles: p.map.tiles, cells: p.map.cells } : null };
+  const c = p.cover, pic = p.drawings.find(d => d.name === c.picture);
+  const data = { title: p.title, tile: TILE, sprites, kinds, solid, sounds, ending: p.ending,
+                 cover: c.on ? { text: p.title, subtitle: c.subtitle, background: hex(c.background), picture: pic ? pic.name : null,
+                                 tiled: pic ? pic.use === 'backdrop' : null } : null,
+                 levels: p.levels.map(l => levelData(p, l, crops)),
+                 start: start || null }; // Play from a level, skipping the cover (never in the card's zip)
   return '-- Made by np2d\'s editor from the project "' + p.title.replace(/"/g, '') + '": change it there.\nreturn ' + lua(data) + '\n';
 }
 
 export function mainLua(p, blocksCode) {
-  return `-- ${p.title.replace(/\n/g, ' ')}: made with np2d's editor. The blocks' code is below; kit (np2d/lib/kit.lua) does
--- the rest: the map, the objects that move by themselves, the events.
+  return `-- ${p.title.replace(/\n/g, ' ')}: made with np2d's editor. The blocks' code is below; kit.lua (a copy of np2d's
+-- lib/kit.lua) does the rest: the levels, the map, the objects that move by themselves, the events.
 kit = require("kit")
 kit.setup(require("data"))
 
@@ -93,8 +103,8 @@ function _draw() kit.draw() end
 
 // ------------------------------------------------------------------ the folder
 
-// -> Map of path -> Uint8Array, the game's files (fonts: the four FONT_*.fnt every game has, already fetched)
-export function buildFiles(p, blocksCode, fonts) {
+// -> Map of path -> Uint8Array, the game's files; `carried`: [[path, bytes]] every game has (fonts, kit), already read
+export function buildFiles(p, blocksCode, carried, { start } = {}) {
   const used = pixelsOf(p.drawings);
   if (used > MAX_PIXELS)
     throw new Error(`los dibujos ocupan ${used * 2 >> 10} KB y la consola guarda ${MAX_PIXELS * 2 >> 10} KB: ` +
@@ -109,8 +119,8 @@ export function buildFiles(p, blocksCode, fonts) {
   }
   files.set('game.json', enc.encode(JSON.stringify({ id: p.id, title: p.title, engine: 'np2d@2', main: 'main.lua',
     author: 'np2d editor', description: 'Hecho con el editor de np2d.' }, null, 2) + '\n'));
-  files.set('data.lua', enc.encode(dataLua(p, crops)));
+  files.set('data.lua', enc.encode(dataLua(p, crops, start)));
   files.set('main.lua', enc.encode(mainLua(p, blocksCode)));
-  for (const [name, bytes] of fonts) files.set('fonts/' + name, bytes);
+  for (const [path, bytes] of carried) files.set(path, bytes);
   return files;
 }

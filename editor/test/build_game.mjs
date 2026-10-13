@@ -23,11 +23,12 @@ const project = templatePlatformer();
 setProject(project);
 const ws = new Blockly.Workspace();
 Blockly.serialization.workspaces.load(templateBlocks(), ws);
-const fonts = ['FONT_MAIN.fnt', 'FONT_BOLD.fnt', 'FONT_MAIN_L.fnt', 'FONT_BOLD_L.fnt']
-  .map(f => [f, readFileSync(join(editor, 'fonts', f))]);
+const carried = [...['FONT_MAIN.fnt', 'FONT_BOLD.fnt', 'FONT_MAIN_L.fnt', 'FONT_BOLD_L.fnt']
+  .map(f => ['fonts/' + f, readFileSync(join(editor, 'fonts', f))]),
+  ...['kit.lua', 'juice.lua', 'particles.lua'].map(f => [f, readFileSync(join(editor, '..', 'lib', f))])];
 
 rmSync(out, { recursive: true, force: true });
-for (const [path, bytes] of buildFiles(project, workspaceLua(ws), fonts)) {
+for (const [path, bytes] of buildFiles(project, workspaceLua(ws), carried)) {
   mkdirSync(dirname(join(out, path)), { recursive: true });
   writeFileSync(join(out, path), bytes);
 }

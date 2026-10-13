@@ -1,11 +1,17 @@
-// The Map tab: tiles painted on a grid, objects put where they start, the map's size, its background colour and whom
-// the camera follows. Shown at twice the world's pixels, as on the console's screen.
-import { TILE, MAP_MAX } from './project.js';
+// The Map tab: the game's levels in the order they are played, and its cover. A level is tiles painted on a grid,
+// objects put where they start, its size, background colour, the pictures behind it and whom the camera follows;
+// shown at twice the world's pixels, as on the console's screen. The cover is the title screen before them.
+import { TILE, MAP_MAX, LEVELS_MAX, newLevel, uniqueName } from './project.js';
 import { drawPixels, thumbnail } from './sprites.js';
 
 const $ = id => document.getElementById(id);
 const S = 2; // screen pixels a world pixel
 let app, piece = { type: 'erase' }, images = new Map(), painting = false;
+let sel = 0; // the level shown, or -1: the cover
+
+const level = () => app.project.levels[sel];
+const byName = name => app.project.drawings.find(d => d.name === name);
+const isPlayer = kind => { const d = byName(kind); return d && (d.behaviour === 'platformer' || d.behaviour === 'topdown'); };
 
 function imageOf(d) { // each drawing as a small canvas, drawn scaled (fast, crisp)
   let c = images.get(d.name);
@@ -18,16 +24,19 @@ function imageOf(d) { // each drawing as a small canvas, drawn scaled (fast, cri
   return c;
 }
 
-const byName = name => app.project.drawings.find(d => d.name === name);
+function backdropsOf(l) { // the pictures behind a level, nearest first (at most three: the console's layers 1 to 3)
+  return app.project.drawings.filter(d => d.use === 'backdrop' && !l.hide.includes(d.name)).slice(0, 3);
+}
 
-function render() {
-  const p = app.project, m = p.map, c = $('map'), g = c.getContext('2d');
-  images = new Map();
+// ------------------------------------------------------------------ a level
+
+function renderMap() {
+  const p = app.project, l = level(), m = l.map, c = $('map'), g = c.getContext('2d');
   c.width = m.w * TILE * S, c.height = m.h * TILE * S;
   g.imageSmoothingEnabled = false;
-  g.fillStyle = p.background;
+  g.fillStyle = l.background;
   g.fillRect(0, 0, c.width, c.height);
-  for (const d of p.drawings.filter(x => x.use === 'backdrop').slice(0, 3).reverse()) { // farthest first, as in the game
+  for (const d of backdropsOf(l).reverse()) { // farthest first, as in the game
     g.save();
     g.scale(S, S);
     g.fillStyle = g.createPattern(imageOf(d), 'repeat');
@@ -39,10 +48,10 @@ function render() {
       const t = m.cells[y * m.w + x], d = t && byName(m.tiles[t - 1]);
       if (d) g.drawImage(imageOf(d), x * TILE * S, y * TILE * S, d.w * S, d.h * S);
     }
-  for (const o of p.objects) {
+  for (const o of l.objects) {
     const d = byName(o.kind);
     if (d) g.drawImage(imageOf(d), o.x * S, o.y * S, d.w * S, d.h * S);
-    if (o.kind === p.camera) { g.strokeStyle = '#f2b233'; g.lineWidth = 2; g.strokeRect(o.x * S - 1, o.y * S - 1, (d ? d.w : 16) * S + 2, (d ? d.h : 16) * S + 2); }
+    if (o.kind === l.camera) { g.strokeStyle = '#f2b233'; g.lineWidth = 2; g.strokeRect(o.x * S - 1, o.y * S - 1, (d ? d.w : 16) * S + 2, (d ? d.h : 16) * S + 2); }
   }
   g.strokeStyle = 'rgba(255,255,255,0.07)';
   g.lineWidth = 1;
@@ -53,7 +62,7 @@ function render() {
 }
 
 function renderPieces() {
-  const p = app.project;
+  const p = app.project, l = level();
   const box = (id, list, type) => {
     const el = $(id);
     el.replaceChildren();
@@ -64,11 +73,26 @@ function renderPieces() {
   };
   box('map-tiles', p.drawings.filter(d => d.use === 'tile'), 'tile');
   box('map-objects', p.drawings.filter(d => d.use === 'object'), 'object');
-  $('map-w').value = p.map.w, $('map-h').value = p.map.h, $('map-bg').value = p.background;
+  $('level-name').value = l.name;
+  $('level-up').disabled = sel === 0;
+  $('level-down').disabled = sel === p.levels.length - 1;
+  $('level-del').disabled = p.levels.length < 2;
+  $('map-w').value = l.map.w, $('map-h').value = l.map.h, $('map-bg').value = l.background;
   const cam = $('map-camera');
   cam.replaceChildren(new Option('(nadie: el primer jugador)', ''));
   for (const d of p.drawings.filter(d => d.use === 'object')) cam.append(new Option(d.name, d.name));
-  cam.value = p.camera || '';
+  cam.value = l.camera || '';
+  const bds = $('map-backdrops'), all = p.drawings.filter(d => d.use === 'backdrop');
+  bds.replaceChildren();
+  bds.hidden = !all.length;
+  if (all.length) bds.append('Detrás:');
+  for (const d of all) {
+    const lab = document.createElement('label'), box = document.createElement('input');
+    Object.assign(box, { type: 'checkbox', checked: !l.hide.includes(d.name) });
+    box.dataset.name = d.name;
+    lab.append(box, ' ' + d.name);
+    bds.append(lab);
+  }
 }
 
 function pieceButton(pc, d, label) {
@@ -88,15 +112,16 @@ function at(e) {
 }
 
 function objectAt(x, y) {
-  for (let i = app.project.objects.length - 1; i >= 0; i--) {
-    const o = app.project.objects[i], d = byName(o.kind) || { w: 16, h: 16 };
+  const list = level().objects;
+  for (let i = list.length - 1; i >= 0; i--) {
+    const o = list[i], d = byName(o.kind) || { w: 16, h: 16 };
     if (x >= o.x && y >= o.y && x < o.x + d.w && y < o.y + d.h) return i;
   }
   return -1;
 }
 
 function setTile(x, y, name) {
-  const m = app.project.map, tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+  const m = level().map, tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
   if (tx < 0 || ty < 0 || tx >= m.w || ty >= m.h) return false;
   let v = 0;
   if (name) {
@@ -110,32 +135,122 @@ function setTile(x, y, name) {
 
 function act(e, first) {
   const { x, y } = at(e), erase = e.buttons === 2 || piece.type === 'erase';
-  const p = app.project;
+  const objects = level().objects;
   if (piece.type === 'object' && !erase) {
     if (!first) return;
     const hit = objectAt(x, y);
-    if (hit >= 0) p.objects.splice(hit, 1);
+    if (hit >= 0) objects.splice(hit, 1);
     else {
       const d = byName(piece.name);
-      p.objects.push({ kind: piece.name, x: Math.max(0, Math.round((x - d.w / 2) / 4) * 4), y: Math.max(0, Math.round((y - d.h / 2) / 4) * 4) });
+      objects.push({ kind: piece.name, x: Math.max(0, Math.round((x - d.w / 2) / 4) * 4), y: Math.max(0, Math.round((y - d.h / 2) / 4) * 4) });
     }
   } else if (erase) {
     const hit = objectAt(x, y);
-    if (hit >= 0 && first) p.objects.splice(hit, 1);
+    if (hit >= 0 && first) objects.splice(hit, 1);
     else if (!setTile(x, y, null)) return;
   } else if (!setTile(x, y, piece.name)) return;
   app.changed();
-  render();
+  renderMap();
 }
 
 function resize(w, h) {
-  const m = app.project.map;
+  const m = level().map;
   w = Math.max(15, Math.min(MAP_MAX, w | 0)), h = Math.max(10, Math.min(MAP_MAX, h | 0));
   const cells = new Array(w * h).fill(0);
   for (let y = 0; y < Math.min(h, m.h); y++) for (let x = 0; x < Math.min(w, m.w); x++) cells[y * w + x] = m.cells[y * m.w + x];
   Object.assign(m, { w, h, cells });
   app.changed();
-  renderPieces();
+  render();
+}
+
+// ------------------------------------------------------------------ the cover
+
+function renderCover() {
+  const p = app.project, c = p.cover, cv = $('cover-preview'), g = cv.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  g.fillStyle = c.background;
+  g.fillRect(0, 0, 480, 320);
+  const d = byName(c.picture);
+  if (d && d.use === 'backdrop') { // repeated, as behind a level
+    g.save();
+    g.scale(2, 2);
+    g.fillStyle = g.createPattern(imageOf(d), 'repeat');
+    g.fillRect(0, 0, 240, 160);
+    g.restore();
+  } else if (d) { // as big as fits, in whole steps
+    const k = Math.max(1, Math.min(Math.floor(480 / d.w), Math.floor(320 / d.h)));
+    g.drawImage(imageOf(d), Math.floor((480 - d.w * k) / 2), Math.floor((320 - d.h * k) / 2), d.w * k, d.h * k);
+  }
+  g.textAlign = 'center';
+  g.lineJoin = 'round';
+  const say = (text, y, size, colour) => {
+    g.font = `700 ${size}px "Pixelify Sans", monospace`;
+    g.lineWidth = 5, g.strokeStyle = '#202020', g.fillStyle = colour;
+    g.strokeText(text, 240, y);
+    g.fillText(text, 240, y);
+  };
+  say(p.title, 128, 44, '#ffffff');
+  say(c.subtitle, 254, 17, '#ffe070');
+  cv.classList.toggle('off', !c.on);
+  $('cover-on').checked = c.on;
+  $('cover-subtitle').value = c.subtitle;
+  $('cover-bg').value = c.background;
+  $('ending').value = p.ending;
+  const pic = $('cover-picture');
+  pic.replaceChildren(new Option('(ninguna)', ''));
+  for (const x of p.drawings) pic.append(new Option(x.name, x.name));
+  pic.value = c.picture;
+}
+
+// ------------------------------------------------------------------ the list of levels
+
+function renderLevels() {
+  const ul = $('levels'), p = app.project;
+  ul.replaceChildren();
+  const item = (i, text) => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    li.tabIndex = 0;
+    li.setAttribute('aria-current', String(i === sel));
+    li.addEventListener('click', () => { sel = i; render(); });
+    li.addEventListener('keydown', e => { if (e.key === 'Enter') { sel = i; render(); } });
+    ul.append(li);
+  };
+  item(-1, p.cover.on ? '★ Portada' : '☆ Portada (no se muestra)');
+  p.levels.forEach((l, i) => item(i, `${i + 1}. ${l.name}`));
+  $('level-add').disabled = p.levels.length >= LEVELS_MAX;
+}
+
+function render() {
+  sel = Math.min(sel, app.project.levels.length - 1);
+  images = new Map();
+  renderLevels();
+  const cover = sel < 0;
+  $('level-work').hidden = cover;
+  $('cover-work').hidden = !cover;
+  $('map-palette').hidden = cover;
+  if (cover) renderCover();
+  else { renderPieces(); renderMap(); }
+}
+
+function addLevel() {
+  const p = app.project, from = level() || p.levels[0];
+  if (p.levels.length >= LEVELS_MAX) return;
+  const n = p.levels.length + 1, l = newLevel(uniqueName('nivel' + n, new Set(p.levels.map(x => x.id))), 'Nivel ' + n);
+  l.background = from.background, l.camera = from.camera, l.hide = from.hide.slice();
+  l.objects = from.objects.filter(o => isPlayer(o.kind)).map(o => ({ ...o })); // the player is there to start with
+  p.levels.push(l);
+  sel = p.levels.length - 1;
+  app.changed();
+  render();
+}
+
+function moveLevel(by) {
+  const list = app.project.levels, to = sel + by;
+  if (to < 0 || to >= list.length) return;
+  [list[sel], list[to]] = [list[to], list[sel]];
+  sel = to;
+  app.changed();
   render();
 }
 
@@ -146,9 +261,37 @@ export function initMap(ctx) {
   c.addEventListener('pointermove', e => { if (painting && e.buttons) act(e, false); });
   c.addEventListener('pointerup', () => { painting = false; });
   c.addEventListener('contextmenu', e => e.preventDefault());
-  $('map-w').addEventListener('change', e => resize(Number(e.target.value), app.project.map.h));
-  $('map-h').addEventListener('change', e => resize(app.project.map.w, Number(e.target.value)));
-  $('map-bg').addEventListener('input', e => { app.project.background = e.target.value; app.changed(); render(); });
-  $('map-camera').addEventListener('change', e => { app.project.camera = e.target.value; app.changed(); render(); });
-  return { render: () => { renderPieces(); render(); } };
+  $('map-w').addEventListener('change', e => resize(Number(e.target.value), level().map.h));
+  $('map-h').addEventListener('change', e => resize(level().map.w, Number(e.target.value)));
+  $('map-bg').addEventListener('input', e => { level().background = e.target.value; app.changed(); renderMap(); });
+  $('map-camera').addEventListener('change', e => { level().camera = e.target.value; app.changed(); renderMap(); });
+  $('map-backdrops').addEventListener('change', e => {
+    const l = level(), name = e.target.dataset.name;
+    l.hide = e.target.checked ? l.hide.filter(n => n !== name) : [...l.hide, name];
+    app.changed();
+    renderMap();
+  });
+  $('level-add').addEventListener('click', addLevel);
+  $('level-up').addEventListener('click', () => moveLevel(-1));
+  $('level-down').addEventListener('click', () => moveLevel(1));
+  $('level-del').addEventListener('click', () => {
+    const p = app.project;
+    if (p.levels.length < 2 || !confirm(`¿Quitar «${level().name}» con todo lo que tiene?`)) return;
+    p.levels.splice(sel, 1);
+    sel = Math.max(0, sel - 1);
+    app.changed();
+    render();
+  });
+  $('level-name').addEventListener('change', e => { level().name = e.target.value.trim().slice(0, 40) || level().id; app.changed(); renderLevels(); });
+  const cover = (id, key, event = 'input', get = e => e.target.value) => $(id).addEventListener(event, e => {
+    app.project.cover[key] = get(e);
+    app.changed();
+    render();
+  });
+  cover('cover-on', 'on', 'change', e => e.target.checked);
+  cover('cover-subtitle', 'subtitle');
+  cover('cover-bg', 'background');
+  cover('cover-picture', 'picture', 'change');
+  $('ending').addEventListener('input', e => { app.project.ending = e.target.value.slice(0, 60); app.changed(); });
+  return { render, reset: () => { sel = 0; render(); } };
 }

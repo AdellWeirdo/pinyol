@@ -12,6 +12,7 @@ import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+LIBS = ("kit.lua", "juice.lua", "particles.lua")  # editor/js/main.js fetches the same list
 
 
 def main() -> None:
@@ -28,6 +29,9 @@ def main() -> None:
             raise SystemExit(f"{a.out} has other things in it: give an empty folder or a previous editor's")
         shutil.rmtree(a.out)
     shutil.copytree(ROOT / "editor", a.out, ignore=shutil.ignore_patterns("test"))
+    (a.out / "lib").mkdir()
+    for name in LIBS:  # each game the editor makes carries these: it plays the same on a console with older firmware
+        shutil.copy(ROOT / "lib" / name, a.out / "lib")
     (a.out / "player").mkdir()
     for f in files:
         shutil.copy(f, a.out / "player")

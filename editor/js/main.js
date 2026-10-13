@@ -10,8 +10,11 @@ import { initMap } from './map.js';
 import { initSounds } from './sounds.js';
 
 const $ = id => document.getElementById(id);
-const FONTS = ['FONT_MAIN.fnt', 'FONT_BOLD.fnt', 'FONT_MAIN_L.fnt', 'FONT_BOLD_L.fnt'];
-let project, ws, tabs = {}, saveTimer = 0, fonts = null;
+// what every game carries besides its own: the fonts, and kit with what it uses (a copy, so the game plays the same on a
+// console with older firmware; tools/make_editor.py puts them in lib/)
+const GAME_FILES = ['fonts/FONT_MAIN.fnt', 'fonts/FONT_BOLD.fnt', 'fonts/FONT_MAIN_L.fnt', 'fonts/FONT_BOLD_L.fnt',
+  'lib/kit.lua', 'lib/juice.lua', 'lib/particles.lua'];
+let project, ws, tabs = {}, saveTimer = 0, gameFiles = null;
 
 function toast(text, ms = 2500) {
   const t = $('toast');
@@ -42,30 +45,39 @@ const app = {
   get project() { return project; },
   changed,
   toast,
-  rename(old, name) { // a drawing's new name, everywhere it is used
+  rename(old, name) { // a drawing's new name, everywhere it is used: every level, the cover, the blocks
     const d = project.drawings.find(x => x.name === old);
     if (!d) return;
     d.name = name;
-    project.map.tiles = project.map.tiles.map(t => (t === old ? name : t));
-    for (const o of project.objects) if (o.kind === old) o.kind = name;
-    if (project.camera === old) project.camera = name;
+    for (const l of project.levels) {
+      l.map.tiles = l.map.tiles.map(t => (t === old ? name : t));
+      for (const o of l.objects) if (o.kind === old) o.kind = name;
+      if (l.camera === old) l.camera = name;
+      l.hide = l.hide.map(n => (n === old ? name : n));
+    }
+    if (project.cover.picture === old) project.cover.picture = name;
     eachField(f => ['KIND', 'A', 'B', 'TILE'].includes(f.name) && f.getValue() === old, f => f.setValue(name));
     tabs.map.render();
     changed();
   },
-  remove(name) { // a drawing gone: from the map, its objects, the camera
+  remove(name) { // a drawing gone: from every level's map, objects and camera, and the cover
     project.drawings = project.drawings.filter(d => d.name !== name);
-    dropTile(name);
-    project.objects = project.objects.filter(o => o.kind !== name);
-    if (project.camera === name) project.camera = '';
+    for (const l of project.levels) {
+      dropTile(l, name);
+      l.objects = l.objects.filter(o => o.kind !== name);
+      if (l.camera === name) l.camera = '';
+      l.hide = l.hide.filter(n => n !== name);
+    }
+    if (project.cover.picture === name) project.cover.picture = '';
     tabs.map.render();
     changed();
   },
   uses() { // a drawing became a tile, an object or a backdrop: it leaves the other roles' places
-    for (const d of project.drawings) {
-      if (d.use !== 'tile') dropTile(d.name);
-      if (d.use !== 'object') project.objects = project.objects.filter(o => o.kind !== d.name);
-    }
+    for (const d of project.drawings)
+      for (const l of project.levels) {
+        if (d.use !== 'tile') dropTile(l, d.name);
+        if (d.use !== 'object') l.objects = l.objects.filter(o => o.kind !== d.name);
+      }
     tabs.map.render();
   },
   renameSound(old, name) {
@@ -75,8 +87,8 @@ const app = {
   },
 };
 
-function dropTile(name) {
-  const m = project.map, i = m.tiles.indexOf(name);
+function dropTile(level, name) {
+  const m = level.map, i = m.tiles.indexOf(name);
   if (i < 0) return;
   m.tiles.splice(i, 1);
   m.cells = m.cells.map(c => (c === i + 1 ? 0 : c > i + 1 ? c - 1 : c));
@@ -93,29 +105,36 @@ function load(p, blocks) {
     if (blocks) ws.cleanUp(); // a template's blocks: in a column, none on top of another
   }
   tabs.draw.reset();
-  tabs.map.render();
+  tabs.map.reset();
   tabs.sound.reset();
   changed();
 }
 
 // ------------------------------------------------------------------ the game
 
-async function getFonts() {
-  if (fonts) return fonts;
+async function getGameFiles() { // -> [[path in the game, bytes]]
+  if (gameFiles) return gameFiles;
   const out = [];
-  for (const f of FONTS) {
-    const r = await fetch('fonts/' + f);
-    if (!r.ok) throw new Error('Falta la fuente ' + f);
-    out.push([f, new Uint8Array(await r.arrayBuffer())]);
+  for (const f of GAME_FILES) {
+    const r = await fetch(f);
+    if (!r.ok) throw new Error('falta ' + f + ' (¿se ha montado el editor con tools/make_editor.py?)');
+    out.push([f.replace(/^lib\//, ''), new Uint8Array(await r.arrayBuffer())]);
   }
-  return (fonts = out);
+  return (gameFiles = out);
 }
 
 export function luaCode() { return ws ? workspaceLua(ws) : ''; }
 
-async function buildZip() {
+async function buildZip(opts) { // opts.start: a level to play first, skipping the cover (to try it)
   project.blocks = Blockly.serialization.workspaces.save(ws);
-  return zip(buildFiles(project, luaCode(), await getFonts()), project.id);
+  return zip(buildFiles(project, luaCode(), await getGameFiles(), opts), project.id);
+}
+
+function renderStart() { // Play from the cover or any level
+  const sel = $('play-start'), was = sel.value;
+  sel.replaceChildren(new Option(project.cover.on ? 'la portada' : 'el primer nivel', ''));
+  project.levels.forEach((l, i) => sel.append(new Option(`${i + 1}. ${l.name}`, l.id)));
+  sel.value = [...sel.options].some(o => o.value === was) ? was : '';
 }
 
 let playerReady = null;
@@ -124,7 +143,7 @@ async function play() {
   $('game-status').textContent = 'Preparando el juego…';
   $('game-status').classList.remove('error');
   try {
-    const bytes = await buildZip();
+    const bytes = await buildZip({ start: $('play-start').value || null });
     const frame = $('player');
     playerReady = new Promise(resolve => { frame.onload = resolve; });
     frame.src = 'player/player.html?embed=1&t=' + Date.now(); /* a fresh engine: it starts once per page */
@@ -154,6 +173,7 @@ function showTab(name) {
   if (name === 'logic' && ws) Blockly.svgResize(ws);
   if (name === 'map') tabs.map.render();
   if (name === 'draw') tabs.draw.render();
+  if (name === 'game') renderStart();
 }
 
 function initBlockly() {
@@ -188,7 +208,7 @@ function init() {
   else load(templatePlatformer(), templateBlocks());
 
   for (const b of document.querySelectorAll('[role=tab]')) b.addEventListener('click', () => showTab(b.dataset.tab));
-  $('title').addEventListener('change', e => { project.title = e.target.value.trim().slice(0, 40) || 'Juego'; changed(); });
+  $('title').addEventListener('change', e => { project.title = e.target.value.trim().slice(0, 40) || 'Juego'; changed(); tabs.map.render(); });
   $('new').addEventListener('click', () => {
     const list = $('new-list');
     list.hidden = !list.hidden;
@@ -227,6 +247,7 @@ function init() {
       $('game-status').classList.add('error');
     }
   });
+  renderStart();
   window.np2dEditor = { get project() { return project; }, buildZip, luaCode, load: p => load(check(p)) }; // for tests
 }
 

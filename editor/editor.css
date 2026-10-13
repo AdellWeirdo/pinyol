@@ -117,14 +117,15 @@ label.add { display: block; text-align: center; color: var(--ink); }
 .tab.dropping .list { outline: 2px dashed var(--amber); outline-offset: -6px; }
 
 /* lists of things */
-#drawings, #sounds { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
-#drawings li, #sounds li {
+#drawings, #sounds, #levels { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+#drawings li, #sounds li, #levels li {
   display: flex; align-items: center; gap: 10px;
   padding: 6px 8px; border-radius: var(--radius); cursor: pointer;
   border: 1px solid transparent;
 }
-#drawings li:hover, #sounds li:hover { background: var(--panel-2); }
-#drawings li[aria-current="true"], #sounds li[aria-current="true"] { background: var(--panel-2); border-color: var(--amber); }
+#drawings li:hover, #sounds li:hover, #levels li:hover { background: var(--panel-2); }
+#levels li { padding: 5px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+#drawings li[aria-current="true"], #sounds li[aria-current="true"], #levels li[aria-current="true"] { background: var(--panel-2); border-color: var(--amber); }
 #drawings canvas { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; background: var(--bg); border-radius: 3px; }
 #drawings li > span:first-of-type { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #drawings .kind, #sounds .kind { margin-left: auto; flex: none; font-size: 11px; color: var(--muted); }
@@ -183,6 +184,12 @@ dialog p { text-align: center; margin: 6px 0; }
 .map-work { align-items: stretch; }
 .map-scroll { overflow: auto; flex: 1; min-height: 0; border-radius: 4px; }
 #map { display: block; cursor: crosshair; }
+.backdrops { display: flex; gap: 10px; align-items: center; color: var(--muted); }
+.backdrops label { margin: 0; color: var(--ink); }
+.cover-work { align-items: stretch; max-width: 560px; }
+#cover-preview { width: 100%; max-width: 480px; align-self: center; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 4px; }
+#cover-preview.off { opacity: .35; }
+label.inline { display: flex; align-items: center; gap: 8px; margin: 0; }
 
 /* sounds */
 .sound-work { align-items: stretch; max-width: 820px; }

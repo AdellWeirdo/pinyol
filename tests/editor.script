@@ -1,7 +1,13 @@
-# the editor's platformer template (editor/test/build_game.mjs: its blocks, drawings and map, as the browser builds them) played by the engine
+# the editor's platformer template (editor/test/build_game.mjs: its blocks, drawings, levels and cover, as the
+# browser builds them) played by the engine: the cover, two levels, losing, the ending, a new game
+tick 30
+expect_lua kit.state() == "cover" and kit.count("heroe") == 0
+shot cover
+press A
 tick 30
 lua h = kit.first("heroe")
-expect_lua h and h.ground and puntos == 0 and kit.count("moneda") == 4
+expect_lua kit.state() == "play" and kit.level() == "nivel1" and h and h.ground and puntos == 0
+expect_lua kit.count("moneda") == 4
 shot start
 hold RIGHT 40
 lua h = kit.first("heroe")
@@ -12,20 +18,39 @@ lua h = kit.first("heroe") h.x, h.y = 132, 60
 tick 2
 expect_lua puntos == 1 and kit.count("moneda") == 3
 shot coin
+# losing tries the level again: its coins are back, the points kept
 lua h = kit.first("heroe") b = kit.first("babosa") h.x, h.y = b.x + 4, b.y - 4
 tick 3
+expect_lua kit.state() == "lost"
 shot lose
 press A
 tick 5
-expect_lua puntos == 0 and kit.count("moneda") == 4
+expect_lua kit.state() == "play" and kit.level() == "nivel1" and puntos == 1 and kit.count("moneda") == 4
 # what the Objects blocks call: a property read, set and changed, a thing made where another is
 lua h = kit.first("heroe") kit.set(h, "x", 50) kit.change(h, "x", 5)
 expect_lua kit.get(h, "x") == 55 and kit.get(h, "nope") == 0 and kit.get(nil, "x") == 0
 lua kit.spawn_at("moneda", h)
 expect_lua kit.count("moneda") == 5
 tick 2
-expect_lua puntos == 1 and kit.count("moneda") == 4
+expect_lua puntos == 2 and kit.count("moneda") == 4
+# the flag: the next level, with its own map, background and things
 lua h = kit.first("heroe") m = kit.first("meta") h.x, h.y = m.x, m.y
 tick 3
-shot win
+expect_lua kit.state() == "play" and kit.level() == "nivel2" and kit.count("babosa") == 3 and puntos == 2
+tick 20
+shot level2
+# its flag is the last one: the game is won, then the cover, then a new game from the start
+lua h = kit.first("heroe") m = kit.first("meta") h.x, h.y = m.x, m.y
+tick 3
+expect_lua kit.state() == "won"
+shot ending
+press A
+tick 3
+expect_lua kit.state() == "cover"
+press A
+tick 3
+expect_lua kit.state() == "play" and kit.level() == "nivel1" and puntos == 0
+lua kit.goto_level("nivel2")
+tick 2
+expect_lua kit.level() == "nivel2"
 expect_ok

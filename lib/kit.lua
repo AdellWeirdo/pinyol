@@ -12,10 +12,17 @@
 -- `tile` pixels; tiles named in data.solid are walls and floors. Objects are of a kind (data.kinds) that says their
 -- picture and how they move: "platformer" (the player: arrows and A to jump), "topdown" (the player: four ways),
 -- "patrol" (walks and turns at walls and edges), "chase" (goes after the player), "shot" (flies straight, gone at a
--- wall), "still". Up to three pictures go behind the map (data.backdrops = {{sprite = "montes", parallax = 0.3}}),
--- repeated, moving with the camera by their parallax (0 still, 1 with the map). Events: "start", "tick", "press"
--- and "hold" (a button), "touch" (two kinds meet), "tile" (a kind on a tile), "every" (seconds), "tap" (a finger,
--- where in the world).
+-- wall), "still". Up to three pictures go behind the map (backdrops = {{sprite = "montes", parallax = 0.3}}),
+-- repeated, moving with the camera by their parallax (0 still, 1 with the map).
+--
+-- A game is levels (data.levels = {{id, name, map, objects, background, camera, backdrops}, ...}; or one map, its
+-- fields straight in data), played in order: kit.next_level() goes on, past the last one the game is won
+-- (data.ending says how). data.cover = {text, subtitle, picture, tiled, background} is a title screen before them.
+-- Losing tries the level again; winning goes back to the cover.
+--
+-- Events: "start" (a game begins), "level" (a level begins: any, or the one named), "tick", "press" and "hold" (a
+-- button), "touch" (two kinds meet), "tile" (a kind on a tile), "every" (seconds), "tap" (a finger, where in the
+-- world).
 local juice = require("juice")
 local particles = require("particles")
 
@@ -32,11 +39,17 @@ local fx
 local ended                           -- {text, won} once the game is won or lost
 local timer = 0
 local cells                           -- the map's tile names, row by row
+local LV = {}                         -- the level being played: {id, name, map, objects, background, camera, backdrops}
+local level_i = 1
+local going                           -- the level to go to, once this tick is over
+local on_cover = false                -- the title screen is showing
+local map_w, map_h = 1, 1             -- KIT_MAP's size: the biggest level's, so one canvas serves them all
+local clock = 0
 
 local BUTTONS = {a = true, b = true, c = true, up = true, down = true, left = true, right = true, start = true}
 
 local function reset_handlers()
-  handlers = {start = {}, tick = {}, press = {}, hold = {}, touch = {}, tile = {}, every = {}, tap = {}}
+  handlers = {start = {}, level = {}, tick = {}, press = {}, hold = {}, touch = {}, tile = {}, every = {}, tap = {}}
 end
 reset_handlers()
 
@@ -44,16 +57,22 @@ function M.setup(data)
   D = data or {}
   T = D.tile or 16
   D.kinds, D.sprites, D.solid, D.sounds = D.kinds or {}, D.sprites or {}, D.solid or {}, D.sounds or {}
+  if not D.levels then -- one map, the way games were before levels
+    D.levels = {{id = "nivel1", map = D.map, objects = D.objects, background = D.background, camera = D.camera,
+                 backdrops = D.backdrops}}
+  end
+  level_i, LV = 1, D.levels[1] or {}
 end
 
 -- ------------------------------------------------------------------ events
 
--- on("start" | "tick", fn); on("press" | "hold", button, fn); on("touch", kind, kind, fn(this, other));
--- on("tile", kind, tile, fn(this, tx, ty)); on("every", seconds, fn); on("tap", fn(x, y))
+-- on("start" | "tick", fn); on("level", [id,] fn); on("press" | "hold", button, fn); on("touch", kind, kind,
+-- fn(this, other)); on("tile", kind, tile, fn(this, tx, ty)); on("every", seconds, fn); on("tap", fn(x, y))
 function M.on(what, a, b, c)
   local list = handlers[what]
   assert(list, "kit.on: no event called " .. tostring(what))
   if what == "start" or what == "tick" then list[#list + 1] = a
+  elseif what == "level" then list[#list + 1] = type(a) == "function" and {fn = a} or {id = a, fn = b}
   elseif what == "press" or what == "hold" then
     assert(BUTTONS[a], "kit.on: no button called " .. tostring(a))
     list[#list + 1] = {button = a, fn = b}
@@ -65,8 +84,8 @@ end
 -- ------------------------------------------------------------------ the map
 
 local function tile_index(tx, ty)
-  if not D.map or tx < 0 or ty < 0 or tx >= D.map.w or ty >= D.map.h then return nil end
-  return ty * D.map.w + tx + 1
+  if not LV.map or tx < 0 or ty < 0 or tx >= LV.map.w or ty >= LV.map.h then return nil end
+  return ty * LV.map.w + tx + 1
 end
 
 function M.tile(x, y) -- the name of the tile at a world point, or nil
@@ -75,8 +94,8 @@ function M.tile(x, y) -- the name of the tile at a world point, or nil
 end
 
 local function solid_at(tx, ty)
-  if not D.map then return false end
-  if tx < 0 or tx >= D.map.w then return true end -- the map's sides are walls; above and below are open
+  if not LV.map then return false end
+  if tx < 0 or tx >= LV.map.w then return true end -- the map's sides are walls; above and below are open
   local i = tile_index(tx, ty)
   local name = i and cells[i]
   return name ~= nil and D.solid[name] == true
@@ -127,8 +146,8 @@ end
 function M.count(kind) return #M.all(kind) end
 
 function M.player() -- whom the camera follows, or the first player-like object
-  if D.camera then
-    local o = M.first(D.camera)
+  if LV.camera then
+    local o = M.first(LV.camera)
     if o then return o end
   end
   for _, o in ipairs(objs) do
@@ -225,7 +244,7 @@ local function behave(o)
   end
   if gravity then o.vy = math.min(o.vy + (k.weight or 0.25), 6) end
   local wall = move(o, k.solid ~= false and b ~= "shot")
-  if b == "shot" and (wall or (D.map and hits_wall(o.x, o.y, o.w, o.h))) then o.alive = false end
+  if b == "shot" and (wall or (LV.map and hits_wall(o.x, o.y, o.w, o.h))) then o.alive = false end
   if (k.animate or 0) > 0 then -- frames go round while it moves (or always, for things that are not players)
     local moving = o.vx ~= 0 or o.vy ~= 0 or (b ~= "platformer" and b ~= "topdown")
     o.anim = moving and o.anim + 1 or 0
@@ -259,51 +278,107 @@ function M.burst_at(o, colour) if o then M.burst(o.x + o.w / 2, o.y + o.h / 2, c
 function M.win(text) ended = {text = text or "¡Has ganado!", won = true} M.sound("ganar") end
 function M.lose(text) ended = {text = text or "Has perdido", won = false} M.sound("perder") end
 
--- ------------------------------------------------------------------ the loop
-
-local function start_over()
-  objs, contacts, on_tile, labels, message, ended, timer = {}, {}, {}, {}, nil, nil, 0
-  cells = {}
-  if D.map then
-    for i = 1, D.map.w * D.map.h do
-      local t = D.map.cells[i] or 0
-      cells[i] = t > 0 and D.map.tiles[t] or nil
-    end
-    canvas("KIT_MAP", D.map.w * T, D.map.h * T)
-    for ty = 0, D.map.h - 1 do for tx = 0, D.map.w - 1 do if cells[tile_index(tx, ty)] then paint_tile(tx, ty) end end end
-    bg(0, {image = "KIT_MAP", wrap = false})
-  end
-  for _, p in ipairs(D.objects or {}) do M.spawn(p.kind, p.x, p.y) end
-  fx = particles.new()
-  juice.reset()
-  for _, f in ipairs(handlers.start) do f() end
+-- levels: changed once this tick is over (a touch that sends to the next level is in the middle of the objects)
+function M.goto_level(which)
+  for i, l in ipairs(D.levels) do if i == which or l.id == which then going = i return end end
+end
+function M.next_level()
+  if level_i < #D.levels then going = level_i + 1 else M.win(D.ending) end
+end
+function M.level() return LV.id end
+function M.state() -- "cover", "play", "won" or "lost"
+  return on_cover and "cover" or ended and (ended.won and "won" or "lost") or "play"
 end
 
-function M.init()
-  backdrop(D.background or 0x6CB4E0)
-  local layers = D.map and BG0 or 0
-  for i, b in ipairs(D.backdrops or {}) do -- pictures behind the map, repeated, moving slower than it
-    if i <= 3 and D.sprites[b.sprite] then
+-- ------------------------------------------------------------------ the loop
+
+local function start_level(first) -- the level LV from its start; first: a game begins with it
+  objs, contacts, on_tile, message, ended, timer, going = {}, {}, {}, nil, nil, 0, nil
+  cells = {}
+  backdrop(LV.background or 0x6CB4E0)
+  local layers = 0
+  if LV.map then
+    for i = 1, LV.map.w * LV.map.h do
+      local t = LV.map.cells[i] or 0
+      cells[i] = t > 0 and LV.map.tiles[t] or nil
+    end
+    canvas("KIT_MAP", map_w, map_h) -- cleared
+    for ty = 0, LV.map.h - 1 do for tx = 0, LV.map.w - 1 do if cells[tile_index(tx, ty)] then paint_tile(tx, ty) end end end
+    bg(0, {image = "KIT_MAP", wrap = false})
+    layers = BG0
+  end
+  for i = 1, 3 do -- pictures behind the map, repeated, moving slower than it
+    local b = (LV.backdrops or {})[i]
+    if b and D.sprites[b.sprite] then
       bg(i, {image = "SPR_" .. b.sprite})
       layers = layers | ({BG1, BG2, BG3})[i]
+    else
+      bg(i)
     end
   end
   show(layers)
+  for _, p in ipairs(LV.objects or {}) do M.spawn(p.kind, p.x, p.y) end
+  fx = particles.new()
+  juice.reset()
+  if #D.levels > 1 and LV.name then M.message(LV.name, 1.5) end
+  if first then for _, f in ipairs(handlers.start) do f() end end
+  for _, h in ipairs(handlers.level) do if not h.id or h.id == LV.id then h.fn() end end
+end
+
+local function play_level(i, first)
+  level_i, LV, on_cover = i, D.levels[i] or {}, false
+  start_level(first)
+end
+
+local function begin_game(which) -- labels last the whole game; "start" fires once the first level is there
+  labels = {}
+  local i = 1
+  for k, l in ipairs(D.levels) do if k == which or l.id == which then i = k end end
+  play_level(i, true)
+end
+
+local function show_cover()
+  local c = D.cover
+  on_cover, objs, ended, message, going = true, {}, nil, nil, nil
+  backdrop(c.background or 0x1D2B53)
+  if c.tiled and c.picture and D.sprites[c.picture] then -- a picture made to repeat, as behind a level
+    bg(1, {image = "SPR_" .. c.picture})
+    scroll(1, 0, 0)
+    show(BG1)
+  else
+    show(0)
+  end
+end
+
+function M.init()
+  for _, l in ipairs(D.levels) do
+    if l.map then map_w, map_h = math.max(map_w, l.map.w * T), math.max(map_h, l.map.h * T) end
+  end
   for name, p in pairs(D.sounds) do -- {recipe = "coin", seed = 3} or the numbers themselves
     if p.recipe then sound("SND_" .. name, p.recipe, p.seed or 1) else sound("SND_" .. name, p) end
   end
   if not D.sounds.ganar then D.sounds.ganar = sound("SND_ganar", "powerup", 4) end
   if not D.sounds.perder then D.sounds.perder = sound("SND_perder", "hit", 9) end
-  start_over()
+  if D.cover and not D.start then show_cover() else begin_game(D.start) end
 end
 
-function M.restart() start_over() end
+function M.restart() begin_game() end -- the game from its first level
 
 local function pair_key(a, b) return a.id * 65536 + b.id end
 
 function M.update()
+  clock = clock + 1
+  local again = btnp("a") or btnp("start") or select(4, touch())
+  if on_cover then
+    if again then begin_game() end
+    return
+  end
   if ended then
-    if btnp("a") or select(4, touch()) then start_over() end
+    if again then
+      if not ended.won then start_level(false) -- the same level again
+      elseif D.cover then show_cover()
+      else begin_game() end
+    end
     return
   end
   if juice.update() then return end
@@ -353,19 +428,36 @@ function M.update()
   if message_t > 0 then message_t = message_t - 1 end
   local p = M.player() -- the camera: on the player, within the map
   if p then
-    local mw, mh = D.map and D.map.w * T or 240, D.map and D.map.h * T or 160
+    local mw, mh = LV.map and LV.map.w * T or 240, LV.map and LV.map.h * T or 160
     cam.x = math.max(0, math.min(mw - 240, math.floor(p.x + p.w / 2 - 120)))
     cam.y = math.max(0, math.min(mh - 160, math.floor(p.y + p.h / 2 - 80)))
   end
+  if going and not ended then play_level(going, false) end
 end
 
 local PLACES = {top_left = {12, 8, "left"}, top = {240, 8, "center"}, top_right = {468, 8, "right"},
                 bottom = {240, 290, "center"}, bottom_left = {12, 290, "left"}, bottom_right = {468, 290, "right"}}
 
+local function draw_cover()
+  local c = D.cover
+  local s = not c.tiled and c.picture and D.sprites[c.picture]
+  if s then -- as big as fits, in whole steps
+    local k = math.max(1, math.min(SCREEN_W // s.w, SCREEN_H // s.h))
+    img("SPR_" .. c.picture, (SCREEN_W - s.w * k) // 2, (SCREEN_H - s.h * k) // 2, {frame = 0, scale = k})
+  end
+  text(c.text or D.title or "", SCREEN_W // 2, 80, {font = "large_bold", scale = 2, color = 0xFFFFFF, outline = 0x202020,
+                                                   align = "center", width = 440})
+  if (clock // 30) % 2 == 0 then
+    text(c.subtitle or "Pulsa A para empezar", SCREEN_W // 2, 236, {font = "bold", color = 0xFFE070,
+                                                                    outline = 0x202020, align = "center"})
+  end
+end
+
 function M.draw()
+  if on_cover then draw_cover() return end
   local sx, sy = juice.offset()
-  if D.map then scroll(0, cam.x - sx // 2, cam.y - sy // 2) end
-  for i, b in ipairs(D.backdrops or {}) do -- parallax 0: still; 1: with the map
+  if LV.map then scroll(0, cam.x - sx // 2, cam.y - sy // 2) end
+  for i, b in ipairs(LV.backdrops or {}) do -- parallax 0: still; 1: with the map
     if i <= 3 then scroll(i, math.floor(cam.x * (b.parallax or 0.5)) - sx // 2, math.floor(cam.y * (b.parallax or 0.5)) - sy // 2) end
   end
   for _, o in ipairs(objs) do
@@ -388,7 +480,7 @@ function M.draw()
     local at = PLACES[l.where] or PLACES.top_left
     text(l.text, at[1], at[2], {font = "bold", color = 0xFFFFFF, outline = 0x202020, align = at[3]})
   end
-  if message and message_t > 0 then
+  if message and message_t > 0 and not ended then
     text(message, SCREEN_W // 2, 140, {font = "large_bold", color = 0xFFFFFF, outline = 0x202020, align = "center",
                                        width = 440})
   end
@@ -396,7 +488,8 @@ function M.draw()
     shade(0, 0, SCREEN_W, SCREEN_H)
     text(ended.text, SCREEN_W // 2, 120, {font = "large_bold", color = ended.won and 0xFFE070 or 0xFF7060,
                                           outline = 0x202020, align = "center", width = 440})
-    text("A: otra vez", SCREEN_W // 2, 180, {font = "bold", color = 0xFFFFFF, outline = 0x202020, align = "center"})
+    text(ended.won and (D.cover and "A: a la portada" or "A: otra partida") or "A: probar otra vez", SCREEN_W // 2, 180,
+         {font = "bold", color = 0xFFFFFF, outline = 0x202020, align = "center"})
   end
   juice.draw()
 end

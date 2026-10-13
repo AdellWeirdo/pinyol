@@ -36,10 +36,11 @@ ctest --test-dir build                       # validates every example and plays
 
 `editor/` is a web page for making a game without programming: draw the pictures pixel by pixel (with frames for
 animation) or bring them in from image files (PNG with transparency, JPG, a row of frames; dropped or pasted), in
-any of the console's colours; paint the map with them and put the objects on it (a player who walks and jumps,
-enemies that patrol or chase, coins), with up to three pictures behind it that move slower than the camera; make
-the sounds from recipes (coin, laser, explosion, jump...) and write the rules with blocks ("when the hero touches a
-coin: remove the other, play coin, add 1 to points"). **Jugar** plays it right there;
+any of the console's colours; paint the levels' maps with them and put the objects on them (a player who walks and
+jumps, enemies that patrol or chase, coins), with up to three pictures behind each that move slower than the camera,
+and a cover before the first; make the sounds from recipes (coin, laser, explosion, jump...) and write the rules
+with blocks ("when the hero touches a coin: remove the other, play coin, add 1 to points"; "when the hero touches
+the flag: go on to the next level"). **Jugar** plays it right there;
 **Para la consola** gives the zip for the card. It starts with a small platformer to change. The interface is in
 Spanish. It needs the web player beside it (see [below](#share-a-game-play-it-in-the-browser) to build it):
 
@@ -50,7 +51,7 @@ python3 -m http.server -d dist/editor    # open http://localhost:8000
 
 The editor keeps the project in the browser as it changes; **Guardar** saves it to a file (`.np2d.json`) and
 **Abrir** opens it again. The game it makes is ordinary Lua on the `kit` library ([lib/kit.lua](lib/kit.lua)), so it
-can be carried on by hand.
+can be carried on by hand; it carries its own copy of kit, so it plays the same on a console with older firmware.
 
 ### In Lua
 
