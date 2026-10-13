@@ -252,6 +252,42 @@ static void bitmaps(void) {
     CHECK(fb[0][0] == 1001 && fb[0][15] == GREY && fb[8][1] == 1002);
 }
 
+/* Bitmap layers against the formula: random sizes (not multiples of 8 too), masks with whole bytes clear and set,
+ * with and without a mask, wrapping or not, scrolled anywhere; every pixel. */
+static void bitmap_against_formula(void) {
+    static uint16_t px[300 * 40];
+    static uint8_t mk[38 * 40];
+    uint32_t seed = 7;
+    int bad = 0;
+    for (int trial = 0; trial < 120 && !bad; trial++) {
+        setup();
+        seed = seed * 1103515245u + 12345u;
+        int W = 1 + (int)(seed >> 8) % 300, H = 1 + (int)(seed >> 20) % 40, stride = (W + 7) / 8;
+        for (int i = 0; i < W * H; i++) seed = seed * 1103515245u + 12345u, px[i] = (uint16_t)(seed >> 9 | 1);
+        for (int i = 0; i < stride * H; i++) {
+            seed = seed * 1103515245u + 12345u;
+            int r = (int)(seed >> 16) % 4;
+            mk[i] = r == 0 ? 0 : r == 1 ? 0xFF : (uint8_t)(seed >> 8);
+        }
+        seed = seed * 1103515245u + 12345u;
+        bool wrap = trial & 1, masked = trial & 2;
+        int sx = (int)(seed >> 8) % 900 - 450, sy = (int)(seed >> 18) % 120 - 60;
+        PPU.bg[1] = (ppu_bg){.mode = BG_BITMAP, .prio = 1, .bitmap = px, .bitmap_mask = masked ? mk : NULL,
+                             .bitmap_w = W, .bitmap_h = H, .wrap = wrap, .scroll_x = sx, .scroll_y = sy};
+        ppu_render(&fb[0][0]);
+        for (int y = 0; y < PPU_H; y++)
+            for (int x = 0; x < PPU_W; x++) {
+                int u = x + sx, v = y + sy;
+                if (wrap) u = ((u % W) + W) % W, v = ((v % H) + H) % H;
+                uint16_t want = GREY;
+                if (u >= 0 && u < W && v >= 0 && v < H && (!masked || mk[v * stride + u / 8] & (0x80 >> (u & 7))))
+                    want = px[v * W + u];
+                bad += fb[y][x] != want;
+            }
+    }
+    CHECK(bad == 0);
+}
+
 /* The empty and opaque row flags, and that drawing with them changes nothing, in every way a line is drawn. */
 static void tile_row_shortcuts(void) {
     static uint16_t plain[PPU_H][PPU_W];
@@ -319,6 +355,7 @@ int main(void) {
     mosaic_and_lines();
     object_window_and_blend_sprite();
     bitmaps();
+    bitmap_against_formula();
     tile_row_shortcuts();
     affine_against_formula();
     printf("ppu: %d checks, %d failed\n", checks, failures);

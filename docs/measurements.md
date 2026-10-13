@@ -164,3 +164,17 @@ autotest script: walking with the camera, jumping, a coin's sparks, the lose and
 |---|---|---|
 | Walking, jumping, a coin | 60-61 fps | 2.4 ms |
 | The lose and win messages over the game | 58-61 fps | 4.4-6.5 ms |
+
+Then the editor gained pictures behind the map (bitmap layers that repeat, moving slower than the camera), and the
+first measure was bad: each such layer cost about 4 ms of picture, the template with its hills fell to 40 fps and
+a game with a photo behind the hills to 30. A repeating bitmap layer worked its column out per pixel with a
+division, and tested its mask bit by bit. Now the column steps and wraps at the bitmap's edge, and the mask skips
+or copies eight pixels a byte at a time (`bitmap_row` in ppu.c; pixel-identical on every script, and
+`tests/ppu_test.c` checks it against the formula on 120 random bitmaps):
+
+| Game | Picture before | Picture now | Frame rate now |
+|---|---|---|---|
+| The template: map, hills behind it | 7.6-8.2 ms | 2.4-2.6 ms | 60-61 fps |
+| An imported photo behind the hills and the map | 12.2 ms | 3.4-3.6 ms | 59-61 fps |
+
+The map itself is a bitmap layer, so it gained too: the template's picture was 4.2 ms before it had hills.

@@ -225,6 +225,37 @@ ALWAYS void bg_affine_x(lines *L, const ppu_bg *b, int n, int y, bool win, bool 
     }
 }
 
+/* A bitmap layer's row without mosaic, from column u0 on: the column steps and wraps at the edge instead of being
+ * worked out per pixel (a division each when it wraps), and the mask skips or copies 8 pixels a byte at a time. */
+ALWAYS void bitmap_row(lines *L, const uint16_t *src, const uint8_t *m, int W, bool wrap, int u0, uint32_t id, int bit,
+                       bool win, bool track) {
+    int x = 0, xe = PPU_W, u = wrap ? wrapi(u0, W) : u0;
+    if (!wrap) {
+        if (u < 0) x = -u, u = 0;
+        if (u0 + PPU_W > W) xe = W - u0;
+    }
+    while (x < xe) {
+        int end = x + (W - u < xe - x ? W - u : xe - x); /* up to the bitmap's edge, where it wraps */
+        if (!m)
+            for (; x < end; x++, u++) put(L, x, src[u] | id, bit, win, track);
+        else
+            while (x < end) {
+                if (!(u & 7) && end - x >= 8) { /* a whole mask byte */
+                    uint8_t mb = m[u >> 3];
+                    if (mb == 0xFF)
+                        for (int k = 0; k < 8; k++) put(L, x + k, src[u + k] | id, bit, win, track);
+                    if (mb == 0 || mb == 0xFF) {
+                        x += 8, u += 8;
+                        continue;
+                    }
+                }
+                if (m[u >> 3] & (0x80 >> (u & 7))) put(L, x, src[u] | id, bit, win, track);
+                x++, u++;
+            }
+        u = 0;
+    }
+}
+
 ALWAYS void bg_bitmap_x(lines *L, const ppu_bg *b, int n, int y, bool win, bool track) {
     int sx = b->scroll_x, sy = b->scroll_y, mw = b->mosaic ? PPU.mosaic.bg_w : 1, mh = b->mosaic ? PPU.mosaic.bg_h : 1;
     if (PPU.line.scroll[n]) sx = PPU.line.scroll[n][y].x, sy = PPU.line.scroll[n][y].y;
@@ -236,6 +267,10 @@ ALWAYS void bg_bitmap_x(lines *L, const ppu_bg *b, int n, int y, bool win, bool 
     const uint16_t *src = b->bitmap + v * W;
     const uint8_t *m = b->bitmap_mask ? b->bitmap_mask + v * stride : NULL;
     L->drew |= (uint8_t)bit;
+    if (mw == 1) {
+        bitmap_row(L, src, m, W, b->wrap, sx, id, bit, win, track);
+        return;
+    }
     for (int x0 = 0; x0 < PPU_W; x0 += mw) { /* a block of mw pixels (mosaic) shows its left edge */
         int u = x0 + sx;
         if (b->wrap) u = wrapi(u, W);
