@@ -1,0 +1,33 @@
+# Moto costa: the countdown, riding (the bike leans into a bend), the rivals, the roadside in view, a lap, the finish
+new
+tick 10
+expect_lua state == "count"
+shot salida
+tick 180
+expect_lua state == "race"
+lua x0, y0 = bike.x, bike.y
+hold A 60
+expect_lua bike.speed > 1.5
+expect_lua (bike.x - x0) ^ 2 + (bike.y - y0) ^ 2 > 1600
+expect_lua rivals[1].speed > 1
+lua a0 = bike.angle
+hold A+LEFT 24
+expect_lua bike.angle < a0 - 10 and bike.lean < -0.5
+shot curva
+lua autopilot, bike.skill = true, 1
+tick 300
+shot carrera
+lua autopilot = false
+lua bike.half, bike.way = true, rawlen(TRACK.way)
+lua bike.x, bike.y = TRACK.way[1][1] * 8 + 4, TRACK.way[1][2] * 8 + 4
+tick 2
+expect_lua bike.lap == 1
+lua bike.lap, bike.half, bike.way = 2, true, rawlen(TRACK.way)
+lua bike.x, bike.y = TRACK.way[1][1] * 8 + 4, TRACK.way[1][2] * 8 + 4
+tick 2
+expect_lua state == "done"
+tick 70
+press A
+tick 2
+expect_lua state == "count" and bike.lap == 0
+expect_ok
