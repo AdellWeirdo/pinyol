@@ -33,7 +33,9 @@ endif()
 if(BP_OTA_TEST)
   target_compile_definitions(${COMPONENT_LIB} PRIVATE BP_OTA_FILE="/flash/firmware.bin")
 endif()
-if(BP_AUTOTEST OR BP_SOAK OR BP_REMOTE) # test builds run unattended, often at night: mixed and timed, never heard
+# test builds run unattended, often at night: mixed and timed, never heard; -DBP_LOUD=ON: heard (the microphone
+# tests listen to the speaker)
+if((BP_AUTOTEST OR BP_SOAK OR BP_REMOTE) AND NOT BP_LOUD)
   target_compile_definitions(${COMPONENT_LIB} PRIVATE BP_QUIET)
 endif()
 if(BP_AUTOTEST OR BP_SOAK)

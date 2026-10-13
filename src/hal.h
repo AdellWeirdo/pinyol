@@ -46,3 +46,9 @@ void hal_link_close(void);
 bool hal_link_send(const uint8_t *p, int n); /* to everyone; false if it could not go */
 int hal_link_recv(uint8_t *p, int max);      /* one packet that came in (bytes), or 0 */
 uint32_t hal_link_id(void);                  /* this console's id: not 0, the same while it runs */
+
+/* The microphone, for mic.c: mono PCM16 at AUDIO_HZ. hal_mic_open starts listening (false: this platform has none,
+ * or the player said no); hal_mic_read hands over what came in since the last call, up to max samples (0: nothing). */
+bool hal_mic_open(void);
+void hal_mic_close(void);
+int hal_mic_read(int16_t *p, int max);

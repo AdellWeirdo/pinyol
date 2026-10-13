@@ -406,6 +406,15 @@ int synth_render(const synth_params *p, int16_t *out, int max); /* samples at AU
 bool synth_recipe(const char *kind, uint32_t seed, synth_params *p); /* coin, laser, explosion, powerup, hit, jump, blip, random */
 
 /* Tracker music (modplay.c): a ProTracker .mod, looped. */
+/* mic.c: the microphone for Lua games, worked out once a tick */
+bool mic_open(void);  /* false: no microphone */
+void mic_close(void); /* (a recording under way is kept) */
+void mic_tick(void);
+bool mic_read(float *level, float *pitch, bool *hit, bool *recording); /* false when not listening */
+bool mic_record(const char *id, float seconds); /* into a sound, sfx(id), when the time is up or on stop */
+void mic_record_stop(void);
+void mic_inject(bool present, float level, float hz); /* tests: a microphone hearing a tone (hz 0: noise) */
+
 bool mod_play(const char *path, float gain); /* false if it cannot be read or played */
 void mod_stop(int fade_ms);
 bool mod_playing(void);

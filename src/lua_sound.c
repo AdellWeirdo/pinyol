@@ -3,7 +3,8 @@
  *
  *   sound(id, {wave, freq, slide, ...} | kind [, seed]) -> its numbers: a sound made into id, played by sfx(id)
  *   sfx(id [, gain [, {pitch, loop}]]) -> handle;  sfx_set(handle, {gain, pitch});  sfx_stop(handle)
- *   music(id [, fade_ms]);  music_layer(stem, gain [, fade_ms]);  tone(voice, note [, {...}]);  note(name) */
+ *   music(id [, fade_ms]);  music_layer(stem, gain [, fade_ms]);  tone(voice, note [, {...}]);  note(name)
+ *   mic() -> level, pitch, hit, recording (nil: no microphone);  mic(false);  mic_record(id, seconds);  mic_record() */
 #include <stdlib.h>
 
 #include "lua_api.h"
@@ -167,10 +168,41 @@ static int l_note(lua_State *L) { /* note("C4") -> 261.63 Hz */
 }
 
 
+/* mic() -> level 0..1, pitch in Hz (0: no clear note), hit (a sudden sound this tick), recording; nil when there is
+ * no microphone. The first call starts listening; mic(false) stops. */
+static int l_mic(lua_State *L) {
+    if (lua_isboolean(L, 1) && !lua_toboolean(L, 1)) {
+        mic_close();
+        return 0;
+    }
+    float level, pitch;
+    bool hit, rec;
+    if (!mic_open() || !mic_read(&level, &pitch, &hit, &rec)) return lua_pushnil(L), 1;
+    lua_pushnumber(L, level), lua_pushnumber(L, pitch), lua_pushboolean(L, hit), lua_pushboolean(L, rec);
+    return 4;
+}
+
+/* mic_record(id, seconds): what the microphone hears becomes the sound id (sfx(id)) when the time is up (10 s at
+ * most); mic_record() ends it sooner. True if it started. */
+static int l_mic_record(lua_State *L) {
+    if (lua_isnoneornil(L, 1)) {
+        mic_record_stop();
+        return 0;
+    }
+    const char *id = luaL_checkstring(L, 1);
+    if (!safe_name(id) || strchr(id, '/') || strlen(id) >= 32) return luaL_error(L, "mic_record \"%s\": not a sound name", id);
+    float s = fin(luaL_checknumber(L, 2));
+    if (audio_made_bytes() + (long)((s > 10 ? 10 : s) * AUDIO_HZ) * 2 > MADE_BYTES)
+        return luaL_error(L, "mic_record \"%s\": no room for it, a game makes %d KB of sounds at most", id, MADE_BYTES / 1024);
+    lua_pushboolean(L, mic_open() && mic_record(id, s));
+    return 1;
+}
+
 void sound_register(lua_State *L) {
     static const luaL_Reg F[] = {{"sound", l_sound}, {"sfx", l_sfx}, {"sfx_set", l_sfx_set}, {"sfx_stop", l_sfx_stop},
                                  {"sfx_on", l_sfx_on}, {"music", l_music}, {"music_layer", l_music_layer},
-                                 {"tone", l_tone}, {"note", l_note}, {NULL, NULL}};
+                                 {"tone", l_tone}, {"note", l_note}, {"mic", l_mic},
+                                 {"mic_record", l_mic_record}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);
     lua_pop(L, 1);

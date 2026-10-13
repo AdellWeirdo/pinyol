@@ -1,0 +1,58 @@
+# The microphone: no microphone is nil (games fall back to a button); a tone gives its level and pitch; a sudden
+# sound is a hit, once; a recording becomes a sound the game plays; mic(false) stops listening
+new
+tick 2
+expect_lua present == false and mic() == nil
+mic 0
+tick 2
+expect_lua present == true and heard.level == 0 and heard.pitch == 0 and heard.hits == 0
+mic 0.5 220
+tick 4
+expect_lua math.abs(heard.level - 0.5) < 0.02
+expect_lua math.abs(heard.pitch - 220) < 3
+mic 0.7 440
+tick 4
+expect_lua math.abs(heard.pitch - 440) < 5
+mic 0.6 880
+tick 4
+expect_lua math.abs(heard.pitch - 880) < 12
+shot mic_tone
+# noise has a level but no pitch; out of silence it is a hit, once, however long it lasts
+mic 0
+tick 30
+lua before = heard.hits
+mic 0.8
+tick 1
+expect_lua heard.hits == before + 1 and heard.pitch == 0 and heard.level > 0.7
+tick 30
+expect_lua heard.hits == before + 1
+# too soft to be a hit
+mic 0
+tick 30
+mic 0.2
+tick 3
+expect_lua heard.hits == before + 1
+# a recording: half a second of a tone becomes a sound, on time or stopped sooner
+mic 0.5 330
+lua ok = mic_record("VOZ", 0.5)
+tick 2
+expect_lua ok and heard.rec == true
+tick 40
+expect_lua heard.rec == false
+lua h = sfx("VOZ")
+expect_lua h > 0 and sfx_on(h)
+lua mic_record("CORTA", 5)
+tick 6
+lua mic_record()
+tick 1
+expect_lua heard.rec == false and sfx("CORTA") > 0
+expect_lua_error mic_record("../x", 1)
+expect_lua_error mic_record("A", "much")
+# mic(false) stops; the next mic() listens again
+lua mic(false)
+tick 1
+expect_lua mic() ~= nil
+mic none
+tick 2
+expect_lua present == false
+expect_ok

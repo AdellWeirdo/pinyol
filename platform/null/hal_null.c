@@ -52,3 +52,8 @@ uint32_t hal_link_id(void) {
     const char *e = getenv("BP_LINK_ID");
     return udp ? link_udp_id() : e ? (uint32_t)strtoul(e, NULL, 16) : 0x0A0B0C0D;
 }
+
+/* No microphone: tests make one up (script: mic, src/mic.c) */
+bool hal_mic_open(void) { return false; }
+void hal_mic_close(void) {}
+int hal_mic_read(int16_t *p, int max) { return (void)p, (void)max, 0; }

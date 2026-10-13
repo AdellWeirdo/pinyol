@@ -930,6 +930,7 @@ static void api(lua_State *L) {
 
 void v2_free(void) {
     link_stop();
+    mic_close();
     if (Ls) lua_close(Ls);
     Ls = NULL;
     assets_free();
@@ -1011,6 +1012,7 @@ void v2_tick(void) {
     menu_held = (G.in.held & ACT_INV) ? menu_held + 1 : 0;
     if (menu_held == 2 * TICK_HZ && hal_can_switch_game()) hal_switch_game(); /* MENU held 2 s: back to the list */
     link_tick((uint32_t)G.ticks); /* what other consoles sent, before the game looks */
+    mic_tick();                   /* and what the microphone heard */
     uint32_t t = hal_micros();
     call("_update", 0);
     us_update = hal_micros() - t;

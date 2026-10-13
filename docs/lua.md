@@ -394,6 +394,38 @@ A sound that stops dead (`decay = 0`) is meant to loop; one that decays fades it
 Making a sound takes a moment (a long one, some hundredths of a second on the console): make them in `_init` or
 between levels, not every frame. A game's made sounds share 1 MB (about 24 seconds).
 
+## The microphone
+
+The console hears: blowing on a candle, singing a note that opens a door, a clap on the beat, a cat's miaow made by
+the player. The browser asks the player first; the simulator uses the computer's microphone.
+
+| Call | Does |
+|---|---|
+| `mic()` | `level, pitch, hit, recording`, or `nil` where there is no microphone (or the player said no). The first call starts listening |
+| `mic(false)` | stops listening |
+| `mic_record(id, seconds)` | what it hears for up to 10 seconds becomes the sound `id`, played with `sfx(id)` like any other; `true` if it started |
+| `mic_record()` | ends the recording sooner |
+
+- `level` goes from 0 (silence) to 1 (a shout close to the console), worked out every tick.
+- `pitch` is the note heard in Hz (a voice, a whistle, a recorder: 70 to 1000 Hz), or 0 when there is no clear one
+  (noise, a breath, silence). `note("A4")` gives the Hz of a note to compare with.
+- `hit` is true on the one tick a sudden sound starts: a clap, a knock on the table, a shout.
+- `recording` is true while `mic_record` is still listening.
+
+```lua
+local level, pitch, hit = mic()
+if not level then                         -- no microphone: a button does it instead
+  blowing = btn("a")
+else
+  blowing = level > 0.5 and pitch == 0    -- loud and without a note: a breath
+  singing = math.abs(pitch - note("C5")) < 15
+  if hit then clap() end
+end
+```
+
+The microphone also hears the console's own speaker: a game that listens for the player plays its music softly
+meanwhile, or not at all. Made sounds and recordings share the same 1 MB.
+
 ## Libraries built in
 
 Lua code every game can `require`, so a game does not start from nothing. They come inside the engine (the
@@ -448,6 +480,7 @@ lua P.x = 100                    # run Lua in the game (set up a situation)
 expect_lua_error spin()          # code that must fail
 expect_ok                        # the game has not stopped on an error
 shot name                        # save the screen to the saves folder (name.ppm)
+mic 0.5 440                      # the microphone hears a tone that loud (no Hz: noise; mic 0: silence; mic none: no microphone)
 ```
 
 `#` after a space starts a comment in these scripts, so avoid Lua's `#` length operator there.

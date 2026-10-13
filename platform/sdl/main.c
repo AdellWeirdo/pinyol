@@ -86,6 +86,65 @@ int hal_link_recv(uint8_t *p, int max) { return link_udp_recv(p, max); }
 uint32_t hal_link_id(void) { return link_udp_id(); }
 #endif
 
+/* The microphone (src/mic.c): a capture device whose callback fills a ring the game empties each tick. In a
+ * browser SDL asks for it through getUserMedia, so the page asks the player first. */
+static SDL_AudioDeviceID mic_dev;
+static int16_t mic_ring[8192];
+static int mic_w, mic_r; /* under the capture device's lock */
+
+static void mic_cb(void *user, Uint8 *stream, int len) {
+    (void)user;
+    const int16_t *p = (const int16_t *)stream;
+    for (int i = 0; i < len / 2; i++) {
+        mic_ring[mic_w] = p[i];
+        mic_w = (mic_w + 1) % 8192;
+        if (mic_w == mic_r) mic_r = (mic_r + 1) % 8192; /* full: the oldest goes */
+    }
+}
+
+#ifdef __EMSCRIPTEN__
+/* SDL asks for {audio: true}: the browser would level the volume and take out noise, so a breath or a steady level
+ * could not be heard. Only the echo of the game's own sound is taken out. */
+EM_JS(void, web_mic_raw, (void), {
+    const md = navigator.mediaDevices;
+    if (!md || Module.np2dMicRaw) return;
+    const ask = md.getUserMedia.bind(md);
+    md.getUserMedia = (c) => ask(c && c.audio === true ? Object.assign({}, c, {audio: {echoCancellation: true,
+                                    noiseSuppression: false, autoGainControl: false}}) : c);
+    Module.np2dMicRaw = true;
+});
+#endif
+
+bool hal_mic_open(void) {
+#ifdef __EMSCRIPTEN__
+    web_mic_raw();
+#endif
+    if (!SDL_WasInit(SDL_INIT_AUDIO) && SDL_InitSubSystem(SDL_INIT_AUDIO)) return false;
+    SDL_AudioSpec want = {.freq = AUDIO_HZ, .format = AUDIO_S16LSB, .channels = 1, .samples = 512, .callback = mic_cb};
+    mic_dev = SDL_OpenAudioDevice(NULL, 1, &want, NULL, 0);
+    if (!mic_dev) {
+        hal_log("microphone unavailable: %s", SDL_GetError());
+        return false;
+    }
+    mic_w = mic_r = 0;
+    SDL_PauseAudioDevice(mic_dev, 0);
+    return true;
+}
+
+void hal_mic_close(void) {
+    if (mic_dev) SDL_CloseAudioDevice(mic_dev);
+    mic_dev = 0;
+}
+
+int hal_mic_read(int16_t *p, int max) {
+    if (!mic_dev) return 0;
+    SDL_LockAudioDevice(mic_dev);
+    int n = 0;
+    while (n < max && mic_r != mic_w) p[n++] = mic_ring[mic_r], mic_r = (mic_r + 1) % 8192;
+    SDL_UnlockAudioDevice(mic_dev);
+    return n;
+}
+
 static bool muted; /* the web page's mute button: the game plays on, silent (its own fades are left alone) */
 
 static void audio_cb(void *user, Uint8 *stream, int len) {

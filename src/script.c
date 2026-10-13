@@ -290,6 +290,13 @@ static bool run_line(char *cmd, char *arg) {
         if (!link_sent_lately(arg)) FAIL("expect_link_sent %s: not in the last messages sent", arg);
         return true;
     }
+    if (!strcmp(cmd, "mic")) { /* np2d@2: mic LEVEL [HZ]: the microphone hears a tone (no HZ: noise); mic none: none */
+        float level = 0, hz = 0;
+        if (!strcmp(arg, "none")) mic_inject(false, 0, 0);
+        else if (sscanf(arg, "%f %f", &level, &hz) >= 1) mic_inject(true, level, hz);
+        else FAIL("mic: LEVEL [HZ] or none");
+        return true;
+    }
     if (!strcmp(cmd, "wait_ms")) { /* real time passing: two runs playing each other over BP_LINK=udp */
         uint32_t t0 = hal_micros(), ms = (uint32_t)atoi(arg);
         while (hal_micros() - t0 < ms * 1000) {}
