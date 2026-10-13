@@ -1,0 +1,41 @@
+# kit, the game model behind the editor: a platformer from data and events
+new
+tick 30
+lua h = kit.first("heroe")
+expect_lua h and h.ground and math.abs(h.y + h.h - 144) < 1 and puntos == 0
+# walking right onto the coin: the touch event, the label, and the win
+hold RIGHT 60
+expect_lua puntos == 1 and kit.count("moneda") == 0
+shot coin
+tick 2
+# the game is won: A starts it over
+press A
+tick 5
+expect_lua puntos == 0 and kit.count("moneda") == 1 and kit.first("heroe").x == 20
+# the step in the way: walking stops at its wall, jumping gets over it (the coin out of the way first)
+lua kit.destroy(kit.first("moneda"))
+hold RIGHT 110
+lua h = kit.first("heroe")
+expect_lua h.x + h.w <= 12 * 16 + 0.01
+hold RIGHT+A 10
+hold RIGHT 40
+lua h = kit.first("heroe")
+expect_lua h.x > 14 * 16
+# the patrol turns at walls; touching it loses
+lua m = kit.first("malo") m.x, m.y = h.x + 8, h.y
+tick 2
+shot lose
+expect_lua kit.count("heroe") == 1
+press A
+tick 5
+# a tile event: the spikes
+lua h = kit.first("heroe") h.x, h.y = 18 * 16 + 2, 7 * 16
+tick 3
+press A
+tick 5
+# changing the map while playing
+lua kit.set_tile(13 * 16, 8 * 16, "")
+expect_lua kit.tile(13 * 16, 8 * 16) == nil and kit.tile(12 * 16, 8 * 16) == "suelo"
+expect_lua_error kit.on("nothing", function() end)
+expect_lua_error kit.on("press", "x", function() end)
+expect_ok

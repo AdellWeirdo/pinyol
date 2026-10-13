@@ -597,6 +597,7 @@ static int l_target(lua_State *L) { /* target(canvas) draws on it from now on; t
         a = gfx_find(id);
         if (!a || !a->canvas) return luaL_error(L, "target \"%s\": not a canvas (make one with canvas())", id);
     }
+    draw_flush(); /* what was drawn on a canvas is there for the next picture that copies it, in this same call */
     target = a, cam_x = cam_y = 0, clipping = false; /* each target starts with no camera and no clip */
     return 0;
 }
