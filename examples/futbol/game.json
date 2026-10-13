@@ -1,0 +1,8 @@
+{
+  "id": "futbol",
+  "title": "Gol de oro",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "np2d examples",
+  "description": "Fútbol cinco contra cinco a la manera de la Neo Geo: un campo el doble de ancho que la pantalla con su grada llena, futbolistas en cuatro equipaciones que son un mismo dibujo con cuatro paletas; todo a 480x320."
+}

@@ -1,0 +1,24 @@
+# Gol de oro: the title, the kick-off, running with the ball, a shot into the goal, the score, eleven a side
+tick 20
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "play" and players[10] ~= nil
+tick 60
+shot saque
+lua owner = nil ball.x, ball.y, ball.z, ball.vx, ball.vy = 1560, 373, 0, 0, 0
+lua for _, p in ipairs(players) do if p.team == 1 and not p.keeper then p.x, p.y = 1550, 373 break end end
+tick 2
+hold RIGHT 20
+shot area
+lua owner = nil ball.x, ball.y, ball.z, ball.vx, ball.vy, ball.vz = 1700, 373, 0, 6, 0, 0
+lua for _, p in ipairs(players) do p.cool = 99 end
+lua for _, p in ipairs(players) do if p.keeper and p.team == 2 then p.y = 600 end end
+tick 20
+expect_lua score[1] == 1 and state == "goal"
+shot gol
+tick 130
+expect_lua state == "play" and ball.x < 1000
+lua bench, autoplay = true, true
+lua kickoff_again = true
+expect_ok

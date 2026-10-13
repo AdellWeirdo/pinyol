@@ -1,0 +1,33 @@
+{
+  "asset": "KIT_GREEN",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 45,
+  "w": 72,
+  "h": 72,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    36,
+    71
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 10342,
+    "as_rgb565": 51840
+  }
+}
