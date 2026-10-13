@@ -1,0 +1,35 @@
+{
+  "asset": "SPR_THUG",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 61,
+  "w": 192,
+  "h": 184,
+  "frames": 6,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "anchor": [
+    122,
+    181
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 73112,
+    "as_rgb565": 423936
+  }
+}

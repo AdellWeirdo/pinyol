@@ -1,0 +1,8 @@
+{
+  "id": "calle",
+  "title": "Calle de neón",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "np2d examples",
+  "description": "Un beat'em up a la manera de la Neo Geo: un karateka contra matones en una calle mojada de noche, con profundidad, peleas en grupo y la cámara que se para hasta limpiar cada tramo; todo a 480x320."
+}

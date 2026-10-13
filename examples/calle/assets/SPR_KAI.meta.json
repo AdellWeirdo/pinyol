@@ -1,0 +1,45 @@
+{
+  "asset": "SPR_KAI",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 53,
+  "w": 192,
+  "h": 184,
+  "frames": 11,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "anchor": [
+    70,
+    181
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 124053,
+    "as_rgb565": 777216
+  }
+}

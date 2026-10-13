@@ -1,0 +1,28 @@
+# Calle de neón: the title, walking up the street until the camera stops and a group comes, striking a thug at his
+# depth (he flashes, reels back, goes down), a thug's punch hurting Kai, the street cleared at the end
+tick 30
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "play"
+hold RIGHT 160
+expect_lua cam >= 300 and thugs[1] ~= nil
+shot grupo
+lua thugs[1].x, thugs[1].y, thugs[1].act, thugs[1].cool = kai.x + 60, kai.y, "walk", 999 kai.dir = 1
+press A
+tick 12
+expect_lua thugs[1].hp == 2
+shot golpe
+lua hp0 = kai.hp kai.hurt = 0
+lua thugs[1].x, thugs[1].y, thugs[1].act, thugs[1].t, thugs[1].dir = kai.x + 60, kai.y, "punch", 0, -1
+tick 10
+expect_lua kai.hp < hp0
+lua for _, t in ipairs(thugs) do t.hp = 0 t.act = "down" t.t = 0 end
+tick 60
+expect_lua thugs[1] == nil
+lua group = 99 kai.x = 4000 cam = 3800
+tick 3
+lua kai.x = 4300
+tick 120
+expect_lua state == "clear" or cam >= 3800
+expect_ok
