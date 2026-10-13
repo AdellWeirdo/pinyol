@@ -42,7 +42,7 @@ static void clip_close(clip *c) {
 /* Frame k's ops onto the canvas; false if the file cannot be read (a bad run only stops that frame). */
 static bool decode(clip *c, int k) {
     uint32_t a = c->index[k], n = c->index[k + 1] - a;
-    if (n && (fseek(c->f, (long)a, SEEK_SET) || fread(c->buf, 1, n, c->f) != n)) return false;
+    if (n && (fseek(c->f, (long)a, SEEK_SET) || fread_chunked(c->buf, n, c->f) != n)) return false; /* (PSRAM) */
     uint16_t *px = c->canvas->pixels;
     const uint8_t *p = c->buf, *end = c->buf + n;
     uint32_t i = 0, total = (uint32_t)c->w * c->h;
@@ -132,7 +132,7 @@ static const char *read_header(clip *c, long size) {
     size_t bytes = ((size_t)frames + 1) * 4;
     uint8_t *raw = hal_realloc_slow(NULL, bytes);
     if (!raw) return "no memory for it";
-    if (fread(raw, 1, bytes, c->f) != bytes) return free(raw), "it is cut short";
+    if (fread_chunked(raw, bytes, c->f) != bytes) return free(raw), "it is cut short";
     c->index = (uint32_t *)raw; /* in place: each offset read once, little-endian */
     uint32_t most = 0, limit = (uint32_t)c->w * c->h * 2 + 1024, first = 20 + 2 * (uint32_t)c->ncol + (uint32_t)bytes;
     for (uint32_t i = 0; i <= frames; i++) {
