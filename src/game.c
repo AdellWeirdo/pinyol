@@ -372,8 +372,10 @@ static void draw_stack(surface *s, surface *world) {
             draw_in(s, &dim, world, -1, false);
         }
         /* the zone is cheap to draw in pieces; a panel layer is not (each piece would lay out its text again): it is
-         * drawn whole, over whatever is under it, and only the zone and the shades are cut */
-        if (i == 0) draw_in(s, &reg[0], world, 0, false);
+         * drawn whole, over whatever is under it, and only the zone and the shades are cut. Nor is an HD zone or a
+         * fight (each piece would set both cores to work again, every picture and the HUD): whole, under the panels */
+        if (i == 0 && (world_is_hd() || layer_has(L_ARENA))) draw_layer(s, world, 0, false);
+        else if (i == 0) draw_in(s, &reg[0], world, 0, false);
         else draw_layer(s, world, i, false);
     }
     for (int i = n; i < G.nstack; i++) draw_layer(s, world, i, true); /* past 8 layers (rare): whole, as before */

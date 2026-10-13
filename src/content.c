@@ -4,12 +4,16 @@
 
 #include "bp.h"
 
-/* fread in 16 KB pieces: on the console the card is shared with the sound mixer, which streams from it, and one
- * long read would make it wait past its buffer (crackles while a zone loads). Same result as one fread. */
+/* fread in 8 KB pieces: on the console the card is shared with the sound mixer, which streams from it, and one
+ * long read would make it wait past its buffer (crackles while a zone loads). Each piece through a buffer of internal
+ * memory (static: the console keeps .bss there): read straight into PSRAM, the card's driver goes a 512-byte sector
+ * per command, ~0.5 MB/s (a 48 KB portrait took 100 ms). Same result as one fread. (The game's task only.) */
 size_t fread_chunked(void *dst, size_t n, FILE *f) {
+    static uint8_t piece[8192] __attribute__((aligned(64)));
     size_t got = 0;
     while (got < n) {
-        size_t want = n - got < 16384 ? n - got : 16384, r = fread((char *)dst + got, 1, want, f);
+        size_t want = n - got < sizeof piece ? n - got : sizeof piece, r = fread(piece, 1, want, f);
+        memcpy((char *)dst + got, piece, r);
         got += r;
         if (r < want) break;
     }

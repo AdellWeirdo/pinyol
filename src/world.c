@@ -716,8 +716,10 @@ static void hd_half(int part, void *ctx) { /* half of the window's columns, on o
     world_over(&s, j->world);
 }
 
+bool world_is_hd(void) { return hd.bg && layer_top() != L_TITLE; }
+
 bool world_render_hd(surface *s, const surface *world) {
-    if (!hd.bg || layer_top() == L_TITLE) return false;
+    if (!world_is_hd()) return false;
     hd_job j = {s, world};
     hal_parallel(hd_half, &j);
     return true;
