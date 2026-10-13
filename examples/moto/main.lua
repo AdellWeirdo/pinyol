@@ -194,9 +194,11 @@ function _draw()
     local it = list[i]
     local s = it.scale * CAM_BACK / FOV -- 1 at the player's own distance from the camera
     if it.thing then
-      local k = math.min(s * 0.9, 2.5)
-      look.frame, look.scale, look.pal = it.thing.kind, k, nil
-      img("SPR_PROPS", it.sx * 2 - 96 * k, it.sy * 2 - 199 * k, look)
+      local k = math.min(s * 0.9, 1.8) -- (nearer, it is passing the camera: not drawn bigger, nor at all below the screen)
+      if it.sy * 2 - 40 * k < 320 then
+        look.frame, look.scale, look.pal = it.thing.kind, k, nil
+        img("SPR_PROPS", it.sx * 2 - 96 * k, it.sy * 2 - 199 * k, look)
+      end
     else
       local k = math.min(s * 0.85, 2)
       look.frame, look.scale, look.pal = lean_frame(it.racer.lean), k, it.racer.pal
@@ -213,7 +215,8 @@ function _draw()
   text(string.format("POS %d", place()), 240, 0, {font = "gran", align = "center", color = 0xFFE070,
                                                  gradient = 0xFF7A10, outline = 0x101018})
   board.align = "right"
-  text(string.format("%d:%05.2f", math.floor(secs / 60), secs % 60), 468, 4, board)
+  -- tenths: a styled text is worked out again when it changes, and hundredths change every frame
+  text(string.format("%d:%04.1f", math.floor(secs / 60), math.floor(secs * 10) % 600 / 10), 468, 4, board)
   rect(12, 300, math.floor(bike.speed / 3 * 120), 8, 0xFFB040)
   box(12, 300, 120, 8, 0xFFFFFF)
   if state == "count" then

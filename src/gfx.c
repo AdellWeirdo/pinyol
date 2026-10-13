@@ -423,7 +423,15 @@ static void blit_packed(surface *s, const asset *a, int frame, int x, int y, int
     }
 }
 
-static int64_t floor_div(int64_t a, int64_t b) { return a / b - (a % b != 0 && (a < 0) != (b < 0)); } /* b > 0 */
+/* a / b rounded down, b > 0; in 32 bits when it fits (always, but for absurd positions): the console divides those in
+ * hardware and 64-bit ones in software, which was most of a scaled picture's cost */
+static inline int64_t floor_div(int64_t a, int64_t b) {
+    if (a >= INT32_MIN && a <= INT32_MAX && b <= INT32_MAX) {
+        int32_t x = (int32_t)a, y = (int32_t)b, q = x / y;
+        return q - (x % y != 0 && x < 0);
+    }
+    return a / b - (a % b != 0 && a < 0);
+}
 
 /* A packed picture scaled (and mirrored, by negative steps), straight from its columns: screen column bx0 + i shows
  * picture column (u + i du) >> 16, screen row by0 + k picture row (v + k dv) >> 16, in 16.16 fixed point, as
@@ -445,7 +453,7 @@ void gfx_blit_scaled(surface *s, const asset *a, int frame, int bx0, int bx1, in
             if (k1 > len) k1 = len;
             int32_t vv = v + (int32_t)k0 * dv;
             uint16_t *d = col + k0 * ys;
-            for (int64_t k = k0; k < k1; k++, vv += dv, d += ys) *d = pal[index_at(ids, (vv >> 16) - ry, bpp)];
+            for (int k = (int)k0; k < k1; k++, vv += dv, d += ys) *d = pal[index_at(ids, (vv >> 16) - ry, bpp)];
         });
     }
 }

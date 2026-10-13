@@ -21,6 +21,7 @@ players, score, state = {}, {0, 0}, "title"
 local cam_x, cam_y, clock, timer = 0, 0, 0, 0
 owner = nil -- who has the ball at his feet (global: tests let go of it)
 local look = {}
+local front = {} -- each team's one nearest the ball, this tick
 
 local SPOTS = { -- a side's places, as fractions of its half (attacking to the right): keeper, two back, two up
   {0.03, 0.5}, {0.28, 0.3}, {0.28, 0.72}, {0.62, 0.38}, {0.62, 0.66},
@@ -116,7 +117,7 @@ local function think(p, me) -- one footballer's tick: the player's own, or the c
       if dx == 0 and dy == 0 then kick(p, goal_of(1) - p.x, GOAL_Y - p.y, 7.5, 2.5)
       else kick(p, dx, dy, 6.5, 1.5) end
     end
-  elseif p == nearest(p.team) then -- the console's nearest: to the ball, then at the goal
+  elseif p == front[p.team] then -- the console's nearest: to the ball, then at the goal
     if owner == p then
       local gx, gy = goal_of(p.team), GOAL_Y + math.sin(p.t / 30) * 25
       moving = run_to(p, gx, gy, 1.9)
@@ -184,8 +185,8 @@ function _update()
     if timer > 120 then kickoff(score[1] > score[2] and 2 or 1) state = "play" sfx("SND_WHISTLE") end
   elseif state == "play" then
     clock = clock + 1
-    local me = nearest(1)
-    for _, p in ipairs(players) do think(p, autoplay and nil or me) end
+    front[1], front[2] = nearest(1), nearest(2) -- once a tick: each footballer asking would be n times n
+    for _, p in ipairs(players) do think(p, not autoplay and front[1] or nil) end
     update_ball()
     if clock >= MATCH then state, timer = "end", 0 sfx("SND_WHISTLE") end
   elseif state == "end" and timer > 90 and btnp("a") then

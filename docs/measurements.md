@@ -227,3 +227,44 @@ landing on the screen rows worked out from its ends (`gfx_blit_scaled`), the sam
 | `examples/duelo`: a fight (sparks, hit flashes, the HUD) | 61 fps | 7.3 ms |
 
 The strips take about half of each frame's 16.6 ms: room for a third layer, more fighters, or effects.
+
+## The Neo Geo's genres (2026-10-13)
+
+Of the Neo Geo's 156 games, by genre: fighting 55, sports 23, shoot-em-ups 15, puzzle 14, run and gun 10, quiz and
+mahjong 10, beat-em-ups 8, platform 7, first person 4, racing 4, maze 3, other 3. One example for each genre that asks
+a lot of the console, with original generated art, all at 480x320 from packed pictures, each measured on the board
+by a script that plays it and loads it on purpose (`examples/<id>`, the scripts in the session's notes):
+
+| Game | Scene | Frame rate | Lua (tick + draw) | Strips |
+|---|---|---|---|---|
+| asalto (run and gun) | running and firing | 61 fps | 1.4-2.0 ms | 6.0 ms |
+| | 20 robots on screen, all firing | 61 fps | 3.4 ms | 7.7 ms |
+| | the walking tank, robots, shells | 61 fps | 3.5 ms | 7.2 ms |
+| nubes (shoot-em-up) | waves of drones | 60-61 fps | 2.9 ms | 5.7 ms |
+| | the battleship's rings and spirals | 56-61 fps | 3.6 ms | 6.8 ms |
+| | 300 orbs more (a swarm) | 61 fps | 2.3 ms | 8.5 ms |
+| calle (beat-em-up) | Kai and six thugs, everyone at 0.8 | 60 fps | 2.3 ms | 9.7 ms |
+| futbol (sports) | five a side | 61 fps | 3.8 ms | 5.1 ms |
+| | eleven a side | 60-61 fps | 5.3 ms | 4.8 ms |
+| moto (racing) | a race: Mode 7 road (2.8 ms) and full-resolution coast, roadside, rivals | 53-60 fps | 4.3 ms | 5.3 ms |
+| | the four rivals all on the player's own place | 44-55 fps | 4.5 ms | 6.3 ms |
+
+What it took, each step measured on the same scenes:
+
+- **Pictures past a budget are let go** and come back from the card (4 MB, least recently drawn first): a game's
+  art may be bigger than the console's memory.
+- **No world when none shows.** With `show(0)` the 240x160 world was still worked out (0.7 ms) and doubled into every
+  strip; now it is one colour, filled (0.8 ms a frame saved in every full-resolution game).
+- **Strips skip what is not theirs.** Each drawing command notes the 32-column bands it may touch; with 450 commands,
+  the strips went from 12.4 to 9.3 ms.
+- **Swarms.** 300 orbs moved and drawn from Lua cost 9 ms (some 10 us each to move and as many to draw); as a swarm
+  (`swarm()`, moved, tested and drawn in C), 2.3 ms: 30 fps became 61.
+- **`img` reads its options in one walk** over the table instead of nine lookups.
+- **Scaled pictures divide in 32 bits.** Each run of each column of a scaled packed picture worked out its rows with
+  two 64-bit divisions, which the console does in software: in 32 bits it divides in hardware.
+- **The two cores split each strip into its left and right columns**, not its top and bottom: a game's work is rarely
+  even between the sky and the ground, nearly always between two neighbouring bands. Six thugs went from 43-55 fps
+  to 60, eleven a side from 46-49 to 61.
+
+Lua is what is left: on the console, each thing moved and drawn from a script costs some 50 us, so about 60-70 of
+them a frame, besides any number in swarms. The strips take 5 to 10 ms of the 16.6.

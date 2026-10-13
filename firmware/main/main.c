@@ -121,9 +121,13 @@ static void perf_report(void) {
 /* A panel strip drawn straight from the game: the frame's columns p0..p0+31, turned and byte-swapped for the bus, in
  * internal RAM. The world is already in G.world (draw); no 480x320 frame exists. */
 static surface strip_s;
-static void strip_half(int part, void *ctx) { /* the top or the bottom half of the screen's strip */
+/* The left or the right half of the strip's columns, the whole height: a game's work is rarely even between the top
+ * and the bottom of the screen (a sky above, fighters below), and nearly always even between two neighbouring bands
+ * of 16 columns. Each half is its own memory in the strip: a column is contiguous on the panel. */
+static void strip_half(int part, void *ctx) {
     (void)ctx;
-    surface half = gfx_clip(&strip_s, 0, part ? SCREEN_H / 2 : 0, SCREEN_W, SCREEN_H / 2);
+    int w0 = strip_s.w / 2;
+    surface half = gfx_clip(&strip_s, strip_s.x0 + (part ? w0 : 0), 0, part ? strip_s.w - w0 : w0, SCREEN_H);
     half.part = (uint8_t)part;
     game_draw(&half, false);
 }
