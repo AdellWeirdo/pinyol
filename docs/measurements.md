@@ -153,3 +153,14 @@ drawn only where they show, the panel layers whole) and a 2× blit that writes w
 
 Pixel-identical on the 48 scripts. The close-up over the bag would need the bag drawn only around the card, which
 costs more than it saves while the bag lays its text out again for every piece.
+
+## A game made with the editor (2026-10-13)
+
+The editor's platformer template (a `kit` game: the map is one canvas drawn as a bitmap layer, objects are sprites,
+the labels and messages are styled text), built by `editor/test/build_game.mjs` and played on the board by an
+autotest script: walking with the camera, jumping, a coin's sparks, the lose and win messages.
+
+| Part | Frame rate | Strips |
+|---|---|---|
+| Walking, jumping, a coin | 60-61 fps | 2.4 ms |
+| The lose and win messages over the game | 58-61 fps | 4.4-6.5 ms |
