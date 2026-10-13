@@ -178,3 +178,16 @@ or copies eight pixels a byte at a time (`bitmap_row` in ppu.c; pixel-identical 
 | An imported photo behind the hills and the map | 12.2 ms | 3.4-3.6 ms | 59-61 fps |
 
 The map itself is a bitmap layer, so it gained too: the template's picture was 4.2 ms before it had hills.
+
+The editor's four templates and a game with music from files, each played on the board by its test script
+(autotest, tests/editor_*.script): all pass, 0 audio underruns.
+
+| Game | Frame rate playing | Picture |
+|---|---|---|
+| Plataformas (two levels, hills behind) | 60-61 fps | 1.9-2.3 ms |
+| Aventura desde arriba (20 x 12 maps, chasing ghosts) | 60-61 fps | 2.2-2.6 ms |
+| Naves (two star fields drifting, saucers, comets) | 60-61 fps | 2.2-2.5 ms |
+| Puzle de cajas | 60-61 fps | 1.9-2.2 ms |
+
+Starting a game takes 0.3-0.5 s (its pictures, fonts and made sounds); starting a level, one frame of about 45 ms
+(its map painted into the map canvas) while its name shows.
