@@ -939,6 +939,7 @@ static void api(lua_State *L) {
     link_register(L); /* consoles playing together: lua_link.c */
     sound_register(L); /* sounds, music, notes: lua_sound.c */
     physics_register(L); /* bodies that turn, for lib/physics.lua: lua_physics.c */
+    clip_register(L); /* video on canvases: lua_clip.c */
     static const struct { const char *n; int v; } K[] = {
         {"BG0", PPU_BG0}, {"BG1", PPU_BG1}, {"BG2", PPU_BG2}, {"BG3", PPU_BG3}, {"OBJ", PPU_OBJ}, {"BACK", PPU_BACK},
         {"FX", PPU_FX}, {"ALL", 0x3F}, {"FLIP_X", F_FLIPX}, {"FLIP_Y", F_FLIPY}, {"BLEND", F_BLEND},
@@ -951,6 +952,7 @@ static void api(lua_State *L) {
 /* ------------------------------------------------------------------ lifecycle */
 
 void v2_free(void) {
+    clip_free_all();
     link_stop();
     mic_close();
     physics_free();
@@ -1036,6 +1038,7 @@ void v2_tick(void) {
     if (menu_held == 2 * TICK_HZ && hal_can_switch_game()) hal_switch_game(); /* MENU held 2 s: back to the list */
     link_tick((uint32_t)G.ticks); /* what other consoles sent, before the game looks */
     mic_tick();                   /* and what the microphone heard */
+    clip_tick();                  /* the clips playing move on a frame */
     uint32_t t = hal_micros();
     call("_update", 0);
     us_update = hal_micros() - t;

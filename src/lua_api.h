@@ -87,3 +87,6 @@ void draw_points(const asset *a, int frame, const float *x, const float *y, int 
 void swarm_register(lua_State *L); /* swarm(): lua_swarm.c */
 void physics_register(lua_State *L); /* physics_turning(), for lib/physics.lua: lua_physics.c */
 void physics_free(void);
+void clip_register(lua_State *L); /* video(): clips on a canvas, lua_clip.c */
+void clip_tick(void);             /* each tick: the clips playing move on */
+void clip_free_all(void);
