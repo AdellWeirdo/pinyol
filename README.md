@@ -35,9 +35,11 @@ ctest --test-dir build                       # validates every example and plays
 ### Without code: the editor
 
 `editor/` is a web page for making a game without programming: draw the pictures pixel by pixel (with frames for
-animation), paint the map with them and put the objects on it (a player who walks and jumps, enemies that patrol or
-chase, coins), make the sounds from recipes (coin, laser, explosion, jump...) and write the rules with blocks
-("when the hero touches a coin: remove the other, play coin, add 1 to points"). **Jugar** plays it right there;
+animation) or bring them in from image files (PNG with transparency, JPG, a row of frames; dropped or pasted), in
+any of the console's colours; paint the map with them and put the objects on it (a player who walks and jumps,
+enemies that patrol or chase, coins), with up to three pictures behind it that move slower than the camera; make
+the sounds from recipes (coin, laser, explosion, jump...) and write the rules with blocks ("when the hero touches a
+coin: remove the other, play coin, add 1 to points"). **Jugar** plays it right there;
 **Para la consola** gives the zip for the card. It starts with a small platformer to change. The interface is in
 Spanish. It needs the web player beside it (see [below](#share-a-game-play-it-in-the-browser) to build it):
 

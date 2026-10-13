@@ -27,6 +27,13 @@ function render() {
   g.imageSmoothingEnabled = false;
   g.fillStyle = p.background;
   g.fillRect(0, 0, c.width, c.height);
+  for (const d of p.drawings.filter(x => x.use === 'backdrop').slice(0, 3).reverse()) { // farthest first, as in the game
+    g.save();
+    g.scale(S, S);
+    g.fillStyle = g.createPattern(imageOf(d), 'repeat');
+    g.fillRect(0, 0, m.w * TILE, m.h * TILE);
+    g.restore();
+  }
   for (let y = 0; y < m.h; y++)
     for (let x = 0; x < m.w; x++) {
       const t = m.cells[y * m.w + x], d = t && byName(m.tiles[t - 1]);

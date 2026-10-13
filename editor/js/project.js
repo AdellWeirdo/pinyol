@@ -1,11 +1,14 @@
 // The project: everything a game made in the editor is, as plain data (saved in the browser, or as a .json file).
 // build.js turns it into a game folder np2d plays.
 
-export const FORMAT = 1;
+export const FORMAT = 2; // 2: pixels are the console's colours (RGB565); 1 had indices into PALETTE
 export const TILE = 16; // the map's grid, in the world's pixels
 export const MAP_MAX = 64; // tiles a side: the map is drawn once into a canvas of at most 1024 px
+export const MAX_SIDE = 512; // a drawing's width or height (a background two screens wide)
+export const MAX_PIXELS = 768 * 1024; // all drawings' frames together: 1.5 MB of the console's memory
+const SEE_THROUGH = 0xF81F; // a saved frame's see-through pixel; a real colour that is this one becomes 0xF81E
 
-// 16 of PICO-8's colours and 8 more: a palette every drawing shares, so a game's colours go together
+// 16 of PICO-8's colours and 8 more: colours at hand that go together (any other can be picked)
 export const PALETTE = [
   '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
   '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA',
@@ -22,7 +25,7 @@ export const BEHAVIOURS = {
   still: 'Quieto',
 };
 
-export const SIZES = [8, 16, 24, 32];
+export const SIZES = [8, 16, 24, 32, 48, 64];
 
 // a name a file and Lua can take: lowercase letters, digits, _ (accents dropped, spaces as _)
 export function safeName(s, fallback = 'cosa') {
@@ -39,17 +42,53 @@ export function uniqueName(name, taken) {
 
 export function blankFrame(w, h) { return new Array(w * h).fill(-1); }
 
-// a drawing from rows of characters: '.' see-through, else a key into `colours` (palette indices)
+// ------------------------------------------------------------------ colours as the console has them
+
+export function rgb565(r, g, b) {
+  const v = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+  return v === SEE_THROUGH ? v - 1 : v;
+}
+export function hex565(hex) { const v = parseInt(hex.slice(1), 16); return rgb565(v >> 16, (v >> 8) & 255, v & 255); }
+export function rgbOf(v) { // back to 8 bits a channel, as the screen shows it
+  const r = v >> 11, g = (v >> 5) & 63, b = v & 31;
+  return [(r << 3) | (r >> 2), (g << 2) | (g >> 4), (b << 3) | (b >> 2)];
+}
+export function hexOf(v) { return '#' + rgbOf(v).map(c => c.toString(16).padStart(2, '0')).join(''); }
+
+export function pixelsOf(drawings) { return drawings.reduce((n, d) => n + d.w * d.h * d.frames.length, 0); }
+
+// a frame saved as text: two bytes a pixel, little-endian, SEE_THROUGH for -1 (a quarter of a list of numbers)
+export function encodeFrame(f) {
+  const b = new Uint8Array(f.length * 2);
+  f.forEach((v, i) => { const u = v < 0 ? SEE_THROUGH : v; b[2 * i] = u & 255; b[2 * i + 1] = u >> 8; });
+  let s = '';
+  for (let i = 0; i < b.length; i += 8192) s += String.fromCharCode.apply(null, b.subarray(i, i + 8192));
+  return btoa(s);
+}
+function decodeFrame(text, n) {
+  let s;
+  try { s = atob(text); } catch { return null; }
+  if (s.length !== n * 2) return null;
+  const f = new Array(n);
+  for (let i = 0; i < n; i++) { const u = s.charCodeAt(2 * i) | (s.charCodeAt(2 * i + 1) << 8); f[i] = u === SEE_THROUGH ? -1 : u; }
+  return f;
+}
+
+// what is saved (in the browser or a file): the project with its frames as text
+export function pack(p) { return { ...p, drawings: p.drawings.map(d => ({ ...d, frames: d.frames.map(encodeFrame) })) }; }
+
+// a drawing from rows of characters: '.' see-through, else a key into `colours` (indices into PALETTE)
 function art(rows, colours) {
   const h = rows.length, w = rows[0].length, f = [];
-  for (const r of rows) for (const c of r) f.push(c === '.' ? -1 : colours[c]);
+  for (const r of rows) for (const c of r) f.push(c === '.' ? -1 : hex565(PALETTE[colours[c]]));
   return { w, h, frame: f };
 }
 
 function drawing(name, rows, colours, extra = {}) {
   const frames = Array.isArray(rows[0]) ? rows : [rows];
   const parts = frames.map(r => art(r, colours));
-  return { name, w: parts[0].w, h: parts[0].h, frames: parts.map(p => p.frame), use: 'tile', solid: false, ...extra };
+  return { name, w: parts[0].w, h: parts[0].h, frames: parts.map(p => p.frame), use: 'tile', solid: false,
+           behaviour: 'still', speed: 1, jump: 4.5, animate: 8, parallax: 0.5, ...extra };
 }
 
 // an explorer of our own: a blue woolly hat, an amber coat, boots; two frames of walking
@@ -93,6 +132,18 @@ const FLAG = ['..w.............', '..wRRRRR........', '..wRRRRRRR......', '..wRR
   '..wRRRRR........', '..w.............', '..w.............', '..w.............', '..w.............', '..w.............',
   '..w.............', '..w.............', '..w.............', '.www............', 'wwwww...........'];
 
+// hills behind the map, drawn by code: two rows of them, the far one paler; as wide as they repeat
+function hills() {
+  const w = 128, h = 160, f = blankFrame(w, h), far = rgb565(150, 196, 170), near = rgb565(104, 160, 120);
+  for (let x = 0; x < w; x++) {
+    const a = x / w * 2 * Math.PI;
+    const top = Math.round(92 + 10 * Math.sin(a) + 5 * Math.sin(3 * a + 1)), front = Math.round(116 + 8 * Math.sin(2 * a + 2) + 4 * Math.sin(5 * a));
+    for (let y = top; y < h; y++) f[y * w + x] = y >= front ? near : far;
+  }
+  return { name: 'montes', w, h, frames: [f], use: 'backdrop', solid: false, behaviour: 'still', speed: 1, jump: 4.5,
+           animate: 8, parallax: 0.4 };
+}
+
 // A game to start from: a little platformer, every part of the editor used once
 export function templatePlatformer() {
   const P = { r: 19, b: 4, s: 15, d: 22, y: 10, g: 21, G: 11, l: 20, L: 4, o: 20, O: 4, Y: 9, p: 23, P: 14, W: 7, k: 0,
@@ -105,6 +156,7 @@ export function templatePlatformer() {
     drawing('babosa', SLIME, P, { use: 'object', behaviour: 'patrol', speed: 0.5, animate: 14 }),
     drawing('pinchos', SPIKES, P),
     drawing('meta', FLAG, P, { use: 'object', behaviour: 'still', speed: 0 }),
+    hills(),
   ];
   const W = 40, H = 10, cells = new Array(W * H).fill(0);
   const tiles = ['suelo', 'ladrillo', 'pinchos'];
@@ -132,7 +184,7 @@ export function templateEmpty() {
   return {
     format: FORMAT, id: 'juego', title: 'Juego nuevo', background: '#1D2B53', camera: '',
     drawings: [{ name: 'jugador', w: 16, h: 16, frames: [blankFrame(16, 16)], use: 'object', behaviour: 'topdown',
-                 speed: 1.5, jump: 4.5, animate: 8, solid: false }],
+                 speed: 1.5, jump: 4.5, animate: 8, solid: false, parallax: 0.5 }],
     map: { w: 15, h: 10, tiles: [], cells: new Array(150).fill(0) }, objects: [{ kind: 'jugador', x: 112, y: 72 }],
     sounds: [], blocks: null,
   };
@@ -146,17 +198,20 @@ export function check(p) {
                 camera: typeof p.camera === 'string' ? safeName(p.camera, '') : '', drawings: [], objects: [], sounds: [],
                 blocks: p.blocks && typeof p.blocks === 'object' ? p.blocks : null };
   const names = new Set();
+  const old = !(p.format >= 2), palette = PALETTE.map(hex565); // format 1: indices into the palette
+  const pixel = v => (!Number.isInteger(v) || v < 0 ? -1 : old ? (v < palette.length ? palette[v] : -1) : v <= 0xFFFF ? v : -1);
   for (const d of Array.isArray(p.drawings) ? p.drawings.slice(0, 64) : []) {
-    const w = SIZES.includes(d.w) ? d.w : 16, h = SIZES.includes(d.h) ? d.h : 16;
+    const w = clampInt(d.w, 1, MAX_SIDE, 16), h = clampInt(d.h, 1, MAX_SIDE, 16);
     const frames = (Array.isArray(d.frames) ? d.frames.slice(0, 8) : []).map(f =>
-      Array.from({ length: w * h }, (_, i) => (Number.isInteger(f[i]) && f[i] >= 0 && f[i] < PALETTE.length ? f[i] : -1)));
+      (typeof f === 'string' ? decodeFrame(f, w * h) : null) ||
+      Array.from({ length: w * h }, (_, i) => (Array.isArray(f) ? pixel(f[i]) : -1)));
     const name = uniqueName(safeName(d.name), names);
     names.add(name);
     out.drawings.push({ name, w, h, frames: frames.length ? frames : [blankFrame(w, h)],
-                        use: d.use === 'object' ? 'object' : 'tile', solid: !!d.solid,
+                        use: ['object', 'backdrop'].includes(d.use) ? d.use : 'tile', solid: !!d.solid,
                         behaviour: BEHAVIOURS[d.behaviour] ? d.behaviour : 'still',
                         speed: clampNum(d.speed, 0, 6, 1.5), jump: clampNum(d.jump, 0, 10, 4.5),
-                        animate: clampNum(d.animate, 0, 60, 8) });
+                        animate: clampNum(d.animate, 0, 60, 8), parallax: clampNum(d.parallax, 0, 1, 0.5) });
   }
   const m = p.map || {};
   const mw = clampInt(m.w, 1, MAP_MAX, 15), mh = clampInt(m.h, 1, MAP_MAX, 10);
@@ -181,7 +236,7 @@ function clampNum(v, lo, hi, d) { v = Number(v); return Number.isFinite(v) ? Mat
 function clampInt(v, lo, hi, d) { return Math.round(clampNum(v, lo, hi, d)); }
 
 const KEY = 'np2d-editor-project';
-export function saveLocal(p) { try { localStorage.setItem(KEY, JSON.stringify(p)); return true; } catch { return false; } }
+export function saveLocal(p) { try { localStorage.setItem(KEY, JSON.stringify(pack(p))); return true; } catch { return false; } }
 export function loadLocal() {
   try { const s = localStorage.getItem(KEY); return s ? check(JSON.parse(s)) : null; } catch { return null; }
 }

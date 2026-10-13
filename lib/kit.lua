@@ -12,8 +12,10 @@
 -- `tile` pixels; tiles named in data.solid are walls and floors. Objects are of a kind (data.kinds) that says their
 -- picture and how they move: "platformer" (the player: arrows and A to jump), "topdown" (the player: four ways),
 -- "patrol" (walks and turns at walls and edges), "chase" (goes after the player), "shot" (flies straight, gone at a
--- wall), "still". Events: "start", "tick", "press" and "hold" (a button), "touch" (two kinds meet), "tile" (a kind
--- on a tile), "every" (seconds), "tap" (a finger, where in the world).
+-- wall), "still". Up to three pictures go behind the map (data.backdrops = {{sprite = "montes", parallax = 0.3}}),
+-- repeated, moving with the camera by their parallax (0 still, 1 with the map). Events: "start", "tick", "press"
+-- and "hold" (a button), "touch" (two kinds meet), "tile" (a kind on a tile), "every" (seconds), "tap" (a finger,
+-- where in the world).
 local juice = require("juice")
 local particles = require("particles")
 
@@ -279,7 +281,14 @@ end
 
 function M.init()
   backdrop(D.background or 0x6CB4E0)
-  show(D.map and BG0 or 0)
+  local layers = D.map and BG0 or 0
+  for i, b in ipairs(D.backdrops or {}) do -- pictures behind the map, repeated, moving slower than it
+    if i <= 3 and D.sprites[b.sprite] then
+      bg(i, {image = "SPR_" .. b.sprite})
+      layers = layers | ({BG1, BG2, BG3})[i]
+    end
+  end
+  show(layers)
   for name, p in pairs(D.sounds) do -- {recipe = "coin", seed = 3} or the numbers themselves
     if p.recipe then sound("SND_" .. name, p.recipe, p.seed or 1) else sound("SND_" .. name, p) end
   end
@@ -356,6 +365,9 @@ local PLACES = {top_left = {12, 8, "left"}, top = {240, 8, "center"}, top_right 
 function M.draw()
   local sx, sy = juice.offset()
   if D.map then scroll(0, cam.x - sx // 2, cam.y - sy // 2) end
+  for i, b in ipairs(D.backdrops or {}) do -- parallax 0: still; 1: with the map
+    if i <= 3 then scroll(i, math.floor(cam.x * (b.parallax or 0.5)) - sx // 2, math.floor(cam.y * (b.parallax or 0.5)) - sy // 2) end
+  end
   for _, o in ipairs(objs) do
     if o.alive then
       local x, y = (o.x - cam.x) * 2 + sx, (o.y - cam.y) * 2 + sy

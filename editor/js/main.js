@@ -1,7 +1,7 @@
 // The editor: the project kept in the browser as it changes, the tabs, and the game built from it for the player
 // (Play) or the console's card (a .zip).
 /* global Blockly */
-import { check, templatePlatformer, templateEmpty, saveLocal, loadLocal } from './project.js';
+import { check, pack, templatePlatformer, templateEmpty, saveLocal, loadLocal } from './project.js';
 import { buildFiles } from './build.js';
 import { zip } from './zip.js';
 import { defineBlocks, setProject, workspaceLua, TOOLBOX, templateBlocks } from './blocks.js';
@@ -41,6 +41,7 @@ function eachField(test, set) { // the blocks' fields that name a drawing or a s
 const app = {
   get project() { return project; },
   changed,
+  toast,
   rename(old, name) { // a drawing's new name, everywhere it is used
     const d = project.drawings.find(x => x.name === old);
     if (!d) return;
@@ -60,10 +61,10 @@ const app = {
     tabs.map.render();
     changed();
   },
-  uses() { // a drawing became a tile or an object: it leaves the other role's places
+  uses() { // a drawing became a tile, an object or a backdrop: it leaves the other roles' places
     for (const d of project.drawings) {
-      if (d.use === 'object') dropTile(d.name);
-      else project.objects = project.objects.filter(o => o.kind !== d.name);
+      if (d.use !== 'tile') dropTile(d.name);
+      if (d.use !== 'object') project.objects = project.objects.filter(o => o.kind !== d.name);
     }
     tabs.map.render();
   },
@@ -210,7 +211,7 @@ function init() {
   });
   $('save').addEventListener('click', () => {
     project.blocks = Blockly.serialization.workspaces.save(ws);
-    download(new TextEncoder().encode(JSON.stringify(project)), project.id + '.np2d.json', 'application/json');
+    download(new TextEncoder().encode(JSON.stringify(pack(project))), project.id + '.np2d.json', 'application/json');
   });
   $('export').addEventListener('click', async () => {
     try {
