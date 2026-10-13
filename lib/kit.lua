@@ -11,9 +11,12 @@
 -- Coordinates are the world's pixels (240x160 on screen at a time, each shown 2x2). The map is a grid of tiles of
 -- `tile` pixels; tiles named in data.solid are walls and floors. Objects are of a kind (data.kinds) that says their
 -- picture and how they move: "platformer" (the player: arrows and A to jump), "topdown" (the player: four ways),
--- "patrol" (walks and turns at walls and edges), "chase" (goes after the player), "shot" (flies straight, gone at a
--- wall), "still". Up to three pictures go behind the map (backdrops = {{sprite = "montes", parallax = 0.3}}),
--- repeated, moving with the camera by their parallax (0 still, 1 with the map).
+-- "grid" (the player, a tile at a time: puzzles), "patrol" (walks and turns at walls and edges), "chase" (goes after
+-- the player), "shot" (flies straight, `dir` "up", "down", "left", "right" or "forward" where its maker faces; gone at
+-- a wall), "push" (a box the grid player pushes), "still". `gravity` true or false overrides the behaviour's own
+-- (platformers and patrols fall). Players stay inside the world; anything else that leaves it is gone ("out"). Up
+-- to three pictures go behind the map (backdrops = {{sprite = "montes", parallax = 0.3, vx = 0, vy = 0.5}}), repeated,
+-- moving with the camera by their parallax (0 still, 1 with the map) and on their own by vx, vy pixels a tick.
 --
 -- A game is levels (data.levels = {{id, name, map, objects, background, camera, backdrops}, ...}; or one map, its
 -- fields straight in data), played in order: kit.next_level() goes on, past the last one the game is won
@@ -21,8 +24,8 @@
 -- Losing tries the level again; winning goes back to the cover.
 --
 -- Events: "start" (a game begins), "level" (a level begins: any, or the one named), "tick", "press" and "hold" (a
--- button), "touch" (two kinds meet), "tile" (a kind on a tile), "every" (seconds), "tap" (a finger, where in the
--- world).
+-- button), "touch" (two kinds meet), "tile" (a kind on a tile, or against a solid one), "out" (a kind leaves the
+-- world), "every" (seconds), "tap" (a finger, where in the world).
 local juice = require("juice")
 local particles = require("particles")
 
@@ -49,7 +52,8 @@ local clock = 0
 local BUTTONS = {a = true, b = true, c = true, up = true, down = true, left = true, right = true, start = true}
 
 local function reset_handlers()
-  handlers = {start = {}, level = {}, tick = {}, press = {}, hold = {}, touch = {}, tile = {}, every = {}, tap = {}}
+  handlers = {start = {}, level = {}, tick = {}, press = {}, hold = {}, touch = {}, tile = {}, out = {}, every = {},
+              tap = {}}
 end
 reset_handlers()
 
@@ -67,7 +71,8 @@ end
 -- ------------------------------------------------------------------ events
 
 -- on("start" | "tick", fn); on("level", [id,] fn); on("press" | "hold", button, fn); on("touch", kind, kind,
--- fn(this, other)); on("tile", kind, tile, fn(this, tx, ty)); on("every", seconds, fn); on("tap", fn(x, y))
+-- fn(this, other)); on("tile", kind, tile, fn(this, tx, ty)); on("out", kind, fn(this)); on("every", seconds, fn);
+-- on("tap", fn(x, y))
 function M.on(what, a, b, c)
   local list = handlers[what]
   assert(list, "kit.on: no event called " .. tostring(what))
@@ -77,6 +82,7 @@ function M.on(what, a, b, c)
     assert(BUTTONS[a], "kit.on: no button called " .. tostring(a))
     list[#list + 1] = {button = a, fn = b}
   elseif what == "touch" or what == "tile" then list[#list + 1] = {a = a, b = b, fn = c}
+  elseif what == "out" then list[#list + 1] = {a = a, fn = b}
   elseif what == "every" then list[#list + 1] = {ticks = math.max(1, math.floor((tonumber(a) or 1) * 60 + 0.5)), fn = b}
   elseif what == "tap" then list[#list + 1] = a end
 end
@@ -101,6 +107,14 @@ local function solid_at(tx, ty)
   return name ~= nil and D.solid[name] == true
 end
 
+local function world() -- its size in pixels: the map's, or one screen
+  return LV.map and LV.map.w * T or 240, LV.map and LV.map.h * T or 160
+end
+
+local function free_cell(tx, ty) -- inside the map and not solid: where a grid player or a box can go
+  return not LV.map or (tx >= 0 and ty >= 0 and tx < LV.map.w and ty < LV.map.h and not solid_at(tx, ty))
+end
+
 local function paint_tile(tx, ty)
   local name = cells[tile_index(tx, ty)]
   target("KIT_MAP")
@@ -119,14 +133,28 @@ end
 
 -- ------------------------------------------------------------------ objects
 
-function M.spawn(kind, x, y)
+local DIRS = {up = {0, -1}, down = {0, 1}, left = {-1, 0}, right = {1, 0}}
+
+local function cell_of(o) return math.floor((o.x + o.w / 2) / T), math.floor((o.y + o.h / 2) / T) end
+local function centre_in(o, cx, cy) return cx * T + (T - o.w) / 2, cy * T + (T - o.h) / 2 end
+
+function M.spawn(kind, x, y, from) -- from: whom it comes from (a shot "forward" flies where that one faces)
   local k = D.kinds[kind]
   if not k then return nil end
   local s = D.sprites[k.sprite or kind] or {w = T, h = T, frames = 1}
   local o = {id = nextid, kind = kind, sprite = k.sprite or kind, x = x or 0, y = y or 0, w = s.w, h = s.h, vx = 0,
-             vy = 0, flip = false, frame = 0, anim = 0, ground = false, alive = true, dir = 1}
+             vy = 0, flip = false, frame = 0, anim = 0, ground = false, alive = true, dir = 1, fx = 1, fy = 0}
   nextid = nextid + 1
-  if k.behaviour == "patrol" then o.vx = k.speed or 1 end
+  local b = k.behaviour
+  if b == "patrol" then o.vx = k.speed or 1 end
+  if b == "shot" then
+    local d = DIRS[k.dir or "forward"]
+    local fx, fy = 1, 0
+    if d then fx, fy = d[1], d[2] elseif from then fx, fy = from.fx, from.fy end
+    local n = math.sqrt(fx * fx + fy * fy)
+    o.vx, o.vy, o.flip = fx / n * (k.speed or 3), fy / n * (k.speed or 3), fx < 0
+  end
+  if b == "grid" or b == "push" then o.x, o.y = centre_in(o, cell_of(o)) end
   objs[#objs + 1] = o
   return o
 end
@@ -165,9 +193,8 @@ function M.set(o, prop, v) if o and o.alive and PROPS[prop] then o[prop] = tonum
 function M.change(o, prop, dv) if o and o.alive and PROPS[prop] then o[prop] = o[prop] + (tonumber(dv) or 0) end end
 function M.spawn_at(kind, o) -- a new one where another is (a shot from the player, a coin where an enemy was)
   if not o then return nil end
-  local n = M.spawn(kind, o.x, o.y)
-  if n then n.x, n.y = o.x + (o.w - n.w) / 2, o.y + (o.h - n.h) / 2 end
-  if n and o.flip then n.flip = true end
+  local n = M.spawn(kind, o.x + (o.w - (D.sprites[kind] or o).w) / 2, o.y + (o.h - (D.sprites[kind] or o).h) / 2, o)
+  if n and o.flip and (D.kinds[kind] or {}).behaviour ~= "shot" then n.flip = true end
   return n
 end
 
@@ -207,20 +234,68 @@ local function move(o, solid)
   return hit
 end
 
+local function box_at(cx, cy) -- a box ("push") in that cell, or on its way to it
+  for _, p in ipairs(objs) do
+    if p.alive and (D.kinds[p.kind] or {}).behaviour == "push" then
+      local px, py = cell_of(p)
+      if (p.tx or px) == cx and (p.ty or py) == cy then return p end
+    end
+  end
+end
+
+local function slide(o, cx, cy, step) o.tx, o.ty, o.step = cx, cy, step end -- there over the next ticks
+
+local function sliding(o) -- a step of a grid move; true while it lasts
+  if not o.tx then return false end
+  local gx, gy = centre_in(o, o.tx, o.ty)
+  local dx, dy, st = gx - o.x, gy - o.y, o.step or 2
+  if math.abs(dx) <= st and math.abs(dy) <= st then
+    o.x, o.y, o.tx, o.ty, o.vx, o.vy = gx, gy, nil, nil, 0, 0
+  else
+    o.vx, o.vy = dx > 0 and st or dx < 0 and -st or 0, dy > 0 and st or dy < 0 and -st or 0
+    o.x, o.y = o.x + o.vx, o.y + o.vy
+  end
+  return true
+end
+
+local SETTLE = 20 -- ticks a level starts with its players still: an arrow held from the last level moves nothing
+local function arrow(name) return timer >= SETTLE and btn(name) end
+
+local function grid_step(o, speed) -- an arrow held: a cell that way, pushing a box if there is room behind it
+  local dx = (arrow("right") and 1 or 0) - (arrow("left") and 1 or 0)
+  local dy = dx == 0 and ((arrow("down") and 1 or 0) - (arrow("up") and 1 or 0)) or 0
+  if dx == 0 and dy == 0 then return end
+  o.fx, o.fy = dx, dy
+  if dx ~= 0 then o.flip = dx < 0 end
+  local cx, cy = cell_of(o)
+  local nx, ny = cx + dx, cy + dy
+  if not free_cell(nx, ny) then return end
+  local box = box_at(nx, ny)
+  if box then
+    if not free_cell(nx + dx, ny + dy) or box_at(nx + dx, ny + dy) then return end
+    slide(box, nx + dx, ny + dy, speed)
+  end
+  slide(o, nx, ny, speed)
+end
+
 local function behave(o)
   local k = D.kinds[o.kind] or {}
   local b, speed = k.behaviour or "still", k.speed or 1.5
   local gravity = k.gravity
   if gravity == nil then gravity = b == "platformer" or b == "patrol" end
-  if b == "platformer" then
-    local dx = (btn("right") and 1 or 0) - (btn("left") and 1 or 0)
+  if b == "grid" or b == "push" then -- moves a cell at a time, by itself never
+    if not sliding(o) and b == "grid" then grid_step(o, math.max(0.5, speed)) sliding(o) end
+  elseif b == "platformer" then
+    local dx = (arrow("right") and 1 or 0) - (arrow("left") and 1 or 0)
     o.vx = dx * speed
-    if dx ~= 0 then o.flip = dx < 0 end
-    if btnp("a") and o.ground then o.vy = -(k.jump or 4.5) end
+    if dx ~= 0 then o.flip, o.fx, o.fy = dx < 0, dx, 0 end
+    if timer >= SETTLE and btnp("a") and o.ground then o.vy = -(k.jump or 4.5) end
   elseif b == "topdown" then
-    local dx = (btn("right") and 1 or 0) - (btn("left") and 1 or 0)
-    local dy = (btn("down") and 1 or 0) - (btn("up") and 1 or 0)
-    o.vx, o.vy = dx * speed, dy * speed
+    local dx = (arrow("right") and 1 or 0) - (arrow("left") and 1 or 0)
+    local dy = (arrow("down") and 1 or 0) - (arrow("up") and 1 or 0)
+    local n = (dx ~= 0 and dy ~= 0) and 0.7071 or 1 -- diagonals no faster
+    o.vx, o.vy = dx * speed * n, dy * speed * n
+    if dx ~= 0 or dy ~= 0 then o.fx, o.fy = dx, dy end
     if dx ~= 0 then o.flip = dx < 0 end
   elseif b == "patrol" then
     if o.vx == 0 then o.dir = -o.dir end
@@ -242,11 +317,16 @@ local function behave(o)
       end
     end
   end
-  if gravity then o.vy = math.min(o.vy + (k.weight or 0.25), 6) end
-  local wall = move(o, k.solid ~= false and b ~= "shot")
-  if b == "shot" and (wall or (LV.map and hits_wall(o.x, o.y, o.w, o.h))) then o.alive = false end
+  if b ~= "grid" and b ~= "push" then
+    if gravity then o.vy = math.min(o.vy + (k.weight or 0.25), 6) end
+    local wall = move(o, k.solid ~= false and b ~= "shot")
+    if b == "shot" and (wall or (LV.map and hits_wall(o.x, o.y, o.w, o.h))) then o.alive = false end
+  end
+  local W, H = world() -- players stay inside the world (a platformer may still fall out of the bottom)
+  if b == "platformer" or b == "topdown" or b == "grid" then o.x = math.max(0, math.min(W - o.w, o.x)) end
+  if b == "topdown" or b == "grid" then o.y = math.max(0, math.min(H - o.h, o.y)) end
   if (k.animate or 0) > 0 then -- frames go round while it moves (or always, for things that are not players)
-    local moving = o.vx ~= 0 or o.vy ~= 0 or (b ~= "platformer" and b ~= "topdown")
+    local moving = o.vx ~= 0 or o.vy ~= 0 or (b ~= "platformer" and b ~= "topdown" and b ~= "grid" and b ~= "push")
     o.anim = moving and o.anim + 1 or 0
     local s = D.sprites[o.sprite]
     o.frame = s and s.frames > 1 and (o.anim // k.animate) % s.frames or 0
@@ -286,6 +366,18 @@ function M.next_level()
   if level_i < #D.levels then going = level_i + 1 else M.win(D.ending) end
 end
 function M.level() return LV.id end
+function M.retry() going = level_i end -- the level from its start
+
+function M.count_on(kind, tile) -- how many of a kind stand (not still moving) on a tile: boxes on their marks
+  local n = 0
+  for _, o in ipairs(objs) do
+    if o.alive and o.kind == kind and not o.tx then
+      local i = tile_index(cell_of(o))
+      if i and cells[i] == tile then n = n + 1 end
+    end
+  end
+  return n
+end
 function M.state() -- "cover", "play", "won" or "lost"
   return on_cover and "cover" or ended and (ended.won and "won" or "lost") or "play"
 end
@@ -387,7 +479,17 @@ function M.update()
   for _, h in ipairs(handlers.hold) do if btn(h.button) then h.fn() end end
   local tx, ty, _, tapped = touch()
   if tapped then for _, f in ipairs(handlers.tap) do f(tx + cam.x, ty + cam.y) end end
+  local player = M.player()
   for _, o in ipairs(objs) do if o.alive then behave(o) end end
+  local W, H = world()
+  for _, o in ipairs(objs) do -- whatever leaves the world is gone; the player falling out loses, unless told otherwise
+    if o.alive and (o.x + o.w < -32 or o.x > W + 32 or o.y + o.h < -32 or o.y > H + 32) then
+      o.alive = false
+      local told = false
+      for _, h in ipairs(handlers.out) do if h.a == o.kind then h.fn(o) told = true end end
+      if o == player and not told and not ended then M.lose("¡Te has caído!") end
+    end
+  end
   local now = {}
   for _, h in ipairs(handlers.touch) do -- each pair once, when it starts touching
     for _, a in ipairs(objs) do
@@ -404,11 +506,12 @@ function M.update()
   end
   contacts = now
   local tiles_now = {}
-  for _, h in ipairs(handlers.tile) do
+  for _, h in ipairs(handlers.tile) do -- on a tile, or against a solid one (a wall, a door, the floor underfoot)
+    local reach = D.solid[h.b] and 1 or 0
     for _, o in ipairs(objs) do
       if o.alive and o.kind == h.a then
-        for cy = math.floor(o.y / T), math.floor((o.y + o.h - 0.001) / T) do
-          for cx = math.floor(o.x / T), math.floor((o.x + o.w - 0.001) / T) do
+        for cy = math.floor((o.y - reach) / T), math.floor((o.y + o.h + reach - 0.001) / T) do
+          for cx = math.floor((o.x - reach) / T), math.floor((o.x + o.w + reach - 0.001) / T) do
             local i = tile_index(cx, cy)
             if i and cells[i] == h.b then
               local k = o.id * 100000 + i
@@ -441,7 +544,10 @@ local PLACES = {top_left = {12, 8, "left"}, top = {240, 8, "center"}, top_right 
 local function draw_cover()
   local c = D.cover
   local s = not c.tiled and c.picture and D.sprites[c.picture]
-  if s then -- as big as fits, in whole steps
+  if s and s.h <= 50 then -- a character: in the band between the title and the line under it, up to 6 times
+    local k = math.max(1, math.min(6, 100 // s.h, SCREEN_W // s.w))
+    img("SPR_" .. c.picture, (SCREEN_W - s.w * k) // 2, 128 + (100 - s.h * k) // 2, {frame = 0, scale = k})
+  elseif s then -- a picture: as big as fits, in whole steps, the title over it
     local k = math.max(1, math.min(SCREEN_W // s.w, SCREEN_H // s.h))
     img("SPR_" .. c.picture, (SCREEN_W - s.w * k) // 2, (SCREEN_H - s.h * k) // 2, {frame = 0, scale = k})
   end
@@ -458,7 +564,10 @@ function M.draw()
   local sx, sy = juice.offset()
   if LV.map then scroll(0, cam.x - sx // 2, cam.y - sy // 2) end
   for i, b in ipairs(LV.backdrops or {}) do -- parallax 0: still; 1: with the map
-    if i <= 3 then scroll(i, math.floor(cam.x * (b.parallax or 0.5)) - sx // 2, math.floor(cam.y * (b.parallax or 0.5)) - sy // 2) end
+    if i <= 3 then
+      local p = b.parallax or 0.5
+      scroll(i, math.floor(cam.x * p - clock * (b.vx or 0)) - sx // 2, math.floor(cam.y * p - clock * (b.vy or 0)) - sy // 2)
+    end
   end
   for _, o in ipairs(objs) do
     if o.alive then

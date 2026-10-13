@@ -1,0 +1,85 @@
+# the editor's puzzle template: a robot that moves a cell at a time, boxes it pushes onto their marks
+tick 30
+press A
+tick 25
+lua r = kit.first("robot") rx = r.x
+expect_lua kit.level() == "nivel1" and kit.count("caja") == 1 and kit.count_on("caja", "diana") == 0
+# a step, then B: the puzzle from its start
+press RIGHT
+tick 9
+expect_lua r.x == rx + 16
+press B
+tick 3
+expect_lua kit.first("robot").x == rx
+# three pushes: the box on its mark, the next puzzle (the arrow still held when it starts moves nothing)
+press B
+tick 25
+hold RIGHT 40
+tick 25
+expect_lua kit.level() == "nivel2" and kit.count("caja") == 2
+# the second, solved move by move
+press UP
+tick 9
+press UP
+tick 9
+press LEFT
+tick 9
+press LEFT
+tick 9
+press DOWN
+tick 9
+press DOWN
+tick 9
+press RIGHT
+tick 9
+press DOWN
+tick 9
+press LEFT
+tick 9
+press UP
+tick 9
+press LEFT
+tick 9
+press DOWN
+tick 9
+expect_lua kit.count_on("caja", "diana") == 1
+press UP
+tick 9
+press UP
+tick 9
+press UP
+tick 9
+press RIGHT
+tick 9
+press RIGHT
+tick 9
+press RIGHT
+tick 9
+press RIGHT
+tick 9
+press RIGHT
+tick 9
+press DOWN
+tick 9
+press DOWN
+tick 9
+press LEFT
+tick 9
+press DOWN
+tick 9
+press RIGHT
+tick 9
+press UP
+tick 9
+press RIGHT
+tick 9
+press DOWN
+tick 9
+tick 3
+expect_lua kit.level() == "nivel3" and kit.count("caja") == 3
+shot puzzle3
+# a box against a wall does not move
+lua kit.next_level()
+tick 2
+expect_lua kit.state() == "won"
+expect_ok

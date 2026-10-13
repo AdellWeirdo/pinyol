@@ -22,7 +22,8 @@ const COLOURS = [['amarillas', '0xFFE070'], ['blancas', '0xFFFFFF'], ['rojas', '
   ['azules', '0x50A0FF'], ['moradas', '0xC070FF']];
 
 const EVENT = 40, OBJECT = 200, ACTION = 290, INPUT = 160;
-export const EVENTS = new Set(['kit_start', 'kit_level', 'kit_tick', 'kit_press', 'kit_hold', 'kit_touch', 'kit_tile', 'kit_every', 'kit_tap']);
+export const EVENTS = new Set(['kit_start', 'kit_level', 'kit_tick', 'kit_press', 'kit_hold', 'kit_touch', 'kit_tile', 'kit_out',
+  'kit_every', 'kit_tap']);
 
 // define(type, colour, parts, kind): parts are text and fields/inputs in order; kind: 'event', 'statement', a value type
 function define(type, colour, parts, kind, tooltip) {
@@ -61,7 +62,10 @@ export function defineBlocks() {
   define('kit_hold', EVENT, ['mientras se pulsa', { dropdown: BUTTONS, name: 'BUTTON' }], 'event');
   define('kit_touch', EVENT, ['cuando', { dropdown: kinds, name: 'A' }, 'toca', { dropdown: kinds, name: 'B' }], 'event',
          'Dentro, «este» es el primero y «el otro» el segundo');
-  define('kit_tile', EVENT, ['cuando', { dropdown: kinds, name: 'A' }, 'pisa', { dropdown: tiles, name: 'TILE' }], 'event');
+  define('kit_tile', EVENT, ['cuando', { dropdown: kinds, name: 'A' }, 'pisa', { dropdown: tiles, name: 'TILE' }], 'event',
+         'También al chocar con una baldosa sólida (una pared, una puerta). Dentro: «x de la baldosa», «y de la baldosa»');
+  define('kit_out', EVENT, ['cuando', { dropdown: kinds, name: 'A' }, 'sale del mapa'], 'event',
+         'Lo que sale del mundo desaparece; si es el jugador y no hay este bloque, se pierde');
   define('kit_every', EVENT, ['cada', { number: 1, min: 0.1, max: 600, step: 0.1, name: 'SECONDS' }, 'segundos'], 'event');
   define('kit_tap', EVENT, ['al tocar la pantalla'], 'event', 'Dónde: «x tocada», «y tocada»');
   // objects
@@ -78,6 +82,8 @@ export function defineBlocks() {
     { value: true, name: 'OBJ', check: 'Obj', label: 'de' }], 'statement');
   define('kit_get', OBJECT, [{ dropdown: PROPS, name: 'PROP' }, { value: true, name: 'OBJ', check: 'Obj', label: 'de' }], 'Number');
   define('kit_count', OBJECT, ['cuántos', { dropdown: kinds, name: 'KIND' }, 'hay'], 'Number');
+  define('kit_count_on', OBJECT, ['cuántos', { dropdown: kinds, name: 'KIND' }, 'hay sobre', { dropdown: tiles, name: 'TILE' }],
+         'Number', 'Los que están quietos encima de esa baldosa: cajas en sus marcas');
   define('kit_sprite', OBJECT, [{ value: true, name: 'OBJ', check: 'Obj', label: 'cambiar el dibujo de' }, 'a',
     { dropdown: kinds, name: 'KIND' }], 'statement');
   // actions
@@ -92,6 +98,7 @@ export function defineBlocks() {
   define('kit_burst', ACTION, ['chispas', { dropdown: COLOURS, name: 'COLOUR' }, { value: true, name: 'OBJ', check: 'Obj', label: 'en' }], 'statement');
   define('kit_restart', ACTION, ['volver a empezar'], 'statement', 'La partida, desde el primer nivel');
   define('kit_next_level', ACTION, ['pasar al siguiente nivel'], 'statement', 'Después del último, se gana');
+  define('kit_retry', ACTION, ['repetir el nivel'], 'statement', 'Este nivel desde su principio');
   define('kit_goto_level', ACTION, ['ir al nivel', { dropdown: someLevel, name: 'LEVEL' }], 'statement');
   define('kit_set_tile', ACTION, ['poner', { dropdown: () => [['nada', '_'], ...tiles().filter(t => t[1] !== '_')], name: 'TILE' },
     { value: true, name: 'X', check: 'Number', label: 'en x' }, { value: true, name: 'Y', check: 'Number', label: 'y' }], 'statement');
@@ -99,6 +106,8 @@ export function defineBlocks() {
   define('kit_button', INPUT, [{ dropdown: BUTTONS, name: 'BUTTON' }, 'está pulsado'], 'Boolean');
   define('kit_tap_x', INPUT, ['x tocada'], 'Number');
   define('kit_tap_y', INPUT, ['y tocada'], 'Number');
+  define('kit_tile_x', INPUT, ['x de la baldosa'], 'Number', 'Dentro de «cuando … pisa …»');
+  define('kit_tile_y', INPUT, ['y de la baldosa'], 'Number', 'Dentro de «cuando … pisa …»');
   defineLua();
 }
 
@@ -120,7 +129,8 @@ function defineLua() {
   F.kit_press = b => on(`"press", ${q(b.getFieldValue('BUTTON'))}`, b);
   F.kit_hold = b => on(`"hold", ${q(b.getFieldValue('BUTTON'))}`, b);
   F.kit_touch = b => on(`"touch", ${q(b.getFieldValue('A'))}, ${q(b.getFieldValue('B'))}`, b, 'este, otro');
-  F.kit_tile = b => on(`"tile", ${q(b.getFieldValue('A'))}, ${q(b.getFieldValue('TILE'))}`, b, 'este');
+  F.kit_tile = b => on(`"tile", ${q(b.getFieldValue('A'))}, ${q(b.getFieldValue('TILE'))}`, b, 'este, tile_x, tile_y');
+  F.kit_out = b => on(`"out", ${q(b.getFieldValue('A'))}`, b, 'este');
   F.kit_every = b => on(`"every", ${Number(b.getFieldValue('SECONDS')) || 1}`, b);
   F.kit_tap = b => on('"tap"', b, 'tap_x, tap_y');
   F.kit_this = b => [b.getFieldValue('WHO'), O.ATOMIC];
@@ -133,6 +143,7 @@ function defineLua() {
   F.kit_change = b => `kit.change(${obj(b)}, ${q(b.getFieldValue('PROP'))}, ${val(b, 'V')})\n`;
   F.kit_get = b => [`kit.get(${obj(b)}, ${q(b.getFieldValue('PROP'))})`, O.HIGH];
   F.kit_count = b => [`kit.count(${q(b.getFieldValue('KIND'))})`, O.HIGH];
+  F.kit_count_on = b => [`kit.count_on(${q(b.getFieldValue('KIND'))}, ${q(b.getFieldValue('TILE'))})`, O.HIGH];
   F.kit_sprite = b => `kit.set_sprite(${obj(b)}, ${q(b.getFieldValue('KIND'))})\n`;
   F.kit_sound = b => `kit.sound(${q(b.getFieldValue('SOUND'))})\n`;
   F.kit_label = b => `kit.label(${q(b.getFieldValue('WHERE'))}, ${text(b)}, ${q(b.getFieldValue('WHERE'))})\n`;
@@ -143,11 +154,14 @@ function defineLua() {
   F.kit_burst = b => `kit.burst_at(${obj(b)}, ${b.getFieldValue('COLOUR')})\n`;
   F.kit_restart = () => 'kit.restart()\n';
   F.kit_next_level = () => 'kit.next_level()\n';
+  F.kit_retry = () => 'kit.retry()\n';
   F.kit_goto_level = b => `kit.goto_level(${q(b.getFieldValue('LEVEL'))})\n`;
   F.kit_set_tile = b => `kit.set_tile(${val(b, 'X')}, ${val(b, 'Y')}, ${q(b.getFieldValue('TILE') === '_' ? '' : b.getFieldValue('TILE'))})\n`;
   F.kit_button = b => [`btn(${q(b.getFieldValue('BUTTON'))})`, O.HIGH];
   F.kit_tap_x = () => ['(tap_x or 0)', O.ATOMIC];
   F.kit_tap_y = () => ['(tap_y or 0)', O.ATOMIC];
+  F.kit_tile_x = () => ['(tile_x or 0)', O.ATOMIC];
+  F.kit_tile_y = () => ['(tile_y or 0)', O.ATOMIC];
 }
 
 // The Lua of the events on the workspace; blocks left loose outside an event do nothing (and are not written).
@@ -163,7 +177,7 @@ export const TOOLBOX = {
   kind: 'categoryToolbox',
   contents: [
     { kind: 'category', name: 'Eventos', colour: EVENT, contents: ['kit_start', 'kit_level', 'kit_tick', 'kit_press', 'kit_hold', 'kit_touch',
-      'kit_tile', 'kit_every', 'kit_tap'].map(type => ({ kind: 'block', type })) },
+      'kit_tile', 'kit_out', 'kit_every', 'kit_tap'].map(type => ({ kind: 'block', type })) },
     { kind: 'category', name: 'Objetos', colour: OBJECT, contents: [
       { kind: 'block', type: 'kit_this' }, { kind: 'block', type: 'kit_player' }, { kind: 'block', type: 'kit_first' },
       { kind: 'block', type: 'kit_spawn', inputs: { X: num(100), Y: num(50) } },
@@ -172,6 +186,7 @@ export const TOOLBOX = {
       { kind: 'block', type: 'kit_set', inputs: { OBJ: thisBlock(), V: num(0) } },
       { kind: 'block', type: 'kit_change', inputs: { OBJ: thisBlock(), V: num(1) } },
       { kind: 'block', type: 'kit_get', inputs: { OBJ: thisBlock() } }, { kind: 'block', type: 'kit_count' },
+      { kind: 'block', type: 'kit_count_on' },
       { kind: 'block', type: 'kit_sprite', inputs: { OBJ: thisBlock() } }] },
     { kind: 'category', name: 'Acciones', colour: ACTION, contents: [
       { kind: 'block', type: 'kit_sound' }, { kind: 'block', type: 'kit_label', inputs: { TEXT: str('Puntos: 0') } },
@@ -179,9 +194,10 @@ export const TOOLBOX = {
       { kind: 'block', type: 'kit_win', inputs: { TEXT: str('¡Has ganado!') } },
       { kind: 'block', type: 'kit_lose', inputs: { TEXT: str('Has perdido') } }, { kind: 'block', type: 'kit_shake' },
       { kind: 'block', type: 'kit_burst', inputs: { OBJ: thisBlock() } }, { kind: 'block', type: 'kit_next_level' },
-      { kind: 'block', type: 'kit_goto_level' }, { kind: 'block', type: 'kit_restart' },
+      { kind: 'block', type: 'kit_goto_level' }, { kind: 'block', type: 'kit_retry' }, { kind: 'block', type: 'kit_restart' },
       { kind: 'block', type: 'kit_set_tile', inputs: { X: num(0), Y: num(0) } }] },
-    { kind: 'category', name: 'Mandos', colour: INPUT, contents: ['kit_button', 'kit_tap_x', 'kit_tap_y'].map(type => ({ kind: 'block', type })) },
+    { kind: 'category', name: 'Mandos', colour: INPUT, contents: ['kit_button', 'kit_tap_x', 'kit_tap_y', 'kit_tile_x', 'kit_tile_y']
+      .map(type => ({ kind: 'block', type })) },
     { kind: 'sep' },
     { kind: 'category', name: 'Lógica', categorystyle: 'logic_category', contents: ['controls_if', 'logic_compare', 'logic_operation',
       'logic_negate', 'logic_boolean'].map(type => ({ kind: 'block', type })) },
@@ -215,25 +231,86 @@ const join = (...parts) => ({ block: { type: 'text_join', extraState: { itemCoun
   inputs: Object.fromEntries(parts.map((p, i) => ['ADD' + i, p])) } });
 const THIS = who => ({ block: b('kit_this', { WHO: who }) });
 
-export function templateBlocks() {
-  const P = 'v_puntos';
-  const event = (x, y, type, fields, statements) => ({ ...b(type, fields, { DO: { block: chain(statements) } }), x, y });
-  return {
-    variables: [{ name: 'puntos', id: P }],
-    blocks: { languageVersion: 0, blocks: [
-      event(20, 20, 'kit_start', {}, [
-        b('variables_set', { VAR: { id: P } }, { VALUE: { block: b('math_number', { NUM: 0 }) } }),
-        b('kit_label', { WHERE: 'top_left' }, { TEXT: T('Monedas: 0') })]),
-      event(20, 170, 'kit_touch', { A: 'heroe', B: 'moneda' }, [
-        b('kit_destroy', {}, { OBJ: THIS('otro') }), b('kit_sound', { SOUND: 'moneda' }),
-        b('kit_burst', { COLOUR: '0xFFE070' }, { OBJ: THIS('otro') }),
-        b('math_change', { VAR: { id: P } }, { DELTA: { block: b('math_number', { NUM: 1 }) } }),
-        b('kit_label', { WHERE: 'top_left' }, { TEXT: join(T('Monedas: '), V(P)) })]),
-      event(480, 20, 'kit_touch', { A: 'heroe', B: 'babosa' }, [
-        b('kit_sound', { SOUND: 'golpe' }), b('kit_shake'), b('kit_lose', {}, { TEXT: T('¡Te ha pillado la babosa!') })]),
-      event(480, 190, 'kit_tile', { A: 'heroe', TILE: 'pinchos' }, [b('kit_lose', {}, { TEXT: T('¡Pinchos!') })]),
-      event(480, 300, 'kit_touch', { A: 'heroe', B: 'meta' }, [b('kit_sound', { SOUND: 'moneda' }), b('kit_next_level')]),
-      event(20, 420, 'kit_press', { BUTTON: 'a' }, [b('kit_sound', { SOUND: 'salto' })]),
-    ] },
-  };
+const N = n => ({ block: b('math_number', { NUM: n }) });
+const set = (id, value) => b('variables_set', { VAR: { id } }, { VALUE: value });
+const add = (id, n) => b('math_change', { VAR: { id } }, { DELTA: N(n) });
+const cmp = (op, a, c) => ({ block: { type: 'logic_compare', fields: { OP: op }, inputs: { A: a, B: c } } });
+const iff = (cond, then, otherwise) => ({ type: 'controls_if', ...(otherwise ? { extraState: { hasElse: true } } : {}),
+  inputs: { IF0: cond, DO0: { block: chain(then) }, ...(otherwise ? { ELSE: { block: chain(otherwise) } } : {}) } });
+const rnd = (lo, hi) => ({ block: { type: 'math_random_int', inputs: { FROM: N(lo), TO: N(hi) } } });
+const label = (where, text) => b('kit_label', { WHERE: where }, { TEXT: text });
+const say = (text, seconds = 1.5) => b('kit_message', { SECONDS: seconds }, { TEXT: T(text) });
+const sound = name => b('kit_sound', { SOUND: name });
+const lose = text => [sound('golpe'), b('kit_shake'), b('kit_lose', {}, { TEXT: T(text) })];
+
+// Each template's blocks, in a column (main.js arranges them): ev(type, fields, statements)
+const ev = (type, fields, statements) => ({ ...b(type, fields, { DO: { block: chain(statements) } }), x: 0, y: 0 });
+
+const TEMPLATE_BLOCKS = {
+  plataformas() {
+    const P = 'v_puntos';
+    return [[{ name: 'puntos', id: P }], [
+      ev('kit_start', {}, [set(P, N(0)), label('top_left', T('Monedas: 0'))]),
+      ev('kit_touch', { A: 'heroe', B: 'moneda' }, [
+        b('kit_destroy', {}, { OBJ: THIS('otro') }), sound('moneda'), b('kit_burst', { COLOUR: '0xFFE070' }, { OBJ: THIS('otro') }),
+        add(P, 1), label('top_left', join(T('Monedas: '), V(P)))]),
+      ev('kit_touch', { A: 'heroe', B: 'babosa' }, lose('¡Te ha pillado la babosa!')),
+      ev('kit_tile', { A: 'heroe', TILE: 'pinchos' }, [b('kit_lose', {}, { TEXT: T('¡Pinchos!') })]),
+      ev('kit_out', { A: 'heroe' }, [sound('golpe'), b('kit_lose', {}, { TEXT: T('¡Te has caído!') })]),
+      ev('kit_touch', { A: 'heroe', B: 'meta' }, [sound('moneda'), b('kit_next_level')]),
+      ev('kit_press', { BUTTON: 'a' }, [sound('salto')]),
+    ]];
+  },
+  aventura() {
+    const G = 'v_gemas', K = 'v_llaves';
+    return [[{ name: 'gemas', id: G }, { name: 'llaves', id: K }], [
+      ev('kit_start', {}, [set(G, N(0)), set(K, N(0)), label('top_left', T('Gemas: 0')), label('top_right', T('Llaves: 0'))]),
+      ev('kit_touch', { A: 'exploradora', B: 'gema' }, [
+        b('kit_destroy', {}, { OBJ: THIS('otro') }), sound('gema'), b('kit_burst', { COLOUR: '0xC070FF' }, { OBJ: THIS('otro') }),
+        add(G, 1), label('top_left', join(T('Gemas: '), V(G)))]),
+      ev('kit_touch', { A: 'exploradora', B: 'llave' }, [
+        b('kit_destroy', {}, { OBJ: THIS('otro') }), sound('llave'), add(K, 1), label('top_right', join(T('Llaves: '), V(K))),
+        say('¡Una llave!')]),
+      ev('kit_tile', { A: 'exploradora', TILE: 'puerta' }, [iff(cmp('GT', V(K), N(0)), [
+        b('kit_set_tile', { TILE: '_' }, { X: { block: b('kit_tile_x') }, Y: { block: b('kit_tile_y') } }), add(K, -1),
+        label('top_right', join(T('Llaves: '), V(K))), sound('puerta'), say('¡Abierta!', 1)], [say('Hace falta una llave')])]),
+      ev('kit_touch', { A: 'exploradora', B: 'cangrejo' }, lose('¡Un cangrejo!')),
+      ev('kit_touch', { A: 'exploradora', B: 'fantasma' }, lose('¡Un fantasma!')),
+      ev('kit_touch', { A: 'exploradora', B: 'escalera' }, [sound('llave'), b('kit_next_level')]),
+    ]];
+  },
+  naves() {
+    const P = 'v_puntos', D = 'v_derribados', W = 'v_oleada';
+    const hit = (enemy, points) => ev('kit_touch', { A: 'laser', B: enemy }, [
+      b('kit_destroy', {}, { OBJ: THIS('este') }), b('kit_destroy', {}, { OBJ: THIS('otro') }),
+      b('kit_burst', { COLOUR: '0xFFE070' }, { OBJ: THIS('otro') }), sound('explosion'), add(P, points), add(D, 1),
+      label('top_left', join(T('Puntos: '), V(P)))]);
+    const fall = (kind, seconds, only) => ev('kit_every', { SECONDS: seconds }, [
+      ...(only ? [iff(cmp('EQ', V(W), N(only)), [b('kit_spawn', { KIND: kind }, { X: rnd(8, 216), Y: N(-16) })])]
+        : [b('kit_spawn', { KIND: kind }, { X: rnd(8, 216), Y: N(-16) })])]);
+    return [[{ name: 'puntos', id: P }, { name: 'derribados', id: D }, { name: 'oleada', id: W }], [
+      ev('kit_start', {}, [set(P, N(0)), set(W, N(1)), label('top_left', T('Puntos: 0'))]),
+      ev('kit_level', { LEVEL: '_' }, [set(D, N(0))]),
+      ev('kit_level', { LEVEL: 'nivel2' }, [set(W, N(2))]),
+      ev('kit_press', { BUTTON: 'a' }, [b('kit_spawn_at', { KIND: 'laser' }, { OBJ: { block: b('kit_player') } }), sound('laser')]),
+      fall('ovni', 1.2), fall('cometa', 0.9, 2),
+      hit('ovni', 1), hit('cometa', 2),
+      ev('kit_touch', { A: 'nave', B: 'ovni' }, lose('¡Te han dado!')),
+      ev('kit_touch', { A: 'nave', B: 'cometa' }, lose('¡Un cometa!')),
+      ev('kit_tick', {}, [iff(cmp('GTE', V(D), N(12)), [b('kit_next_level')])]),
+    ]];
+  },
+  puzle() {
+    return [[], [
+      ev('kit_start', {}, [label('bottom', T('B: empezar el puzle otra vez'))]),
+      ev('kit_press', { BUTTON: 'b' }, [sound('otra'), b('kit_retry')]),
+      ev('kit_tick', {}, [iff(cmp('EQ', { block: b('kit_count_on', { KIND: 'caja', TILE: 'diana' }) },
+        { block: b('kit_count', { KIND: 'caja' }) }), [sound('bien'), b('kit_next_level')])]),
+    ]];
+  },
+};
+
+export function templateBlocks(key = 'plataformas') {
+  const [variables, blocks] = (TEMPLATE_BLOCKS[key] || TEMPLATE_BLOCKS.plataformas)();
+  return { variables, blocks: { languageVersion: 0, blocks } };
 }

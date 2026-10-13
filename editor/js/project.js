@@ -23,8 +23,17 @@ export const BEHAVIOURS = {
   patrol: 'Patrulla (anda y se da la vuelta)',
   chase: 'Persigue al jugador',
   shot: 'Proyectil (vuela recto)',
+  grid: 'Jugador por casillas (puzles, flechas)',
+  push: 'Se empuja (cajas de puzle)',
   still: 'Quieto',
 };
+export const SHOT_DIRS = { forward: 'hacia donde mira quien lo crea', up: 'hacia arriba', down: 'hacia abajo',
+                           left: 'hacia la izquierda', right: 'hacia la derecha' };
+export const DRIFTS = { '': 'no', down: 'hacia abajo', up: 'hacia arriba', left: 'hacia la izquierda', right: 'hacia la derecha' };
+
+// what a drawing is unless told otherwise (gravity null: what its behaviour says, platformers and patrols fall)
+export const DRAWING = { use: 'tile', solid: false, behaviour: 'still', speed: 1, jump: 4.5, animate: 8, gravity: null,
+                         dir: 'forward', parallax: 0.5, drift: '', drift_speed: 0.5 };
 
 export const SIZES = [8, 16, 24, 32, 48, 64];
 
@@ -79,144 +88,22 @@ function decodeFrame(text, n) {
 export function pack(p) { return { ...p, drawings: p.drawings.map(d => ({ ...d, frames: d.frames.map(encodeFrame) })) }; }
 
 // a drawing from rows of characters: '.' see-through, else a key into `colours` (indices into PALETTE)
-function art(rows, colours) {
+export function art(rows, colours) {
   const h = rows.length, w = rows[0].length, f = [];
+  if (rows.some(r => r.length !== w)) throw new Error('a drawing\'s rows are not all ' + w + ' long: ' + rows.join('|'));
   for (const r of rows) for (const c of r) f.push(c === '.' ? -1 : hex565(PALETTE[colours[c]]));
   return { w, h, frame: f };
 }
 
-function drawing(name, rows, colours, extra = {}) {
+export function drawing(name, rows, colours, extra = {}) {
   const frames = Array.isArray(rows[0]) ? rows : [rows];
   const parts = frames.map(r => art(r, colours));
-  return { name, w: parts[0].w, h: parts[0].h, frames: parts.map(p => p.frame), use: 'tile', solid: false,
-           behaviour: 'still', speed: 1, jump: 4.5, animate: 8, parallax: 0.5, ...extra };
-}
-
-// an explorer of our own: a blue woolly hat, an amber coat, boots; two frames of walking
-const HERO = [
-  ['................', '.....hhhhhh.....', '....hhhhhhhh....', '...hHHHHHHHHh...', '....ssssssss....', '....sesssses....',
-   '....ssssssss....', '.....ssssss.....', '....cccccccc....', '...cccccccccc...', '..sccCccccCccs..', '..s.cccccccc.s..',
-   '....pppppppp....', '....ppp..ppp....', '....ppp..ppp....', '...bbbb..bbbb...'],
-  ['................', '.....hhhhhh.....', '....hhhhhhhh....', '...hHHHHHHHHh...', '....ssssssss....', '....sesssses....',
-   '....ssssssss....', '.....ssssss.....', '....cccccccc....', '...cccccccccc...', '..sccCccccCccs..', '..s.cccccccc.s..',
-   '....pppppppp....', '....ppp...pp....', '...bbbb...pp....', '..........bbb...'],
-];
-const HERO_COLOURS = { h: 12, H: 22, s: 15, e: 0, c: 18, C: 9, p: 17, b: 20 };
-
-const GROUND = ['gggggggggggggggg', 'gGGgggGGgggGGggg', 'GllGGGllGGGllGGG', 'llllllllllllllll', 'llLlllllllLlllll',
-  'llllllLllllllllL', 'lLlllllllLllllll', 'lllllllllllllLll', 'llllLlllllllllll', 'lllllllllLllllll', 'lLllllllllllllll',
-  'llllllLllllllLll', 'llllllllllllllll', 'llLlllllllLlllll', 'llllllllLlllllll', 'llllllllllllllll'];
-
-const BRICK = ['oooooooooooooooo', 'oOOOOOOooOOOOOOo', 'oOOOOOOooOOOOOOo', 'oOOOOOOooOOOOOOo', 'oooooooooooooooo',
-  'OOOooOOOOOOooOOO', 'OOOooOOOOOOooOOO', 'OOOooOOOOOOooOOO', 'oooooooooooooooo', 'oOOOOOOooOOOOOOo', 'oOOOOOOooOOOOOOo',
-  'oOOOOOOooOOOOOOo', 'oooooooooooooooo', 'OOOooOOOOOOooOOO', 'OOOooOOOOOOooOOO', 'OOOooOOOOOOooOOO'];
-
-const COIN = [
-  ['..yyyy..', '.yYYYYy.', 'yYyyyyYy', 'yYyYYyYy', 'yYyYYyYy', 'yYyyyyYy', '.yYYYYy.', '..yyyy..'],
-  ['...yy...', '..yYYy..', '..yyYy..', '..yYYy..', '..yYYy..', '..yyYy..', '..yYYy..', '...yy...'],
-];
-
-const SLIME = [
-  ['................', '................', '................', '................', '................', '................',
-   '.....pppppp.....', '...pppppppppp...', '..ppPPppppPPpp..', '..ppWkppppWkpp..', '.pppWkppppWkppp.', '.pppppppppppppp.',
-   '.pppppppppppppp.', 'pppppppppppppppp', 'pppppppppppppppp', '.pp.pp.pp.pp.pp.'],
-  ['................', '................', '................', '................', '................', '................',
-   '................', '.....pppppp.....', '...pppppppppp...', '..ppPPppppPPpp..', '..ppWkppppWkpp..', '.pppWkppppWkppp.',
-   '.pppppppppppppp.', 'pppppppppppppppp', 'pppppppppppppppp', 'pp.pp.pp.pp.pp.p'],
-];
-
-const SPIKES = ['................', '................', '................', '................', '................',
-  '................', '................', '................', '...w.......w....', '...w.......w....', '..www.....www...',
-  '..www.....www...', '.wwwww...wwwww..', '.wwwww...wwwww..', 'wwwwwww.wwwwwwww', 'ssssssssssssssss'];
-
-const FLAG = ['..w.............', '..wRRRRR........', '..wRRRRRRR......', '..wRRRRRRRRR....', '..wRRRRRRR......',
-  '..wRRRRR........', '..w.............', '..w.............', '..w.............', '..w.............', '..w.............',
-  '..w.............', '..w.............', '..w.............', '.www............', 'wwwww...........'];
-
-// hills behind the map, drawn by code: two rows of them, the far one paler; as wide as they repeat
-function hills() {
-  const w = 128, h = 160, f = blankFrame(w, h), far = rgb565(150, 196, 170), near = rgb565(104, 160, 120);
-  for (let x = 0; x < w; x++) {
-    const a = x / w * 2 * Math.PI;
-    const top = Math.round(92 + 10 * Math.sin(a) + 5 * Math.sin(3 * a + 1)), front = Math.round(116 + 8 * Math.sin(2 * a + 2) + 4 * Math.sin(5 * a));
-    for (let y = top; y < h; y++) f[y * w + x] = y >= front ? near : far;
-  }
-  return { name: 'montes', w, h, frames: [f], use: 'backdrop', solid: false, behaviour: 'still', speed: 1, jump: 4.5,
-           animate: 8, parallax: 0.4 };
-}
-
-// A game to start from: a little platformer, every part of the editor used once
-export function templatePlatformer() {
-  const P = { r: 19, b: 4, s: 15, d: 22, y: 10, g: 21, G: 11, l: 20, L: 4, o: 20, O: 4, Y: 9, p: 23, P: 14, W: 7, k: 0,
-              w: 6, R: 8 };
-  const drawings = [
-    drawing('heroe', HERO, HERO_COLOURS, { use: 'object', behaviour: 'platformer', speed: 1.6, jump: 4.6, animate: 8 }),
-    drawing('suelo', GROUND, P, { solid: true }),
-    drawing('ladrillo', BRICK, P, { solid: true }),
-    drawing('moneda', COIN, P, { use: 'object', behaviour: 'still', speed: 0, animate: 10 }),
-    drawing('babosa', SLIME, P, { use: 'object', behaviour: 'patrol', speed: 0.5, animate: 14 }),
-    drawing('pinchos', SPIKES, P),
-    drawing('meta', FLAG, P, { use: 'object', behaviour: 'still', speed: 0 }),
-    hills(),
-  ];
-  const tiles = ['suelo', 'ladrillo', 'pinchos'];
-  const field = (W, H, paint) => { // a map from a function that puts tiles
-    const cells = new Array(W * H).fill(0);
-    paint((x, y, t) => { cells[y * W + x] = tiles.indexOf(t) + 1; });
-    return { w: W, h: H, tiles: tiles.slice(), cells };
-  };
-  const meadow = field(40, 10, put => {
-    for (let x = 0; x < 40; x++) if (x < 14 || x > 16) put(x, 9, 'suelo');
-    for (const x of [8, 9, 10, 22, 23, 24, 25]) put(x, 5, 'ladrillo');
-    put(30, 8, 'pinchos');
-    put(31, 8, 'pinchos');
-  });
-  const cave = field(30, 10, put => {
-    for (let x = 0; x < 30; x++) if (x !== 9 && x !== 10 && x !== 19 && x !== 20) put(x, 9, 'suelo');
-    for (let x = 0; x < 30; x++) put(x, 0, 'ladrillo');
-    for (const x of [4, 5, 6, 12, 13, 14, 15]) put(x, 6, 'ladrillo');
-    for (const x of [22, 23, 24]) put(x, 4, 'ladrillo');
-    put(16, 8, 'pinchos');
-    put(17, 8, 'pinchos');
-  });
-  const levels = [
-    { id: 'nivel1', name: 'Nivel 1: el prado', map: meadow, background: '#6CB4E0', camera: 'heroe', hide: [],
-      objects: [{ kind: 'heroe', x: 24, y: 112 }, { kind: 'moneda', x: 132, y: 64 }, { kind: 'moneda', x: 148, y: 64 },
-        { kind: 'moneda', x: 372, y: 64 }, { kind: 'moneda', x: 404, y: 64 }, { kind: 'babosa', x: 290, y: 128 },
-        { kind: 'meta', x: 600, y: 128 }] },
-    { id: 'nivel2', name: 'Nivel 2: la cueva', map: cave, background: '#2A2338', camera: 'heroe', hide: ['montes'],
-      objects: [{ kind: 'heroe', x: 24, y: 112 }, { kind: 'moneda', x: 84, y: 80 }, { kind: 'moneda', x: 212, y: 80 },
-        { kind: 'moneda', x: 228, y: 80 }, { kind: 'moneda', x: 372, y: 48 }, { kind: 'babosa', x: 200, y: 128 },
-        { kind: 'babosa', x: 280, y: 128 }, { kind: 'babosa', x: 400, y: 128 }, { kind: 'meta', x: 452, y: 128 }] },
-  ];
-  return {
-    format: FORMAT, id: 'aventura', title: 'Mi aventura', drawings, levels,
-    cover: { on: true, subtitle: 'Pulsa A para empezar', picture: 'montes', background: '#6CB4E0' },
-    ending: '¡Has terminado el juego!',
-    sounds: [
-      { name: 'moneda', recipe: 'coin', seed: 3 },
-      { name: 'salto', recipe: 'jump', seed: 2 },
-      { name: 'golpe', recipe: 'hit', seed: 5 },
-    ],
-    blocks: null, // the starter blocks are made by blocks.js (templateBlocks): they need Blockly's ids
-  };
+  return { ...DRAWING, name, w: parts[0].w, h: parts[0].h, frames: parts.map(p => p.frame), ...extra };
 }
 
 export function newLevel(id, name) {
   return { id, name, map: { w: 15, h: 10, tiles: [], cells: new Array(150).fill(0) }, objects: [], background: '#1D2B53',
            camera: '', hide: [] };
-}
-
-export function templateEmpty() {
-  const level = newLevel('nivel1', 'Nivel 1');
-  level.objects.push({ kind: 'jugador', x: 112, y: 72 });
-  return {
-    format: FORMAT, id: 'juego', title: 'Juego nuevo',
-    drawings: [{ name: 'jugador', w: 16, h: 16, frames: [blankFrame(16, 16)], use: 'object', behaviour: 'topdown',
-                 speed: 1.5, jump: 4.5, animate: 8, solid: false, parallax: 0.5 }],
-    levels: [level], cover: { on: true, subtitle: 'Pulsa A para empezar', picture: '', background: '#1D2B53' },
-    ending: '¡Has ganado!', sounds: [], blocks: null,
-  };
 }
 
 // made safe after loading: a file from anywhere may be anything
@@ -238,7 +125,9 @@ export function check(p) {
                         use: ['object', 'backdrop'].includes(d.use) ? d.use : 'tile', solid: !!d.solid,
                         behaviour: BEHAVIOURS[d.behaviour] ? d.behaviour : 'still',
                         speed: clampNum(d.speed, 0, 6, 1.5), jump: clampNum(d.jump, 0, 10, 4.5),
-                        animate: clampNum(d.animate, 0, 60, 8), parallax: clampNum(d.parallax, 0, 1, 0.5) });
+                        animate: clampNum(d.animate, 0, 60, 8), parallax: clampNum(d.parallax, 0, 1, 0.5),
+                        gravity: typeof d.gravity === 'boolean' ? d.gravity : null, dir: SHOT_DIRS[d.dir] ? d.dir : 'forward',
+                        drift: DRIFTS[d.drift] !== undefined ? d.drift : '', drift_speed: clampNum(d.drift_speed, 0, 4, 0.5) });
   }
   const levels = Array.isArray(p.levels) ? p.levels : [{ id: 'nivel1', name: 'Nivel 1', map: p.map, objects: p.objects,
     background: p.background, camera: p.camera, hide: [] }]; // before levels: one map

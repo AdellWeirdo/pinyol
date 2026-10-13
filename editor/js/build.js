@@ -53,17 +53,18 @@ export function lua(v, indent = '') { // a value as a Lua literal
     }
     return '{\n' + v.map(x => indent + '  ' + lua(x, indent + '  ')).join(',\n') + '\n' + indent + '}';
   }
-  const keys = Object.keys(v);
+  const keys = Object.keys(v).filter(k => v[k] !== undefined);
   if (!keys.length) return '{}';
   return '{\n' + keys.map(k => indent + '  ' + (/^[A-Za-z_][A-Za-z0-9_]*$/.test(k) ? k : '[' + lua(k) + ']') + ' = ' +
     lua(v[k], indent + '  ')).join(',\n') + '\n' + indent + '}';
 }
 
 const hex = c => parseInt(c.slice(1), 16);
+const DRIFT = { '': () => ({}), down: v => ({ vy: v }), up: v => ({ vy: -v }), left: v => ({ vx: -v }), right: v => ({ vx: v }) };
 
 function levelData(p, l, crops) {
   const backdrops = p.drawings.filter(d => d.use === 'backdrop' && !l.hide.includes(d.name)).slice(0, 3) // layers 1-3
-    .map(d => ({ sprite: d.name, parallax: d.parallax }));
+    .map(d => ({ sprite: d.name, parallax: d.parallax, ...DRIFT[d.drift](d.drift_speed) }));
   return { id: l.id, name: l.name, background: hex(l.background), camera: l.camera || null, backdrops,
            objects: l.objects.filter(o => crops[o.kind]).map(o => ({ kind: o.kind, x: o.x + crops[o.kind].x, y: o.y + crops[o.kind].y })),
            map: l.map.tiles.length ? { w: l.map.w, h: l.map.h, tiles: l.map.tiles, cells: l.map.cells } : null };
@@ -74,7 +75,8 @@ function dataLua(p, crops, start) {
   for (const d of p.drawings) {
     const c = crops[d.name];
     sprites[d.name] = { w: c.w, h: c.h, frames: d.frames.length };
-    if (d.use === 'object') kinds[d.name] = { behaviour: d.behaviour, speed: d.speed, jump: d.jump, animate: d.animate };
+    if (d.use === 'object') kinds[d.name] = { behaviour: d.behaviour, speed: d.speed, jump: d.jump, animate: d.animate,
+                                              gravity: d.gravity ?? undefined, dir: d.behaviour === 'shot' ? d.dir : undefined };
     else if (d.use === 'tile' && d.solid) solid[d.name] = true;
   }
   for (const s of p.sounds) sounds[s.name] = s.params ? s.params : { recipe: s.recipe, seed: s.seed };

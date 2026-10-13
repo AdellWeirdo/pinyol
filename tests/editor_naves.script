@@ -1,0 +1,37 @@
+# the editor's shooter template: lasers up, saucers down, the ship kept on the screen, a second wave of comets
+tick 30
+press A
+tick 10
+lua n = kit.first("nave")
+expect_lua kit.level() == "nivel1" and n and n.y > 100 and puntos == 0
+press A
+tick 1
+expect_lua kit.count("laser") == 1
+lua l = kit.first("laser") ly = l.y
+tick 5
+expect_lua kit.first("laser").y < ly
+# gone once out of the top
+tick 80
+expect_lua kit.count("laser") == 0
+hold LEFT 120
+expect_lua kit.first("nave").x == 0
+lua n = kit.first("nave") kit.spawn("ovni", n.x, n.y - 50)
+press A
+tick 12
+expect_lua puntos == 1 and derribados == 1
+# twelve down: the second wave, with comets
+lua derribados = 12
+tick 2
+expect_lua kit.level() == "nivel2" and oleada == 2 and derribados == 0
+tick 70
+expect_lua kit.count("cometa") >= 1
+shot wave2
+lua n = kit.first("nave") kit.spawn("ovni", n.x, n.y)
+tick 2
+expect_lua kit.state() == "lost"
+press A
+tick 3
+lua derribados = 12
+tick 2
+expect_lua kit.state() == "won"
+expect_ok

@@ -177,7 +177,10 @@ function renderCover() {
     g.fillStyle = g.createPattern(imageOf(d), 'repeat');
     g.fillRect(0, 0, 240, 160);
     g.restore();
-  } else if (d) { // as big as fits, in whole steps
+  } else if (d && d.h <= 50) { // a character: between the title and the line under it (as kit.lua draws it)
+    const k = Math.max(1, Math.min(6, Math.floor(100 / d.h), Math.floor(480 / d.w)));
+    g.drawImage(imageOf(d), Math.floor((480 - d.w * k) / 2), 128 + Math.floor((100 - d.h * k) / 2), d.w * k, d.h * k);
+  } else if (d) { // a picture: as big as fits, in whole steps
     const k = Math.max(1, Math.min(Math.floor(480 / d.w), Math.floor(320 / d.h)));
     g.drawImage(imageOf(d), Math.floor((480 - d.w * k) / 2), Math.floor((320 - d.h * k) / 2), d.w * k, d.h * k);
   }
@@ -189,7 +192,7 @@ function renderCover() {
     g.strokeText(text, 240, y);
     g.fillText(text, 240, y);
   };
-  say(p.title, 128, 44, '#ffffff');
+  say(p.title, 118, 44, '#ffffff');
   say(c.subtitle, 254, 17, '#ffe070');
   cv.classList.toggle('off', !c.on);
   $('cover-on').checked = c.on;

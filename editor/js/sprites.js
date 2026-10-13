@@ -1,7 +1,7 @@
 // The Drawings tab: pixel by pixel in the console's colours (a palette at hand, or any other), with frames for
 // animation; pictures brought in from files; and what each drawing is for (a tile of the map, solid or not, an
 // object that moves in some way, or a picture behind the map).
-import { PALETTE, BEHAVIOURS, SIZES, MAX_SIDE, MAX_PIXELS, blankFrame, safeName, uniqueName, rgb565, hex565, rgbOf, hexOf,
+import { PALETTE, BEHAVIOURS, SHOT_DIRS, DRIFTS, DRAWING, SIZES, MAX_SIDE, MAX_PIXELS, blankFrame, safeName, uniqueName, rgb565, hex565, rgbOf, hexOf,
          pixelsOf } from './project.js';
 
 const $ = id => document.getElementById(id);
@@ -167,7 +167,13 @@ function renderProps() {
   $('object-props').hidden = d.use !== 'object';
   $('backdrop-props').hidden = d.use !== 'backdrop';
   $('d-behaviour').value = d.behaviour;
-  for (const k of ['speed', 'jump', 'animate', 'parallax']) { $('d-' + k).value = d[k]; $('o-' + k).textContent = d[k]; }
+  $('d-dir').value = d.dir;
+  $('dir-row').hidden = d.behaviour !== 'shot';
+  $('jump-row').hidden = d.behaviour !== 'platformer';
+  $('d-gravity').checked = d.gravity ?? (d.behaviour === 'platformer' || d.behaviour === 'patrol');
+  $('d-drift').value = d.drift;
+  $('drift-row').hidden = !d.drift;
+  for (const k of ['speed', 'jump', 'animate', 'parallax', 'drift_speed']) { $('d-' + k).value = d[k]; $('o-' + k).textContent = d[k]; }
   $('drawing-del').disabled = app.project.drawings.length < 2;
 }
 
@@ -290,8 +296,7 @@ function finishImport() {
   const pic = importPixels(), names = new Set(app.project.drawings.map(d => d.name));
   if (!fits(pic.w * pic.h * pic.frames.length)) { incoming = null; app.toast(TOO_BIG); return; }
   const use = pic.w === 16 && pic.h === 16 ? 'tile' : pic.w >= 120 || pic.h >= 120 ? 'backdrop' : 'object';
-  app.project.drawings.push({ name: uniqueName(safeName(incoming.name, 'imagen'), names), ...pic, use, solid: false,
-                              behaviour: 'still', speed: 1, jump: 4.5, animate: 8,
+  app.project.drawings.push({ ...DRAWING, name: uniqueName(safeName(incoming.name, 'imagen'), names), ...pic, use,
                               parallax: 0 }); // a picture is rarely made to repeat: still, until asked to move
   incoming.bmp.close();
   incoming = null;
@@ -336,6 +341,8 @@ export function initDrawings(ctx) {
   $('colour-any').addEventListener('input', e => setColour(hex565(e.target.value)));
   setColour(colour);
   for (const [k, label] of Object.entries(BEHAVIOURS)) $('d-behaviour').append(new Option(label, k));
+  for (const [k, label] of Object.entries(SHOT_DIRS)) $('d-dir').append(new Option(label, k));
+  for (const [k, label] of Object.entries(DRIFTS)) $('d-drift').append(new Option(label, k));
   for (const b of document.querySelectorAll('[data-tool]')) b.addEventListener('click', () => setTool(b.dataset.tool));
   const c = $('pixels');
   c.addEventListener('pointerdown', e => { c.setPointerCapture(e.pointerId); paint(e, true); });
@@ -379,8 +386,7 @@ export function initDrawings(ctx) {
   $('drawing-add').addEventListener('click', () => {
     const names = new Set(app.project.drawings.map(d => d.name));
     if (!fits(256)) { app.toast(TOO_BIG); return; }
-    app.project.drawings.push({ name: uniqueName('dibujo', names), w: 16, h: 16, frames: [blankFrame(16, 16)], use: 'tile',
-                                solid: false, behaviour: 'still', speed: 1, jump: 4.5, animate: 8, parallax: 0.5 });
+    app.project.drawings.push({ ...DRAWING, name: uniqueName('dibujo', names), w: 16, h: 16, frames: [blankFrame(16, 16)] });
     select(app.project.drawings.length - 1);
     app.changed();
   });
@@ -409,7 +415,10 @@ export function initDrawings(ctx) {
     r.addEventListener('change', () => { drawing().use = r.value; if (r.value !== 'tile') drawing().solid = false; app.uses(); changed(); });
   $('d-solid').addEventListener('change', e => { drawing().solid = e.target.checked; changed(); });
   $('d-behaviour').addEventListener('change', e => { drawing().behaviour = e.target.value; changed(); });
-  for (const k of ['speed', 'jump', 'animate', 'parallax'])
+  $('d-dir').addEventListener('change', e => { drawing().dir = e.target.value; changed(); });
+  $('d-gravity').addEventListener('change', e => { drawing().gravity = e.target.checked; changed(); });
+  $('d-drift').addEventListener('change', e => { drawing().drift = e.target.value; changed(); });
+  for (const k of ['speed', 'jump', 'animate', 'parallax', 'drift_speed'])
     $('d-' + k).addEventListener('input', e => { drawing()[k] = Number(e.target.value); $('o-' + k).textContent = e.target.value; app.changed(); });
   initImport();
   requestAnimationFrame(animate);

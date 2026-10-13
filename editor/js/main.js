@@ -1,7 +1,8 @@
 // The editor: the project kept in the browser as it changes, the tabs, and the game built from it for the player
 // (Play) or the console's card (a .zip).
 /* global Blockly */
-import { check, pack, templatePlatformer, templateEmpty, saveLocal, loadLocal } from './project.js';
+import { check, pack, saveLocal, loadLocal } from './project.js';
+import { TEMPLATES, templateEmpty } from './templates.js';
 import { buildFiles } from './build.js';
 import { zip } from './zip.js';
 import { defineBlocks, setProject, workspaceLua, TOOLBOX, templateBlocks } from './blocks.js';
@@ -205,7 +206,7 @@ function init() {
   initBlockly();
   const saved = loadLocal();
   if (saved) load(saved);
-  else load(templatePlatformer(), templateBlocks());
+  else load(TEMPLATES[0].make(), templateBlocks(TEMPLATES[0].key));
 
   for (const b of document.querySelectorAll('[role=tab]')) b.addEventListener('click', () => showTab(b.dataset.tab));
   $('title').addEventListener('change', e => { project.title = e.target.value.trim().slice(0, 40) || 'Juego'; changed(); tabs.map.render(); });
@@ -214,14 +215,18 @@ function init() {
     list.hidden = !list.hidden;
     $('new').setAttribute('aria-expanded', String(!list.hidden));
   });
-  for (const b of document.querySelectorAll('[data-template]'))
+  const fresh = (label, start) => { // a game to start from, in the Nuevo menu
+    const b = Object.assign(document.createElement('button'), { textContent: label });
     b.addEventListener('click', () => {
       $('new-list').hidden = true;
       if (!confirm('¿Empezar un juego nuevo? Guarda antes el actual si lo quieres conservar.')) return;
-      if (b.dataset.template === 'platformer') load(templatePlatformer(), templateBlocks());
-      else load(templateEmpty(), { blocks: { languageVersion: 0, blocks: [] } });
+      start();
       showTab('draw');
     });
+    $('new-list').append(b);
+  };
+  for (const t of TEMPLATES) fresh(t.label, () => load(t.make(), templateBlocks(t.key)));
+  fresh('Vacío', () => load(templateEmpty(), { blocks: { languageVersion: 0, blocks: [] } }));
   $('open').addEventListener('change', async e => {
     const f = e.target.files[0];
     e.target.value = '';

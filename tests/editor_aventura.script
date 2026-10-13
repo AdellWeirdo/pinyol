@@ -1,0 +1,41 @@
+# the editor's adventure template, seen from above: a door that needs a key, gems, a crab, the stairs to the crypt
+tick 30
+press A
+tick 20
+lua h = kit.first("exploradora")
+expect_lua kit.level() == "nivel1" and h and gemas == 0 and llaves == 0
+# against the door without a key: it stays shut
+lua h.x, h.y = 163, 64
+hold RIGHT 6
+expect_lua kit.tile(184, 72) == "puerta" and h.x < 176
+# the key, then the door opens and lets her through
+lua k = kit.first("llave") h.x, h.y = k.x, k.y
+tick 2
+expect_lua llaves == 1 and kit.count("llave") == 0
+lua h.x, h.y = 163, 64
+hold RIGHT 6
+expect_lua kit.tile(184, 72) == nil and llaves == 0
+hold RIGHT 30
+expect_lua h.x > 180
+lua g = kit.first("gema") h.x, h.y = g.x, g.y
+tick 2
+expect_lua gemas == 1
+# a crab: the level again, its door shut and its key back
+lua c = kit.first("cangrejo") h.x, h.y = c.x, c.y
+tick 2
+expect_lua kit.state() == "lost"
+press A
+tick 3
+expect_lua kit.state() == "play" and kit.tile(184, 72) == "puerta" and kit.count("llave") == 1 and gemas == 1
+lua h = kit.first("exploradora") e = kit.first("escalera") h.x, h.y = e.x, e.y
+tick 3
+expect_lua kit.level() == "nivel2"
+shot crypt
+# the ghosts come after her, around what is in the way
+lua f = kit.first("fantasma") fx, fy = f.x, f.y
+tick 60
+expect_lua f.x ~= fx or f.y ~= fy
+lua h = kit.first("exploradora") e = kit.first("escalera") h.x, h.y = e.x, e.y
+tick 3
+expect_lua kit.state() == "won"
+expect_ok

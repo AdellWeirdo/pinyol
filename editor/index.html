@@ -18,10 +18,7 @@
   <nav class="actions" aria-label="Proyecto">
     <div class="menu">
       <button id="new" aria-haspopup="true" aria-expanded="false">Nuevo</button>
-      <div class="menu-list" id="new-list" hidden>
-        <button data-template="platformer">Plataformas (con ejemplo)</button>
-        <button data-template="empty">Vacío</button>
-      </div>
+      <div class="menu-list" id="new-list" hidden></div>
     </div>
     <label class="button">Abrir<input type="file" id="open" accept=".json,application/json" hidden></label>
     <button id="save">Guardar</button>
@@ -86,12 +83,16 @@
       </fieldset>
       <div id="backdrop-props" hidden>
         <label>Se mueve con la cámara <input type="range" id="d-parallax" min="0" max="1" step="0.05"><output id="o-parallax"></output></label>
+        <label>Se mueve solo <select id="d-drift"></select></label>
+        <label id="drift-row">Velocidad <input type="range" id="d-drift_speed" min="0.1" max="3" step="0.1"><output id="o-drift_speed"></output></label>
         <p class="hint">0: quieto. 1: como el mapa. Se repite hasta llenar la pantalla. Hasta tres fondos: el primero de la lista, delante.</p>
       </div>
       <div id="object-props">
         <label>Se mueve como <select id="d-behaviour"></select></label>
-        <label>Velocidad <input type="range" id="d-speed" min="0" max="4" step="0.1"><output id="o-speed"></output></label>
-        <label>Salto <input type="range" id="d-jump" min="0" max="8" step="0.1"><output id="o-jump"></output></label>
+        <label id="dir-row">Vuela <select id="d-dir"></select></label>
+        <label>Velocidad <input type="range" id="d-speed" min="0" max="6" step="0.1"><output id="o-speed"></output></label>
+        <label id="jump-row">Salto <input type="range" id="d-jump" min="0" max="8" step="0.1"><output id="o-jump"></output></label>
+        <label class="check"><input type="checkbox" id="d-gravity"> Cae (le afecta la gravedad)</label>
         <label>Animación <input type="range" id="d-animate" min="0" max="30" step="1"><output id="o-animate"></output></label>
       </div>
       <button id="drawing-del" class="danger">Quitar este dibujo</button>

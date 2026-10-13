@@ -41,7 +41,9 @@ jumps, enemies that patrol or chase, coins), with up to three pictures behind ea
 and a cover before the first; make the sounds from recipes (coin, laser, explosion, jump...) and write the rules
 with blocks ("when the hero touches a coin: remove the other, play coin, add 1 to points"; "when the hero touches
 the flag: go on to the next level"). **Jugar** plays it right there;
-**Para la consola** gives the zip for the card. It starts with a small platformer to change. The interface is in
+**Para la consola** gives the zip for the card. **Nuevo** starts from one of four small games to change, each with
+its own drawings, levels and rules: a platformer, an adventure seen from above (keys and doors), a space shooter
+and a box-pushing puzzle. The interface is in
 Spanish. It needs the web player beside it (see [below](#share-a-game-play-it-in-the-browser) to build it):
 
 ```sh
