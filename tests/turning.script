@@ -1,0 +1,27 @@
+# Bodies that turn: a box dropped tilted lands and lies flat; a stack of three stands; a wheel rolls down a ramp,
+# turning as it goes; a polygon is the hull of its points around its centre; a raft floats half under, level, and
+# the current carries it; old bodies that do not turn keep working beside them
+new
+tick 1
+expect_lua rock.kind == "poly" and math.abs(rock.angle) < 1e-9
+lua n = 0 for _ in ipairs(rock.pts) do n = n + 1 end
+expect_lua n == 8
+tick 240
+expect_lua flat(tipper, 3) and math.abs(tipper.spin) < 0.5 and math.abs(tipper.vy) < 0.5
+expect_lua tipper.y > 250 and tipper.y < 300
+expect_lua flat(stack[1], 3) and flat(stack[2], 3) and flat(stack[3], 3)
+expect_lua math.abs(stack[3].x - 20) < 4 and stack[3].y > 239 and stack[3].y < 241.5
+expect_lua wheel.x > 240 and math.abs(wheel.angle) > 1
+expect_lua hits > 0
+shot turning
+# the raft: floats about half under the surface (200), level, carried downstream
+expect_lua raft.y + 8 > 196 and raft.y + 8 < 206 and flat(raft, 6)
+lua raft.x = 320 x0 = raft.x
+tick 10
+expect_lua raft.x > x0 + 8 and raft.vx > 1
+# w:at finds a turned box by its corners
+lua tipper.angle = 45
+expect_lua world:at(tipper.x + 30, tipper.y + 10) == tipper and world:at(tipper.x + 1, tipper.y + 1) == nil
+expect_lua_error world:poly(0, 0, {0, 0, 10, 10})
+expect_lua_error world:poly(0, 0, {0, 0, 10, 10, 20, 20})
+expect_ok
