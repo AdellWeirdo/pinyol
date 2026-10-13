@@ -95,7 +95,7 @@ static int sheet_get(const char *id) { /* handle (1-based), 0 if it cannot be lo
         }
     } else {
         asset *a = gfx_asset(id);
-        if (a->missing || a->w > 255 || a->h > 255) {
+        if (a->missing || a->w > 255 || a->h > 255 || !gfx_pixels(a)) { /* the PPU reads pixels: a packed one unpacked */
             cJSON_Delete(meta);
             return 0;
         }
@@ -402,6 +402,7 @@ static int l_bg(lua_State *L) {
         const char *id = opt_str(L, 2, "image");
         asset *a = id && asset_name(id) ? gfx_asset(id) : NULL;
         if (!a || a->missing) return luaL_error(L, "bg %d: no image '%s'", n, id ? id : "");
+        if (!gfx_pixels(a)) return luaL_error(L, "bg %d: no memory to unpack '%s'", n, id);
         b->mode = BG_BITMAP, b->bitmap = a->pixels, b->bitmap_mask = a->mask, b->bitmap_w = a->w, b->bitmap_h = a->h;
         return 0;
     }

@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import struct
 import re
 from pathlib import Path
 
@@ -78,6 +79,91 @@ def export(assets: Path, aid: str, frames: list[Image.Image], frame_ms: int = 0,
 
 def rgb565(r: int, g: int, b: int) -> int:
     return pack565(r, g, b)
+
+
+# ------------------------------------------------------------------ packed pictures (the format "packed", src/gfx.c)
+# For big pictures and many frames at the screen's full resolution (as a Neo Geo game draws them): a palette of up to
+# 16 colours (4 bits a pixel) or 256 (8 bits), and each frame kept column by column, as the console's turned screen
+# draws it, only the opaque runs of each column stored. Little-endian:
+#   "NP2K", u8 version 1, u8 bpp (4 or 8), u16 colours, u16 w, u16 h, u16 frames, u16 0
+#   colours x u16 RGB565, padded to 4 bytes
+#   frames x w x u32: where each column starts, from the file's start
+#   a column: u16 runs, then each run: u16 y, u16 length, its indices (8 bits each; 4 bits: high nibble first, a
+#   run's last odd nibble padded)
+def pack_frames(frames: list[Image.Image], colours: int | None) -> tuple[bytes, int, int]:
+    """-> (the .pk file, bits per pixel, colours used). colours: at most this many (quantized if more are drawn)."""
+    w, h = frames[0].size
+    rgba = [f.convert("RGBA") for f in frames]
+    seen = {}
+    for f in rgba:
+        raw = f.tobytes()
+        for i in range(0, len(raw), 4):
+            if raw[i + 3] >= 128:
+                seen.setdefault(pack565(raw[i], raw[i + 1], raw[i + 2]), None)
+    limit = min(colours or 256, 256)
+    if len(seen) > limit:  # more than fit: the frames as one strip, quantized together (one palette for all)
+        strip = Image.new("RGBA", (w * len(rgba), h))
+        for k, f in enumerate(rgba):
+            strip.paste(f, (k * w, 0))
+        q = strip.convert("RGB").quantize(colors=limit, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+        qrgb = q.convert("RGB")
+        alpha = strip.getchannel("A")
+        qrgb.putalpha(alpha)
+        rgba = [qrgb.crop((k * w, 0, (k + 1) * w, h)) for k in range(len(rgba))]
+        seen = {}
+        for f in rgba:
+            raw = f.tobytes()
+            for i in range(0, len(raw), 4):
+                if raw[i + 3] >= 128:
+                    seen.setdefault(pack565(raw[i], raw[i + 1], raw[i + 2]), None)
+    pal = list(seen) or [0]
+    index = {c: i for i, c in enumerate(pal)}
+    bpp = 4 if len(pal) <= 16 else 8
+    head = b"NP2K" + bytes([1, bpp]) + struct.pack("<HHHHH", len(pal), w, h, len(rgba), 0)
+    head += b"".join(struct.pack("<H", c) for c in pal)
+    head += b"\0" * (-len(head) % 4)
+    table_at = len(head)
+    data_at = table_at + 4 * w * len(rgba)
+    table, data = [], bytearray()
+    for f in rgba:
+        raw = f.tobytes()
+        for x in range(w):
+            table.append(data_at + len(data))
+            runs, y = [], 0
+            while y < h:
+                if raw[(y * w + x) * 4 + 3] < 128:
+                    y += 1
+                    continue
+                y0 = y
+                while y < h and raw[(y * w + x) * 4 + 3] >= 128:
+                    y += 1
+                runs.append((y0, y - y0))
+            data += struct.pack("<H", len(runs))
+            for y0, n in runs:
+                data += struct.pack("<HH", y0, n)
+                ids = [index[pack565(*raw[((y0 + j) * w + x) * 4:((y0 + j) * w + x) * 4 + 3])] for j in range(n)]
+                if bpp == 8:
+                    data += bytes(ids)
+                else:
+                    ids += [0] * (n & 1)
+                    data += bytes(ids[j] << 4 | ids[j + 1] for j in range(0, len(ids), 2))
+    return head + struct.pack(f"<{len(table)}I", *table) + bytes(data), bpp, len(pal)
+
+
+def export_packed(assets: Path, aid: str, frames: list[Image.Image], colours: int | None, frame_ms: int = 0,
+                  anchor: tuple | None = None, kind: str = "sprite") -> None:
+    w, h = frames[0].size
+    blob, bpp, used = pack_frames(frames, colours)
+    assets.mkdir(parents=True, exist_ok=True)
+    for old in (".rgb565", ".mask"):  # the same picture, packed now
+        if (assets / f"{aid}{old}").exists():
+            (assets / f"{aid}{old}").unlink()
+    (assets / f"{aid}.pk").write_bytes(blob)
+    meta = {"asset": aid, "type": kind, "format": "packed", "bpp": bpp, "colours": used, "w": w, "h": h,
+            "frames": len(frames), "frame_ms": [frame_ms] * len(frames), "order": list(range(len(frames))),
+            "anchor": list(anchor) if anchor else [w // 2, h - 1], "tile": None,
+            "memory_bytes": {"total": len(blob), "as_rgb565": w * h * len(frames) * 2}}
+    (assets / f"{aid}.meta.json").write_text(json.dumps(meta, indent=2) + "\n")
 
 
 def load_palette(path: Path) -> list[int]:
@@ -155,6 +241,11 @@ def main() -> None:
     p.add_argument("--indexed", action="store_true", help="indexed sprite frames (a PPU sprite sheet)")
     p.add_argument("--affine", action="store_true", help="with --tiles: for an affine layer (no flips, 256 tiles)")
     p.add_argument("--palette", help="share assets/PALETTE.pal (it grows); default: the asset's own <ID>.pal")
+    p.add_argument("--packed", action="store_true",
+                   help="packed: a palette and only the opaque runs, column by column; up to 7x smaller and faster to "
+                        "draw at the screen's full resolution (big characters, many frames, wide backgrounds)")
+    p.add_argument("--colours", type=int, help="with --packed: at most this many colours (16: 4 bits a pixel, as a "
+                                              "Neo Geo sprite); more are drawn: quantized")
     a = p.parse_args()
     if not re.fullmatch(r"[A-Za-z0-9_]+", a.id) or (a.palette and not re.fullmatch(r"[A-Za-z0-9_]+", a.palette)):
         p.error("IDs: letters, digits and _ only")
@@ -192,6 +283,13 @@ def main() -> None:
     fw = img.width // a.frames
     frames = [img.crop((i * fw, 0, (i + 1) * fw, img.height)) for i in range(a.frames)]
     anchor = tuple(int(v) for v in a.anchor.split(",")) if a.anchor else None
+    if a.packed:
+        export_packed(a.assets, a.id, frames, a.colours, a.ms, anchor, a.type)
+        meta = json.loads((a.assets / f"{a.id}.meta.json").read_text())
+        print(f"{a.assets / a.id}: {a.frames} packed frame(s) of {fw}x{img.height}, {meta['colours']} colours, "
+              f"{meta['bpp']} bits, {meta['memory_bytes']['total'] // 1024} KB (as RGB565: "
+              f"{meta['memory_bytes']['as_rgb565'] // 1024} KB)")
+        return
     export(a.assets, a.id, frames, a.ms, anchor, a.type)
     print(f"{a.assets / a.id}: {a.frames} frame(s) of {fw}x{img.height}")
 

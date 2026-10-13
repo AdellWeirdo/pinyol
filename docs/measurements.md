@@ -191,3 +191,39 @@ The editor's four templates and a game with music from files, each played on the
 
 Starting a game takes 0.3-0.5 s (its pictures, fonts and made sounds); starting a level, one frame of about 45 ms
 (its map painted into the map canvas) while its name shows.
+
+## A Neo Geo scene (2026-10-13)
+
+Can the console draw what a Neo Geo fighting game draws, every pixel at 480x320? `tests/games/neo.lua` is that
+scene: a sky, two layers wider than the screen moving at their own speeds, two big fighters walking and striking,
+one mirrored; the benchmark adds a camera zoomed to 1.25 and six fighters. Its first pictures were drawn by code
+(layers 960 pixels wide, fighters of 128x192 in eight frames). Every step below draws the same frames (packed and
+plain pictures give the same CRC on every frame):
+
+| Step | Frame rate | Strips |
+|---|---|---|
+| Plain pictures (RGB565 and a mask) | 20 fps | 38-47 ms |
+| Packed pictures: a palette each, columns of opaque runs | 30 fps | 23.6-28 ms |
+| The palette copied to internal memory per picture, 4-bit pixels two at a time, each strip drawn in two halves, one on each core | 60-61 fps | 10.4-12.9 ms |
+
+The plain pictures were limited by PSRAM: about 40 MB/s read through a 64 KB cache, and a full-screen scene in two
+layers reads more than that at 60 fps.
+
+Then the scene took `examples/duelo`'s art: a sky and city 640 pixels wide, a pier and crowd in front, fighters of
+192x184 in eleven frames. Packed, its pictures take 528 KB instead of 2.2 MB.
+
+Zoomed (`scale = 1.25`), the fighters first went through the cache of turned pictures, each frame scaled once and
+kept: eleven frames of two fighters at 240x230 did not fit its 1.5 MB, so it made them again every frame (40-45 fps,
+frames of 28 and 52 ms). A packed picture scaled but not turned is now drawn straight from its runs, each run
+landing on the screen rows worked out from its ends (`gfx_blit_scaled`), the same pixels as before:
+
+| Scene (the art of examples/duelo) | Frame rate | Strips |
+|---|---|---|
+| The stage alone | 61 fps | 7.4 ms |
+| Two fighters | 61 fps | 6.7 ms |
+| Two fighters at 1.25 | 61 fps | 8.9 ms |
+| Six fighters | 61 fps | 8.3 ms |
+| `examples/duelo`: the title (styled text, both fighters) | 60-61 fps | 8.8 ms |
+| `examples/duelo`: a fight (sparks, hit flashes, the HUD) | 61 fps | 7.3 ms |
+
+The strips take about half of each frame's 16.6 ms: room for a third layer, more fighters, or effects.

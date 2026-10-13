@@ -36,7 +36,8 @@ static void glyph(surface *sf, const font *f, int c, int x, int y, const text_st
     if (lo < 0) lo = 0;
     if (hi > W) hi = W;
     const int ilo = lo - 3 < 0 ? 0 : lo - 3, ihi = hi + 3 > W ? W : hi + 3; /* ink: what a ring or a shadow comes from */
-    static uint8_t m[MAP_W * MAP_W];
+    static uint8_t maps[2][MAP_W * MAP_W]; /* one for each part of hal_parallel: both may draw text at once */
+    uint8_t *m = maps[sf->part & 1];
     memset(m, 0, (size_t)W * H);
     for (int j = b[2]; j < b[3]; j++)
         for (int i = b[0] > ilo - PAD ? b[0] : ilo - PAD; i < b[1] && i + PAD < ihi; i++)
@@ -107,7 +108,8 @@ int font_draw_styled(surface *sf, const font *f, int x, int y, const char *s, in
 
 /* Each pixel of the window the picture may cover is looked up in the picture (nearest), from its centre: a turned
  * picture has no gaps, at the cost of a little arithmetic per pixel. Fixed point, 16 bits of fraction. */
-void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, float sy, float degrees) {
+void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, float sy, float degrees, const asset *pal,
+                 int tint) {
     if (frame < 0 || frame >= a->frames) frame = 0;
     if (!(fabsf(sx) >= 1 / 64.0f && fabsf(sy) >= 1 / 64.0f && isfinite(sx) && isfinite(sy) && isfinite(degrees))) return; /* too small to see; and fixed point stays in range */
     float r = degrees * 3.14159265f / 180.0f, cs = cosf(r), sn = sinf(r), ax = fabsf(sx), ay = fabsf(sy);
@@ -128,6 +130,10 @@ void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, 
     float px = (float)ox + 0.5f - cx, py = (float)oy + 0.5f - cy;
     int32_t u_row = (int32_t)(((px * cs + py * sn) / sx + a->w / 2.0f) * F), v_row = (int32_t)(((-px * sn + py * cs) / sy + a->h / 2.0f) * F);
     u_row += (bx0 - ox) * du_dx + (by0 - oy) * du_dy, v_row += (bx0 - ox) * dv_dx + (by0 - oy) * dv_dy;
+    if (a->pk && degrees == 0) { /* packed, not turned: from its columns, never unpacked; in its look */
+        gfx_blit_scaled(s, a, frame, bx0, bx1, by0, by1, u_row, du_dx, v_row, dv_dy, pal, tint);
+        return;
+    }
     const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
     const int stride = (a->w + 7) / 8;
     const uint8_t *mask = a->mask ? a->mask + (size_t)frame * stride * a->h : NULL;

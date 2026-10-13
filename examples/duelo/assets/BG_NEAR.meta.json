@@ -1,0 +1,25 @@
+{
+  "asset": "BG_NEAR",
+  "type": "background",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 225,
+  "w": 572,
+  "h": 175,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    286,
+    174
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 88725,
+    "as_rgb565": 200200
+  }
+}

@@ -77,6 +77,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [estilos](examples/estilos) | a game's own look: fonts from the library, outlined and wavy text, frames cut from a picture, turned pictures |
 | [inventos](examples/inventos) | toys of no genre, from code alone: painting, land that breaks, generative trails, 3D triangles, a split screen |
 | [juntos](examples/juntos) | consoles playing together over the air (ESP-NOW, no router): a shared whiteboard, a ball passed from screen to screen |
+| [duelo](examples/duelo) | a fighting game as a Neo Geo's: every pixel at 480x320, a stage in two layers, fighters in 192x184 frames as packed pictures, hit flashes and sparks, a rival played by the console |
 | [sonidos](examples/sonidos) | sounds made from numbers (a factory of coins, lasers, explosions), a theremin, an engine that follows the speed, music in layers |
 
 ### As an adventure made of data
@@ -94,6 +95,7 @@ uv run tools/new_game.py games/mygame --title "My Game"
   ```sh
   uv run tools/png2asset.py street.png games/mygame/assets BG_Z01 --type background
   uv run tools/png2asset.py hero_walk.png games/mygame/assets PJ_WALK --frames 16 --ms 125 --anchor 12,29
+  uv run tools/png2asset.py fighter.png games/mygame/assets SPR_KAI --frames 11 --packed   # big art: its own palette, a quarter of the memory
   ```
 - **Sound**: WAV, PCM 16-bit mono at 22,050 Hz.
 - **Fonts**: `tools/font2fnt.py` turns a TTF, OTF, BDF or PNG sheet into the engine's FNT format; twelve free pixel
@@ -171,7 +173,7 @@ platform/sdl/    desktop simulator, and the web players when built with Emscript
 platform/null/   bp_headless: validator and test runner without a window
 platform/web/    the web pages around the players
 firmware/        the console: ESP-IDF project, builds src/ unchanged
-examples/        games as they go on the microSD: nine in Lua, hola as data
+examples/        games as they go on the microSD: ten in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
 tests/           test scripts for the examples, and the PPU's own tests
 tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, font2fnt.py, ...

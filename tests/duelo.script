@@ -1,0 +1,39 @@
+# Duelo: the title, picking Ran, a round's intro, walking up to the console's fighter and striking it (it loses
+# life, flashes), a K.O. that ends the round, three rounds to the end; every frame drawn at the full 480x320
+tick 30
+expect_lua state == "title"
+shot titulo
+press RIGHT
+press A
+expect_lua state == "intro" and p[1].name == "RAN" and p[2].cpu
+tick 100
+expect_lua state == "fight"
+hold LEFT 40
+expect_lua p[1].x < 150
+hold RIGHT 70
+shot pelea
+hold A 1
+tick 7
+shot golpe
+tick 20
+hold A 1
+tick 30
+expect_lua p[2].hp < 100 or p[1].hp < 100
+lua p[2].hp = 1
+hold A 1
+tick 40
+lua p[2].hp = 0
+tick 10
+expect_lua state == "ko" and p[1].wins == 1
+shot ko
+tick 160
+expect_lua state == "intro" and round == 2
+lua p[2].hp = 0
+tick 100
+tick 170
+expect_lua state == "over" and p[1].wins == 2
+shot gana
+tick 70
+press A
+expect_lua state == "title"
+expect_ok

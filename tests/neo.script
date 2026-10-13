@@ -1,0 +1,16 @@
+# a fighting-game scene at the full 480x320 (tests/make_neo_game.py): the sky, two parallax layers, two fighters
+# walking and punching, mirrored, zoomed, six of them; the same frames whether its pictures are packed or not
+tick 20
+lua mode = 1
+tick 20
+lua mode = 2
+tick 40
+shot fighters
+lua mode = 3
+tick 20
+lua mode = 4
+tick 20
+lua mode = 5
+tick 20
+shot scales
+expect_ok

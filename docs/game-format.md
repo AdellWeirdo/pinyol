@@ -1211,6 +1211,28 @@ RGB565 packing: `((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)`.
 Any other key (the example games' files also carry `asset`, `type`, `tile`, `order`, `rgb565`, `memory_bytes`...)
 is ignored by the engine.
 
+### Packed pictures
+
+`png2asset.py --packed [--colours N]` writes `<ID>.pk` instead of `.rgb565` and `.mask`, and `"format": "packed"`
+in the meta: the picture's own palette (up to 256 colours, exact when it has no more, else reduced to `N`, 256 by
+default) and each column as runs of opaque pixels, 4 bits a pixel when 16 colours are enough, 8 otherwise. A big
+picture with see-through around it takes a quarter of the memory or less, and is drawn faster: the console reads
+far fewer bytes, and draws its strips column by column, as the file keeps them. Mirrored, scaled, in another
+palette or as one colour (`img`'s `flip_x`, `scale`, `pal`, `tint`) it is drawn straight from the runs; only
+turned (`angle`) or doubled (`scale` 2 as the fifth argument) it is unpacked once, when first drawn so.
+
+| Bytes | Content (little-endian) |
+|---|---|
+| 0 | `NP2K` |
+| 4 | version 1; bits a pixel, 4 or 8 |
+| 6 | `u16` colours (1..256), `u16` w, `u16` h, `u16` frames, `u16` 0 |
+| 16 | the palette: colours × `u16` RGB565, padded to a multiple of 4 bytes |
+| then | frames × w `u32`: where each column starts, from the start of the file (frame by frame, left to right) |
+| a column | `u16` runs; each run `u16` y, `u16` length, then its pixels' colour numbers (4 bits: the upper half first, the last byte padded) |
+
+The engine checks the whole file when it loads it (every column and run inside the file and the picture, every
+colour number inside the palette); a file that fails is drawn as a placeholder.
+
 ### Draw scale
 
 | Drawn at world scale (1 asset px = 2×2 screen px) | Drawn 2× on the native screen | Drawn at native size |

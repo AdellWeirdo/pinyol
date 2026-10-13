@@ -181,10 +181,16 @@ Drawn over the world, in screen pixels (480×320), every frame in `_draw()`.
 | `shade(x, y, w, h)` | darken what is under it |
 | `panel(x, y, w, h)`, `plate(x, y, w, h, colour)` | a card and a small sign, in the game's theme (`game.json` "theme") |
 | `img(id, x, y [, frame [, scale]])` | a direct-colour runtime asset, scale 1 or 2 |
-| `img(id, x, y, {frame, scale, scale_x, scale_y, flip_x, flip_y, angle})` | the same turned (degrees, about its centre), scaled by any amount (negative flips) or flipped; `(x, y)` is where its top-left corner would be unturned |
+| `img(id, x, y, {frame, scale, scale_x, scale_y, flip_x, flip_y, angle, pal, tint})` | the same turned (degrees, about its centre), scaled by any amount (negative flips) or flipped; `(x, y)` is where its top-left corner would be unturned. A packed picture (below) can also be drawn with another one's colours, `pal = "SPR_RAN_B"` (a second player, an enemy's stronger kind), or all of one colour, `tint = 0xFFFFFF` (the flash of a hit, a shadow); not turned |
 | `frame(id, x, y, w, h [, scale [, frame]])` | a box of any size cut from a picture of the game: its thirds are the corners (drawn once), the edges and the middle (repeated). A 24×24 picture gives 8×8 corners; `scale` makes each pixel bigger |
 
 Text is UTF-8 limited to the characters of Windows-1252 (Spanish, French, German... yes; emoji no).
+
+**Pictures as big as a Neo Geo's.** Converted with `png2asset.py --packed`, a picture keeps its own palette and only
+its visible pixels ([the format](game-format.md#packed-pictures)): fighters 192 pixels tall, backgrounds wider than
+the screen, all drawn at 60 fps on the console. `examples/duelo` is a fighting game made this way: two layers of
+stage, two fighters of eleven frames each, mirrored, flashing white when hit. Mirrored (`flip_x`) a packed picture
+costs the same as plain; scaled, the same per pixel drawn.
 
 ### A game's own look
 

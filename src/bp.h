@@ -96,12 +96,14 @@ void v2_timing(v2_times *t); /* the averages (and the longest picture) since the
  * frame (fw x fh) stored any way round: pixel (x, y) is px[(x - x0) * xs + (y - y0) * ys], and everything is clipped to
  * [x0, x0 + w) x [y0, y0 + h). Drawing a frame window by window gives the same pixels as drawing it whole: the console
  * draws straight into its panel strips this way (gfx_turned). swap: pixels are stored with their bytes swapped, as a
- * big-endian display bus wants them. Fields left at 0 mean the plain buffer. */
+ * big-endian display bus wants them. part: which part of hal_parallel draws on it (0 or 1), for the scratch memory
+ * drawing needs (each part its own). Fields left at 0 mean the plain buffer. */
 typedef struct surface {
     uint16_t *px;
     int w, h;
     int x0, y0, xs, ys, fw, fh;
     bool swap;
+    uint8_t part;
 } surface;
 void v2_draw(surface *s); /* np2d@2: the world 2x and the script's text and shapes, onto s (lua_game.c) */
 void game_draw(surface *s, bool world_pass); /* the frame onto s, a window of it or all (game.c) */
@@ -113,10 +115,16 @@ void game_draw_world(void);                  /* only the zone into G.world: game
 typedef struct {
     char id[32];
     int w, h, frames, ax, ay, frame_ms;
-    uint16_t *pixels; /* frames * w * h */
+    uint16_t *pixels; /* frames * w * h; NULL for a packed picture until gfx_pixels unpacks it */
     uint8_t *mask;    /* frames * stride * h, MSB first, 1 = opaque; NULL = opaque */
     bool missing;
     bool canvas;      /* made by the game while it runs (gfx_canvas): its pixels change */
+    /* packed (tools/png2asset.py --packed): a palette and each frame's columns, only their opaque runs */
+    uint8_t *pk;            /* the .pk file, checked whole when loaded */
+    const uint16_t *pal;    /* its colours (RGB565), in pk */
+    const uint32_t *cols;   /* frames * w: where each column starts in pk */
+    uint8_t bpp;            /* 4 or 8; 0: not packed */
+    bool pk_opaque;         /* every column of every frame one run, top to bottom (no see-through) */
 } asset;
 
 typedef struct {
@@ -131,8 +139,13 @@ asset *gfx_asset_opt(const char *id); /* the same, silent when the game leaves i
 void gfx_reset(void);
 void gfx_force_missing(const char *id);
 bool gfx_opaque(const asset *a, int frame, int u, int v);
+uint16_t *gfx_pixels(asset *a); /* its pixels (and mask) as RGB565: a packed picture unpacked, once; NULL: no memory */
+/* At 1x, maybe mirrored; pal: another packed picture's colours for this one's (a variant), or NULL; tint >= 0: every
+ * pixel that colour (RGB565: a flash, a shadow), else -1. */
+void gfx_blit_flip(surface *s, const asset *a, int frame, int x, int y, bool flip_x, const asset *pal, int tint);
 void gfx_blit(surface *s, const asset *a, int frame, int x, int y, int rot, bool half);
 void gfx_blit2x(surface *s, const asset *a, int frame, int x, int y);
+void gfx_blit2x_look(surface *s, const asset *a, int frame, int x, int y, const asset *pal, int tint); /* (pal, tint: packed) */
 void gfx_blit_rows(surface *s, const asset *a, int frame, int x, int y, int rows); /* top rows only */
 void gfx_fill(surface *s, int x, int y, int w, int h, uint16_t c);
 void gfx_frame(surface *s, int x, int y, int w, int h, uint16_t c);
@@ -169,7 +182,10 @@ int font_draw_styled(surface *sf, const font *f, int x, int y, const char *s, in
                      const text_style *st);
 /* The picture scaled (sx, sy; negative flips), turned by degrees about its centre; (x, y) is where its top-left
  * corner would be unturned. */
-void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, float sy, float degrees);
+void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, float sy, float degrees, const asset *pal,
+                 int tint); /* pal, tint (-1: none): packed pictures not turned */
+void gfx_blit_scaled(surface *s, const asset *a, int frame, int bx0, int bx1, int by0, int by1, int32_t u, int32_t du,
+                     int32_t v, int32_t dv, const asset *alt, int tint);
 void gfx_nine(surface *s, const asset *a, int frame, int x, int y, int w, int h, int k); /* a frame from the picture's thirds */
 
 /* ------------------------------------------------------------------ gfx_cache.c: pictures worked out once */

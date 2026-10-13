@@ -1,0 +1,8 @@
+{
+  "id": "duelo",
+  "title": "Duelo en el puerto",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "np2d examples",
+  "description": "Lucha uno contra uno a la manera de la Neo Geo: luchadores grandes y animados, un escenario con parallax y público, todo a 480x320 con imágenes empaquetadas."
+}

@@ -24,6 +24,7 @@ enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NIN
 typedef struct {
     uint8_t op, font, scale, ext; /* ext: 1 + its entry in ov_style (text) or ov_xf (img); 0: none */
     uint8_t clip;                 /* 1 + its entry in ov_clip; 0: none */
+    uint8_t flip;                 /* img at 1x mirrored left to right (gfx_blit_flip) */
     int16_t x, y, w, h, frame;    /* line: x, y to w, h; circle: centre x, y, radius w, filled h; polygon: filled frame */
     uint16_t color, str, len;     /* text: its bytes in ov_text; polygon: its corners in ov_pts */
     const asset *a;
@@ -33,6 +34,8 @@ static ov_cmd ov[OV_MAX];
 static char ov_text[OV_TEXT];
 static text_style ov_style[OV_EXT];
 static struct { float sx, sy, deg; } ov_xf[OV_EXT];
+static struct { const asset *pal; int tint; } ov_look[OV_EXT]; /* img's pal and tint: c->font is 1 + its entry */
+static int nlook;
 static int nstyle, nxf;
 static struct { char name[32]; font f; } vfont[MAX_FONTS]; /* fonts/<name>.fnt, loaded when first used */
 static int nvfont;
@@ -83,9 +86,14 @@ static void draw_one(surface *s, const ov_cmd *c) {
     case OV_CIRC: gfx_circ(s, c->x, c->y, c->w, c->color, c->h != 0); break;
     case OV_POLY: gfx_poly(s, ov_pts + c->str, c->len, c->color, c->frame != 0); break;
     case OV_IMG:
-        if (c->ext) gfx_blit_ex(s, c->a, c->frame, c->x, c->y, ov_xf[c->ext - 1].sx, ov_xf[c->ext - 1].sy, ov_xf[c->ext - 1].deg);
-        else if (c->scale == 2) gfx_blit2x(s, c->a, c->frame, c->x, c->y);
-        else gfx_blit(s, c->a, c->frame, c->x, c->y, 0, false);
+        if (c->ext)
+            gfx_blit_ex(s, c->a, c->frame, c->x, c->y, ov_xf[c->ext - 1].sx, ov_xf[c->ext - 1].sy, ov_xf[c->ext - 1].deg,
+                        c->font ? ov_look[c->font - 1].pal : NULL, c->font ? ov_look[c->font - 1].tint : -1);
+        else if (c->scale == 2)
+            gfx_blit2x_look(s, c->a, c->frame, c->x, c->y, c->font ? ov_look[c->font - 1].pal : NULL,
+                            c->font ? ov_look[c->font - 1].tint : -1);
+        else if (c->font) gfx_blit_flip(s, c->a, c->frame, c->x, c->y, c->flip, ov_look[c->font - 1].pal, ov_look[c->font - 1].tint);
+        else gfx_blit_flip(s, c->a, c->frame, c->x, c->y, c->flip, NULL, -1);
         break;
     }
 }
@@ -149,6 +157,7 @@ static void forget(const ov_cmd *c, int text_bytes, int corners) { /* the last c
     nov--, ntext -= text_bytes, npts -= 2 * corners;
     if (c->ext && c->op == OV_TEXT_OP) nstyle--;
     else if (c->ext) nxf--;
+    if (c->op == OV_IMG && c->font) nlook--;
 }
 
 /* The costly commands (styled text, nine-slice frames, turned pictures) drawn once into a picture of their own,
@@ -190,6 +199,10 @@ static asset *picture(const uint8_t *key, int n, int w, int h, bool *fresh) {
 
 static uint16_t not_key(uint16_t c) { return c == CANVAS_KEY ? c ^ 1 : c; } /* the key colour is see-through there */
 
+static bool straight(const ov_cmd *c) { /* a packed picture scaled, not turned: drawn from its columns, not kept */
+    return c->a->pk && ov_xf[c->ext - 1].deg == 0;
+}
+
 static void as_picture(ov_cmd *c) {
     uint8_t key[KEY_MAX];
     int n = 0, w = 0, h = 0, ox = 0, oy = 0;
@@ -219,20 +232,22 @@ static void as_picture(ov_cmd *c) {
             surface s = {.px = a->pixels, .w = w, .h = h};
             gfx_nine(&s, c->a, c->frame, 0, 0, w, h, c->scale);
         }
-    } else if (c->op == OV_IMG && c->ext) {
+    } else if (c->op == OV_IMG && c->ext && !straight(c)) {
         float t[3] = {ov_xf[c->ext - 1].sx, ov_xf[c->ext - 1].sy, ov_xf[c->ext - 1].deg};
         key_add(key, &n, &c->a, sizeof c->a), key_add(key, &n, &c->frame, sizeof c->frame), key_add(key, &n, t, sizeof t);
         gfx_blit_ex_bounds(c->a, t[0], t[1], t[2], &ox, &oy, &w, &h);
         if (!(a = picture(key, n, w, h, &fresh))) return;
         if (fresh) {
             surface s = {.px = a->pixels, .w = w, .h = h};
-            gfx_blit_ex(&s, c->a, c->frame, -ox, -oy, t[0], t[1], t[2]);
+            gfx_blit_ex(&s, c->a, c->frame, -ox, -oy, t[0], t[1], t[2], NULL, -1);
         }
     } else {
         return;
     }
     if (fresh) pic_done(a);
+    if (c->op == OV_IMG && c->font) nlook--; /* (a text's font field is no look: it becomes a plain picture) */
     c->op = OV_IMG, c->a = a, c->x = i16(c->x + ox), c->y = i16(c->y + oy), c->scale = 1, c->ext = 0, c->frame = 0;
+    c->font = 0, c->flip = 0;
 }
 
 /* A drawing call's command, finished: moved by the camera; then kept for the screen's strips with the clip in force,
@@ -443,12 +458,13 @@ static int l_img(lua_State *L) {
     asset *a = safe_name(id) ? gfx_asset(id) : NULL;
     ov_cmd *c = !a || a->missing ? NULL : ov_add(OV_IMG);
     if (!c) return 0;
-    c->a = a, c->x = i16(num(L, 2)), c->y = i16(num(L, 3)), c->scale = 1;
+    c->a = a, c->x = i16(num(L, 2)), c->y = i16(num(L, 3)), c->scale = 1, c->flip = 0, c->font = 0;
     if (!lua_istable(L, 4)) {
         lua_Integer f = luaL_optinteger(L, 4, 0);
         c->frame = (int16_t)(f < 0 || f >= a->frames ? 0 : f);
         c->scale = (uint8_t)(luaL_optinteger(L, 5, 1) == 2 ? 2 : 1);
-        commit(c, 0, 0);
+        if (c->scale == 2 && !a->pk && !gfx_pixels(a)) forget(c, 0, 0);
+        else commit(c, 0, 0);
         return 0;
     }
     lua_Integer f = opt_int(L, 4, "frame", 0);
@@ -459,7 +475,23 @@ static int l_img(lua_State *L) {
     if (opt_bool(L, 4, "flip_x", false)) sx = -sx;
     if (opt_bool(L, 4, "flip_y", false)) sy = -sy;
     if (deg == 0 && sx == sy && (sx == 1 || sx == 2)) c->scale = (uint8_t)sx; /* the plain ways, faster */
+    else if (deg == 0 && sx == -1 && sy == 1) c->flip = 1;      /* mirrored at 1x: as fast as plain */
     else if (nxf < OV_EXT) ov_xf[nxf].sx = sx, ov_xf[nxf].sy = sy, ov_xf[nxf].deg = deg, c->ext = (uint8_t)(++nxf);
+    const char *pal = opt_str(L, 4, "pal");
+    lua_getfield(L, 4, "tint");
+    bool tinted = !lua_isnil(L, -1);
+    lua_Integer tint = tinted ? luaL_checkinteger(L, -1) : 0;
+    lua_pop(L, 1);
+    if ((pal || tinted) && (c->ext ? straight(c) : c->scale == 1 || a->pk) && nlook < OV_EXT) { /* a variant's colours, or one colour */
+        asset *pa = pal && safe_name(pal) ? gfx_asset_opt(pal) : NULL;
+        ov_look[nlook].pal = pa && !pa->missing ? pa : NULL;
+        ov_look[nlook].tint = tinted ? to565(tint) : -1;
+        c->font = (uint8_t)(++nlook);
+    }
+    if ((c->ext ? !straight(c) : c->scale == 2 && !a->pk) && !gfx_pixels(a)) { /* turned: unpacked here, once */
+        forget(c, 0, 0);
+        return 0;
+    }
     commit(c, 0, 0);
     return 0;
 }
@@ -469,7 +501,7 @@ static int l_img(lua_State *L) {
 static int l_frame(lua_State *L) {
     const char *id = luaL_checkstring(L, 1);
     asset *a = safe_name(id) ? gfx_asset(id) : NULL;
-    ov_cmd *c = !a || a->missing ? NULL : ov_add(OV_NINE);
+    ov_cmd *c = !a || a->missing || !gfx_pixels(a) ? NULL : ov_add(OV_NINE); /* (a packed one: unpacked, once) */
     if (!c) return 0;
     c->a = a, c->x = i16(num(L, 2)), c->y = i16(num(L, 3)), c->w = i16(num(L, 4)), c->h = i16(num(L, 5));
     lua_Integer k = luaL_optinteger(L, 6, 1), f = luaL_optinteger(L, 7, 0);
@@ -564,7 +596,7 @@ static int l_pget(lua_State *L) { /* pget(x, y [, picture]) -> 0xRRGGBB, or nil 
         a = safe_name(id) ? gfx_asset_opt(id) : NULL;
     }
     int x = num(L, 1), y = num(L, 2);
-    if (!a || a->missing || x < 0 || y < 0 || x >= a->w || y >= a->h) return lua_pushnil(L), 1;
+    if (!a || a->missing || x < 0 || y < 0 || x >= a->w || y >= a->h || !gfx_pixels(a)) return lua_pushnil(L), 1;
     uint16_t v = a->pixels[y * a->w + x];
     if (a->canvas ? v == CANVAS_KEY : !gfx_opaque(a, 0, x, y)) return lua_pushnil(L), 1;
     unsigned r = v >> 11, g = v >> 5 & 63, b = v & 31;
@@ -581,6 +613,7 @@ static int l_canvas(lua_State *L) { /* canvas(id, w, h) or canvas(id, picture): 
     if (lua_type(L, 2) == LUA_TSTRING) {
         const char *src = lua_tostring(L, 2);
         from = safe_name(src) ? gfx_asset_opt(src) : NULL;
+        if (from && !from->missing && !gfx_pixels(from)) return luaL_error(L, "canvas \"%s\": no memory to copy \"%s\"", id, src);
         if (!from || from->missing) return luaL_error(L, "canvas \"%s\": no picture \"%s\" to copy", id, src);
     } else {
         w = num(L, 2), h = num(L, 3);
@@ -628,7 +661,7 @@ static int l_imgsize(lua_State *L) { /* imgsize(picture) -> w, h, frames, or nil
 void draw_frame_begin(void) { /* each _draw starts on the screen, with no camera and no clip */
     frame_no++;
     nseen[frame_no & 1] = 0;
-    nov = ntext = nstyle = nxf = npts = nclip = 0;
+    nov = ntext = nstyle = nxf = npts = nclip = nlook = 0;
     target = NULL, cam_x = cam_y = 0, clipping = false;
 }
 
@@ -643,7 +676,8 @@ void draw_free(void) {
 bool draw_covers_screen(void) {
     const ov_cmd *c = nov ? &ov[0] : NULL;
     int k = c && c->op == OV_IMG ? c->scale : 0;
-    return k && !c->ext && !c->a->mask && c->x <= 0 && c->y <= 0 && c->x + k * c->a->w >= SCREEN_W &&
+    bool opaque = c && c->a && (c->a->pk && !c->a->pixels ? c->a->pk_opaque : !c->a->mask);
+    return k && !c->ext && !c->flip && opaque && c->x <= 0 && c->y <= 0 && c->x + k * c->a->w >= SCREEN_W &&
            c->y + k * c->a->h >= SCREEN_H;
 }
 

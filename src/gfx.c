@@ -20,6 +20,7 @@ void gfx_reset(void) {
     for (int i = 0; i < nassets; i++) {
         if (assets[i].pixels != &oom_pixel) free(assets[i].pixels);
         free(assets[i].mask);
+        free(assets[i].pk);
     }
     nassets = 0;
     nforced = 0;
@@ -55,6 +56,59 @@ static void placeholder(asset *a, int w, int h, int frames) {
     a->missing = true;
 }
 
+static inline unsigned rd16(const uint8_t *p) { return p[0] | p[1] << 8; }
+static inline unsigned index_at(const uint8_t *ids, int j, int bpp) {
+    return bpp == 8 ? ids[j] : (j & 1 ? ids[j >> 1] & 15 : ids[j >> 1] >> 4);
+}
+
+/* A packed picture's file, checked whole: every column's runs inside the picture and the file, so drawing it needs no
+ * checks. False (the asset a placeholder) when anything is off. */
+static bool load_packed(asset *a) {
+    char path[384];
+    long len = 0;
+    snprintf(path, sizeof path, "%s/assets/%s.pk", G.game_dir, a->id);
+    uint8_t *pk = (uint8_t *)read_file(path, &len);
+    const char *why = NULL;
+    if (!pk || len < 16 || memcmp(pk, "NP2K", 4) || pk[4] != 1 || (pk[5] != 4 && pk[5] != 8)) why = "not a packed picture";
+    unsigned ncol = why ? 0 : rd16(pk + 6), w = why ? 0 : rd16(pk + 8), h = why ? 0 : rd16(pk + 10), nf = why ? 0 : rd16(pk + 12);
+    size_t table = (16 + 2 * (size_t)ncol + 3) & ~(size_t)3, ncols = (size_t)w * nf;
+    if (!why && ((int)w != a->w || (int)h != a->h || (int)nf != a->frames || !ncol || ncol > (pk[5] == 4 ? 16u : 256u)))
+        why = "its size is not its meta's";
+    if (!why && table + 4 * ncols > (size_t)len) why = "cut short";
+    bool opaque = true;
+    for (size_t c = 0; !why && c < ncols; c++) { /* every column: its runs, in order, inside the picture and the file */
+        uint32_t at;
+        memcpy(&at, pk + table + 4 * c, 4);
+        if (at < table + 4 * ncols || at > (size_t)len - 2) { why = "a column outside the file"; break; } /* (no at + 2: it wraps) */
+        unsigned runs = rd16(pk + at), next = 0;
+        size_t p = at + 2;
+        if (runs != 1) opaque = false;
+        for (unsigned r = 0; r < runs && !why; r++) {
+            if (p + 4 > (size_t)len) { why = "a run outside the file"; break; }
+            unsigned y = rd16(pk + p), n = rd16(pk + p + 2);
+            if (y < next || !n || y + n > h) why = "a run outside its column";
+            if (r == 0 && runs == 1 && (y != 0 || n != h)) opaque = false;
+            next = y + n;
+            p += 4 + (pk[5] == 8 ? n : (n + 1) / 2);
+            if (p > (size_t)len) why = "indices outside the file";
+        }
+        for (size_t q = at + 2, r = 0; !why && r < runs; r++) { /* the indices inside the palette */
+            unsigned n = rd16(pk + q + 2);
+            for (unsigned j = 0; j < n && !why; j++)
+                if (index_at(pk + q + 4, (int)j, pk[5]) >= ncol) why = "a colour outside the palette";
+            q += 4 + (pk[5] == 8 ? n : (n + 1) / 2);
+        }
+    }
+    if (why) {
+        hal_log("asset %s: %s", a->id, why);
+        free(pk);
+        return false;
+    }
+    a->pk = pk, a->bpp = pk[5], a->pal = (const uint16_t *)(pk + 16), a->cols = (const uint32_t *)(pk + table);
+    a->pk_opaque = opaque;
+    return true;
+}
+
 static bool load_asset(asset *a) {
     for (int i = 0; i < nforced; i++)
         if (!strcmp(forced[i], a->id)) return false;
@@ -69,8 +123,15 @@ static bool load_asset(asset *a) {
     a->ax = jai(anc, 0, a->w / 2);
     a->ay = jai(anc, 1, a->h - 1);
     a->frame_ms = jai(fms, 0, 0);
+    const char *format = jstr(meta, "format");
+    bool packed = format && !strcmp(format, "packed");
     cJSON_Delete(meta);
     if (a->w <= 0 || a->h <= 0 || a->frames <= 0 || a->w > 1024 || a->h > 1024 || a->frames > 64) return false;
+    if (packed) {
+        if (load_packed(a)) return true;
+        placeholder(a, a->w, a->h, a->frames);
+        return true; /* the declared geometry, a checkerboard */
+    }
 
     char path[384];
     long len = 0;
@@ -177,7 +238,50 @@ const char *gfx_canvas(const char *id, int w, int h, const asset *from, asset **
 }
 asset *gfx_asset_opt(const char *id) { return lookup(id, true); } /* a sprite a game may leave out: no log */
 
+/* The runs of a packed picture's column (frame f, column u): the code after ids runs for each, with y, n, ids set. */
+#define EACH_RUN(a, f, u, y, n, ids, ...)                                                        \
+    do {                                                                                        \
+        const uint8_t *p_ = (a)->pk + (a)->cols[(size_t)(f) * (a)->w + (u)];                    \
+        unsigned runs_ = rd16(p_);                                                              \
+        p_ += 2;                                                                                \
+        for (unsigned r_ = 0; r_ < runs_; r_++) {                                               \
+            int y = (int)rd16(p_), n = (int)rd16(p_ + 2);                                       \
+            const uint8_t *ids = p_ + 4;                                                        \
+            __VA_ARGS__;                                                                        \
+            p_ += 4 + ((a)->bpp == 8 ? n : (n + 1) / 2);                                        \
+        }                                                                                       \
+    } while (0)
+
+uint16_t *gfx_pixels(asset *a) {
+    if (a->pixels || !a->pk) return a->pixels;
+    size_t npx = (size_t)a->w * a->h * a->frames;
+    int stride = (a->w + 7) / 8;
+    uint16_t *px = malloc(npx * 2);
+    uint8_t *mask = a->pk_opaque ? NULL : calloc((size_t)stride * a->h * a->frames, 1);
+    if (!px || (!a->pk_opaque && !mask)) {
+        free(px), free(mask);
+        return NULL;
+    }
+    memset(px, 0, npx * 2);
+    for (int f = 0; f < a->frames; f++)
+        for (int u = 0; u < a->w; u++)
+            EACH_RUN(a, f, u, y, n, ids, {
+                for (int j = 0; j < n; j++) {
+                    size_t i = ((size_t)f * a->h + y + j) * a->w + u;
+                    px[i] = a->pal[index_at(ids, j, a->bpp)];
+                    if (mask) mask[((size_t)f * a->h + y + j) * stride + u / 8] |= 0x80 >> (u % 8);
+                }
+            });
+    a->pixels = px, a->mask = mask;
+    return px;
+}
+
 bool gfx_opaque(const asset *a, int frame, int u, int v) {
+    if (a->pk && !a->pixels) {
+        bool in = false;
+        EACH_RUN(a, frame, u, y, n, ids, { (void)ids; if (v >= y && v < y + n) in = true; });
+        return in;
+    }
     if (!a->mask) return true;
     int stride = (a->w + 7) / 8;
     return a->mask[(size_t)frame * stride * a->h + v * stride + u / 8] & (0x80 >> (u % 8));
@@ -210,7 +314,75 @@ surface gfx_turned(uint16_t *out, int row0, int rows, int fw, int fh, bool flip,
 
 /* Unrotated blit of the first `rows` rows: clipped once, the mask read a row at a time, rows without a mask
  * copied whole. This is every sprite and background in the world, so it is the hot path on the console. */
+/* A packed picture at 1x, maybe mirrored: column by column (on the console's turned strips both the picture's column
+ * and the screen's are contiguous), only the opaque runs, each pixel its palette's colour. rows: the top ones only. */
+/* A packed picture's colours as the surface keeps them, here in internal memory (no PSRAM read per pixel): a
+ * variant's colours where it has them (alt), or one colour for a flash (tint >= 0) */
+static void look_pal(const surface *s, const asset *a, const asset *alt, int tint, uint16_t pal[256]) {
+    const int ncol = (int)rd16(a->pk + 6), nalt = alt && alt->pk ? (int)rd16(alt->pk + 6) : 0;
+    for (int i = 0; i < ncol; i++) pal[i] = stored(s, tint >= 0 ? (uint16_t)tint : i < nalt ? alt->pal[i] : a->pal[i]);
+}
+
+static void blit_packed(surface *s, const asset *a, int frame, int x, int y, int rows, bool flip, const asset *alt,
+                        int tint) {
+    int u0, v0, n = CLIP_X(s, x, a->w, &u0), m = CLIP_Y(s, y, rows < a->h ? rows : a->h, &v0);
+    if (n <= 0 || m <= 0) return;
+    const int ys = step_y(s), lo = v0, hi = v0 + m, bpp = a->bpp;
+    uint16_t pal[256];
+    look_pal(s, a, alt, tint, pal);
+    for (int k = 0; k < n; k++) {
+        int u = u0 + k;
+        EACH_RUN(a, frame, flip ? a->w - 1 - u : u, ry, rn, ids, {
+            int j = ry < lo ? lo - ry : 0, j1 = ry + rn > hi ? hi - ry : rn;
+            if (j < j1) {
+                uint16_t *d = at(s, x + u, y + ry + j);
+                if (bpp == 8) {
+                    for (; j < j1; j++, d += ys) *d = pal[ids[j]];
+                } else { /* two pixels a byte: the odd one first, then pairs, then the last even one */
+                    if (j & 1) *d = pal[ids[j >> 1] & 15], d += ys, j++;
+                    for (; j + 1 < j1; j += 2, d += 2 * ys) {
+                        unsigned b = ids[j >> 1];
+                        d[0] = pal[b >> 4], d[ys] = pal[b & 15];
+                    }
+                    if (j < j1) *d = pal[ids[j >> 1] >> 4];
+                }
+            }
+        });
+    }
+}
+
+static int64_t floor_div(int64_t a, int64_t b) { return a / b - (a % b != 0 && (a < 0) != (b < 0)); } /* b > 0 */
+
+/* A packed picture scaled (and mirrored, by negative steps), straight from its columns: screen column bx0 + i shows
+ * picture column (u + i du) >> 16, screen row by0 + k picture row (v + k dv) >> 16, in 16.16 fixed point, as
+ * gfx_blit_ex steps them; each run of a column lands on the rows k worked out from its ends, not looked for. */
+void gfx_blit_scaled(surface *s, const asset *a, int frame, int bx0, int bx1, int by0, int by1, int32_t u, int32_t du,
+                     int32_t v, int32_t dv, const asset *alt, int tint) {
+    uint16_t pal[256];
+    look_pal(s, a, alt, tint, pal);
+    const int ys = step_y(s), len = by1 - by0, bpp = a->bpp;
+    const int64_t m = dv < 0 ? -(int64_t)dv : dv;
+    for (int x = bx0; x < bx1; x++, u += du) {
+        if (u < 0 || u >= a->w << 16) continue;
+        uint16_t *col = at(s, x, by0);
+        EACH_RUN(a, frame, u >> 16, ry, rn, ids, {
+            int64_t lo = ((int64_t)ry << 16) - v, hi = ((int64_t)(ry + rn) << 16) - v; /* lo <= k dv < hi */
+            int64_t k0 = dv > 0 ? -floor_div(-lo, m) : floor_div(-hi, m) + 1;
+            int64_t k1 = dv > 0 ? -floor_div(-hi, m) : floor_div(-lo, m) + 1;
+            if (k0 < 0) k0 = 0;
+            if (k1 > len) k1 = len;
+            int32_t vv = v + (int32_t)k0 * dv;
+            uint16_t *d = col + k0 * ys;
+            for (int64_t k = k0; k < k1; k++, vv += dv, d += ys) *d = pal[index_at(ids, (vv >> 16) - ry, bpp)];
+        });
+    }
+}
+
 static void blit_plain(surface *s, const asset *a, int frame, int x, int y, int rows, bool half) {
+    if (a->pk && (!half || !a->pixels)) { /* (half see-through is the v1 games', whose pictures are not packed) */
+        blit_packed(s, a, frame, x, y, rows, false, NULL, -1);
+        return;
+    }
     int u0, v0, n = CLIP_X(s, x, a->w, &u0), m = CLIP_Y(s, y, rows < a->h ? rows : a->h, &v0);
     if (n <= 0 || m <= 0) return;
     const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
@@ -265,6 +437,32 @@ static void blit_plain(surface *s, const asset *a, int frame, int x, int y, int 
     }
 }
 
+/* At 1x, mirrored left to right when flip_x: a fighter facing the other way without the general (scaled, turned) path. */
+void gfx_blit_flip(surface *s, const asset *a, int frame, int x, int y, bool flip_x, const asset *pal, int tint) {
+    if (frame < 0 || frame >= a->frames) frame = 0;
+    if (a->pk) {
+        blit_packed(s, a, frame, x, y, a->h, flip_x, pal, tint);
+        return;
+    }
+    if (!flip_x && tint < 0) {
+        blit_plain(s, a, frame, x, y, a->h, false);
+        return;
+    }
+    int u0, v0, n = CLIP_X(s, x, a->w, &u0), m = CLIP_Y(s, y, a->h, &v0), stride = (a->w + 7) / 8;
+    if (n <= 0 || m <= 0) return;
+    const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
+    const uint8_t *mask = a->mask ? a->mask + (size_t)frame * stride * a->h : NULL;
+    const int ys = step_y(s);
+    for (int k = 0; k < n; k++) { /* each screen column from the picture's mirrored one */
+        int u = u0 + k, su = flip_x ? a->w - 1 - u : u;
+        uint16_t *d = at(s, x + u, y + v0);
+        const uint16_t *sp = src + v0 * a->w + su;
+        const uint8_t *mp = mask ? mask + v0 * stride + (su >> 3) : NULL, bit = (uint8_t)(0x80 >> (su & 7));
+        for (int j = 0; j < m; j++, d += ys, sp += a->w)
+            if (!mp || (mp[j * stride] & bit)) *d = stored(s, tint >= 0 ? (uint16_t)tint : *sp);
+    }
+}
+
 /* rot: quarter turns clockwise. Forward map (u,v) -> rot1 (h-1-v,u), rot2 (w-1-u,h-1-v), rot3 (v,w-1-u). */
 void gfx_blit(surface *s, const asset *a, int frame, int x, int y, int rot, bool half) {
     if (frame < 0 || frame >= a->frames) frame = 0;
@@ -302,6 +500,20 @@ void gfx_blit_rows(surface *s, const asset *a, int frame, int x, int y, int rows
 }
 
 /* Each pixel a 2x2 block; a block that would cross the frame's edge is left out whole, whatever window s is. */
+/* gfx_blit2x for a packed picture, from its runs, in its look: only the source pixels whose 2x2 block lies whole
+ * inside the frame, as gfx_blit2x draws them (the same pixels, packed or not) */
+void gfx_blit2x_look(surface *s, const asset *a, int frame, int x, int y, const asset *pal, int tint) {
+    if (!a->pk) {
+        gfx_blit2x(s, a, frame, x, y);
+        return;
+    }
+    const int fw = frame_w(s), fh = frame_h(s);
+    const int x0 = x < 0 ? x + ((1 - x) & ~1) : x, y0 = y < 0 ? y + ((1 - y) & ~1) : y; /* the first whole block */
+    const int x1 = fw - x < 0 ? x0 : x + ((fw - x) & ~1), y1 = fh - y < 0 ? y0 : y + ((fh - y) & ~1);
+    surface in = gfx_clip(s, x0, y0, x1 - x0, y1 - y0);
+    if (in.w > 0 && in.h > 0) gfx_blit_ex(&in, a, frame, x, y, 2, 2, 0, pal, tint);
+}
+
 void gfx_blit2x(surface *s, const asset *a, int frame, int x, int y) {
     if (frame < 0 || frame >= a->frames) frame = 0;
     const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
