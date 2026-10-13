@@ -102,3 +102,33 @@ serial data received"); it needs the cable unplugged and plugged back in. Until 
   screen on the console: Bajo Pueblo's bag 14.7 → 10.4 ms, bag with a dialogue 20.2 → 14.2 ms, Geumgye's bag
   13.9 → 9.9 ms. Then occlusion for the whole stack and a faster 2× blit: an item's close-up 14.8 → 11.6 ms (60 fps),
   over the bag 27.2 → 18.5 ms (still ~30 fps there).
+
+## 2026-10-13 · What creative games need: hearing, stories, rhythm, turning, video, the console itself
+
+Pau's own game ideas (a buried village that remembers, ritual mechas, a cat's life, raising a child, live 90s TV that
+turns on the player, castells, a festa's dances, rafts on rivers, a metro that should not exist) were the yardstick.
+Six things np2d lacked, added on branch `fases` (local commits, all tests green after each):
+
+- **The microphone:** `mic()` gives level, pitch (McLeod's NSDF, 69-1000 Hz) and a hit on the tick a sudden sound
+  starts; `mic_record(id, s)` turns what it hears into a sound. Console: the ES8311's ADC on the same I2S stream as
+  the sound (full duplex, +6 KB of DMA). Browser: verified in Chromium with a fake microphone playing 440 Hz (level
+  0.889 against 0.894 worked out; pitch 440.1 Hz), without the browser's auto gain and noise suppression.
+  **Not tried on the console yet** (`MIC_GAIN`, `MIC_PGA` in audio_out.c are guesses to tune; is there a microphone
+  on the board at all?).
+- **Stories:** `lib/story.lua`, conversations written as plain text (knots, who says what and with which mood,
+  choices once or always with indented bodies, `[if]`, `[do]`, `[var]`, `{expr}`), saved with `store()`.
+  `file(name)` reads any text file of a game.
+- **The song's clock:** `music_time()`, the samples of the song the speaker has played, for rhythm games; it takes
+  off what is queued (the console's DMA queue, 70 ms, a guess not yet checked against the microphone).
+- **Bodies that turn:** boxes and circles with `turns = true`, convex polygons, water with lift, drag and current.
+  First in Lua: on the console 10 turning boxes took **32 ms** a tick, 25 took 85 ms (measured on the board).
+  Then in C (`src/lua_physics.c`), about 20 times faster on a desktop: 25 turning boxes 0.83 → 0.04 ms (not measured
+  on the board again). Bodies that do not turn keep the old Lua path, bit for bit (checked).
+- **Video:** `tools/clip2npv.py` and `video(id)`: a palette clip of changed runs, played on a canvas, seek, loop,
+  speed and backwards. 6 s of 213x160 at 15 fps: 451 KB. 22 broken clips fail or play, never crash (ASan).
+- **The console itself:** `led(0xRRGGBB)` lights the pilot LED (red and green) and `battery()` gives level and
+  charging; in the browser a light on the player's page and the Battery API.
+
+Found on the way, not fixed: the API fuzzer with a different random sequence finds strips that differ from the whole
+frame (455 pixels on main itself) on odd PPU settings; the fuzzer keeps its old sequence and the new functions get a
+storm of their own.

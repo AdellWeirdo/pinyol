@@ -4,7 +4,7 @@ A small C engine for 2D games on the **RetroGo** console, an open-source handhel
 
 A game is **a folder**: copy it to the console's microSD under `games/<id>/` and it appears in the game list. The same folder runs in a desktop simulator and in the browser. There are two kinds:
 
-- **Lua games** (`"engine": "np2d@2"`), any genre. The engine gives them a virtual console modelled on the Game Boy Advance: four background layers (tiles, rotated and scaled, Mode 7), 128 sprites, palettes, transparency, windows, mosaic and per-line effects, with text drawn on top at full resolution. They hold 60 fps on the console. The API: [docs/lua.md](docs/lua.md).
+- **Lua games** (`"engine": "np2d@2"`), any genre. The engine gives them a virtual console modelled on the Game Boy Advance: four background layers (tiles, rotated and scaled, Mode 7), 128 sprites, palettes, transparency, windows, mosaic and per-line effects, with text drawn on top at full resolution. They hold 60 fps on the console. Beyond the screen and the buttons: the microphone (level, pitch, claps, recordings), stories written as plain text, a song's clock for rhythm games, bodies that tip over, roll and float, video clips on canvases, the console's LED and battery, and consoles playing together. The API: [docs/lua.md](docs/lua.md).
 - **Adventures made of data** (`"engine": "np2d@1"`): JSON for zones, dialogues, items, puzzles and events, no code. Bajo Pueblo and Geumgye are made this way: [docs/game-format.md](docs/game-format.md).
 
 ![Four Lua games: a platformer, a shoot-'em-up, a Mode 7 kart race and the starting template](docs/examples.png)
@@ -181,8 +181,8 @@ firmware/        the console: ESP-IDF project, builds src/ unchanged
 examples/        games as they go on the microSD: fifteen in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
 tests/           test scripts for the examples, and the PPU's own tests
-tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, font2fnt.py, ...
-lib/             Lua libraries built into the engine, require()d by any game: juice, particles, physics, keyboard, kit
+tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, font2fnt.py, clip2npv.py, ...
+lib/             Lua libraries built into the engine, require()d by any game: juice, particles, physics, keyboard, kit, story
 editor/          the web editor (plain HTML and JavaScript, no build step) and Blockly in vendor/
 third_party/     cJSON, Lua 5.4, pocketmod, the Pixelify Sans font and a library of pixel fonts (fonts/)
 ```
