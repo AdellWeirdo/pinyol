@@ -1,7 +1,7 @@
 // The Drawings tab: pixel by pixel in the console's colours (a palette at hand, or any other), with frames for
 // animation; pictures brought in from files; and what each drawing is for (a tile of the map, solid or not, an
 // object that moves in some way, or a picture behind the map).
-import { PALETTE, BEHAVIOURS, SHOT_DIRS, DRIFTS, DRAWING, SIZES, MAX_SIDE, MAX_PIXELS, blankFrame, safeName, uniqueName, rgb565, hex565, rgbOf, hexOf,
+import { PALETTE, COLOUR_NAMES, BEHAVIOURS, SHOT_DIRS, DRIFTS, DRAWING, SIZES, MAX_SIDE, MAX_PIXELS, blankFrame, safeName, uniqueName, rgb565, hex565, rgbOf, hexOf,
          pixelsOf } from './project.js';
 
 const $ = id => document.getElementById(id);
@@ -40,7 +40,8 @@ export function thumbnail(d, size = 32) {
 
 const drawing = () => app.project.drawings[cur];
 const fits = more => pixelsOf(app.project.drawings) + more <= MAX_PIXELS;
-const TOO_BIG = 'No cabe: los dibujos ya ocupan casi toda la memoria de la consola';
+const TOO_BIG = 'No cabe: la memoria de la consola está casi llena. Quita fotogramas o dibujos que no uses, o hazlos más pequeños.';
+let kb = { x: 0, y: 0 }; // the keyboard's cursor on the canvas
 
 function snapshot() { // before a change: for undo
   const d = drawing();
@@ -85,15 +86,29 @@ function fill(d, f, x, y, to) {
   }
 }
 
-function paint(e, first) {
-  const d = drawing(), at = cellAt(e);
+// at: the cell (from the pointer, or the keyboard's cursor); every frame at once when "Pintar en todos" is on
+function paint(e, first, at = cellAt(e)) {
+  const d = drawing();
   if (!d || !at) return;
-  const px = d.frames[frame], i = at.y * d.w + at.x;
-  if (tool === 'pick') { if (px[i] >= 0) setColour(px[i]); setTool('pen'); return; }
+  const i = at.y * d.w + at.x, all = $('all-frames').checked && d.frames.length > 1;
+  if (tool === 'pick') { if (d.frames[frame][i] >= 0) setColour(d.frames[frame][i]); setTool('pen'); return; }
   if (first) snapshot();
-  if (tool === 'fill') { if (first) fill(d, frame, at.x, at.y, colour); }
-  else px[i] = tool === 'erase' || e.buttons === 2 ? -1 : colour;
+  for (const f of all ? d.frames.keys() : [frame]) {
+    if (tool === 'fill') { if (first) fill(d, f, at.x, at.y, colour); }
+    else d.frames[f][i] = tool === 'erase' || e.buttons === 2 ? -1 : colour;
+  }
   app.changed();
+  renderCanvas();
+}
+
+function canvasKeys(e) { // arrows move the cursor; Space or Enter paints with the tool; Delete erases
+  const d = drawing(), m = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  if (!d) return;
+  if (m) kb = { x: Math.max(0, Math.min(d.w - 1, kb.x + m[0])), y: Math.max(0, Math.min(d.h - 1, kb.y + m[1])) };
+  else if (e.key === ' ' || e.key === 'Enter') paint({ buttons: 1 }, true, { ...kb });
+  else if (e.key === 'Delete' || e.key === 'Backspace') paint({ buttons: 2 }, true, { ...kb });
+  else return;
+  e.preventDefault();
   renderCanvas();
 }
 
@@ -110,6 +125,14 @@ function renderCanvas() {
     for (let i = 1; i < d.w; i++) { g.beginPath(); g.moveTo(i * s + 0.5, 0); g.lineTo(i * s + 0.5, c.height); g.stroke(); }
     for (let i = 1; i < d.h; i++) { g.beginPath(); g.moveTo(0, i * s + 0.5); g.lineTo(c.width, i * s + 0.5); g.stroke(); }
   }
+  if (document.activeElement === c) { // the keyboard's cursor
+    const g = c.getContext('2d');
+    kb = { x: Math.min(kb.x, d.w - 1), y: Math.min(kb.y, d.h - 1) };
+    g.lineWidth = Math.max(1, s / 8);
+    g.strokeStyle = '#6cb4e0';
+    g.strokeRect(kb.x * s + g.lineWidth / 2, kb.y * s + g.lineWidth / 2, s - g.lineWidth, s - g.lineWidth);
+  }
+  $('all-frames-row').hidden = d.frames.length < 2;
   renderFrames();
   drawPreview();
   const li = $('drawings').children[cur];
@@ -121,36 +144,39 @@ function renderCanvas() {
 const USES = { tile: 'baldosa', object: 'objeto', backdrop: 'fondo' };
 
 function renderList() {
-  const ul = $('drawings');
+  const ul = $('drawings'), focused = ul.contains(document.activeElement);
   ul.replaceChildren();
   app.project.drawings.forEach((d, i) => {
-    const li = document.createElement('li');
-    li.append(thumbnail(d));
-    li.append(Object.assign(document.createElement('span'), { textContent: d.name }));
-    li.append(Object.assign(document.createElement('span'), { className: 'kind', textContent: d.use === 'tile' && d.solid ? 'sólida' : USES[d.use] }));
-    li.setAttribute('aria-current', String(i === cur));
-    li.tabIndex = 0;
-    li.addEventListener('click', () => select(i));
-    li.addEventListener('keydown', e => { if (e.key === 'Enter') select(i); });
+    const li = document.createElement('li'), b = document.createElement('button');
+    b.className = 'item';
+    b.append(thumbnail(d), Object.assign(document.createElement('span'), { className: 'name', textContent: d.name }),
+      Object.assign(document.createElement('span'), { className: 'kind', textContent: d.use === 'tile' && d.solid ? 'sólida' : USES[d.use] }));
+    b.setAttribute('aria-current', String(i === cur));
+    b.addEventListener('click', () => select(i));
+    li.append(b);
     ul.append(li);
   });
+  if (focused) ul.querySelector('[aria-current="true"]')?.focus(); // still where it was
   const used = pixelsOf(app.project.drawings), m = $('d-memory');
   m.textContent = `Memoria de la consola: ${used * 2 >> 10} de ${MAX_PIXELS * 2 >> 10} KB`;
   m.classList.toggle('warn', used > MAX_PIXELS * 0.9);
 }
 
 function renderFrames() {
-  const d = drawing(), box = $('frames');
+  const d = drawing(), box = $('frames'), focused = box.contains(document.activeElement);
   box.replaceChildren();
   d.frames.forEach((_, f) => {
-    const c = document.createElement('canvas');
+    const b = document.createElement('button'), c = document.createElement('canvas');
     c.width = d.w, c.height = d.h;
     drawPixels(c, d, f);
-    c.setAttribute('aria-current', String(f === frame));
-    c.title = 'Fotograma ' + (f + 1);
-    c.addEventListener('click', () => { frame = f; renderCanvas(); });
-    box.append(c);
+    b.append(c);
+    b.setAttribute('aria-pressed', String(f === frame));
+    b.setAttribute('aria-label', 'Fotograma ' + (f + 1));
+    b.title = 'Fotograma ' + (f + 1);
+    b.addEventListener('click', () => { frame = f; renderCanvas(); });
+    box.append(b);
   });
+  if (focused) box.querySelector('[aria-pressed="true"]')?.focus();
   $('frame-del').disabled = d.frames.length < 2;
   $('frame-add').disabled = d.frames.length >= 8;
 }
@@ -261,7 +287,7 @@ function importPreview() {
   drawPixels(c, pic, 0, s);
   incoming.total = pic.w * pic.frames.length; // the row's width: kept when the number of frames changes
   $('import-size').textContent = `${pic.w} × ${pic.h} px` + (pic.frames.length > 1 ? ` cada uno, ${pic.frames.length} fotogramas` : '') +
-    (ok ? '' : ' · no cabe en la memoria de la consola');
+    (ok ? '' : ' · no cabe en la memoria de la consola: hazla más pequeña');
   $('import-size').classList.toggle('warn', !ok);
   $('import-ok').disabled = !ok;
 }
@@ -278,9 +304,10 @@ function fewColours(bmp) { // pixel art (a few colours) stays sharp when made sm
 }
 
 async function openImport(file) {
-  if (!file || !/^image\//.test(file.type)) return;
+  if (!file) return;
+  if (!/^image\//.test(file.type)) return app.oops(`«${file.name}» no es una imagen. Usa un archivo PNG, JPG, GIF o WebP.`);
   try { incoming = { bmp: await createImageBitmap(file), name: (file.name || 'imagen').replace(/\.[^.]*$/, '') }; }
-  catch { app.toast('No se ha podido leer esa imagen'); return; }
+  catch { return app.oops('No se ha podido leer esa imagen. Prueba a guardarla como PNG.'); }
   const { width: w, height: h } = incoming.bmp;
   const strip = w > h && w % h === 0 && w / h <= 8 ? w / h : 1; // a row of square frames
   const tw = Math.min(w, strip > 1 ? MAX_SIDE : 240); // the screen is 240 wide
@@ -303,7 +330,7 @@ function finishImport() {
   select(app.project.drawings.length - 1);
   app.uses();
   app.changed();
-  app.toast(use === 'backdrop' ? 'Imagen traída como fondo: se ve detrás del mapa' : 'Imagen traída');
+  app.toast(use === 'backdrop' ? 'Imagen añadida como fondo: se ve detrás del mapa.' : 'Imagen añadida.');
 }
 
 function initImport() {
@@ -331,10 +358,10 @@ function initImport() {
 export function initDrawings(ctx) {
   app = ctx;
   const pal = $('palette');
-  PALETTE.forEach(hex => {
+  PALETTE.forEach((hex, i) => {
     const b = document.createElement('button'), v = hex565(hex);
-    b.style.background = hexOf(v), b.dataset.c = v, b.title = hexOf(v);
-    b.setAttribute('aria-label', 'Color ' + hexOf(v));
+    b.style.background = hexOf(v), b.dataset.c = v, b.title = COLOUR_NAMES[i];
+    b.setAttribute('aria-label', COLOUR_NAMES[i]);
     b.addEventListener('click', () => setColour(v));
     pal.append(b);
   });
@@ -345,13 +372,16 @@ export function initDrawings(ctx) {
   for (const [k, label] of Object.entries(DRIFTS)) $('d-drift').append(new Option(label, k));
   for (const b of document.querySelectorAll('[data-tool]')) b.addEventListener('click', () => setTool(b.dataset.tool));
   const c = $('pixels');
-  c.addEventListener('pointerdown', e => { c.setPointerCapture(e.pointerId); paint(e, true); });
-  c.addEventListener('pointermove', e => { if (e.buttons && tool !== 'fill' && tool !== 'pick') paint(e, false); });
+  c.addEventListener('pointerdown', e => { if (!e.isPrimary) return; c.setPointerCapture(e.pointerId); paint(e, true); });
+  c.addEventListener('pointermove', e => { if (e.isPrimary && e.buttons && tool !== 'fill' && tool !== 'pick') paint(e, false); });
+  c.addEventListener('keydown', canvasKeys);
+  c.addEventListener('focus', renderCanvas);
+  c.addEventListener('blur', renderCanvas);
   c.addEventListener('contextmenu', e => e.preventDefault());
   $('undo').addEventListener('click', () => restore(undo, redo));
   $('redo').addEventListener('click', () => restore(redo, undo));
-  addEventListener('keydown', e => {
-    if ($('tab-draw').hidden || $('import').open || e.target.matches('input, select, textarea')) return;
+  addEventListener('keydown', e => { // the tab's shortcuts, only over its drawing area (single letters type elsewhere)
+    if ($('tab-draw').hidden || $('import').open || !e.target.closest('#tab-draw .work') || e.target.matches('input, select, textarea')) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); restore(e.shiftKey ? redo : undo, e.shiftKey ? undo : redo); }
     else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); restore(redo, undo); }
     else if (!e.ctrlKey && !e.metaKey) {
@@ -392,7 +422,8 @@ export function initDrawings(ctx) {
   });
   $('drawing-del').addEventListener('click', () => {
     const d = drawing();
-    if (app.project.drawings.length < 2 || !confirm(`¿Quitar «${d.name}»? También sale del mapa.`)) return;
+    if (app.project.drawings.length < 2 ||
+        !confirm(`¿Quitar «${d.name}»? Sale también de todos los niveles y de la portada, y los bloques que lo usan dejarán de funcionar.`)) return;
     app.remove(d.name);
     cur = Math.max(0, cur - 1);
     changed();
@@ -401,6 +432,7 @@ export function initDrawings(ctx) {
     const d = drawing(), names = new Set(app.project.drawings.filter(x => x !== d).map(x => x.name));
     const name = uniqueName(safeName(e.target.value, d.name), names);
     if (name !== d.name) { undo.delete(d.name); app.rename(d.name, name); }
+    if (name !== e.target.value) app.toast(`Se llama «${name}»: sin acentos ni espacios, así sale en los bloques.`);
     changed();
   });
   $('d-size').addEventListener('change', e => {
@@ -412,7 +444,17 @@ export function initDrawings(ctx) {
     changed();
   });
   for (const r of document.querySelectorAll('input[name=use]'))
-    r.addEventListener('change', () => { drawing().use = r.value; if (r.value !== 'tile') drawing().solid = false; app.uses(); changed(); });
+    r.addEventListener('change', () => { // what it is placed as goes away from the maps: said first
+      const d = drawing(), n = app.placed(d.name);
+      if (n && !confirm(`«${d.name}» está puesto ${n} ${n === 1 ? 'vez' : 'veces'} en el mapa. Si cambia, se quita de los niveles. ¿Seguir?`)) {
+        renderProps();
+        return;
+      }
+      d.use = r.value;
+      if (r.value !== 'tile') d.solid = false;
+      app.uses();
+      changed();
+    });
   $('d-solid').addEventListener('change', e => { drawing().solid = e.target.checked; changed(); });
   $('d-behaviour').addEventListener('change', e => { drawing().behaviour = e.target.value; changed(); });
   $('d-dir').addEventListener('change', e => { drawing().dir = e.target.value; changed(); });

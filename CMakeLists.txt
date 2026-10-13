@@ -128,6 +128,7 @@ if(NODE)
   add_test(NAME make_editor_game COMMAND ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/editor/test/build_game.mjs
            ${CMAKE_BINARY_DIR}/editor)
   set_tests_properties(make_editor_game PROPERTIES FIXTURES_SETUP editor_game)
+  add_test(NAME editor_cable COMMAND ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/editor/test/cable_test.mjs)
 endif()
 file(GLOB SCRIPTS CONFIGURE_DEPENDS tests/*.script)
 foreach(s ${SCRIPTS})

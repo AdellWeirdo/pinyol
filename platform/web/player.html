@@ -64,6 +64,16 @@
   .abc button { border-radius: 50%; font-size: 1.1rem; }
   .abc .a { grid-area: 1 / 2; } .abc .b { grid-area: 2 / 1; } .abc .c { grid-area: 1 / 1; }
   @media (pointer: coarse) { .pad { display: grid; } .keys { display: none; } }
+  /* in the editor: the screen as big as leaves room for the buttons under it */
+  .embed main { padding: 8px; }
+  .embed .screen { width: min(100%, (100dvh - 24px) * 1.5); justify-self: center; }
+  @media (pointer: coarse) { .embed .screen { width: min(100%, (100dvh - 220px) * 1.5); } }
+  @media (max-width: 440px) { /* a phone: the buttons smaller, START and MENU on a row of their own */
+    .pad { grid-template-columns: auto auto; justify-content: space-between; gap: 8px; }
+    .dpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); }
+    .abc { grid-template-columns: repeat(2, 52px); grid-template-rows: repeat(2, 52px); }
+    .mid { grid-column: 1 / -1; order: 3; }
+  }
 </style>
 </head>
 <body>
@@ -276,6 +286,12 @@ for (const b of document.querySelectorAll('.pad button')) {
 /* np2d's editor, in the same site, hands its game over: played at once (?embed=1) */
 if (new URLSearchParams(location.search).get('embed') === '1') {
   document.body.classList.add('embed');
+  addEventListener('keydown', e => { /* Shift+Esc leaves the game for the editor: the keyboard is never trapped in it */
+    if (e.key !== 'Escape' || !e.shiftKey) return;
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    parent.postMessage({ np2d: 'leave' }, location.origin);
+  }, true);
   addEventListener('message', async e => {
     if (e.origin !== location.origin || !e.data || e.data.np2d !== 'play' || !(e.data.zip instanceof ArrayBuffer)) return;
     await load(e.data.zip);

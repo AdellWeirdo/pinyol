@@ -19,7 +19,7 @@ const WAVE_NAMES = { square: 'cuadrada', triangle: 'triangular', saw: 'sierra', 
 
 const sound = () => app.project.sounds[cur];
 export function paramsOf(s) { return s.params ? { ...s.params } : recipe(s.recipe, s.seed); }
-const hear = s => (s.file ? playClip(s).catch(() => app.toast('No se ha podido leer ese sonido')) : play(paramsOf(s)));
+const hear = s => (s.file ? playClip(s).catch(() => app.oops(`No se ha podido leer el sonido «${s.name}».`)) : play(paramsOf(s)));
 
 function drawWave(data, from = 0, to = data.length, note = '') { // the samples; outside from..to dimmed (cut away)
   const c = $('wave'), g = c.getContext('2d');
@@ -35,22 +35,26 @@ function drawWave(data, from = 0, to = data.length, note = '') { // the samples;
   }
   g.fillStyle = '#9c90b0';
   g.font = '12px system-ui';
-  g.fillText(note || (data.length / HZ).toFixed(2) + ' s', 8, 16);
+  const said = note || 'Dura ' + (data.length / HZ).toFixed(2) + ' s';
+  g.fillText(said, 8, 16);
+  $('wave-note').textContent = said; // also as text: not only drawn
 }
 
 function renderList() {
-  const ul = $('sounds');
+  const ul = $('sounds'), focused = ul.contains(document.activeElement);
   ul.replaceChildren();
   app.project.sounds.forEach((s, i) => {
-    const li = document.createElement('li');
-    li.append(Object.assign(document.createElement('span'), { textContent: s.name }));
+    const li = document.createElement('li'), b = document.createElement('button');
     const kind = s.file ? (s.use === 'music' ? 'música' : 'archivo') : s.params ? 'a mano' : RECIPES[s.recipe] || '';
-    li.append(Object.assign(document.createElement('span'), { className: 'kind', textContent: kind }));
-    li.setAttribute('aria-current', String(i === cur));
-    li.tabIndex = 0;
-    li.addEventListener('click', () => { cur = i; stopClip(); render(); if (s.use !== 'music') hear(s); });
+    b.className = 'item';
+    b.append(Object.assign(document.createElement('span'), { className: 'name', textContent: s.name }),
+      Object.assign(document.createElement('span'), { className: 'kind', textContent: kind }));
+    b.setAttribute('aria-current', String(i === cur));
+    b.addEventListener('click', () => { cur = i; stopClip(); render(); if (s.use !== 'music') hear(s); });
+    li.append(b);
     ul.append(li);
   });
+  if (focused) ul.querySelector('[aria-current="true"]')?.focus();
 }
 
 function slider(box, label, value, min, max, step, onInput, show = v => Number(v).toFixed(2)) {
@@ -85,7 +89,7 @@ async function renderClip(s) { // a sound from a file: what it is for, the part 
   use.textContent = 'Es';
   sel.append(new Option('un efecto: suena una vez (hasta 5 s)', 'effect'), new Option('música: se repite (hasta 4 min)', 'music'));
   sel.value = s.use;
-  sel.addEventListener('change', () => { s.use = sel.value; app.forgetMusic(); app.changed(); render(); });
+  sel.addEventListener('change', () => { s.use = sel.value; app.forgetMusic(); app.changed(); render(); $('sliders').querySelector('select')?.focus(); });
   use.append(sel);
   box.append(use);
   let data;
@@ -108,7 +112,7 @@ function render() {
   for (const id of ['s-name', 's-play', 's-again', 'sound-del']) $(id).disabled = !has;
   renderList();
   $('sliders').replaceChildren();
-  if (!has) { $('wave').getContext('2d').clearRect(0, 0, 9999, 999); return; }
+  if (!has) { $('wave').getContext('2d').clearRect(0, 0, 9999, 999); $('wave-note').textContent = ''; return; }
   cur = Math.min(cur, app.project.sounds.length - 1);
   const s = sound();
   $('s-name').value = s.name;
@@ -127,19 +131,22 @@ function tweak(key, value, quiet) { // the numbers by hand: the sound keeps them
 }
 
 async function bringIn(file) {
-  if (!file || !(/^audio\//.test(file.type) || /\.(wav|mp3|ogg|oga|m4a|aac|flac|opus|webm)$/i.test(file.name))) return;
-  if (file.size > 16 << 20) { app.toast('Es demasiado grande: hasta 16 MB'); return; }
+  if (!file) return;
+  if (!(/^audio\//.test(file.type) || /\.(wav|mp3|ogg|oga|m4a|aac|flac|opus|webm)$/i.test(file.name)))
+    return app.oops(`«${file.name}» no es un sonido. Usa un archivo WAV, MP3, OGG o M4A.`);
+  if (file.size > 16 << 20) return app.oops('Ese sonido es demasiado grande: hasta 16 MB.');
+  app.toast('Leyendo el sonido…');
   const names = new Set(app.project.sounds.map(x => x.name));
   const s = { name: uniqueName(safeName((file.name || 'sonido').replace(/\.[^.]*$/, ''), 'sonido'), names),
               file: toBase64(new Uint8Array(await file.arrayBuffer())), use: 'effect', start: 0, end: 0, volume: 1 };
   let data;
-  try { data = await samples(s); } catch { app.toast('No se ha podido leer ese sonido'); return; }
+  try { data = await samples(s); } catch { return app.oops(`No se ha podido leer «${file.name}». Prueba con otro archivo o guárdalo como WAV o MP3.`); }
   s.use = data.length / HZ > MAX_S.effect ? 'music' : 'effect'; // a long one is music
   app.project.sounds.push(s);
   cur = app.project.sounds.length - 1;
   app.changed();
   render();
-  app.toast(s.use === 'music' ? 'Traído como música: elígela para un nivel en Mapa' : 'Sonido traído');
+  app.toast(s.use === 'music' ? 'Añadido como música: elígela para un nivel en la pestaña Mapa.' : 'Sonido añadido.');
 }
 
 export function initSounds(ctx) {
@@ -191,6 +198,7 @@ export function initSounds(ctx) {
     const s = sound(), names = new Set(app.project.sounds.filter(x => x !== s).map(x => x.name));
     const name = uniqueName(safeName(e.target.value, s.name), names);
     if (name !== s.name) app.renameSound(s.name, name);
+    if (name !== e.target.value) app.toast(`Se llama «${name}»: sin acentos ni espacios, así sale en los bloques.`);
     app.changed();
     render();
   });

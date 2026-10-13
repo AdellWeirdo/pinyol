@@ -13,73 +13,79 @@
 </head>
 <body>
 <header class="top">
-  <div class="brand"><span class="logo">np2d</span><span class="sub">editor</span></div>
+  <h1 class="brand"><span class="logo">np2d</span><span class="sub">editor</span></h1>
   <input id="title" class="title" aria-label="Nombre del juego" maxlength="40" spellcheck="false">
+  <span id="saved" class="saved"></span>
   <nav class="actions" aria-label="Proyecto">
     <div class="menu">
-      <button id="new" aria-haspopup="true" aria-expanded="false">Nuevo</button>
+      <button id="new" aria-expanded="false" aria-controls="new-list">Nuevo</button>
       <div class="menu-list" id="new-list" hidden></div>
     </div>
-    <label class="button">Abrir<input type="file" id="open" accept=".json,application/json" hidden></label>
-    <button id="save">Guardar</button>
-    <button id="export" title="Un .zip para la carpeta games/ de la tarjeta de la consola">Para la consola</button>
-    <button id="play" class="primary">▶ Jugar</button>
+    <label class="button">Abrir<input type="file" id="open" class="vh" accept=".json,application/json"></label>
+    <button id="save">Guardar archivo</button>
+    <button id="export"><span aria-hidden="true">⬇ </span>Pasar a la consola</button>
+    <button id="play" class="primary"><span aria-hidden="true">▶ </span>Jugar</button>
+    <button id="help" aria-label="Guía para empezar" title="Guía para empezar">?</button>
   </nav>
 </header>
 
-<nav class="tabs" role="tablist" aria-label="Partes del juego">
-  <button role="tab" data-tab="draw" aria-selected="true">Dibujos</button>
-  <button role="tab" data-tab="map">Mapa</button>
-  <button role="tab" data-tab="sound">Sonidos</button>
-  <button role="tab" data-tab="logic">Lógica</button>
-  <button role="tab" data-tab="game">Jugar</button>
-</nav>
+<nav aria-label="Partes del juego"><div class="tabs" role="tablist" aria-label="Partes del juego">
+  <button role="tab" id="t-draw" data-tab="draw" aria-controls="tab-draw" aria-selected="true">Dibujos</button>
+  <button role="tab" id="t-map" data-tab="map" aria-controls="tab-map" tabindex="-1">Mapa</button>
+  <button role="tab" id="t-sound" data-tab="sound" aria-controls="tab-sound" tabindex="-1">Sonidos</button>
+  <button role="tab" id="t-logic" data-tab="logic" aria-controls="tab-logic" tabindex="-1">Bloques</button>
+  <button role="tab" id="t-game" data-tab="game" aria-controls="tab-game" tabindex="-1">Jugar</button>
+</div></nav>
 
 <main>
   <!-- Dibujos -->
-  <section class="tab" id="tab-draw" role="tabpanel">
-    <aside class="list">
+  <section class="tab" id="tab-draw" role="tabpanel" aria-labelledby="t-draw">
+    <aside class="list" aria-label="Lista de dibujos">
       <h2>Dibujos</h2>
       <ul id="drawings"></ul>
       <button id="drawing-add" class="add">+ Nuevo dibujo</button>
-      <label class="button add">Traer una imagen…<input type="file" id="import-file" accept="image/*" hidden></label>
-      <p class="hint">O arrástrala aquí, o pégala (Ctrl+V). PNG con transparencia, JPG, GIF, WebP.</p>
+      <label class="button add">Añadir una imagen…<input type="file" id="import-file" class="vh" accept="image/*"></label>
+      <p class="hint">O arrástrala aquí, o pégala. PNG con transparencia, JPG, GIF, WebP.</p>
       <p class="hint" id="d-memory"></p>
     </aside>
     <div class="work">
       <div class="tools" role="toolbar" aria-label="Herramientas">
-        <button data-tool="pen" aria-pressed="true" title="Lápiz (P)">✎ Lápiz</button>
-        <button data-tool="erase" title="Goma (E)">⌫ Goma</button>
-        <button data-tool="fill" title="Cubo (F)">◩ Cubo</button>
-        <button data-tool="pick" title="Cuentagotas (I)">⊙ Coger color</button>
+        <button data-tool="pen" aria-pressed="true" title="Lápiz (tecla P)"><span aria-hidden="true">✎ </span>Lápiz</button>
+        <button data-tool="erase" title="Goma (tecla E)"><span aria-hidden="true">⌫ </span>Goma</button>
+        <button data-tool="fill" title="Rellenar una zona del mismo color (tecla F)"><span aria-hidden="true">◩ </span>Rellenar</button>
+        <button data-tool="pick" title="Copiar el color de un píxel (tecla I)"><span aria-hidden="true">⊙ </span>Copiar color</button>
         <span class="gap"></span>
-        <button id="flip" title="Darle la vuelta">⇋</button>
-        <button id="clear" title="Borrar todo">✕</button>
-        <button id="undo" title="Deshacer (Ctrl+Z)">↶</button>
-        <button id="redo" title="Rehacer (Ctrl+Y)">↷</button>
+        <button id="flip" title="Darle la vuelta, como en un espejo"><span aria-hidden="true">⇋ </span>Espejo</button>
+        <button id="clear" title="Dejar vacío este fotograma"><span aria-hidden="true">✕ </span>Vaciar</button>
+        <button id="undo" title="Deshacer (Ctrl+Z)" aria-keyshortcuts="Control+Z"><span aria-hidden="true">↶ </span>Deshacer</button>
+        <button id="redo" title="Rehacer (Ctrl+Y)" aria-keyshortcuts="Control+Y"><span aria-hidden="true">↷ </span>Rehacer</button>
       </div>
-      <canvas id="pixels" width="384" height="384" aria-label="El dibujo, píxel a píxel"></canvas>
+      <canvas id="pixels" width="384" height="384" tabindex="0" role="application" aria-roledescription="lienzo"
+              aria-label="El dibujo, píxel a píxel" aria-describedby="pixels-help"></canvas>
+      <p class="hint" id="pixels-help">Clic para pintar; botón derecho para borrar. Con el teclado: flechas para moverte, Espacio para pintar, Supr para borrar.</p>
       <div class="frames">
         <span class="label">Fotogramas</span>
-        <div id="frames"></div>
-        <button id="frame-add" title="Un fotograma nuevo, copia del actual">+</button>
-        <button id="frame-del" title="Quitar este fotograma">−</button>
-        <canvas id="preview" width="64" height="64" aria-label="Animación"></canvas>
+        <div id="frames" role="group" aria-label="Fotogramas"></div>
+        <button id="frame-add" title="Un fotograma nuevo, copia del actual" aria-label="Añadir fotograma">+</button>
+        <button id="frame-del" title="Quitar este fotograma" aria-label="Quitar este fotograma">−</button>
+        <canvas id="preview" width="64" height="64" role="img" aria-label="La animación"></canvas>
       </div>
+      <label class="check" id="all-frames-row"><input type="checkbox" id="all-frames"> Pintar en todos los fotogramas a la vez</label>
     </div>
-    <aside class="props">
+    <aside class="props" aria-label="Colores y propiedades del dibujo">
       <h2>Colores</h2>
-      <div id="palette" class="palette"></div>
+      <div id="palette" class="palette" role="group" aria-label="Colores"></div>
       <label class="any">Otro color <input type="color" id="colour-any"></label>
       <h2>Este dibujo</h2>
-      <label>Nombre <input id="d-name" maxlength="24" spellcheck="false"></label>
+      <label>Nombre <input id="d-name" maxlength="24" spellcheck="false" aria-describedby="name-hint"></label>
+      <p class="hint" id="name-hint">Sin acentos ni espacios: así sale en los bloques.</p>
       <label>Tamaño <select id="d-size"></select></label>
       <fieldset class="use">
         <legend>Es</legend>
-        <label><input type="radio" name="use" value="tile"> una baldosa del mapa</label>
-        <label class="sub"><input type="checkbox" id="d-solid"> sólida (suelo, pared)</label>
-        <label><input type="radio" name="use" value="object"> un objeto</label>
-        <label><input type="radio" name="use" value="backdrop"> un fondo, detrás del mapa</label>
+        <label><input type="radio" name="use" value="tile"> una baldosa: un trozo de suelo, pared o adorno del mapa</label>
+        <label class="sub"><input type="checkbox" id="d-solid"> sólida (no se puede atravesar)</label>
+        <label><input type="radio" name="use" value="object"> un objeto: un personaje o una cosa que se pone en el mapa</label>
+        <label><input type="radio" name="use" value="backdrop"> un fondo: un paisaje detrás del mapa</label>
       </fieldset>
       <div id="backdrop-props" hidden>
         <label>Se mueve con la cámara <input type="range" id="d-parallax" min="0" max="1" step="0.05"><output id="o-parallax"></output></label>
@@ -88,95 +94,107 @@
         <p class="hint">0: quieto. 1: como el mapa. Se repite hasta llenar la pantalla. Hasta tres fondos: el primero de la lista, delante.</p>
       </div>
       <div id="object-props">
-        <label>Se mueve como <select id="d-behaviour"></select></label>
-        <label id="dir-row">Vuela <select id="d-dir"></select></label>
+        <label>Cómo se mueve <select id="d-behaviour"></select></label>
+        <label id="dir-row">Hacia dónde <select id="d-dir"></select></label>
         <label>Velocidad <input type="range" id="d-speed" min="0" max="6" step="0.1"><output id="o-speed"></output></label>
         <label id="jump-row">Salto <input type="range" id="d-jump" min="0" max="8" step="0.1"><output id="o-jump"></output></label>
         <label class="check"><input type="checkbox" id="d-gravity"> Cae (le afecta la gravedad)</label>
-        <label>Animación <input type="range" id="d-animate" min="0" max="30" step="1"><output id="o-animate"></output></label>
+        <label>Pausa entre fotogramas (0: sin animar) <input type="range" id="d-animate" min="0" max="30" step="1"><output id="o-animate"></output></label>
       </div>
       <button id="drawing-del" class="danger">Quitar este dibujo</button>
     </aside>
   </section>
 
   <!-- Mapa -->
-  <section class="tab" id="tab-map" role="tabpanel" hidden>
-    <aside class="list">
+  <section class="tab" id="tab-map" role="tabpanel" aria-labelledby="t-map" hidden>
+    <aside class="list" aria-label="Niveles y piezas">
       <h2>Niveles</h2>
       <ul id="levels" aria-label="Niveles, en el orden en que se juegan"></ul>
       <button id="level-add" class="add">+ Nuevo nivel</button>
       <div id="map-palette">
         <h2>Baldosas</h2>
-        <div id="map-tiles" class="pieces"></div>
+        <div id="map-tiles" class="pieces" role="group" aria-label="Baldosas"></div>
         <h2>Objetos</h2>
-        <div id="map-objects" class="pieces"></div>
-        <p class="hint">Clic para poner. Clic sobre un objeto para quitarlo. Botón derecho o la goma para borrar.</p>
+        <div id="map-objects" class="pieces" role="group" aria-label="Objetos"></div>
+        <p class="hint">Elige una pieza y haz clic en el mapa para ponerla. Para quitar, la goma o el botón derecho.</p>
       </div>
     </aside>
     <div class="work map-work" id="level-work">
+      <h2 class="vh">Nivel</h2>
       <div class="tools">
         <label>Nombre <input id="level-name" maxlength="40" spellcheck="false"></label>
-        <button id="level-up" title="Jugarlo antes">↑</button>
-        <button id="level-down" title="Jugarlo después">↓</button>
+        <button id="level-up" title="Jugarlo antes" aria-label="Jugar este nivel antes">↑</button>
+        <button id="level-down" title="Jugarlo después" aria-label="Jugar este nivel después">↓</button>
         <button id="level-del" class="danger">Quitar nivel</button>
       </div>
       <div class="tools">
-        <label>Ancho <input type="number" id="map-w" min="15" max="64"></label>
-        <label>Alto <input type="number" id="map-h" min="10" max="64"></label>
-        <label>Fondo <input type="color" id="map-bg"></label>
+        <label>Ancho <input type="number" id="map-w" min="15" max="64" inputmode="numeric"></label>
+        <label>Alto <input type="number" id="map-h" min="10" max="64" inputmode="numeric"></label>
+        <label>Color de fondo <input type="color" id="map-bg"></label>
         <label>La cámara sigue a <select id="map-camera"></select></label>
         <label>Música <select id="map-music"></select></label>
         <span id="map-backdrops" class="backdrops"></span>
       </div>
-      <div class="map-scroll"><canvas id="map" aria-label="El mapa del nivel"></canvas></div>
+      <div class="tools">
+        <button id="map-undo" aria-keyshortcuts="Control+Z"><span aria-hidden="true">↶ </span>Deshacer</button>
+        <button id="map-redo" aria-keyshortcuts="Control+Y"><span aria-hidden="true">↷ </span>Rehacer</button>
+        <button id="map-pan" class="coarse-only" aria-pressed="false"><span aria-hidden="true">✋ </span>Mover el mapa</button>
+        <span class="hint">El recuadro amarillo es lo que cabe en la pantalla.</span>
+      </div>
+      <div class="map-scroll"><canvas id="map" tabindex="0" role="application" aria-roledescription="mapa"
+           aria-label="El mapa del nivel" aria-describedby="map-help"></canvas></div>
+      <p class="hint" id="map-help">Con el teclado: flechas para moverte, Espacio para poner la pieza, Supr para quitar.</p>
     </div>
     <div class="work cover-work" id="cover-work" hidden>
-      <canvas id="cover-preview" width="480" height="320" aria-label="Así se verá la portada"></canvas>
+      <h2>Portada</h2>
+      <canvas id="cover-preview" width="480" height="320" role="img" aria-label="Así se verá la portada"></canvas>
       <div class="cover-form">
         <label class="check"><input type="checkbox" id="cover-on"> Mostrar una portada antes del primer nivel</label>
         <p class="hint">El título es el nombre del juego, arriba del todo.</p>
         <label>Debajo del título <input id="cover-subtitle" maxlength="60"></label>
-        <label>Imagen <select id="cover-picture"></select></label>
+        <label>Dibujo <select id="cover-picture"></select></label>
         <label>Color de fondo <input type="color" id="cover-bg"></label>
         <label>Música <select id="cover-music"></select></label>
-        <label>Al pasar el último nivel se gana y se lee <input id="ending" maxlength="60"></label>
+        <label>Mensaje al ganar (tras el último nivel) <input id="ending" maxlength="60"></label>
       </div>
     </div>
   </section>
 
   <!-- Sonidos -->
-  <section class="tab" id="tab-sound" role="tabpanel" hidden>
-    <aside class="list">
+  <section class="tab" id="tab-sound" role="tabpanel" aria-labelledby="t-sound" hidden>
+    <aside class="list" aria-label="Lista de sonidos">
       <h2>Sonidos</h2>
       <ul id="sounds"></ul>
       <button id="sound-add" class="add">+ Nuevo sonido</button>
-      <label class="button add">Traer un sonido…<input type="file" id="sound-file" accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac" hidden></label>
+      <label class="button add">Añadir un sonido…<input type="file" id="sound-file" class="vh" accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac"></label>
       <p class="hint">O arrástralo aquí. WAV, MP3, OGG, M4A… Un efecto dura hasta 5 s; una música, hasta 4 min, y se elige para cada nivel en Mapa.</p>
     </aside>
     <div class="work sound-work">
-      <div class="recipes" id="recipes"></div>
+      <h2 id="recipes-title">Cambiar este sonido por</h2>
+      <div class="recipes" id="recipes" role="group" aria-labelledby="recipes-title"></div>
       <div class="sound-head">
         <label>Nombre <input id="s-name" maxlength="24" spellcheck="false"></label>
-        <button id="s-play" class="primary">▶ Escuchar</button>
-        <button id="s-stop" hidden>■ Parar</button>
-        <button id="s-again" title="Otro sonido de la misma receta">↻ Otro</button>
+        <button id="s-play" class="primary"><span aria-hidden="true">▶ </span>Escuchar</button>
+        <button id="s-stop" hidden><span aria-hidden="true">■ </span>Parar</button>
+        <button id="s-again" title="Otro sonido de la misma receta"><span aria-hidden="true">↻ </span>Otro</button>
         <button id="sound-del" class="danger">Quitar</button>
       </div>
-      <canvas id="wave" width="640" height="120" aria-label="La forma del sonido"></canvas>
+      <canvas id="wave" width="640" height="120" role="img" aria-label="La forma del sonido"></canvas>
+      <p id="wave-note" class="hint" role="status"></p>
       <div id="sliders" class="sliders"></div>
     </div>
   </section>
 
-  <!-- Lógica -->
-  <section class="tab" id="tab-logic" role="tabpanel" hidden>
+  <!-- Bloques -->
+  <section class="tab" id="tab-logic" role="tabpanel" aria-labelledby="t-logic" hidden>
     <div id="blockly" class="blockly"></div>
     <details class="code"><summary>Ver el código Lua</summary><pre id="lua-code"></pre></details>
   </section>
 
   <!-- Jugar -->
-  <section class="tab" id="tab-game" role="tabpanel" hidden>
+  <section class="tab" id="tab-game" role="tabpanel" aria-labelledby="t-game" hidden>
     <div class="game-bar">
-      <button id="restart" class="primary">↻ Volver a empezar</button>
+      <button id="restart" class="primary"><span aria-hidden="true">↻ </span>Jugar desde el principio</button>
       <label class="inline">Empezar en <select id="play-start"></select></label>
       <span id="game-status" role="status"></span>
     </div>
@@ -186,18 +204,46 @@
 
 <dialog id="import" aria-labelledby="import-title">
   <form method="dialog">
-    <h2 id="import-title">Traer una imagen</h2>
-    <canvas id="import-preview" aria-label="Así quedará en el juego"></canvas>
+    <h2 id="import-title">Añadir una imagen</h2>
+    <canvas id="import-preview" role="img" aria-label="Así quedará en el juego"></canvas>
     <p><output id="import-size"></output></p>
-    <label>Ancho en el juego, de cada fotograma (la pantalla mide 240) <input type="number" id="import-w" min="1" max="512"></label>
-    <label>Fotogramas en fila <input type="number" id="import-frames" min="1" max="8"></label>
+    <label>Ancho en el juego, de cada fotograma (la pantalla mide 240) <input type="number" id="import-w" min="1" max="512" inputmode="numeric"></label>
+    <label>Fotogramas en fila <input type="number" id="import-frames" min="1" max="8" inputmode="numeric"></label>
     <label class="check"><input type="checkbox" id="import-smooth"> Suavizar al reducir (fotos, dibujos a mano)</label>
     <p class="hint">Lo transparente de la imagen queda transparente. Los colores pasan a los de la consola.</p>
-    <div class="dialog-buttons"><button value="cancel">Cancelar</button><button value="ok" id="import-ok" class="primary">Traer</button></div>
+    <div class="dialog-buttons"><button value="cancel">Cancelar</button><button value="ok" id="import-ok" class="primary">Añadir</button></div>
   </form>
 </dialog>
 
-<div id="toast" role="status" aria-live="polite" hidden></div>
+<dialog id="console" aria-labelledby="console-title">
+  <form method="dialog">
+    <h2 id="console-title">Pasar el juego a la consola</h2>
+    <section class="way" aria-labelledby="cable-title">
+      <h3 id="cable-title">Por el cable USB</h3>
+      <p>Enciende la consola y conéctala al ordenador con su cable. El juego se guarda en ella y empieza solo.</p>
+      <button type="button" id="cable-send" class="primary">Enviar por el cable</button>
+      <progress id="cable-progress" max="100" value="0" hidden></progress>
+      <p id="cable-status" class="status" role="status"></p>
+    </section>
+    <section class="way" aria-labelledby="card-title">
+      <h3 id="card-title">Con la tarjeta microSD</h3>
+      <ol>
+        <li>Pulsa «Descargar»: se guarda el archivo <b id="zip-name">juego.zip</b>.</li>
+        <li>Descomprímelo: sale la carpeta <b id="folder-name">juego</b>.</li>
+        <li>Copia esa carpeta dentro de la carpeta <b>games</b> de la tarjeta.</li>
+        <li>Pon la tarjeta en la consola y elige el juego en su lista.</li>
+      </ol>
+      <button type="button" id="zip-download"><span aria-hidden="true">⬇ </span>Descargar</button>
+    </section>
+    <div class="dialog-buttons"><button value="close">Cerrar</button></div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite">
+  <span id="toast-text"></span>
+  <button id="toast-action" hidden></button>
+  <button id="toast-close" aria-label="Cerrar el aviso" hidden>✕</button>
+</div>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

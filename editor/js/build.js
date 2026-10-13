@@ -114,7 +114,7 @@ function _draw() kit.draw() end
 export function buildFiles(p, blocksCode, carried, { start, audio = [] } = {}) {
   const used = pixelsOf(p.drawings);
   if (used > MAX_PIXELS)
-    throw new Error(`los dibujos ocupan ${used * 2 >> 10} KB y la consola guarda ${MAX_PIXELS * 2 >> 10} KB: ` +
+    throw new Error(`los dibujos no caben en la consola (${used * 2 >> 10} de ${MAX_PIXELS * 2 >> 10} KB): ` +
                     'quita fotogramas o haz más pequeños los dibujos grandes');
   const enc = new TextEncoder(), files = new Map(), crops = {};
   for (const d of p.drawings) {

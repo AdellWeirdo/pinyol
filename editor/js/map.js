@@ -6,8 +6,10 @@ import { drawPixels, thumbnail } from './sprites.js';
 
 const $ = id => document.getElementById(id);
 const S = 2; // screen pixels a world pixel
-let app, piece = { type: 'erase' }, images = new Map(), painting = false;
+let app, piece = null, images = new Map(), painting = false; // piece: what a click puts (the first tile at first)
 let sel = 0; // the level shown, or -1: the cover
+let kb = { x: 0, y: 0 }; // the keyboard's cursor, in tiles
+const undo = [], redo = []; // the level's map and objects before each change (any level: the snapshot says which)
 
 const level = () => app.project.levels[sel];
 const byName = name => app.project.drawings.find(d => d.name === name);
@@ -59,6 +61,12 @@ function renderMap() {
   for (let y = 1; y < m.h; y++) { g.beginPath(); g.moveTo(0, y * TILE * S + 0.5); g.lineTo(c.width, y * TILE * S + 0.5); g.stroke(); }
   g.strokeStyle = 'rgba(242,178,51,0.5)'; // what one screen shows
   g.strokeRect(0.5, 0.5, 240 * S - 1, 160 * S - 1);
+  if (document.activeElement === c) { // the keyboard's cursor
+    kb = { x: Math.min(kb.x, m.w - 1), y: Math.min(kb.y, m.h - 1) };
+    g.strokeStyle = '#6cb4e0';
+    g.lineWidth = 2;
+    g.strokeRect(kb.x * TILE * S + 1, kb.y * TILE * S + 1, TILE * S - 2, TILE * S - 2);
+  }
 }
 
 function renderPieces() {
@@ -71,7 +79,10 @@ function renderPieces() {
     if (!list.length) el.append(Object.assign(document.createElement('p'), { className: 'hint', textContent: type === 'tile'
       ? 'Ningún dibujo es baldosa: márcalo en Dibujos.' : 'Ningún dibujo es objeto: márcalo en Dibujos.' }));
   };
-  box('map-tiles', p.drawings.filter(d => d.use === 'tile'), 'tile');
+  const tilesNow = p.drawings.filter(d => d.use === 'tile'), objectsNow = p.drawings.filter(d => d.use === 'object');
+  if (!piece || (piece.type !== 'erase' && !p.drawings.some(d => d.name === piece.name && d.use === piece.type)))
+    piece = tilesNow.length ? { type: 'tile', name: tilesNow[0].name } : objectsNow.length ? { type: 'object', name: objectsNow[0].name } : { type: 'erase' };
+  box('map-tiles', tilesNow, 'tile');
   box('map-objects', p.drawings.filter(d => d.use === 'object'), 'object');
   $('level-name').value = l.name;
   $('level-up').disabled = sel === 0;
@@ -79,7 +90,7 @@ function renderPieces() {
   $('level-del').disabled = p.levels.length < 2;
   $('map-w').value = l.map.w, $('map-h').value = l.map.h, $('map-bg').value = l.background;
   const cam = $('map-camera');
-  cam.replaceChildren(new Option('(nadie: el primer jugador)', ''));
+  cam.replaceChildren(new Option('(el jugador)', ''));
   for (const d of p.drawings.filter(d => d.use === 'object')) cam.append(new Option(d.name, d.name));
   cam.value = l.camera || '';
   musicSelect($('map-music'), l.music);
@@ -102,15 +113,35 @@ function musicSelect(sel, value) { // none, or a sound brought in as music
   sel.value = value || '';
 }
 
+const same = (a, b) => a && b && a.type === b.type && a.name === b.name;
+
 function pieceButton(pc, d, label) {
   const b = document.createElement('button');
   b.title = label;
   b.setAttribute('aria-label', label);
   if (d) b.append(thumbnail(d, 40));
   else b.textContent = '⌫';
-  b.setAttribute('aria-pressed', String(pc.type === piece.type && pc.name === piece.name));
-  b.addEventListener('click', () => { piece = pc; renderPieces(); });
+  b.setAttribute('aria-pressed', String(same(pc, piece)));
+  b.addEventListener('click', () => { // chosen: only the pressed states change, the focus stays on it
+    piece = pc;
+    for (const x of document.querySelectorAll('.pieces button')) x.setAttribute('aria-pressed', String(x === b));
+  });
   return b;
+}
+
+// undo, redo: what a level's map and objects were
+const snap = () => ({ sel, map: JSON.stringify(level().map), objects: JSON.stringify(level().objects) });
+function remember() { undo.push(snap()); if (undo.length > 80) undo.shift(); redo.length = 0; }
+function back(from, to) {
+  const s = from.pop();
+  if (!s) return;
+  const was = sel;
+  sel = s.sel;
+  if (!level()) { sel = was; return; } // that level is gone
+  to.push(snap());
+  Object.assign(level(), { map: JSON.parse(s.map), objects: JSON.parse(s.objects) });
+  app.changed();
+  render();
 }
 
 function at(e) {
@@ -140,13 +171,16 @@ function setTile(x, y, name) {
   return true;
 }
 
-function act(e, first) {
-  const { x, y } = at(e), erase = e.buttons === 2 || piece.type === 'erase';
-  const objects = level().objects;
-  if (piece.type === 'object' && !erase) {
+// a click (or Space) with the chosen piece: a tile painted, an object put (or taken back, clicked again on one of its
+// kind); the eraser (or the right button, or Delete) takes away the object there, else the tile. p: from the pointer,
+// or the keyboard's cursor
+function act(e, first, p = at(e)) {
+  const { x, y } = p, erase = e.buttons === 2 || !piece || piece.type === 'erase';
+  const objects = level().objects, before = snap();
+  if (!erase && piece.type === 'object') {
     if (!first) return;
     const hit = objectAt(x, y);
-    if (hit >= 0) objects.splice(hit, 1);
+    if (hit >= 0 && objects[hit].kind === piece.name) objects.splice(hit, 1);
     else {
       const d = byName(piece.name);
       objects.push({ kind: piece.name, x: Math.max(0, Math.round((x - d.w / 2) / 4) * 4), y: Math.max(0, Math.round((y - d.h / 2) / 4) * 4) });
@@ -156,13 +190,31 @@ function act(e, first) {
     if (hit >= 0 && first) objects.splice(hit, 1);
     else if (!setTile(x, y, null)) return;
   } else if (!setTile(x, y, piece.name)) return;
+  if (first) { undo.push(before); if (undo.length > 80) undo.shift(); redo.length = 0; } // a stroke is one step
   app.changed();
   renderMap();
 }
 
+function mapKeys(e) { // arrows move the cursor a tile; Space or Enter puts the piece; Delete takes away
+  const m = level().map, d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  const centre = () => ({ x: kb.x * TILE + TILE / 2, y: kb.y * TILE + TILE / 2 });
+  if (d) kb = { x: Math.max(0, Math.min(m.w - 1, kb.x + d[0])), y: Math.max(0, Math.min(m.h - 1, kb.y + d[1])) };
+  else if (e.key === ' ' || e.key === 'Enter') act({ buttons: 1 }, true, centre());
+  else if (e.key === 'Delete' || e.key === 'Backspace') act({ buttons: 2 }, true, centre());
+  else return;
+  e.preventDefault();
+  renderMap();
+  const c = $('map'), box = c.parentElement; // the cursor stays in view
+  const cx = kb.x * TILE * S, cy = kb.y * TILE * S;
+  if (cx < box.scrollLeft || cx + TILE * S > box.scrollLeft + box.clientWidth) box.scrollLeft = cx - box.clientWidth / 2;
+  if (cy < box.scrollTop || cy + TILE * S > box.scrollTop + box.clientHeight) box.scrollTop = cy - box.clientHeight / 2;
+}
+
 function resize(w, h) {
-  const m = level().map;
+  const m = level().map, asked = [w, h];
   w = Math.max(15, Math.min(MAP_MAX, w | 0)), h = Math.max(10, Math.min(MAP_MAX, h | 0));
+  if (asked[0] !== w || asked[1] !== h) app.toast(`Un mapa mide de 15 × 10 a ${MAP_MAX} × ${MAP_MAX} baldosas: queda en ${w} × ${h}.`);
+  remember();
   const cells = new Array(w * h).fill(0);
   for (let y = 0; y < Math.min(h, m.h); y++) for (let x = 0; x < Math.min(w, m.w); x++) cells[y * w + x] = m.cells[y * m.w + x];
   Object.assign(m, { w, h, cells });
@@ -216,20 +268,21 @@ function renderCover() {
 // ------------------------------------------------------------------ the list of levels
 
 function renderLevels() {
-  const ul = $('levels'), p = app.project;
+  const ul = $('levels'), p = app.project, focused = ul.contains(document.activeElement);
   ul.replaceChildren();
   const item = (i, text) => {
-    const li = document.createElement('li');
-    li.textContent = text;
-    li.tabIndex = 0;
-    li.setAttribute('aria-current', String(i === sel));
-    li.addEventListener('click', () => { sel = i; render(); });
-    li.addEventListener('keydown', e => { if (e.key === 'Enter') { sel = i; render(); } });
+    const li = document.createElement('li'), b = document.createElement('button');
+    b.className = 'item';
+    b.append(Object.assign(document.createElement('span'), { className: 'name', textContent: text }));
+    b.setAttribute('aria-current', String(i === sel));
+    b.addEventListener('click', () => { sel = i; render(); });
+    li.append(b);
     ul.append(li);
   };
   item(-1, p.cover.on ? '★ Portada' : '☆ Portada (no se muestra)');
   p.levels.forEach((l, i) => item(i, `${i + 1}. ${l.name}`));
   $('level-add').disabled = p.levels.length >= LEVELS_MAX;
+  if (focused) ul.querySelector('[aria-current="true"]')?.focus();
 }
 
 function render() {
@@ -268,8 +321,27 @@ function moveLevel(by) {
 export function initMap(ctx) {
   app = ctx;
   const c = $('map');
-  c.addEventListener('pointerdown', e => { painting = true; c.setPointerCapture(e.pointerId); act(e, true); });
-  c.addEventListener('pointermove', e => { if (painting && e.buttons) act(e, false); });
+  c.addEventListener('pointerdown', e => {
+    if (!e.isPrimary || c.classList.contains('pan')) return; // a second finger, or moving the map: no painting
+    painting = true;
+    c.setPointerCapture(e.pointerId);
+    act(e, true);
+  });
+  c.addEventListener('pointermove', e => { if (painting && e.isPrimary && e.buttons) act(e, false); });
+  c.addEventListener('keydown', mapKeys);
+  c.addEventListener('focus', renderMap);
+  c.addEventListener('blur', renderMap);
+  $('map-undo').addEventListener('click', () => back(undo, redo));
+  $('map-redo').addEventListener('click', () => back(redo, undo));
+  addEventListener('keydown', e => {
+    if ($('tab-map').hidden || !e.target.closest('#level-work') || e.target.matches('input, select') || !(e.ctrlKey || e.metaKey)) return;
+    const k = e.key.toLowerCase();
+    if (k === 'z' || k === 'y') { e.preventDefault(); if (k === 'y' || e.shiftKey) back(redo, undo); else back(undo, redo); }
+  });
+  $('map-pan').addEventListener('click', e => {
+    const on = c.classList.toggle('pan');
+    e.currentTarget.setAttribute('aria-pressed', String(on));
+  });
   c.addEventListener('pointerup', () => { painting = false; });
   c.addEventListener('contextmenu', e => e.preventDefault());
   $('map-w').addEventListener('change', e => resize(Number(e.target.value), level().map.h));
@@ -306,5 +378,5 @@ export function initMap(ctx) {
   cover('cover-picture', 'picture', 'change');
   cover('cover-music', 'music', 'change');
   $('ending').addEventListener('input', e => { app.project.ending = e.target.value.slice(0, 60); app.changed(); });
-  return { render, reset: () => { sel = 0; render(); } };
+  return { render, reset: () => { sel = 0; piece = null; undo.length = redo.length = 0; render(); } };
 }

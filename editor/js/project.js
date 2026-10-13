@@ -11,6 +11,9 @@ export const MAX_PIXELS = 768 * 1024; // all drawings' frames together: 1.5 MB o
 const SEE_THROUGH = 0xF81F; // a saved frame's see-through pixel; a real colour that is this one becomes 0xF81E
 
 // 16 of PICO-8's colours and 8 more: colours at hand that go together (any other can be picked)
+export const COLOUR_NAMES = ['negro', 'azul marino', 'granate', 'verde oscuro', 'marrón', 'gris oscuro', 'gris claro',
+  'blanco', 'rojo', 'naranja', 'amarillo', 'verde', 'azul', 'lavanda', 'rosa', 'carne', 'celeste', 'índigo', 'ámbar',
+  'rojo teja', 'chocolate', 'verde hierba', 'azul medio', 'morado']; // PALETTE's, said
 export const PALETTE = [
   '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
   '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA',
@@ -19,14 +22,14 @@ export const PALETTE = [
 
 // What a drawing is for. An object moves by itself in one of these ways (kit.lua's behaviours).
 export const BEHAVIOURS = {
-  platformer: 'Jugador de plataformas (flechas y A para saltar)',
-  topdown: 'Jugador visto desde arriba (flechas)',
-  patrol: 'Patrulla (anda y se da la vuelta)',
+  platformer: 'Es el jugador: anda y salta (flechas y A)',
+  topdown: 'Es el jugador, visto desde arriba (flechas)',
+  grid: 'Es el jugador: de casilla en casilla (puzles)',
+  patrol: 'Va y viene (se da la vuelta en las paredes)',
   chase: 'Persigue al jugador',
-  shot: 'Proyectil (vuela recto)',
-  grid: 'Jugador por casillas (puzles, flechas)',
-  push: 'Se empuja (cajas de puzle)',
-  still: 'Quieto',
+  shot: 'Vuela recto (disparos, cosas que caen)',
+  push: 'Se deja empujar (cajas de puzle)',
+  still: 'No se mueve',
 };
 export const SHOT_DIRS = { forward: 'hacia donde mira quien lo crea', up: 'hacia arriba', down: 'hacia abajo',
                            left: 'hacia la izquierda', right: 'hacia la derecha' };
@@ -191,10 +194,12 @@ function store(mode, use) {
     };
   });
 }
-export async function saveLocal(p) {
-  try { await store('readwrite', s => s.put(pack(p), 'current')); return true; } catch { return false; }
+// key "current": the game being made; "previous": the one Nuevo or Abrir replaced, to get it back
+export async function saveLocal(p, key = 'current') {
+  try { await store('readwrite', s => s.put(pack(p), key)); return true; } catch { return false; }
 }
-export async function loadLocal() {
-  try { const p = await store('readonly', s => s.get('current')); if (p) return check(p); } catch { /* none kept */ }
+export async function loadLocal(key = 'current') {
+  try { const p = await store('readonly', s => s.get(key)); if (p) return check(p); } catch { /* none kept */ }
+  if (key !== 'current') return null;
   try { const s = localStorage.getItem(KEY); return s ? check(JSON.parse(s)) : null; } catch { return null; } // before
 }

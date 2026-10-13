@@ -6,11 +6,11 @@
 let project = null; // the project being edited (set by main.js)
 export function setProject(p) { project = p; }
 
-const none = [['(ninguno)', '_']];
+const none = [['(no hay)', '_']];
 const kinds = () => { const k = project ? project.drawings.filter(d => d.use === 'object').map(d => [d.name, d.name]) : []; return k.length ? k : none; };
 const tiles = () => { const t = project ? project.drawings.filter(d => d.use === 'tile').map(d => [d.name, d.name]) : []; return t.length ? t : none; };
 const levels = () => (project ? project.levels.map(l => [l.name, l.id]) : []);
-const anyLevel = () => [['cualquiera', '_'], ...levels()];
+const anyLevel = () => [['cualquier nivel', '_'], ...levels()];
 const someLevel = () => { const l = levels(); return l.length ? l : none; };
 const named = keep => () => { const s = project ? project.sounds.filter(keep).map(x => [x.name, x.name]) : []; return s.length ? s : none; };
 const sounds = named(x => x.use !== 'music'), tunes = named(x => x.use === 'music');
@@ -56,7 +56,7 @@ function define(type, colour, parts, kind, tooltip) {
 export function defineBlocks() {
   // events
   define('kit_start', EVENT, ['al empezar la partida'], 'event', 'Una vez, antes del primer nivel (y en cada partida nueva)');
-  define('kit_level', EVENT, ['al empezar el nivel', { dropdown: anyLevel, name: 'LEVEL' }], 'event',
+  define('kit_level', EVENT, ['al empezar', { dropdown: anyLevel, name: 'LEVEL' }], 'event',
          'Cada vez que empieza ese nivel (también al repetirlo tras perder)');
   define('kit_tick', EVENT, ['en cada momento'], 'event', '60 veces por segundo');
   define('kit_press', EVENT, ['al pulsar', { dropdown: BUTTONS, name: 'BUTTON' }], 'event');
@@ -66,13 +66,13 @@ export function defineBlocks() {
   define('kit_tile', EVENT, ['cuando', { dropdown: kinds, name: 'A' }, 'pisa', { dropdown: tiles, name: 'TILE' }], 'event',
          'También al chocar con una baldosa sólida (una pared, una puerta). Dentro: «x de la baldosa», «y de la baldosa»');
   define('kit_out', EVENT, ['cuando', { dropdown: kinds, name: 'A' }, 'sale del mapa'], 'event',
-         'Lo que sale del mundo desaparece; si es el jugador y no hay este bloque, se pierde');
-  define('kit_every', EVENT, ['cada', { number: 1, min: 0.1, max: 600, step: 0.1, name: 'SECONDS' }, 'segundos'], 'event');
+         'Lo que sale del mapa desaparece. Si es el jugador y no usas este bloque, pierde.');
+  define('kit_every', EVENT, ['cada', { number: 2, min: 0.1, max: 600, step: 0.1, name: 'SECONDS' }, 'segundos'], 'event');
   define('kit_tap', EVENT, ['al tocar la pantalla'], 'event', 'Dónde: «x tocada», «y tocada»');
   // objects
   define('kit_this', OBJECT, [{ dropdown: [['este', 'este'], ['el otro', 'otro']], name: 'WHO' }], 'Obj');
   define('kit_player', OBJECT, ['el jugador'], 'Obj');
-  define('kit_first', OBJECT, ['un', { dropdown: kinds, name: 'KIND' }], 'Obj');
+  define('kit_first', OBJECT, ['un objeto', { dropdown: kinds, name: 'KIND' }], 'Obj');
   define('kit_spawn', OBJECT, ['crear', { dropdown: kinds, name: 'KIND' }, { value: true, name: 'X', check: 'Number', label: 'en x' },
     { value: true, name: 'Y', check: 'Number', label: 'y' }], 'statement');
   define('kit_spawn_at', OBJECT, ['crear', { dropdown: kinds, name: 'KIND' }, { value: true, name: 'OBJ', check: 'Obj', label: 'donde está' }], 'statement');
@@ -82,8 +82,8 @@ export function defineBlocks() {
   define('kit_change', OBJECT, [{ value: true, name: 'V', check: 'Number', label: 'sumar' }, 'a', { dropdown: PROPS, name: 'PROP' },
     { value: true, name: 'OBJ', check: 'Obj', label: 'de' }], 'statement');
   define('kit_get', OBJECT, [{ dropdown: PROPS, name: 'PROP' }, { value: true, name: 'OBJ', check: 'Obj', label: 'de' }], 'Number');
-  define('kit_count', OBJECT, ['cuántos', { dropdown: kinds, name: 'KIND' }, 'hay'], 'Number');
-  define('kit_count_on', OBJECT, ['cuántos', { dropdown: kinds, name: 'KIND' }, 'hay sobre', { dropdown: tiles, name: 'TILE' }],
+  define('kit_count', OBJECT, ['cuántos objetos', { dropdown: kinds, name: 'KIND' }, 'hay'], 'Number');
+  define('kit_count_on', OBJECT, ['cuántos objetos', { dropdown: kinds, name: 'KIND' }, 'hay sobre', { dropdown: tiles, name: 'TILE' }],
          'Number', 'Los que están quietos encima de esa baldosa: cajas en sus marcas');
   define('kit_sprite', OBJECT, [{ value: true, name: 'OBJ', check: 'Obj', label: 'cambiar el dibujo de' }, 'a',
     { dropdown: kinds, name: 'KIND' }], 'statement');
@@ -94,16 +94,18 @@ export function defineBlocks() {
   define('kit_music_stop', ACTION, ['parar la música'], 'statement');
   define('kit_label', ACTION, [{ value: true, name: 'TEXT', label: 'mostrar' }, { dropdown: PLACES, name: 'WHERE' }], 'statement',
          'Se queda en pantalla hasta que se cambia');
-  define('kit_message', ACTION, [{ value: true, name: 'TEXT', label: 'mensaje' }, 'durante',
-    { number: 2, min: 0.1, max: 60, step: 0.1, name: 'SECONDS' }, 's'], 'statement');
-  define('kit_win', ACTION, [{ value: true, name: 'TEXT', label: 'ganar:' }], 'statement');
-  define('kit_lose', ACTION, [{ value: true, name: 'TEXT', label: 'perder:' }], 'statement');
+  define('kit_message', ACTION, [{ value: true, name: 'TEXT', label: 'mostrar el mensaje' }, 'durante',
+    { number: 2, min: 0.1, max: 60, step: 0.1, name: 'SECONDS' }, 'segundos'], 'statement');
+  define('kit_win', ACTION, [{ value: true, name: 'TEXT', label: 'ganar y decir' }], 'statement',
+         'Se acaba la partida: con A se vuelve a la portada');
+  define('kit_lose', ACTION, [{ value: true, name: 'TEXT', label: 'perder y decir' }], 'statement',
+         'Con A se repite el nivel');
   define('kit_shake', ACTION, ['sacudir la pantalla'], 'statement');
   define('kit_burst', ACTION, ['chispas', { dropdown: COLOURS, name: 'COLOUR' }, { value: true, name: 'OBJ', check: 'Obj', label: 'en' }], 'statement');
   define('kit_restart', ACTION, ['volver a empezar'], 'statement', 'La partida, desde el primer nivel');
   define('kit_next_level', ACTION, ['pasar al siguiente nivel'], 'statement', 'Después del último, se gana');
   define('kit_retry', ACTION, ['repetir el nivel'], 'statement', 'Este nivel desde su principio');
-  define('kit_goto_level', ACTION, ['ir al nivel', { dropdown: someLevel, name: 'LEVEL' }], 'statement');
+  define('kit_goto_level', ACTION, ['ir a', { dropdown: someLevel, name: 'LEVEL' }], 'statement');
   define('kit_set_tile', ACTION, ['poner', { dropdown: () => [['nada', '_'], ...tiles().filter(t => t[1] !== '_')], name: 'TILE' },
     { value: true, name: 'X', check: 'Number', label: 'en x' }, { value: true, name: 'Y', check: 'Number', label: 'y' }], 'statement');
   // input
@@ -206,7 +208,7 @@ export const TOOLBOX = {
     { kind: 'category', name: 'Mandos', colour: INPUT, contents: ['kit_button', 'kit_tap_x', 'kit_tap_y', 'kit_tile_x', 'kit_tile_y']
       .map(type => ({ kind: 'block', type })) },
     { kind: 'sep' },
-    { kind: 'category', name: 'Lógica', categorystyle: 'logic_category', contents: ['controls_if', 'logic_compare', 'logic_operation',
+    { kind: 'category', name: 'Condiciones', categorystyle: 'logic_category', contents: ['controls_if', 'logic_compare', 'logic_operation',
       'logic_negate', 'logic_boolean'].map(type => ({ kind: 'block', type })) },
     { kind: 'category', name: 'Repetir', categorystyle: 'loop_category', contents: [
       { kind: 'block', type: 'controls_repeat_ext', inputs: { TIMES: num(3) } }, { kind: 'block', type: 'controls_whileUntil' }] },
