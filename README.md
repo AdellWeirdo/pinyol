@@ -32,6 +32,24 @@ ctest --test-dir build                       # validates every example and plays
 
 ## Make your own game
 
+### Without code: the editor
+
+`editor/` is a web page for making a game without programming: draw the pictures pixel by pixel (with frames for
+animation), paint the map with them and put the objects on it (a player who walks and jumps, enemies that patrol or
+chase, coins), make the sounds from recipes (coin, laser, explosion, jump...) and write the rules with blocks
+("when the hero touches a coin: remove the other, play coin, add 1 to points"). **Jugar** plays it right there;
+**Para la consola** gives the zip for the card. It starts with a small platformer to change. The interface is in
+Spanish. It needs the web player beside it (see [below](#share-a-game-play-it-in-the-browser) to build it):
+
+```sh
+python3 tools/make_editor.py dist/editor --player build-web
+python3 -m http.server -d dist/editor    # open http://localhost:8000
+```
+
+The editor keeps the project in the browser as it changes; **Guardar** saves it to a file (`.np2d.json`) and
+**Abrir** opens it again. The game it makes is ordinary Lua on the `kit` library ([lib/kit.lua](lib/kit.lua)), so it
+can be carried on by hand.
+
 ### In Lua
 
 ```sh
@@ -142,7 +160,8 @@ examples/        games as they go on the microSD: nine in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
 tests/           test scripts for the examples, and the PPU's own tests
 tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, font2fnt.py, ...
-lib/             Lua libraries built into the engine, require()d by any game: juice, particles, physics, keyboard
+lib/             Lua libraries built into the engine, require()d by any game: juice, particles, physics, keyboard, kit
+editor/          the web editor (plain HTML and JavaScript, no build step) and Blockly in vendor/
 third_party/     cJSON, Lua 5.4, pocketmod, the Pixelify Sans font and a library of pixel fonts (fonts/)
 ```
 
@@ -159,4 +178,4 @@ np2d was written for two games, *Bajo Pueblo* and *Geumgye*, and then opened up 
 
 ## License
 
-np2d is MIT licensed ([LICENSE](LICENSE)). It includes [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT) the [Pixelify Sans](third_party/pixelify/OFL.txt) font and the pixel fonts in [third_party/fonts](third_party/fonts/README.md) (all SIL Open Font License 1.1).
+np2d is MIT licensed ([LICENSE](LICENSE)). It includes [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT) the [Pixelify Sans](third_party/pixelify/OFL.txt) font and the pixel fonts in [third_party/fonts](third_party/fonts/README.md) (all SIL Open Font License 1.1). The editor includes [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0).

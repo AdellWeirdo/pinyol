@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor np2d</title>
+<meta name="description" content="Haz un juego para la consola np2d sin programar: dibujos, mapa, sonidos y bloques.">
+<link rel="stylesheet" href="editor.css">
+<script src="vendor/blockly/blockly_compressed.js"></script>
+<script src="vendor/blockly/blocks_compressed.js"></script>
+<script src="vendor/blockly/lua_compressed.js"></script>
+<script src="vendor/blockly/msg/es.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">np2d</span><span class="sub">editor</span></div>
+  <input id="title" class="title" aria-label="Nombre del juego" maxlength="40" spellcheck="false">
+  <nav class="actions" aria-label="Proyecto">
+    <div class="menu">
+      <button id="new" aria-haspopup="true" aria-expanded="false">Nuevo</button>
+      <div class="menu-list" id="new-list" hidden>
+        <button data-template="platformer">Plataformas (con ejemplo)</button>
+        <button data-template="empty">Vacío</button>
+      </div>
+    </div>
+    <label class="button">Abrir<input type="file" id="open" accept=".json,application/json" hidden></label>
+    <button id="save">Guardar</button>
+    <button id="export" title="Un .zip para la carpeta games/ de la tarjeta de la consola">Para la consola</button>
+    <button id="play" class="primary">▶ Jugar</button>
+  </nav>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Partes del juego">
+  <button role="tab" data-tab="draw" aria-selected="true">Dibujos</button>
+  <button role="tab" data-tab="map">Mapa</button>
+  <button role="tab" data-tab="sound">Sonidos</button>
+  <button role="tab" data-tab="logic">Lógica</button>
+  <button role="tab" data-tab="game">Jugar</button>
+</nav>
+
+<main>
+  <!-- Dibujos -->
+  <section class="tab" id="tab-draw" role="tabpanel">
+    <aside class="list">
+      <h2>Dibujos</h2>
+      <ul id="drawings"></ul>
+      <button id="drawing-add" class="add">+ Nuevo dibujo</button>
+    </aside>
+    <div class="work">
+      <div class="tools" role="toolbar" aria-label="Herramientas">
+        <button data-tool="pen" aria-pressed="true" title="Lápiz (P)">✎ Lápiz</button>
+        <button data-tool="erase" title="Goma (E)">⌫ Goma</button>
+        <button data-tool="fill" title="Cubo (F)">◩ Cubo</button>
+        <button data-tool="pick" title="Cuentagotas (I)">⊙ Coger color</button>
+        <span class="gap"></span>
+        <button id="flip" title="Darle la vuelta">⇋</button>
+        <button id="clear" title="Borrar todo">✕</button>
+        <button id="undo" title="Deshacer (Ctrl+Z)">↶</button>
+        <button id="redo" title="Rehacer (Ctrl+Y)">↷</button>
+      </div>
+      <canvas id="pixels" width="384" height="384" aria-label="El dibujo, píxel a píxel"></canvas>
+      <div class="frames">
+        <span class="label">Fotogramas</span>
+        <div id="frames"></div>
+        <button id="frame-add" title="Un fotograma nuevo, copia del actual">+</button>
+        <button id="frame-del" title="Quitar este fotograma">−</button>
+        <canvas id="preview" width="64" height="64" aria-label="Animación"></canvas>
+      </div>
+    </div>
+    <aside class="props">
+      <h2>Colores</h2>
+      <div id="palette" class="palette"></div>
+      <h2>Este dibujo</h2>
+      <label>Nombre <input id="d-name" maxlength="24" spellcheck="false"></label>
+      <label>Tamaño <select id="d-size"><option>8</option><option>16</option><option>24</option><option>32</option></select></label>
+      <fieldset class="use">
+        <legend>Es</legend>
+        <label><input type="radio" name="use" value="tile"> una baldosa del mapa</label>
+        <label class="sub"><input type="checkbox" id="d-solid"> sólida (suelo, pared)</label>
+        <label><input type="radio" name="use" value="object"> un objeto</label>
+      </fieldset>
+      <div id="object-props">
+        <label>Se mueve como <select id="d-behaviour"></select></label>
+        <label>Velocidad <input type="range" id="d-speed" min="0" max="4" step="0.1"><output id="o-speed"></output></label>
+        <label>Salto <input type="range" id="d-jump" min="0" max="8" step="0.1"><output id="o-jump"></output></label>
+        <label>Animación <input type="range" id="d-animate" min="0" max="30" step="1"><output id="o-animate"></output></label>
+      </div>
+      <button id="drawing-del" class="danger">Quitar este dibujo</button>
+    </aside>
+  </section>
+
+  <!-- Mapa -->
+  <section class="tab" id="tab-map" role="tabpanel" hidden>
+    <aside class="list">
+      <h2>Baldosas</h2>
+      <div id="map-tiles" class="pieces"></div>
+      <h2>Objetos</h2>
+      <div id="map-objects" class="pieces"></div>
+      <p class="hint">Clic para poner. Clic sobre un objeto para quitarlo. Botón derecho o la goma para borrar.</p>
+    </aside>
+    <div class="work map-work">
+      <div class="tools">
+        <label>Ancho <input type="number" id="map-w" min="15" max="64"></label>
+        <label>Alto <input type="number" id="map-h" min="10" max="64"></label>
+        <label>Fondo <input type="color" id="map-bg"></label>
+        <label>La cámara sigue a <select id="map-camera"></select></label>
+      </div>
+      <div class="map-scroll"><canvas id="map" aria-label="El mapa"></canvas></div>
+    </div>
+  </section>
+
+  <!-- Sonidos -->
+  <section class="tab" id="tab-sound" role="tabpanel" hidden>
+    <aside class="list">
+      <h2>Sonidos</h2>
+      <ul id="sounds"></ul>
+      <button id="sound-add" class="add">+ Nuevo sonido</button>
+    </aside>
+    <div class="work sound-work">
+      <div class="recipes" id="recipes"></div>
+      <div class="sound-head">
+        <label>Nombre <input id="s-name" maxlength="24" spellcheck="false"></label>
+        <button id="s-play" class="primary">▶ Escuchar</button>
+        <button id="s-again" title="Otro sonido de la misma receta">↻ Otro</button>
+        <button id="sound-del" class="danger">Quitar</button>
+      </div>
+      <canvas id="wave" width="640" height="120" aria-label="La forma del sonido"></canvas>
+      <div id="sliders" class="sliders"></div>
+    </div>
+  </section>
+
+  <!-- Lógica -->
+  <section class="tab" id="tab-logic" role="tabpanel" hidden>
+    <div id="blockly" class="blockly"></div>
+    <details class="code"><summary>Ver el código Lua</summary><pre id="lua-code"></pre></details>
+  </section>
+
+  <!-- Jugar -->
+  <section class="tab" id="tab-game" role="tabpanel" hidden>
+    <div class="game-bar">
+      <button id="restart" class="primary">↻ Volver a empezar</button>
+      <span id="game-status" role="status"></span>
+    </div>
+    <iframe id="player" title="El juego" allow="autoplay; fullscreen"></iframe>
+  </section>
+</main>
+
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -137,6 +137,19 @@ end
 
 function M.set_sprite(o, name) if o and D.sprites[name] then o.sprite = name end end
 
+-- what the blocks read and change: an object that is not there (nil, or gone) is quietly left alone
+local PROPS = {x = true, y = true, vx = true, vy = true}
+function M.get(o, prop) return o and PROPS[prop] and o[prop] or 0 end
+function M.set(o, prop, v) if o and o.alive and PROPS[prop] then o[prop] = tonumber(v) or 0 end end
+function M.change(o, prop, dv) if o and o.alive and PROPS[prop] then o[prop] = o[prop] + (tonumber(dv) or 0) end end
+function M.spawn_at(kind, o) -- a new one where another is (a shot from the player, a coin where an enemy was)
+  if not o then return nil end
+  local n = M.spawn(kind, o.x, o.y)
+  if n then n.x, n.y = o.x + (o.w - n.w) / 2, o.y + (o.h - n.h) / 2 end
+  if n and o.flip then n.flip = true end
+  return n
+end
+
 -- moving with the map's walls in the way: one axis then the other, stopped at the tile's edge
 local function hits_wall(x, y, w, h) -- the box [x, x + w) x [y, y + h): positions have fractions
   for ty = math.floor(y / T), math.floor((y + h - 0.001) / T) do
@@ -239,6 +252,7 @@ function M.shake(px) juice.shake(px or 4) end
 function M.burst(x, y, colour, n)
   fx:burst(x, y, n or 16, {speed = 2, colours = {colour or 0xFFE070, 0xFFFFFF}, gravity = 0.06, life = 30, size = 2})
 end
+function M.burst_at(o, colour) if o then M.burst(o.x + o.w / 2, o.y + o.h / 2, colour) end end
 
 function M.win(text) ended = {text = text or "¡Has ganado!", won = true} M.sound("ganar") end
 function M.lose(text) ended = {text = text or "Has perdido", won = false} M.sound("perder") end
@@ -266,7 +280,9 @@ end
 function M.init()
   backdrop(D.background or 0x6CB4E0)
   show(D.map and BG0 or 0)
-  for name, p in pairs(D.sounds) do sound("SND_" .. name, p) end
+  for name, p in pairs(D.sounds) do -- {recipe = "coin", seed = 3} or the numbers themselves
+    if p.recipe then sound("SND_" .. name, p.recipe, p.seed or 1) else sound("SND_" .. name, p) end
+  end
   if not D.sounds.ganar then D.sounds.ganar = sound("SND_ganar", "powerup", 4) end
   if not D.sounds.perder then D.sounds.perder = sound("SND_perder", "hit", 9) end
   start_over()

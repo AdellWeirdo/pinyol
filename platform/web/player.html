@@ -13,6 +13,8 @@
   html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, sans-serif; }
   main { max-width: 1000px; margin: 0 auto; padding: 16px; display: grid; gap: 14px; }
   header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  /* inside np2d's editor (?embed=1): only the screen and the buttons */
+  .embed header, .embed .keys { display: none; }
   h1 { margin: 0; font-size: clamp(1.2rem, 1rem + 1.2vw, 1.8rem); letter-spacing: .01em; }
   .by { color: var(--dim); font-size: .85rem; }
   /* the game draws 480x320: the canvas keeps that ratio, whole pixels stay crisp at any size */
@@ -269,6 +271,17 @@ for (const b of document.querySelectorAll('.pad button')) {
   const set = down => { b.classList.toggle('on', down); if (started && Module._web_button) Module._web_button(i, down ? 1 : 0); };
   b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); set(true); });
   for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => set(false));
+}
+
+/* np2d's editor, in the same site, hands its game over: played at once (?embed=1) */
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.body.classList.add('embed');
+  addEventListener('message', async e => {
+    if (e.origin !== location.origin || !e.data || e.data.np2d !== 'play' || !(e.data.zip instanceof ArrayBuffer)) return;
+    await load(e.data.zip);
+    if (gameFiles) start();
+    else parent.postMessage({ np2d: 'error', message: $('status') ? $('status').textContent : 'El juego no se ha podido abrir' }, location.origin);
+  });
 }
 
 const param = new URLSearchParams(location.search).get('game');

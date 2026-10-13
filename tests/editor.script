@@ -1,0 +1,31 @@
+# the editor's platformer template (editor/test/build_game.mjs: its blocks, drawings and map, as the browser builds them) played by the engine
+tick 30
+lua h = kit.first("heroe")
+expect_lua h and h.ground and puntos == 0 and kit.count("moneda") == 4
+shot start
+hold RIGHT 40
+lua h = kit.first("heroe")
+expect_lua h.x > 40
+hold A 10
+tick 30
+lua h = kit.first("heroe") h.x, h.y = 132, 60
+tick 2
+expect_lua puntos == 1 and kit.count("moneda") == 3
+shot coin
+lua h = kit.first("heroe") b = kit.first("babosa") h.x, h.y = b.x + 4, b.y - 4
+tick 3
+shot lose
+press A
+tick 5
+expect_lua puntos == 0 and kit.count("moneda") == 4
+# what the Objects blocks call: a property read, set and changed, a thing made where another is
+lua h = kit.first("heroe") kit.set(h, "x", 50) kit.change(h, "x", 5)
+expect_lua kit.get(h, "x") == 55 and kit.get(h, "nope") == 0 and kit.get(nil, "x") == 0
+lua kit.spawn_at("moneda", h)
+expect_lua kit.count("moneda") == 5
+tick 2
+expect_lua puntos == 1 and kit.count("moneda") == 4
+lua h = kit.first("heroe") m = kit.first("meta") h.x, h.y = m.x, m.y
+tick 3
+shot win
+expect_ok
