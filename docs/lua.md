@@ -268,6 +268,32 @@ if pget(px, py + 4, "LAND") then    -- standing on something
 `noise(x [, y [, z]])` gives smooth noise between about -1 and 1 (Perlin's), the same everywhere: hills along `x`,
 clouds over `x, y`, the same clouds moving with time as `z`.
 
+## Swarms
+
+Bullets, sparks, rain, stars, a crowd: many things that move the same simple way. Moved and drawn from Lua, each one
+costs some microseconds on the console to move and as many to draw, so a few hundred take a whole frame. A swarm
+moves, culls, tests and draws them in C: 300 orbs and more at 60 frames a second.
+
+| Call | Does |
+|---|---|
+| `s = swarm(cap [, {x0, y0, x1, y1}])` | room for `cap` (up to 4096); those that leave the area go (default: the screen and 32 pixels around it) |
+| `s:add(x, y [, vx, vy [, life]])` | one more, moving by vx, vy a tick, for `life` ticks (none: until it leaves); `false` when full |
+| `s:step()` | each moves; those out of the area or out of life go |
+| `s:draw(picture [, frame])` | each drawn centred on its point: one command for them all (the camera applies) |
+| `s:hit(x, y, w, h [, keep])` | how many are in that box; they go, unless `keep` |
+| `#s`, `s:get(i)`, `s:set(i, x, y [, vx, vy])`, `s:remove(i)`, `s:clear()` | how many; one of them, 1 to `#s` (x, y, vx, vy, life); move one; take one out; all out |
+
+```lua
+orbs = swarm(1500)
+orbs:add(boss_x, boss_y, math.cos(a) * 2, math.sin(a) * 2)   -- in _update: a ring, one by one
+orbs:step()
+if orbs:hit(ship_x - 6, ship_y - 5, 12, 10) > 0 then hurt() end
+orbs:draw("SPR_ORB")                                          -- in _draw
+```
+
+Which one is where changes as they go (the last takes the place of one that leaves): keep anything a single one needs
+in Lua tables instead. `examples/nubes` fires its shots and the battleship's orbs this way.
+
 ## Playing together (link)
 
 Consoles near each other running the same game can send each other messages: no router, no internet. On the

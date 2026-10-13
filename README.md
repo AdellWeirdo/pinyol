@@ -77,6 +77,11 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [estilos](examples/estilos) | a game's own look: fonts from the library, outlined and wavy text, frames cut from a picture, turned pictures |
 | [inventos](examples/inventos) | toys of no genre, from code alone: painting, land that breaks, generative trails, 3D triangles, a split screen |
 | [juntos](examples/juntos) | consoles playing together over the air (ESP-NOW, no router): a shared whiteboard, a ball passed from screen to screen |
+| [asalto](examples/asalto) | a run and gun: a heroine with a machine gun, scrap robots that explode, a walking tank at the end of a long street |
+| [nubes](examples/nubes) | a horizontal shoot-em-up over a sea of clouds: drones in formation, a battleship that fills the sky with orbs (swarms) |
+| [calle](examples/calle) | a beat-em-up on a neon street at night: depth, groups of thugs, the camera stopping at each fight |
+| [futbol](examples/futbol) | five a side on a pitch twice the screen's width: four kits that are one picture in four palettes |
+| [moto](examples/moto) | a motorbike race: the road on the world's Mode 7 floor, the coast, the roadside and the rivals at full resolution over it |
 | [duelo](examples/duelo) | a fighting game as a Neo Geo's: every pixel at 480x320, a stage in two layers, fighters in 192x184 frames as packed pictures, hit flashes and sparks, a rival played by the console |
 | [sonidos](examples/sonidos) | sounds made from numbers (a factory of coins, lasers, explosions), a theremin, an engine that follows the speed, music in layers |
 
@@ -173,7 +178,7 @@ platform/sdl/    desktop simulator, and the web players when built with Emscript
 platform/null/   bp_headless: validator and test runner without a window
 platform/web/    the web pages around the players
 firmware/        the console: ESP-IDF project, builds src/ unchanged
-examples/        games as they go on the microSD: ten in Lua, hola as data
+examples/        games as they go on the microSD: fifteen in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
 tests/           test scripts for the examples, and the PPU's own tests
 tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, font2fnt.py, ...
