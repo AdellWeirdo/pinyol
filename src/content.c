@@ -1,6 +1,8 @@
 /* Content loading (JSON files under the game folder) and the reference validator. */
+#include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "bp.h"
 
@@ -18,6 +20,41 @@ size_t fread_chunked(void *dst, size_t n, FILE *f) {
         if (r < want) break;
     }
     return got;
+}
+
+/* The game's folders listed once each (content_free forgets them): on the console's card, opening a file walks its
+ * whole folder a sector per command, and one that is not there costs the most (a picture without a mask, a pose a
+ * sprite may leave out, a sound's next variant: tens of milliseconds each). Those are answered from here. */
+#define LISTED 4
+static struct { char path[320]; char **names; int n; } listed[LISTED]; /* no names: not listed, every file is tried */
+static int nlisted;
+
+static int by_name(const void *a, const void *b) { return strcasecmp(*(char *const *)a, *(char *const *)b); }
+
+static void list_folder(int i, const char *path) {
+    snprintf(listed[i].path, sizeof listed[i].path, "%s", path);
+    DIR *d = opendir(path);
+    for (struct dirent *e; d && (e = readdir(d));) {
+        char **more = listed[i].n % 256 ? listed[i].names : realloc(listed[i].names, (listed[i].n + 256) * sizeof(char *));
+        char *copy = more ? strdup(e->d_name) : NULL;
+        if (more) listed[i].names = more;
+        if (copy) listed[i].names[listed[i].n++] = copy;
+    }
+    if (d) closedir(d);
+    if (listed[i].n) qsort(listed[i].names, (size_t)listed[i].n, sizeof(char *), by_name);
+}
+
+bool game_has(const char *rel) {
+    const char *slash = strrchr(rel, '/'), *name = slash ? slash + 1 : rel;
+    char path[320];
+    if (!slash || snprintf(path, sizeof path, "%s/%.*s", G.game_dir, (int)(slash - rel), rel) >= (int)sizeof path) return true;
+    int i = 0;
+    while (i < nlisted && strcmp(listed[i].path, path)) i++; /* (by the whole path: tools move G.game_dir) */
+    if (i == nlisted) {
+        if (nlisted == LISTED) return true;
+        list_folder(nlisted++, path);
+    }
+    return !listed[i].n || bsearch(&name, listed[i].names, (size_t)listed[i].n, sizeof(char *), by_name);
 }
 
 char *read_file(const char *path, long *len) {
@@ -72,6 +109,12 @@ const char *jas(const cJSON *arr, int i) {
 }
 
 void content_free(void) {
+    for (int i = 0; i < nlisted; i++) {
+        for (int k = 0; k < listed[i].n; k++) free(listed[i].names[k]);
+        free(listed[i].names);
+        listed[i] = (typeof(listed[i])){0};
+    }
+    nlisted = 0;
     cJSON **all[] = {&G.game, &G.tiles, &G.items, &G.events, &G.notebook, &G.sequences, &G.listens, &G.puzzles,
                      &G.music, &G.dialogues, &G.zones};
     for (size_t i = 0; i < sizeof all / sizeof all[0]; i++) {

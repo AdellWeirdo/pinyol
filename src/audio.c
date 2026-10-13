@@ -116,7 +116,7 @@ static FILE *open_wav(const char *id, long *start, long *len, int *chans, bool q
     if (!id || !*id || is_missing(id)) return NULL;
     char path[384];
     snprintf(path, sizeof path, "%s/audio/%s.wav", G.game_dir, id);
-    FILE *f = fopen(path, "rb");
+    FILE *f = game_has(path + strlen(G.game_dir) + 1) ? fopen(path, "rb") : NULL;
     if (f && wav_parse(f, start, len, chans)) {
         fseek(f, *start, SEEK_SET);
         return f;

@@ -99,6 +99,10 @@ add_executable(synth_test tests/synth_test.c platform/null/hal_null.c platform/l
 target_compile_options(synth_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(synth_test bp_core)
 add_test(NAME synth COMMAND synth_test)
+add_executable(files_test tests/files_test.c platform/null/hal_null.c platform/link_udp.c)
+target_compile_options(files_test PRIVATE -Wall -Wextra -Werror ${SAN})
+target_link_libraries(files_test bp_core)
+add_test(NAME files COMMAND files_test)
 # Every example opens and validates; tests/<name>.script plays examples/<name> (with its strips checked).
 file(GLOB EXAMPLES LIST_DIRECTORIES true CONFIGURE_DEPENDS examples/*)
 foreach(dir ${EXAMPLES})

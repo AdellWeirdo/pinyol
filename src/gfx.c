@@ -92,17 +92,19 @@ static void make_room(size_t need, const asset *keep, bool all) {
 /* read_file for a picture's data, with room made for it first (and everything that can go let go, then once more,
  * when memory itself runs out) */
 static char *read_picture(const char *path, long *len, const asset *keep) {
-    FILE *f = fopen(path, "rb");
+    FILE *f = fopen(path, "rb"); /* (once: on the card each opening walks the folder) */
     if (!f) return NULL;
     fseek(f, 0, SEEK_END);
     long n = ftell(f);
-    fclose(f);
-    make_room(n > 0 ? (size_t)n : 0, keep, false);
-    char *d = read_file(path, len);
-    if (!d && n >= 0) {
-        make_room(0, keep, true);
-        d = read_file(path, len);
+    fseek(f, 0, SEEK_SET);
+    char *d = NULL;
+    if (n >= 0) {
+        make_room((size_t)n, keep, false);
+        if (!(d = malloc((size_t)n + 1))) make_room(0, keep, true), d = malloc((size_t)n + 1);
     }
+    if (d && fread_chunked(d, (size_t)n, f) != (size_t)n) free(d), d = NULL;
+    fclose(f);
+    if (d) d[n] = 0, *len = n;
     return d;
 }
 
@@ -172,7 +174,7 @@ static bool load_asset(asset *a) {
         if (!strcmp(forced[i], a->id)) return false;
     char rel[96];
     snprintf(rel, sizeof rel, "assets/%s.meta.json", a->id);
-    cJSON *meta = json_file(rel);
+    cJSON *meta = game_has(rel) ? json_file(rel) : NULL;
     if (!meta) return false;
     a->w = jint(meta, "w", 0);
     a->h = jint(meta, "h", 0);
@@ -205,7 +207,7 @@ static bool load_asset(asset *a) {
     for (size_t i = 0; i < npx; i++) ((uint16_t *)raw)[i] = (uint16_t)(raw[2 * i] | (raw[2 * i + 1] << 8)); /* LE, in place */
     a->pixels = (uint16_t *)raw; /* (read_file's memory: malloc'd, aligned for any type) */
     snprintf(path, sizeof path, "%s/assets/%s.mask", G.game_dir, a->id);
-    a->mask = (uint8_t *)read_picture(path, &len, a);
+    a->mask = game_has(path + strlen(G.game_dir) + 1) ? (uint8_t *)read_picture(path, &len, a) : NULL; /* none: opaque */
     if (a->mask && (size_t)len != (size_t)((a->w + 7) / 8) * a->h * a->frames) {
         hal_log("asset %s: bad mask size, drawing opaque", a->id);
         free(a->mask);
