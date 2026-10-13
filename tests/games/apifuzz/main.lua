@@ -20,8 +20,7 @@ local VALUES = {0, 1, -1, 2, 3, 4, 7, 15, 16, 31, 127, 128, 255, 256, 1023, 1024
   "CANV", "CANV2", CLEAR, {1, 2, 3, 4, 5, 6}, {0, 0, 1e9, 1e9, -1e9, 5, 0 / 0, 1}, {1, 2, 3}, {"a", "b", "c", "d"},
   "coin", "laser", "random", "SND", {wave = "noise", freq = 1e9, slide = -1e9, sustain = 1e9, lowpass = 0 / 0,
   resonance = 1, again = 0.0001, arp = 0, volume = 2}, {pitch = 1e9, loop = true, gain = -5}, {pitch = 0 / 0}}
--- The newer functions get their own storm with its own random numbers, so the one above keeps its sequence (a
--- different one finds strips that differ from the whole frame on odd PPU settings, 2026-10-13: not fixed yet)
+-- The newer functions get their own storm with its own random numbers, so the one above keeps its sequence
 local NEW = {"mic", "mic_record", "music_time", "file", "physics_turning", "video", "led", "battery"}
 local NEW_VALUES = {0, 1, -1, 0.5, 1e9, -1e9, 0 / 0, 1 / 0, "", "x", "../x", "SND", "STARS", "bad.txt", true, false,
   {}, {1, 2, 3}, {canvas = "CANV", loop = true, speed = -16}, {canvas = "../x"}, {speed = 0 / 0},
@@ -82,5 +81,13 @@ function _update()
 end
 
 function _draw()
+  -- boxes with no size or a negative one drew their edges outside their box, where the strips did not look
+  box(111, 7, -2147483648, 1, 1023)
+  box(255, 0, 1023, -1e9)
+  box(300, 100, 1, 10, 0xFF0000)
+  box(64, 200, 10, 1, 0x00FF00)
+  panel(22, -1, 1e9, -0.5)
+  panel(200, 40, 3, 30)
+  plate(300, 60, 2, -5, 0xFF0000)
   storm(60)
 end

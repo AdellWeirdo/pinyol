@@ -150,6 +150,15 @@ static void bounds(const ov_cmd *c, int *x0, int *y0, int *x1, int *y1) { /* wha
         *y0 = c->y < c->h ? c->y : c->h, *y1 = (c->y > c->h ? c->y : c->h) + 1;
         break;
     case OV_CIRC: *x0 = c->x - c->w, *y0 = c->y - c->w, *x1 = c->x + c->w + 1, *y1 = c->y + c->w + 1; break;
+    case OV_BOX: /* its 2-pixel edges are drawn even past a box of no size or a negative one */
+        *x0 = (c->w < 0 ? c->x + c->w : c->x) - 2, *x1 = (c->w < 0 ? c->x : c->x + c->w) + 2;
+        *y0 = (c->h < 0 ? c->y + c->h : c->y) - 2, *y1 = (c->h < 0 ? c->y : c->y + c->h) + 2;
+        break;
+    case OV_PANEL:
+    case OV_PLATE: /* a card's shadow falls right and below it, and a theme's marks can reach past a small one */
+        *x0 = (c->w < 0 ? c->x + c->w : c->x) - 56, *x1 = (c->w < 0 ? c->x : c->x + c->w) + 8;
+        *y0 = (c->h < 0 ? c->y + c->h : c->y) - 12, *y1 = (c->h < 0 ? c->y : c->y + c->h) + 8;
+        break;
     case OV_POLY:
     case OV_POINTS: {
         int pw = c->op == OV_POINTS ? c->a->w : 1, ph = c->op == OV_POINTS ? c->a->h : 1; /* a point: its picture */
