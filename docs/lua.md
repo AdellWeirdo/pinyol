@@ -475,6 +475,17 @@ end
 The microphone also hears the console's own speaker: a game that listens for the player plays its music softly
 meanwhile, or not at all. Made sounds and recordings share the same 1 MB.
 
+## The console itself
+
+Games that reach out of the screen: a TV studio's red tally light that comes on when the camera is live, a warning
+that the cat's console is running out, a story that knows the player is charging it.
+
+| Call | Does |
+|---|---|
+| `led(0xRRGGBB)` | the console's pilot LED in that colour. It has red and green only: red, green, yellow, orange (no blue). In a browser, a light in the corner of the screen |
+| `led()` | the LED back to the console's own (charging, battery); it is also given back when the game ends. A battery about to die blinks it red whatever the game asked |
+| `battery()` | `level, charging`: 0 (empty) to 1 (full) and whether it is charging; `nil` where it cannot be told (a desktop with no battery, browsers without the Battery API). On the console the level is a guess from the voltage, and says little while the cable is in |
+
 ## Libraries built in
 
 Lua code every game can `require`, so a game does not start from nothing. They come inside the engine (the
@@ -592,6 +603,8 @@ expect_lua_error spin()          # code that must fail
 expect_ok                        # the game has not stopped on an error
 shot name                        # save the screen to the saves folder (name.ppm)
 mic 0.5 440                      # the microphone hears a tone that loud (no Hz: noise; mic 0: silence; mic none: no microphone)
+battery 0.2 charging             # battery() says so (battery none: no battery; battery real: the platform's)
+expect_led ff0000                # the LED is that colour (expect_led off: the console's own)
 ```
 
 `#` after a space starts a comment in these scripts, so avoid Lua's `#` length operator there.

@@ -1,0 +1,27 @@
+# The LED: a game's colour, then the console's own again (led()), and when the game ends; the battery: its level and
+# charging, or nil where it cannot be told
+new
+tick 2
+expect_led off
+press A
+expect_led ff0000
+shot device_on_air
+press A
+expect_led off
+lua led(0x00FF00)
+expect_led 00ff00
+new
+tick 1
+expect_led off
+battery 0.42 charging
+tick 1
+expect_lua math.abs(level - 0.42) < 1e-6 and charging == true
+battery 1.5
+tick 1
+expect_lua level == 1 and charging == false
+battery none
+tick 1
+expect_lua level == nil and battery() == nil
+battery real
+expect_lua_error led("red")
+expect_ok

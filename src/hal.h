@@ -55,3 +55,8 @@ uint32_t hal_link_id(void);                  /* this console's id: not 0, the sa
 bool hal_mic_open(void);
 void hal_mic_close(void);
 int hal_mic_read(int16_t *p, int max);
+
+/* The pilot LED: 0xRRGGBB for a game (a console's has only red and green), -1 back to the console's own. And the
+ * battery: level 0..1 and whether it charges; false where it cannot be told. */
+void hal_led(int rgb);
+bool hal_battery(float *level, bool *charging);

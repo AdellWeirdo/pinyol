@@ -297,6 +297,19 @@ static bool run_line(char *cmd, char *arg) {
         else FAIL("mic: LEVEL [HZ] or none");
         return true;
     }
+    if (!strcmp(cmd, "battery")) { /* np2d@2: battery LEVEL [charging]; battery none; battery real */
+        float level = 0;
+        if (!strcmp(arg, "none")) device_fake_battery(true, false, 0, false);
+        else if (!strcmp(arg, "real")) device_fake_battery(false, false, 0, false);
+        else if (sscanf(arg, "%f", &level) == 1) device_fake_battery(true, true, level, strstr(arg, "charging") != NULL);
+        else FAIL("battery: LEVEL [charging], none or real");
+        return true;
+    }
+    if (!strcmp(cmd, "expect_led")) { /* np2d@2: expect_led RRGGBB, or off: the colour the game left the LED in */
+        int want = !strcmp(arg, "off") ? -1 : (int)strtol(arg, NULL, 16);
+        if (device_led() != want) FAIL("the LED is %06x, not %s", device_led(), arg);
+        return true;
+    }
     if (!strcmp(cmd, "wait_ms")) { /* real time passing: two runs playing each other over BP_LINK=udp */
         uint32_t t0 = hal_micros(), ms = (uint32_t)atoi(arg);
         while (hal_micros() - t0 < ms * 1000) {}

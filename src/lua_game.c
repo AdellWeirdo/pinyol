@@ -940,6 +940,7 @@ static void api(lua_State *L) {
     sound_register(L); /* sounds, music, notes: lua_sound.c */
     physics_register(L); /* bodies that turn, for lib/physics.lua: lua_physics.c */
     clip_register(L); /* video on canvases: lua_clip.c */
+    device_register(L); /* the LED and the battery: lua_device.c */
     static const struct { const char *n; int v; } K[] = {
         {"BG0", PPU_BG0}, {"BG1", PPU_BG1}, {"BG2", PPU_BG2}, {"BG3", PPU_BG3}, {"OBJ", PPU_OBJ}, {"BACK", PPU_BACK},
         {"FX", PPU_FX}, {"ALL", 0x3F}, {"FLIP_X", F_FLIPX}, {"FLIP_Y", F_FLIPY}, {"BLEND", F_BLEND},
@@ -956,6 +957,7 @@ void v2_free(void) {
     link_stop();
     mic_close();
     physics_free();
+    device_reset();
     if (Ls) lua_close(Ls);
     Ls = NULL;
     assets_free();

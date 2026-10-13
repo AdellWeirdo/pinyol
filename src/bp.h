@@ -417,6 +417,8 @@ bool mic_read(float *level, float *pitch, bool *hit, bool *recording); /* false 
 bool mic_record(const char *id, float seconds); /* into a sound, sfx(id), when the time is up or on stop */
 void mic_record_stop(void);
 void mic_inject(bool present, float level, float hz); /* tests: a microphone hearing a tone (hz 0: noise) */
+int device_led(void); /* lua_device.c: the colour a game set the LED to, -1 none (tests) */
+void device_fake_battery(bool on, bool have, float level, bool charging); /* tests: a battery, or none */
 
 bool mod_play(const char *path, float gain); /* false if it cannot be read or played */
 void mod_stop(int fade_ms);

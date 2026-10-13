@@ -163,6 +163,48 @@ int hal_mic_read(int16_t *p, int max) {
     return n;
 }
 
+/* The pilot LED and the battery (lua_device.c). The browser: a light on the player's page, and the Battery API
+ * where the browser has it (Chrome; asked once, then kept up to date by its events). The desktop: no light, and
+ * the laptop's battery as SDL sees it. */
+#ifdef __EMSCRIPTEN__
+EM_JS(void, web_led, (int rgb), {
+    const e = document.getElementById("led");
+    if (!e) return;
+    if (rgb < 0) { e.hidden = true; return; }
+    const c = "rgb(" + ((rgb >> 16) & 255) + "," + ((rgb >> 8) & 255) + ",0)"; /* red and green: as the console */
+    e.hidden = false;
+    e.style.background = c;
+    e.style.boxShadow = "0 0 10px 3px " + c;
+});
+EM_JS(int, web_battery, (float *level, int *charging), {
+    if (!Module.np2dBattery && navigator.getBattery) {
+        Module.np2dBattery = {};
+        navigator.getBattery().then((b) => { Module.np2dBattery = b; }).catch(() => {});
+    }
+    const b = Module.np2dBattery;
+    if (!b || b.level === undefined) return 0;
+    HEAPF32[level >> 2] = b.level;
+    HEAP32[charging >> 2] = b.charging ? 1 : 0;
+    return 1;
+});
+void hal_led(int rgb) { web_led(rgb); }
+bool hal_battery(float *level, bool *charging) {
+    int c = 0;
+    if (!web_battery(level, &c)) return false;
+    *charging = c;
+    return true;
+}
+#else
+void hal_led(int rgb) { (void)rgb; }
+bool hal_battery(float *level, bool *charging) {
+    int pct = -1;
+    SDL_PowerState st = SDL_GetPowerInfo(NULL, &pct);
+    if (st == SDL_POWERSTATE_UNKNOWN || st == SDL_POWERSTATE_NO_BATTERY || pct < 0) return false;
+    *level = pct / 100.0f, *charging = st == SDL_POWERSTATE_CHARGING;
+    return true;
+}
+#endif
+
 static bool muted; /* the web page's mute button: the game plays on, silent (its own fades are left alone) */
 
 static void audio_cb(void *user, Uint8 *stream, int len) {

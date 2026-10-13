@@ -58,3 +58,6 @@ uint32_t hal_link_id(void) {
 bool hal_mic_open(void) { return false; }
 void hal_mic_close(void) {}
 int hal_mic_read(int16_t *p, int max) { return (void)p, (void)max, 0; }
+
+void hal_led(int rgb) { (void)rgb; }                                            /* (tests read it: expect_led) */
+bool hal_battery(float *level, bool *charging) { return (void)level, (void)charging, false; } /* (script: battery) */

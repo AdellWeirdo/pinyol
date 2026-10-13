@@ -90,3 +90,5 @@ void physics_free(void);
 void clip_register(lua_State *L); /* video(): clips on a canvas, lua_clip.c */
 void clip_tick(void);             /* each tick: the clips playing move on */
 void clip_free_all(void);
+void device_register(lua_State *L); /* led(), battery(): lua_device.c */
+void device_reset(void);

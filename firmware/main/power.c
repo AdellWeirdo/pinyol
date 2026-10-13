@@ -34,6 +34,7 @@ static adc_oneshot_unit_handle_t adc;
 static adc_cali_handle_t cali;
 static volatile float volts;
 static volatile bool usb, critical, off; /* off: power_off owns the LED */
+static volatile int game_led = -1;        /* a game's colour for the LED (led() in Lua), -1: the console's own */
 
 static void led(float red, float green) { /* 0..1 each */
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, (uint32_t)(255 * (red < 0 ? 0 : red > 1 ? 1 : red)));
@@ -68,6 +69,7 @@ static void power_task(void *arg) {
             if (low_count >= 3) critical = true; /* three readings in a row, not a dip under load */
         }
         if (critical) led(fmodf(s, 0.25f) < 0.12f, 0);
+        else if (game_led >= 0) led((game_led >> 16 & 255) / 255.0f, (game_led >> 8 & 255) / 255.0f);
         else if (usb && volts < FULL_V) { /* charging: orange breathing */
             float b = 0.5f - 0.5f * cosf(s * 6.2831853f / 2.5f);
             led(b, b * 0.45f);
@@ -114,6 +116,20 @@ void power_init(void) {
 }
 
 float power_volts(void) { return volts; }
+
+void hal_led(int rgb) {
+    game_led = rgb;
+    if (rgb >= 0 && !critical && !off) led((rgb >> 16 & 255) / 255.0f, (rgb >> 8 & 255) / 255.0f); /* at once */
+}
+
+/* ponytail: a LiPo's voltage is not linear in its charge; 3.4 V empty to 4.15 V full is a guess good for a bar.
+ * On USB the reading is the charger's output, so the level says little until it is unplugged. */
+bool hal_battery(float *level, bool *charging) {
+    float l = (volts - CRITICAL_V) / (FULL_V - CRITICAL_V);
+    *level = l < 0 ? 0 : l > 1 ? 1 : l;
+    *charging = usb && volts < FULL_V;
+    return volts > 0;
+}
 bool power_usb(void) { return usb; }
 bool power_critical(void) { return critical; }
 
