@@ -100,7 +100,7 @@ export function templatePlatformer() {
         { kind: 'babosa', x: 280, y: 128 }, { kind: 'babosa', x: 400, y: 128 }, { kind: 'meta', x: 452, y: 128 }] },
   ];
   return {
-    format: FORMAT, id: 'aventura', title: 'Mi aventura', drawings, levels,
+    format: FORMAT, id: 'mi_aventura', title: 'Mi aventura', drawings, levels,
     cover: { on: true, subtitle: 'Pulsa A para empezar', picture: 'montes', background: '#6CB4E0' },
     ending: '¡Has terminado el juego!',
     sounds: [
@@ -117,7 +117,7 @@ export function templateEmpty() {
   const level = newLevel('nivel1', 'Nivel 1');
   level.objects.push({ kind: 'jugador', x: 112, y: 72 });
   return {
-    format: FORMAT, id: 'juego', title: 'Juego nuevo',
+    format: FORMAT, id: 'juego_nuevo', title: 'Juego nuevo',
     drawings: [{ ...DRAWING, name: 'jugador', w: 16, h: 16, frames: [blankFrame(16, 16)], use: 'object', behaviour: 'topdown',
                  speed: 1.5 }],
     levels: [level], cover: { on: true, subtitle: 'Pulsa A para empezar', picture: '', background: '#1D2B53' },
@@ -248,7 +248,7 @@ export function templateAdventure() {
     '#.....#............#',
     '####################',
   ], { '#': 'roca', D: 'puerta' }, things, { background: '#26222F', camera: 'exploradora' });
-  return game('aventura', 'La llave perdida', drawings, [forest, crypt],
+  return game('la_llave_perdida', 'La llave perdida', drawings, [forest, crypt],
     [{ name: 'gema', recipe: 'coin', seed: 7 }, { name: 'llave', recipe: 'powerup', seed: 3 },
      { name: 'puerta', recipe: 'blip', seed: 5 }, { name: 'golpe', recipe: 'hit', seed: 4 }],
     { picture: 'exploradora', background: '#4C8F3C' }, '¡Has encontrado la salida!');
@@ -300,7 +300,7 @@ export function templateShooter() {
   ];
   const space = (id, name) => levelOf(id, name, Array(10).fill('...............'), {}, {},
     { background: '#0B0A1A', camera: 'nave', objects: [{ kind: 'nave', x: 112, y: 136 }] });
-  return game('naves', 'Defensa galáctica', drawings, [space('nivel1', 'Oleada 1'), space('nivel2', 'Oleada 2: cometas')],
+  return game('defensa_galactica', 'Defensa galáctica', drawings, [space('nivel1', 'Oleada 1'), space('nivel2', 'Oleada 2: cometas')],
     [{ name: 'laser', recipe: 'laser', seed: 1 }, { name: 'explosion', recipe: 'explosion', seed: 2 },
      { name: 'golpe', recipe: 'hit', seed: 1 }],
     { picture: 'estrellas', background: '#0B0A1A' }, '¡Has salvado la galaxia!');
@@ -336,7 +336,7 @@ export function templatePuzzle() {
   const things = { P: 'robot', B: 'caja' };
   const room = (id, name, rows) => levelOf(id, name, rows, tiles, things, { background: '#14121C' });
   const empty = '...............';
-  return game('puzle', 'Cajas y robot', drawings, [
+  return game('cajas_y_robot', 'Cajas y robot', drawings, [
     room('nivel1', 'Puzle 1: un empujón', [empty, empty, '..#########....', '..#_______#....', '..#_P_B__x#....',
       '..#_______#....', '..#########....', empty, empty, empty]),
     room('nivel2', 'Puzle 2: dos cajas', [empty, '...#########...', '...#_______#...', '...#_B___B_#...',

@@ -1,7 +1,7 @@
 // The editor: the project kept in the browser as it changes, the tabs, and the game built from it for the player
 // (Play) or the console's card (a .zip).
 /* global Blockly */
-import { check, pack, saveLocal, loadLocal } from './project.js';
+import { check, pack, safeName, saveLocal, loadLocal } from './project.js';
 import { TEMPLATES, templateEmpty } from './templates.js';
 import { buildFiles } from './build.js';
 import { audioFiles } from './audio.js';
@@ -218,7 +218,12 @@ async function init() {
   else load(TEMPLATES[0].make(), templateBlocks(TEMPLATES[0].key));
 
   for (const b of document.querySelectorAll('[role=tab]')) b.addEventListener('click', () => showTab(b.dataset.tab));
-  $('title').addEventListener('change', e => { project.title = e.target.value.trim().slice(0, 40) || 'Juego'; changed(); tabs.map.render(); });
+  $('title').addEventListener('change', e => { // the game's folder on the card follows its name: two games, two folders
+    project.title = e.target.value.trim().slice(0, 40) || 'Juego';
+    project.id = safeName(project.title, 'juego');
+    changed();
+    tabs.map.render();
+  });
   $('new').addEventListener('click', () => {
     const list = $('new-list');
     list.hidden = !list.hidden;
