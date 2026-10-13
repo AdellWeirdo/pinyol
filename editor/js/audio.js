@@ -1,6 +1,8 @@
 // Sounds brought in from files: decoded by the browser (WAV, MP3, OGG, M4A...), cut, made louder or softer, and made
 // into what the console plays: a WAV, 16-bit, mono, 22 050 Hz. Effects are kept in the console's memory as they play,
 // so they are short; music is read from the card as it plays, so it can be long.
+import { renderSong } from './song.js';
+
 export const HZ = 22050;
 export const MAX_S = { effect: 5, music: 240 };
 
@@ -56,8 +58,9 @@ export function wav(part) {
 // the console's names: effects SFX_ (kept when a game is baked into its flash), music MUS_ (left on the card)
 export const fileOf = s => (s.use === 'music' ? 'MUS_' : 'SFX_') + s.name;
 
-export async function audioFiles(p) { // [[path, bytes]] of the sounds from files
+export async function audioFiles(p) { // [[path, bytes]] of the sounds from files, and of the songs composed
   const out = [];
+  for (const s of p.sounds.filter(x => x.song)) out.push([`audio/${fileOf(s)}.wav`, wav(renderSong(s.song))]);
   for (const s of p.sounds.filter(x => x.file)) {
     try { out.push([`audio/${fileOf(s)}.wav`, wav(cut(s, await samples(s)))]); }
     catch { throw new Error(`no se ha podido leer el sonido «${s.name}»`); }
@@ -66,17 +69,24 @@ export async function audioFiles(p) { // [[path, bytes]] of the sounds from file
 }
 
 export function stop() {
-  if (playing) { try { playing.stop(); } catch { /* already over */ } }
+  if (playing) { try { playing.src.stop(); } catch { /* already over */ } }
   playing = null;
 }
 
-export async function play(s) { // the part kept, as the game will play it
+// as the game will play it: the part kept of a file, or a song (looping, from `offset` seconds)
+export async function play(s, offset = 0) {
   stop();
-  const part = cut(s, await samples(s)), c = audio(), buf = c.createBuffer(1, part.length, HZ);
+  const part = s.song ? renderSong(s.song) : cut(s, await samples(s)), c = audio(), buf = c.createBuffer(1, part.length, HZ);
   buf.copyToChannel(part, 0);
   const src = c.createBufferSource();
   src.buffer = buf;
+  src.loop = !!s.song;
   src.connect(c.destination);
-  src.start();
-  playing = src;
+  src.start(0, offset % buf.duration);
+  playing = { src, start: c.currentTime - offset, duration: buf.duration };
+  src.onended = () => { if (playing && playing.src === src) playing = null; };
+}
+
+export function position() { // seconds into what plays (a song: within its loop), or -1
+  return playing ? (audio().currentTime - playing.start) % playing.duration : -1;
 }

@@ -1,5 +1,6 @@
 // The project: everything a game made in the editor is, as plain data (saved in the browser, or as a .json file).
 // build.js turns it into a game folder np2d plays.
+import { checkSong } from './song.js';
 
 export const FORMAT = 3; // 3: levels and a cover; 2: pixels in the console's colours (RGB565); 1: palette indices
 export const TILE = 16; // the map's grid, in the world's pixels
@@ -162,7 +163,9 @@ export function check(p) {
   for (const s of Array.isArray(p.sounds) ? p.sounds.slice(0, 48) : []) {
     const name = uniqueName(safeName(s.name, 'sonido'), snames);
     snames.add(name);
-    if (typeof s.file === 'string' && s.file && s.file.length < FILE_MAX) // brought in from a file (base64)
+    if (s.song && typeof s.song === 'object') // composed in the editor (song.js): always music
+      out.sounds.push({ name, song: checkSong(s.song), use: 'music' });
+    else if (typeof s.file === 'string' && s.file && s.file.length < FILE_MAX) // brought in from a file (base64)
       out.sounds.push({ name, file: s.file, use: s.use === 'music' ? 'music' : 'effect', start: clampNum(s.start, 0, 3600, 0),
                         end: clampNum(s.end, 0, 3600, 0), volume: clampNum(s.volume, 0, 2, 1) });
     else

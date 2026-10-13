@@ -1,5 +1,5 @@
 # sounds brought into the editor from files: the cover's and the first level's music (the same one goes on), an
-# effect, a level with none (silence), music changed by a block
+# effect; a song composed in the editor for the second level; music changed and stopped by a block
 tick 30
 expect_lua kit.state() == "cover" and kit.playing() == "MUS_tema"
 press A
@@ -9,7 +9,7 @@ press B
 tick 5
 lua kit.goto_level("nivel2")
 tick 2
-expect_lua kit.level() == "nivel2" and kit.playing() == nil
+expect_lua kit.level() == "nivel2" and kit.playing() == "MUS_cancion"
 lua kit.music("tema")
 tick 2
 expect_lua kit.playing() == "MUS_tema"

@@ -82,7 +82,7 @@ function dataLua(p, crops, start) {
     else if (d.use === 'tile' && d.solid) solid[d.name] = true;
   }
   for (const s of p.sounds) // made from numbers; brought in: an effect is a file, music is named by its levels
-    if (s.file) { if (s.use === 'effect') sounds[s.name] = { file: fileOf(s) }; }
+    if (s.file || s.song) { if (s.use === 'effect') sounds[s.name] = { file: fileOf(s) }; } // songs are music
     else sounds[s.name] = s.params ? s.params : { recipe: s.recipe, seed: s.seed };
   const c = p.cover, pic = p.drawings.find(d => d.name === c.picture);
   const data = { title: p.title, tile: TILE, sprites, kinds, solid, sounds, ending: p.ending,

@@ -215,6 +215,11 @@ label.inline { display: flex; align-items: center; gap: 8px; margin: 0; }
 .sound-head { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
 .sound-head label { margin: 0; flex: 1 1 160px; }
 #wave { width: 100%; height: 120px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; }
+.composer { display: grid; gap: 10px; min-width: 0; }
+.composer:empty { display: none; }
+.song-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; }
+#song-grid { display: block; touch-action: none; cursor: pointer; }
+@media (pointer: coarse) { #song-grid { touch-action: pan-x pan-y; } } /* a finger scrolls the grid; a tap puts a note */
 .sliders { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 18px; }
 .sliders label { grid-template-columns: 1fr auto; margin: 4px 0; }
 .sliders input, .sliders select { grid-column: 1 / -1; }

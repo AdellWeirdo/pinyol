@@ -3,6 +3,8 @@
 import { safeName, uniqueName } from './project.js';
 import { RECIPES, WAVES, recipe, render as renderSound, play } from './synth.js';
 import { HZ, MAX_S, toBase64, samples, play as playClip, stop as stopClip } from './audio.js';
+import { newSong } from './song.js';
+import { renderComposer, composerPlays } from './composer.js';
 
 const $ = id => document.getElementById(id);
 let app, cur = 0;
@@ -19,7 +21,8 @@ const WAVE_NAMES = { square: 'cuadrada', triangle: 'triangular', saw: 'sierra', 
 
 const sound = () => app.project.sounds[cur];
 export function paramsOf(s) { return s.params ? { ...s.params } : recipe(s.recipe, s.seed); }
-const hear = s => (s.file ? playClip(s).catch(() => app.oops(`No se ha podido leer el sonido «${s.name}».`)) : play(paramsOf(s)));
+const hear = s => (s.song ? playClip(s).then(composerPlays)
+  : s.file ? playClip(s).catch(() => app.oops(`No se ha podido leer el sonido «${s.name}».`)) : play(paramsOf(s)));
 
 function drawWave(data, from = 0, to = data.length, note = '') { // the samples; outside from..to dimmed (cut away)
   const c = $('wave'), g = c.getContext('2d');
@@ -45,7 +48,7 @@ function renderList() {
   ul.replaceChildren();
   app.project.sounds.forEach((s, i) => {
     const li = document.createElement('li'), b = document.createElement('button');
-    const kind = s.file ? (s.use === 'music' ? 'música' : 'archivo') : s.params ? 'a mano' : RECIPES[s.recipe] || '';
+    const kind = s.song ? 'compuesta' : s.file ? (s.use === 'music' ? 'música' : 'archivo') : s.params ? 'a mano' : RECIPES[s.recipe] || '';
     b.className = 'item';
     b.append(Object.assign(document.createElement('span'), { className: 'name', textContent: s.name }),
       Object.assign(document.createElement('span'), { className: 'kind', textContent: kind }));
@@ -112,13 +115,16 @@ function render() {
   for (const id of ['s-name', 's-play', 's-again', 'sound-del']) $(id).disabled = !has;
   renderList();
   $('sliders').replaceChildren();
+  $('composer').replaceChildren();
   if (!has) { $('wave').getContext('2d').clearRect(0, 0, 9999, 999); $('wave-note').textContent = ''; return; }
   cur = Math.min(cur, app.project.sounds.length - 1);
   const s = sound();
   $('s-name').value = s.name;
-  $('recipes').hidden = $('s-again').hidden = !!s.file;
-  $('s-stop').hidden = !s.file;
-  if (s.file) renderClip(s);
+  $('recipes').hidden = $('recipes-title').hidden = $('s-again').hidden = !!(s.file || s.song);
+  $('s-stop').hidden = !(s.file || s.song);
+  $('wave').hidden = $('wave-note').hidden = !!s.song; // a song shows its notes instead
+  if (s.song) renderComposer($('composer'), s, app);
+  else if (s.file) renderClip(s);
   else renderMade(s);
 }
 
@@ -177,7 +183,16 @@ export function initSounds(ctx) {
   tab.addEventListener('dragleave', e => { if (e.target === tab) tab.classList.remove('dropping'); });
   tab.addEventListener('drop', e => { e.preventDefault(); tab.classList.remove('dropping'); bringIn(e.dataTransfer.files[0]); });
   $('s-play').addEventListener('click', () => hear(sound()));
-  $('s-stop').addEventListener('click', stopClip);
+  $('s-stop').addEventListener('click', () => { stopClip(); composerPlays(); });
+  $('song-add').addEventListener('click', () => {
+    const names = new Set(app.project.sounds.map(x => x.name));
+    stopClip();
+    app.project.sounds.push({ name: uniqueName('musica', names), song: newSong(), use: 'music' });
+    cur = app.project.sounds.length - 1;
+    app.changed();
+    render();
+    app.toast('Música nueva, con un ejemplo para empezar: cámbiala como quieras y elígela para un nivel en Mapa.');
+  });
   $('s-again').addEventListener('click', () => {
     const s = sound();
     s.seed = 1 + Math.floor(Math.random() * 99999), s.params = null;

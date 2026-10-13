@@ -1,4 +1,4 @@
-// The guide: seven steps through the editor the first time it opens (again with the ? button), each on the tab it
+// The guide: eight steps through the editor the first time it opens (again with the ? button), each on the tab it
 // speaks about, with what it speaks about outlined. A panel in a corner, not in the way: everything still works.
 const $ = id => document.getElementById(id);
 const SEEN = 'np2d-guide-seen';
@@ -15,6 +15,8 @@ const STEPS = [
     text: () => 'Elige una pieza (una baldosa o un objeto, como la moneda) y haz clic en el mapa para ponerla. La goma la quita. Arriba a la izquierda están los niveles y la portada.' },
   { tab: 'logic', at: 'blockly', title: 'Las reglas son bloques',
     text: () => 'Lee los bloques como frases: «cuando heroe toca moneda: quitar el otro, sumar 1 a puntos». Arrastra bloques de la izquierda para inventar reglas nuevas.' },
+  { tab: 'sound', at: 'song-add', title: 'Sonidos y música',
+    text: () => 'Haz efectos con las recetas (moneda, salto, láser…), añade sonidos tuyos o compón una música en una cuadrícula. En Mapa, cada nivel elige su música.' },
   { tab: 'game', at: 'play-start', title: 'Prueba tus cambios',
     text: () => 'Cada vez que cambies algo, juega otra vez. Con «Empezar en» vas directo al nivel que estás haciendo.' },
   { tab: 'game', at: 'export', title: 'A tu consola',

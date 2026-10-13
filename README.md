@@ -39,7 +39,8 @@ animation) or bring them in from image files (PNG with transparency, JPG, a row 
 any of the console's colours; paint the levels' maps with them and put the objects on them (a player who walks and
 jumps, enemies that patrol or chase, coins), with up to three pictures behind each that move slower than the camera,
 and a cover before the first; make the sounds from recipes (coin, laser, explosion, jump...) or bring them in from
-files (WAV, MP3, OGG...: effects, and music for each level and the cover, cut and made louder or softer); write the rules
+files (WAV, MP3, OGG...: effects, and music for each level and the cover, cut and made louder or softer), or compose a
+song on a grid (melody, bass and drums, in a scale where every note fits); write the rules
 with blocks ("when the hero touches a coin: remove the other, play coin, add 1 to points"; "when the hero touches
 the flag: go on to the next level"). **Jugar** plays it right there; **Pasar a la consola** sends it over the USB
 cable (Chrome and Edge, with Web Serial) or gives the zip for the card. A short guide walks a first-time user through
