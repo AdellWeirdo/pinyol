@@ -607,7 +607,19 @@ void arena_tick(void) {
 static struct { bool hd, covers; float z, cx; asset *bg; int dim; } R; /* covers: the background fills the screen;
                                                                         * dim: halvings of the whole frame (fades) */
 
-static void hd_reset(void) { R.hd = false, R.z = 0; }
+static const int RING[4] = {6, 12, 20, 30}; /* the Canto's wave: 4 frames, one dotted ring each, r * 6 dots */
+static int8_t ring_xy[(6 + 12 + 20 + 30) * 6][2];
+static float ray_cs[8], ray_sn[8]; /* an impact's 8 rays */
+
+static void hd_reset(void) { /* (and the effects' dots, worked out once: their sines were most of a strip's time) */
+    R.hd = false, R.z = 0;
+    for (int k = 0, i = 0; k < 4; k++)
+        for (int a = 0, n = RING[k] * 6; a < n; a++, i++) {
+            float th = a * 6.2831853f / n;
+            ring_xy[i][0] = (int8_t)lroundf(RING[k] * cosf(th)), ring_xy[i][1] = (int8_t)lroundf(RING[k] * 0.8f * sinf(th));
+        }
+    for (int d = 0; d < 8; d++) ray_cs[d] = cosf(d * 0.785398f), ray_sn[d] = sinf(d * 0.785398f);
+}
 
 static int sx_(float x) { return R.hd ? (int)floorf(SCREEN_W / 2 + (x - R.cx) * 2 * R.z) : (int)x; }
 static int sy_(float y) { return R.hd ? (int)floorf(2 * K.floor_y + (y - K.floor_y) * 2 * R.z) : (int)y; }
@@ -886,13 +898,11 @@ static void warm(surface *s, int level) {
 }
 
 static void wave(surface *s, int cx, int cy, int t) { /* 4 frames, one dotted ring each */
-    static const int R[4] = {6, 12, 20, 30};
     if (t < 0 || t >= WAVE_T) return;
-    int r = R[t / 5], n = r * 6;
-    for (int a = 0; a < n; a++) {
-        float th = a * 6.2831853f / n;
-        dot(s, cx + (int)lroundf(r * cosf(th)), cy + (int)lroundf(r * 0.8f * sinf(th)), t < 10 ? AMBER_HI : AMBER);
-    }
+    int k = t / 5, r = RING[k], i = 0;
+    if (R.hd && (sx_((float)(cx + r + 1)) <= s->x0 || sx_((float)(cx - r)) >= s->x0 + s->w)) return; /* not this strip's */
+    for (int j = 0; j < k; j++) i += RING[j] * 6;
+    for (int a = 0; a < r * 6; a++, i++) dot(s, cx + ring_xy[i][0], cy + ring_xy[i][1], t < 10 ? AMBER_HI : AMBER);
 }
 
 static void bands(surface *s, int x0, int t) { /* two bands of pixel light cross the scene from the core */
@@ -925,10 +935,8 @@ static void draw_fx(surface *s) {
         if (FX[i].kind == FX_IMPACT) { /* a star of rays that opens and thins */
             static const int R[3] = {3, 6, 8};
             int r = R[k] + 2 * big;
-            for (int d = 0; d < 8; d++) {
-                float th = d * 0.785398f;
-                for (int q = r / 2; q <= r; q++) dot(s, x + (int)lroundf(q * cosf(th)), y + (int)lroundf(q * sinf(th)), k ? AMBER : AMBER_HI);
-            }
+            for (int d = 0; d < 8; d++)
+                for (int q = r / 2; q <= r; q++) dot(s, x + (int)lroundf(q * ray_cs[d]), y + (int)lroundf(q * ray_sn[d]), k ? AMBER : AMBER_HI);
             if (!k) wfill(s, x - 1, y - 1, 3, 3, C_WHITE);
         } else if (FX[i].kind == FX_SPARK) { /* short streaks thrown up and back off the guard */
             for (int j = 0; j < 4 + 2 * big; j++) {

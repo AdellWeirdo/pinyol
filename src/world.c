@@ -24,23 +24,36 @@ static struct { asset *bg; int shade; bool dusk; } hd;
 #define SPAN_FULL 255
 static struct { uint8_t n[WORLD_W], run[WORLD_W][SPANS][2]; } *spans;
 
+typedef uint32_t __attribute__((may_alias)) px2; /* two pixels (the world's rows start at even pixels) */
+
 static void hd_spans(const surface *w) {
+    enum { WORDS = (WORLD_W + 31) / 32 };
     if (!spans && !(spans = hal_realloc_slow(NULL, sizeof *spans))) return;
     static uint8_t start[WORLD_W];
+    uint32_t was[WORDS] = {0}, in[WORDS];
+    const uint32_t keys = WORLD_KEY * 0x00010001u;
     memset(spans->n, 0, sizeof spans->n);
-    memset(start, SPAN_FULL, sizeof start); /* SPAN_FULL as a start: not in a run */
-    for (int v = 0; v <= WORLD_H; v++) { /* row by row, as the world is kept; a last pass closes the open runs */
+    /* row by row, as the world is kept: each row's drawn pixels as bits (two key pixels skipped at once), and only the
+     * columns whose bit changed from the row above are visited; a last pass, all clear, closes the open runs */
+    for (int v = 0; v <= WORLD_H; v++) {
+        memset(in, 0, sizeof in);
         const uint16_t *row = w->px + v * WORLD_W;
-        for (int u = 0; u < WORLD_W; u++) {
-            bool in = v < WORLD_H && row[u] != WORLD_KEY;
-            if (in && start[u] == SPAN_FULL) start[u] = (uint8_t)v;
-            else if (!in && start[u] != SPAN_FULL) {
-                uint8_t *n = &spans->n[u];
-                if (*n < SPANS) spans->run[u][*n][0] = start[u], spans->run[u][*n][1] = (uint8_t)(v - start[u]), (*n)++;
-                else *n = SPAN_FULL;
-                start[u] = SPAN_FULL;
-            }
+        for (int u = 0; v < WORLD_H && u < WORLD_W; u += 2) {
+            if (*(const px2 *)(row + u) == keys) continue;
+            if (row[u] != WORLD_KEY) in[u >> 5] |= 1u << (u & 31);
+            if (row[u + 1] != WORLD_KEY) in[(u + 1) >> 5] |= 1u << ((u + 1) & 31);
         }
+        for (int k = 0; k < WORDS; k++)
+            for (uint32_t d = in[k] ^ was[k]; d; d &= d - 1) {
+                int b = __builtin_ctz(d), u = k * 32 + b;
+                if (in[k] >> b & 1) start[u] = (uint8_t)v; /* a run starts */
+                else { /* it ends */
+                    uint8_t *n = &spans->n[u];
+                    if (*n < SPANS) spans->run[u][*n][0] = start[u], spans->run[u][*n][1] = (uint8_t)(v - start[u]), (*n)++;
+                    else *n = SPAN_FULL;
+                }
+            }
+        memcpy(was, in, sizeof was);
     }
 }
 

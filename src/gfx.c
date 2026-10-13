@@ -838,18 +838,29 @@ void gfx_upscale2x_key(const surface *src, surface *dst, uint16_t key) {
     }
 }
 
-void gfx_shade_except(surface *s, uint16_t key) {
-    for (int i = 0; i < s->w * s->h; i++)
-        if (s->px[i] != key) s->px[i] = (uint16_t)((s->px[i] & 0xF7DE) >> 1);
-}
+/* A plain buffer (aligned, an even count: the world) mostly the key in HD: two pixels a word, skipped together. */
+#define EACH_BUT_KEY(s, key, c, ...)                                                    \
+    do {                                                                                \
+        const uint32_t kk_ = (key) * 0x00010001u;                                       \
+        uint16_t *p_ = (s)->px;                                                         \
+        for (int i_ = 0; i_ < (s)->w * (s)->h; i_ += 2) {                               \
+            if (*(px2 *)(p_ + i_) == kk_) continue;                                     \
+            for (int j_ = i_; j_ < i_ + 2; j_++) {                                      \
+                uint16_t c = p_[j_];                                                    \
+                if (c == (key)) continue;                                               \
+                __VA_ARGS__;                                                            \
+                p_[j_] = c;                                                             \
+            }                                                                           \
+        }                                                                               \
+    } while (0)
+
+void gfx_shade_except(surface *s, uint16_t key) { EACH_BUT_KEY(s, key, c, c = (uint16_t)((c & 0xF7DE) >> 1)); }
 
 void gfx_tint_dusk_except(surface *s, uint16_t key) {
-    for (int i = 0; i < s->w * s->h; i++) {
-        uint16_t c = s->px[i];
-        if (c == key) continue;
+    EACH_BUT_KEY(s, key, c, {
         int r = (c >> 11) * 5 / 8, g = ((c >> 5) & 63) * 11 / 16, b = (c & 31) * 13 / 16 + 2;
-        s->px[i] = (uint16_t)((r << 11) | (g << 5) | (b > 31 ? 31 : b));
-    }
+        c = (uint16_t)((r << 11) | (g << 5) | (b > 31 ? 31 : b));
+    });
 }
 
 /* ponytail: fixed per-channel scale toward blue-grey; a LUT or palette swap if art needs finer control */
@@ -891,7 +902,20 @@ static void cut_card(surface *s, int x, int y, int w, int h, uint16_t fill, int 
     int c = h >= 24 ? 8 : 5, ka = s->x0 - x, kb = s->x0 + s->w - x; /* only the columns inside the window */
     if (ka < 0) ka = 0;
     if (kb > w + shadow) kb = w + shadow;
+    /* the columns between the corners are all alike (shadow below, ink 2 rows each end, paper between): as boxes */
+    int m0 = c + (shadow > 1 ? shadow : 1), m1 = w - c - 1;
+    m0 = m0 > ka ? m0 : ka, m1 = m1 < kb ? m1 : kb;
+    if (m0 < m1) {
+        if (shadow) gfx_shade(s, x + m0, y + h, m1 - m0, shadow);
+        gfx_fill(s, x + m0, y, m1 - m0, 2, C_INK);
+        gfx_fill(s, x + m0, y + h - 2, m1 - m0, 2, C_INK);
+        gfx_fill(s, x + m0, y + 2, m1 - m0, h - 4, fill);
+    } else m0 = m1 = 0;
     for (int k = ka; k < kb; k++) {
+        if (k >= m0 && k < m1) { /* (done) */
+            k = m1 - 1;
+            continue;
+        }
         int it = 0, ib = 0, pt = 0, pb = 0, st = 0, sb = 0; /* ink, paper and shadow rows, relative to y */
         if (k < w) ib = cut_column(k, w, h, c, &it);
         if (k >= 2 && k < w - 2) pb = 2 + cut_column(k - 2, w - 4, h - 4, c - 1, &pt), pt += 2;
