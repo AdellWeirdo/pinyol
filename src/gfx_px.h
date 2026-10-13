@@ -14,6 +14,10 @@ static inline uint16_t *at(const surface *s, int x, int y) {
 }
 static inline uint16_t bswap16(uint16_t v) { return (uint16_t)(v << 8 | v >> 8); }
 static inline uint16_t stored(const surface *s, uint16_t c) { return s->swap ? bswap16(c) : c; } /* a colour as kept in s */
+static inline bool dithered(const surface *s, int x, int y) { /* a pixel the dissolve leaves as it was (bp.h) */
+    static const uint8_t BAYER[16] = {0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
+    return BAYER[((y >> 1) & 3) * 4 + ((x >> 1) & 3)] < s->dither;
+}
 
 /* Visible part of a span [x, x+len) on a line [lo, hi): first offset into the span, and how many. */
 static inline int clip(int x, int len, int lo, int hi, int *first) {

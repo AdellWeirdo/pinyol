@@ -475,7 +475,12 @@ void gfx_blit_scaled(surface *s, const asset *a, int frame, int bx0, int bx1, in
             const int n0 = (int)k0, n1 = (int)k1; /* (32-bit from here: the console's loops are its words) */
             int32_t vv = v + n0 * dv;
             uint16_t *d = col + n0 * ys;
-            if (bpp == 8)
+            if (s->dither)
+                for (int k = n0; k < n1; k++, vv += dv, d += ys) {
+                    int j = (vv >> 16) - ry;
+                    if (!dithered(s, x, by0 + k)) *d = pal[bpp == 8 ? ids[j] : j & 1 ? ids[j >> 1] & 15 : ids[j >> 1] >> 4];
+                }
+            else if (bpp == 8)
                 for (int k = n0; k < n1; k++, vv += dv, d += ys) *d = pal[ids[(vv >> 16) - ry]];
             else
                 for (int k = n0; k < n1; k++, vv += dv, d += ys) {

@@ -97,13 +97,14 @@ void v2_timing(v2_times *t); /* the averages (and the longest picture) since the
  * [x0, x0 + w) x [y0, y0 + h). Drawing a frame window by window gives the same pixels as drawing it whole: the console
  * draws straight into its panel strips this way (gfx_turned). swap: pixels are stored with their bytes swapped, as a
  * big-endian display bus wants them. part: which part of hal_parallel draws on it (0 or 1), for the scratch memory
- * drawing needs (each part its own). Fields left at 0 mean the plain buffer. */
+ * drawing needs (each part its own). dither 1..16: a dissolve, packed pictures scaled (gfx_blit_ex) leave the pixels
+ * under that level of a 4x4 ordered dither (in 2x2 cells) as they were. Fields left at 0 mean the plain buffer. */
 typedef struct surface {
     uint16_t *px;
     int w, h;
     int x0, y0, xs, ys, fw, fh;
     bool swap;
-    uint8_t part;
+    uint8_t part, dither;
 } surface;
 void v2_draw(surface *s); /* np2d@2: the world 2x and the script's text and shapes, onto s (lua_game.c) */
 void game_draw(surface *s, bool world_pass); /* the frame onto s, a window of it or all (game.c) */

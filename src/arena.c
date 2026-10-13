@@ -604,7 +604,8 @@ void arena_tick(void) {
  * once a frame (arena_render_world), before the strips. */
 #define HD_K 3.2f
 #define ZOOM_MAX 1.6f
-static struct { bool hd, covers; float z, cx; asset *bg; } R; /* covers: the background fills the screen */
+static struct { bool hd, covers; float z, cx; asset *bg; int dim; } R; /* covers: the background fills the screen;
+                                                                        * dim: halvings of the whole frame (fades) */
 
 static void hd_reset(void) { R.hd = false, R.z = 0; }
 
@@ -708,26 +709,6 @@ static void draw_player(surface *s) {
 /* Put the background back over a box in a 4x4 ordered dither: level 0..16 of it. */
 static void dissolve(surface *s, const asset *bg, int x0, int y0, int w, int h, int level) {
     static const uint8_t bayer[16] = {0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
-    if (R.hd) { /* the same, at full resolution: each screen pixel's own background pixel, in 2x2 dither cells */
-        if (!R.bg->pixels) return; /* (unpacked when the release began: arena_render_world) */
-        const int32_t step = (int32_t)(HD_K / (2 * R.z) * 65536); /* screen pixels to the HD picture's, 16.16 */
-        int X0 = sx_((float)x0), Y0 = sy_((float)y0), X1 = sx_((float)(x0 + w)), Y1 = sy_((float)(y0 + h));
-        const int ox = sx_(0), oy = sy_(0), ys = step_y(s);
-        int xa = X0 > s->x0 ? X0 : s->x0, xb = X1 < s->x0 + s->w ? X1 : s->x0 + s->w;
-        int ya = Y0 > s->y0 ? Y0 : s->y0, yb = Y1 < s->y0 + s->h ? Y1 : s->y0 + s->h;
-        for (int X = xa; X < xb; X++) { /* column by column, stepping: the console's strips keep columns together */
-            int u = (int)(((int64_t)(X - ox) * step) >> 16);
-            if (u < 0 || u >= R.bg->w || ya >= yb) continue;
-            const uint8_t *row = bayer + ((X >> 1) & 3);
-            uint16_t *d = at(s, X, ya);
-            int32_t v = (ya - oy) * step;
-            for (int Y = ya; Y < yb; Y++, d += ys, v += step) {
-                int vi = v >> 16;
-                if (row[((Y >> 1) & 3) * 4] < level && vi >= 0 && vi < R.bg->h) *d = stored(s, R.bg->pixels[vi * R.bg->w + u]);
-            }
-        }
-        return;
-    }
     for (int y = y0 < 0 ? 0 : y0; y < y0 + h && y < s->h; y++)
         for (int x = x0 < 0 ? 0 : x0; x < x0 + w && x < s->w; x++)
             if (bayer[(y & 3) * 4 + (x & 3)] < level)
@@ -774,8 +755,14 @@ static void draw_boss(surface *s) {
         if (f >= 0 && has_pose(1, POSE[A.pat])) id = sprite_id(sb, 1, POSE[A.pat]), frame = f;
     }
     if (releasing() && A.fade > 40) x += (A.fade - 40) * 0.2f;
-    pose(s, id, frame, x);
     int level = releasing() ? (A.fade - 40) * 16 / 120 : 0;
+    if (R.hd) { /* the dissolve as it draws: the pixels it leaves show what is under it (no background to read back) */
+        surface b = *s;
+        b.dither = (uint8_t)(level < 0 ? 0 : level > 16 ? 16 : level);
+        pose(&b, id, frame, x);
+        return;
+    }
+    pose(s, id, frame, x);
     if (level > 0) {
         const asset *a = gfx_asset(id);
         dissolve(s, gfx_asset(jstr(A.def, "bg")), (int)x - a->ax, K.floor_y - a->ay, a->w, a->h, level);
@@ -1092,7 +1079,6 @@ void arena_render_world(surface *world) {
     }
     if (R.hd) { /* drawn on the strips (arena_render_screen); here only what must be worked out once */
         camera_update();
-        if (releasing() && !R.bg->pixels) gfx_pixels(R.bg); /* the dissolve reads it pixel by pixel */
         return;
     }
     R.z = 0;
@@ -1104,16 +1090,25 @@ void arena_render_world(surface *world) {
 
 /* Half of the window's columns (part 0 the left, 1 the right): the HD background and the fight, on one core each.
  * Both only read the fight's state and the pictures (all loaded before the strips), and write their own pixels. */
-static void hd_half(int part, void *ctx) {
-    surface *scr = ctx;
+static surface half_of(const surface *scr, int part) {
     int w0 = scr->w / 2;
     surface half = gfx_clip(scr, scr->x0 + (part ? w0 : 0), scr->y0, part ? scr->w - w0 : w0, scr->h);
-    if (half.w <= 0 || half.h <= 0) return;
     half.part = (uint8_t)part;
+    return half;
+}
+
+static void hd_half(int part, void *ctx) {
+    surface half = half_of(ctx, part);
+    if (half.w <= 0 || half.h <= 0) return;
     float k = 2 * R.z / HD_K;
     if (!R.covers) gfx_fill(&half, 0, 0, SCREEN_W, SCREEN_H, C_INK);
     gfx_blit_ex(&half, R.bg, 0, sx_(0), sy_(0), k, k, 0, NULL, -1);
     scene(&half);
+}
+
+static void dim_half(int part, void *ctx) {
+    surface half = half_of(ctx, part);
+    for (int k = 0; k < R.dim; k++) gfx_shade(&half, 0, 0, SCREEN_W, SCREEN_H);
 }
 
 void arena_render_screen(surface *world, surface *scr) {
@@ -1125,7 +1120,8 @@ void arena_render_screen(surface *world, surface *scr) {
     else gfx_upscale2x(world, scr);
     draw_hud(scr);
     int f = A.fade ? A.fade - (end_ticks() - 60) : A.ps == P_KNEEL ? A.pt * 2 / 3 : 0; /* to black; defeat: dim */
-    for (int k = 0; k < (f > 40 ? 3 : f > 20 ? 2 : f > 0 ? 1 : 0); k++) gfx_shade(scr, 0, 0, SCREEN_W, SCREEN_H);
+    R.dim = f > 40 ? 3 : f > 20 ? 2 : f > 0 ? 1 : 0;
+    if (R.dim) hal_parallel(dim_half, scr);
 }
 
 /* ------------------------------------------------------------------ scripts and debugging */
