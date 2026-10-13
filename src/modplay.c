@@ -46,6 +46,7 @@ bool mod_play(const char *path, float g) {
     hal_audio_lock();
     uint8_t *old = bytes;
     song = next, bytes = data, playing = true, gain = g, level = 1, fade_step = 0;
+    audio_music_clock_locked(2);
     hal_audio_unlock();
     free(old);
     return true;

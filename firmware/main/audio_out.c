@@ -170,6 +170,8 @@ void audio_out_off(void) {
     gpio_hold_en(PIN_AMP);
 }
 
+int hal_audio_latency(void) { return 6 * BLOCK; } /* the DMA queue a block waits behind (chan.dma_desc_num) */
+
 bool hal_mic_open(void) {
     if (!rx) return false;
     if (!mic_ring && !(mic_ring = heap_caps_malloc(MIC_RING * sizeof(int16_t), MALLOC_CAP_SPIRAM))) return false;

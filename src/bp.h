@@ -364,6 +364,9 @@ void audio_bus(float amb, float mus, float amb_lowpass_hz, int fade_ms); /* duck
 void audio_master(float gain, int fade_ms);
 #define VOLUME_MAX 4
 void audio_pause(bool paused);
+void audio_music_clock(int src);        /* 0: music() stopped the song; its clock from 0 (1 WAV, 2 module) */
+void audio_music_clock_locked(int src); /* (the same, the audio lock held: in a song's swap) */
+bool audio_music_time(double *seconds); /* how far into the song the player hears now; false: none plays */
 void audio_reset(void);
 void audio_force_missing(const char *id);
 

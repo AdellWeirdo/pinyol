@@ -1,0 +1,23 @@
+# music_time(): nil with no song; from 0 when music() starts one, going on across its loops; a MOD too; music()
+# stops it. In tests the mix is the clock (a tick is 367.5 samples), on a console it is what the speaker plays.
+new
+tick 2
+expect_lua last() == false
+lua music("BEAT")
+tick 60
+expect_lua math.abs(music_time() - 1.0) < 0.02
+tick 90
+expect_lua math.abs(music_time() - 2.5) < 0.02 and rising()
+lua music("BEAT")
+tick 1
+expect_lua music_time() < 0.05
+lua music()
+tick 1
+expect_lua music_time() == nil
+lua music("TUNE") times = {}
+tick 120
+expect_lua math.abs(music_time() - 2.0) < 0.02 and rising()
+lua music("NOPE")
+tick 10
+expect_lua music_time() == nil
+expect_ok

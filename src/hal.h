@@ -31,6 +31,9 @@ bool hal_can_switch_game(void);
 void hal_switch_game(void);
 void hal_audio_lock(void);
 void hal_audio_unlock(void);
+/* Samples between the end of a block audio_mix has just made and the moment its first sample is heard, after what is
+ * queued before it; -1 when nothing is heard (tests: the mix itself is the clock). For music_time(). */
+int hal_audio_latency(void);
 /* fn(0, ctx) here and fn(1, ctx) on the other core, if there is one; returns when both are done. They must not
  * touch the same memory. */
 void hal_parallel(void (*fn)(int part, void *ctx), void *ctx);

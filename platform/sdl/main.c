@@ -43,6 +43,24 @@ void hal_parallel(void (*fn)(int part, void *ctx), void *ctx) { fn(0, ctx), fn(1
 uint32_t hal_micros(void) { return (uint32_t)(SDL_GetPerformanceCounter() * 1000000 / SDL_GetPerformanceFrequency()); }
 
 void hal_audio_lock(void) { if (audio_dev) SDL_LockAudioDevice(audio_dev); }
+
+static int audio_block; /* samples of each callback, as the device gave them */
+#ifdef __EMSCRIPTEN__
+EM_JS(double, web_audio_latency, (void), { /* seconds the browser adds after a buffer is handed over */
+    const c = Module.SDL2 && Module.SDL2.audioContext;
+    return c ? (c.baseLatency || 0) + (c.outputLatency || 0) : 0;
+});
+#endif
+/* ponytail: a block waits for the one playing; the system adds about half a block more (desktop) or what the
+ * browser says. A rhythm game still lets the player tune it (docs/lua.md, music_time). */
+int hal_audio_latency(void) {
+    if (!audio_dev) return -1;
+#ifdef __EMSCRIPTEN__
+    return audio_block + (int)(web_audio_latency() * AUDIO_HZ);
+#else
+    return audio_block + audio_block / 2;
+#endif
+}
 void hal_audio_unlock(void) { if (audio_dev) SDL_UnlockAudioDevice(audio_dev); }
 
 /* The link between consoles (src/link.c). Desktop: UDP multicast on the local network (platform/link_udp.c), so
@@ -329,7 +347,9 @@ int main(int argc, char **argv) {
 #else
         want.samples = 512;
 #endif
-        audio_dev = SDL_OpenAudioDevice(NULL, 0, &want, NULL, 0);
+        SDL_AudioSpec have;
+        audio_dev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
+        audio_block = have.samples;
         if (audio_dev) SDL_PauseAudioDevice(audio_dev, 0);
         else fprintf(stderr, "audio unavailable: %s\n", SDL_GetError());
     }

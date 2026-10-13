@@ -329,6 +329,7 @@ order, so consoles that get the same messages can compute the same thing.
 | `sound(id, {numbers})` | makes a sound from its numbers (below), played with `sfx(id)`. Returns them, completed |
 | `music(id)` / `music()` | loops `audio/<id>.mod` (a tracker module) or else `audio/<id>.wav`; no id stops it |
 | `music_layer(stem, gain [, fade_ms])` | a WAV's channels are layers (drums, bass, melody... up to 3): each comes in or goes out, so the music follows the game |
+| `music_time()` | seconds into the song `music()` started, as the player hears it now, going on across its loops; `nil` when none plays. For notes on the beat |
 | `tone(voice, pitch [, options])` | plays a synthesised note on voice 0-3, replacing what it played |
 | `tone(voice)` | lets the voice's note go (it fades with its release) |
 | `note(name)` | the frequency of a note: `note("A4")` is 440, also `"C#3"`, `"Eb5"` |
@@ -359,6 +360,20 @@ Music made in a tracker (MilkyTracker, OpenMPT, ProTracker...) saved as a ProTra
 
 A tune is notes played from `_update` on a beat: keep a step counter and call `tone` when it changes. The `puzle`
 example does its music this way.
+
+**On the beat.** A rhythm game reads `music_time()` every tick: it follows the samples the speaker plays, not the
+game's ticks, so notes stay on the song however long it lasts. What is queued for the speaker is already taken off
+(about 70 ms on the console, more in a browser); the player's ears and screen add the rest, so a rhythm game lets
+them tune it once, tapping along:
+
+```lua
+local bpm, offset = 120, stored("offset", 0)        -- offset: the player's own, in seconds
+local beat = (music_time() - offset) * bpm / 60      -- 3.0 is the fourth beat, right now
+-- tuning: taps on a steady beat; each tap's distance to the nearest beat, averaged, is the offset to store
+local d = ((music_time() * bpm / 60 + 0.5) % 1 - 0.5) * 60 / bpm
+```
+
+Buttons are read once a tick (every 17 ms): judge a hit within about 50 ms of its beat, and do not ask for less.
 
 ### Sounds made from numbers
 

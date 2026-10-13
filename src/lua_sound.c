@@ -117,6 +117,7 @@ static int l_music(lua_State *L) {
     if (lua_isnoneornil(L, 1)) {
         audio_music_stop(fade);
         mod_stop(fade);
+        audio_music_clock(0);
         return 0;
     }
     const char *id = luaL_checkstring(L, 1);
@@ -126,7 +127,7 @@ static int l_music(lua_State *L) {
     if (f) { /* a module: it replaces any music */
         fclose(f);
         audio_music_stop(fade);
-        mod_play(path, 1);
+        if (!mod_play(path, 1)) audio_music_clock(0);
         return 0;
     }
     static const float all[8] = {1, 1, 1, 1, 1, 1, 1, 1};
@@ -135,6 +136,15 @@ static int l_music(lua_State *L) {
     return 0;
 }
 
+
+/* music_time() -> seconds into the song music() started, as the player hears it now (what is queued for the speaker
+ * taken off), going on across its loops; nil when no song plays. For notes on the beat. */
+static int l_music_time(lua_State *L) {
+    double s;
+    if (!audio_music_time(&s)) return lua_pushnil(L), 1;
+    lua_pushnumber(L, s);
+    return 1;
+}
 
 /* tone(voice, freq or "C4" [, {wave, vol, duty, attack, decay, sustain, len, release, slide}]); tone(voice) lets go */
 static int l_tone(lua_State *L) {
@@ -201,6 +211,7 @@ static int l_mic_record(lua_State *L) {
 void sound_register(lua_State *L) {
     static const luaL_Reg F[] = {{"sound", l_sound}, {"sfx", l_sfx}, {"sfx_set", l_sfx_set}, {"sfx_stop", l_sfx_stop},
                                  {"sfx_on", l_sfx_on}, {"music", l_music}, {"music_layer", l_music_layer},
+                                 {"music_time", l_music_time},
                                  {"tone", l_tone}, {"note", l_note}, {"mic", l_mic},
                                  {"mic_record", l_mic_record}, {NULL, NULL}};
     lua_pushglobaltable(L);

@@ -16,6 +16,7 @@ void hal_log(const char *fmt, ...) {
 
 void hal_audio_lock(void) {}
 void hal_audio_unlock(void) {}
+int hal_audio_latency(void) { return -1; } /* no speaker: what is mixed is the clock (main.c mixes each tick) */
 
 void *hal_realloc_slow(void *p, size_t n) { return realloc(p, n); }
 

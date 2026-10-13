@@ -70,6 +70,12 @@ static unsigned use_clock;
 static volatile bool paused;
 static char missing[NMISSING][32];
 static int nmissing;
+/* music_time(): the song's samples mixed since music() started it, and where the last mix ended, by the clock */
+static long mus_clock, mark_clock;
+static int mus_src; /* 0: no song; 1: the WAV stream; 2: a module (modplay.c) */
+static uint32_t mark_us;
+static int mark_n;
+static double mus_last; /* the last time given: it never goes back */
 
 static uint32_t rd32(const uint8_t *p) { return p[0] | (p[1] << 8) | (p[2] << 16) | ((uint32_t)p[3] << 24); }
 
@@ -244,6 +250,7 @@ int audio_music_start(const char *cue, float loop_at_s, float bar_s, const float
     hal_audio_lock();
     stream *s = &st[S_MUS];
     close_stream(s);
+    audio_music_clock_locked(f ? 1 : 0); /* in the same swap: not one block of the old song counted */
     if (f) {
         long frame = 2L * chans, at = (long)(loop_at_s * AUDIO_HZ) * frame;
         *s = (stream){.f = f, .start = start, .len = len, .chans = chans, .loop = true,
@@ -460,6 +467,37 @@ long audio_made_bytes(void) { /* the game's own sounds, which are never evicted 
 
 void audio_pause(bool p) { paused = p; }
 
+void audio_music_clock_locked(int src) { mus_src = src, mus_clock = mark_clock = 0, mark_n = 0, mus_last = 0; }
+
+void audio_music_clock(int src) {
+    hal_audio_lock();
+    audio_music_clock_locked(src);
+    hal_audio_unlock();
+}
+
+static bool music_sounds(void) { return mus_src == 1 ? st[S_MUS].f != NULL : mus_src == 2 && mod_playing(); }
+
+bool audio_music_time(double *seconds) {
+    hal_audio_lock();
+    bool on = music_sounds();
+    long c = mark_clock;
+    uint32_t us = mark_us;
+    int n = mark_n;
+    bool still = paused;
+    hal_audio_unlock();
+    if (!on) return false;
+    int lat = hal_audio_latency();
+    double t = (double)c;
+    if (lat >= 0 && c > 0) { /* the block mixed last starts after the queue; by the clock since it was mixed */
+        double e = still ? 0 : (double)(uint32_t)(hal_micros() - us) * (AUDIO_HZ / 1e6);
+        t += (e < n ? e : n) - n - lat;
+    }
+    if (t < mus_last) t = mus_last;
+    mus_last = t;
+    *seconds = t > 0 ? t / AUDIO_HZ : 0;
+    return true;
+}
+
 void audio_reset(void) {
     hal_audio_lock();
     for (int i = 0; i < NSTREAMS; i++) close_stream(&st[i]);
@@ -567,7 +605,9 @@ void audio_mix(int16_t *out, int n) {
             }
         }
         psg_mix(acc, m);
+        if (!paused && music_sounds()) mus_clock += m; /* (before a module may end) */
         if (!paused) mod_mix(acc, m);
         for (int i = 0; i < m; i++) out[off + i] = limit(acc[i] * ramp_next(&master));
     }
+    mark_clock = mus_clock, mark_us = hal_micros(), mark_n = n;
 }
