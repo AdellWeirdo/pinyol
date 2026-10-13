@@ -94,13 +94,14 @@ static void perf_report(void) {
     int64_t now = esp_timer_get_time();
     if (now - perf.since < PERF_WINDOW_US || !perf.ticks || !perf.frames) return;
     hal_log("perf: tick %.2f ms, render %.2f ms, present %.2f ms, %.1f fps | audio %.0f%% of a core, %d underruns |"
-            " battery %.2f V%s | free internal %u KB, PSRAM %u KB",
+            " battery %.2f V%s | free internal %u KB, PSRAM %u KB, core 1 stack %u B unused",
             perf.tick / 1000.0 / perf.ticks, perf.render / 1000.0 / perf.frames,
             display_present_us / 1000.0 / perf.frames, perf.frames * 1e6 / (now - perf.since),
             audio_out_blocks ? 100.0 * audio_out_mix_us / (now - perf.since) : 0.0, audio_out_underruns,
             power_volts(), power_usb() ? " (USB)" : "",
             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
-            (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
+            (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024),
+            part1_task ? (unsigned)uxTaskGetStackHighWaterMark(part1_task) : 0u);
     if (strip_us.first)
         hal_log("frame: world %.2f ms, waiting for the scan %.2f ms, strips %.2f ms (CPU, the DMA overlaps)",
                 strip_us.world / 1000.0 / perf.frames, strip_us.wait / 1000.0 / perf.frames,
@@ -119,11 +120,24 @@ static void perf_report(void) {
 
 /* A panel strip drawn straight from the game: the frame's columns p0..p0+31, turned and byte-swapped for the bus, in
  * internal RAM. The world is already in G.world (draw); no 480x320 frame exists. */
+static surface strip_s;
+static void strip_half(int part, void *ctx) { /* the top or the bottom half of the screen's strip */
+    (void)ctx;
+    surface half = gfx_clip(&strip_s, 0, part ? SCREEN_H / 2 : 0, SCREEN_W, SCREEN_H / 2);
+    half.part = (uint8_t)part;
+    game_draw(&half, false);
+}
+
 static void draw_strip(int p0, uint16_t *out, void *ctx) {
     (void)ctx;
     int64_t a = esp_timer_get_time();
     surface s = gfx_turned(out, p0, 32, SCREEN_W, SCREEN_H, display_flipped(), true); /* the bus sends high bytes first */
-    game_draw(&s, false);
+    if (G.v2) { /* a Lua game's strip only reads what the frame recorded: both cores draw it, a half each */
+        strip_s = s;
+        hal_parallel(strip_half, NULL);
+    } else {
+        game_draw(&s, false);
+    }
     *(p0 == 0 ? &strip_us.first : &strip_us.rest) += esp_timer_get_time() - a;
 }
 
@@ -384,7 +398,7 @@ void app_main(void) {
     display_present(frame);
     display_backlight(100);
     display_start_task();
-    xTaskCreatePinnedToCore(part1_loop, "part1", 4096, NULL, 4, &part1_task, 1); /* hal_parallel */
+    xTaskCreatePinnedToCore(part1_loop, "part1", 6144, NULL, 4, &part1_task, 1); /* hal_parallel: half a game's frame */
     ota_from_card(frames[1]); /* a card with only firmware.bin on it still updates the console */
     if (!n) {
         fatal_screen();
