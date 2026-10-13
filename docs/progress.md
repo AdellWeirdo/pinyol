@@ -132,3 +132,15 @@ Six things np2d lacked, added on branch `fases` (local commits, all tests green 
 Found on the way, not fixed: the API fuzzer with a different random sequence finds strips that differ from the whole
 frame (455 pixels on main itself) on odd PPU settings; the fuzzer keeps its old sequence and the new functions get a
 storm of their own.
+
+Measured on the console afterwards (autotest builds with the speaker on, `-DBP_LOUD=ON`):
+
+| What | Result |
+|---|---|
+| Physics, 10 / 25 / 40 boxes that turn | 2.4 / 5.3 / 8.7 ms a tick (in Lua it was 32 ms for 10, 85 ms for 25) |
+| Physics, 25 that turn + 30 plain circles | 23.9 ms: the plain bodies' Lua path is now what limits a big pile |
+| Microphone | there is one and it works: at the full gain (42 dB) the speaker's 880 Hz square reads level 0.76 with its note found every tick; silence reads 0 |
+| A click from the speaker, heard | 6-7 ticks later (~100-115 ms round trip: the 70 ms queued for the speaker, the microphone's block, the tick) |
+| Video, 213x160 at 15 fps at scale 2, with its sound, from the flash | 61 fps, a tick 0.5 ms on average with the decoding |
+
+Not checked by eye yet: the LED's colours.
