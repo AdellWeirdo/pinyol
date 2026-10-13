@@ -1,0 +1,20 @@
+# Swarms (lua_swarm.c): room, life, the area, hits, get/set/remove, drawing with a camera and on a canvas
+tick 2
+expect_lua len(rain) == 300 and not rain:add(0, 0)
+expect_lua (function() local s = swarm(3) s:add(1, 2, 3, 4, 2) s:step() local ok = len(s) == 1 s:step() return ok and len(s) == 0 end)()
+expect_lua (function() local s = swarm(5, {0, 0, 10, 10}) s:add(5, 5, 4, 0) s:add(5, 5, 0, 0) s:step() return len(s) == 2 and select(1, s:get(1)) == 9 end)()
+expect_lua (function() local s = swarm(5, {0, 0, 10, 10}) s:add(5, 5, 4, 0) s:step() s:step() return len(s) == 0 end)()
+expect_lua (function() local s = swarm(9) for i = 1, 9 do s:add(i * 10, 50) end return s:hit(15, 0, 30, 100) == 3 and len(s) == 6 and s:hit(0, 0, 999, 999, true) == 6 and len(s) == 6 end)()
+expect_lua (function() local s = swarm(4) s:add(1, 1) s:add(2, 2) s:set(2, 7, 8, 1, -1) s:step() local x, y = s:get(2) s:remove(1) return x == 8 and y == 7 and len(s) == 1 end)()
+expect_lua_error swarm(0)
+expect_lua_error swarm(5000)
+expect_lua_error swarm(2):get(1)
+expect_lua_error (function() local s = swarm(2) s:add(0, 0) s:get(2) end)()
+expect_lua_error swarm(2).add(nil, 1, 1)
+tick 60
+shot lluvia
+tick 60
+expect_lua len(rain) < 300
+tick 400
+expect_lua len(rain) == 0
+expect_ok

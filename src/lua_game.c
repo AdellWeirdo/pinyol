@@ -914,6 +914,7 @@ static void api(lua_State *L) {
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);
     draw_register(L); /* text, shapes, pictures, canvases: lua_draw.c */
+    swarm_register(L); /* many things moving the same way: lua_swarm.c */
     link_register(L); /* consoles playing together: lua_link.c */
     sound_register(L); /* sounds, music, notes: lua_sound.c */
     static const struct { const char *n; int v; } K[] = {

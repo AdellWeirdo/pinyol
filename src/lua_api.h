@@ -81,3 +81,7 @@ void link_register(lua_State *L);
 
 /* lua_sound.c: sound, sfx, sfx_set, sfx_stop, sfx_on, music, music_layer, tone, note */
 void sound_register(lua_State *L);
+
+/* lua_draw.c: a swarm's points drawn, each as the picture centred on it (lua_swarm.c) */
+void draw_points(const asset *a, int frame, const float *x, const float *y, int n);
+void swarm_register(lua_State *L); /* swarm(): lua_swarm.c */

@@ -14,17 +14,19 @@
 #define MAX_FONTS 16               /* a game's own fonts, besides the four every game has */
 #define OV_PTS 4096                /* polygon corners per frame, x and y each */
 #define OV_CLIPS 32                /* clip rectangles per frame */
+#define BAND 32                    /* screen columns a band: the console's strips (draw_overlay) */
 #define MAX_DIRTY 16               /* canvases drawn on in one call before their masks are brought up to date */
 #define CLEAR (-1)                 /* as a colour: see-through on a canvas (nothing on the screen) */
 
 /* ------------------------------------------------------------------ the overlay: text and shapes at 480x320 */
 
-enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY };
+enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS };
 
 typedef struct {
     uint8_t op, font, scale, ext; /* ext: 1 + its entry in ov_style (text) or ov_xf (img); 0: none */
     uint8_t clip;                 /* 1 + its entry in ov_clip; 0: none */
     uint8_t flip;                 /* img at 1x mirrored left to right (gfx_blit_flip) */
+    uint8_t band0, band1;         /* the screen's BAND-column bands it may draw on (band()): strips skip the others */
     int16_t x, y, w, h, frame;    /* line: x, y to w, h; circle: centre x, y, radius w, filled h; polygon: filled frame */
     uint16_t color, str, len;     /* text: its bytes in ov_text; polygon: its corners in ov_pts */
     const asset *a;
@@ -57,6 +59,7 @@ static ov_cmd *ov_add(int op) {
     ov_cmd *c = &ov[nov++];
     memset(c, 0, sizeof *c);
     c->op = (uint8_t)op;
+    c->band1 = 255; /* every band, until commit works out its own */
     return c;
 }
 
@@ -85,6 +88,13 @@ static void draw_one(surface *s, const ov_cmd *c) {
     case OV_LINE: gfx_line(s, c->x, c->y, c->w, c->h, c->color); break;
     case OV_CIRC: gfx_circ(s, c->x, c->y, c->w, c->color, c->h != 0); break;
     case OV_POLY: gfx_poly(s, ov_pts + c->str, c->len, c->color, c->frame != 0); break;
+    case OV_POINTS: /* a swarm: its picture at each point (its top-left corner, already worked out) */
+        for (int i = 0; i < c->len; i++) {
+            int x = ov_pts[c->str + 2 * i], y = ov_pts[c->str + 2 * i + 1];
+            if (x + c->a->w > s->x0 && x < s->x0 + s->w && y + c->a->h > s->y0 && y < s->y0 + s->h)
+                gfx_blit_flip(s, c->a, c->frame, x, y, false, NULL, -1);
+        }
+        break;
     case OV_IMG:
         if (c->ext)
             gfx_blit_ex(s, c->a, c->frame, c->x, c->y, ov_xf[c->ext - 1].sx, ov_xf[c->ext - 1].sy, ov_xf[c->ext - 1].deg,
@@ -99,8 +109,10 @@ static void draw_one(surface *s, const ov_cmd *c) {
 }
 
 void draw_overlay(surface *s) {
+    const int b0 = s->x0 / BAND, b1 = (s->x0 + s->w - 1) / BAND; /* the bands of this strip (all, for the whole frame) */
     for (int i = 0; i < nov; i++) {
         const ov_cmd *c = &ov[i];
+        if (c->band1 < b0 || c->band0 > b1) continue; /* nowhere near: a byte compared, not a call and its clipping */
         if (!c->clip) {
             draw_one(s, c);
             continue;
@@ -139,12 +151,15 @@ static void bounds(const ov_cmd *c, int *x0, int *y0, int *x1, int *y1) { /* wha
         break;
     case OV_CIRC: *x0 = c->x - c->w, *y0 = c->y - c->w, *x1 = c->x + c->w + 1, *y1 = c->y + c->w + 1; break;
     case OV_POLY:
+    case OV_POINTS: {
+        int pw = c->op == OV_POINTS ? c->a->w : 1, ph = c->op == OV_POINTS ? c->a->h : 1; /* a point: its picture */
         *x0 = *y0 = 32767, *x1 = *y1 = -32768;
         for (int i = 0; i < c->len; i++) {
             int x = ov_pts[c->str + 2 * i], y = ov_pts[c->str + 2 * i + 1];
-            *x0 = x < *x0 ? x : *x0, *y0 = y < *y0 ? y : *y0, *x1 = x + 1 > *x1 ? x + 1 : *x1, *y1 = y + 1 > *y1 ? y + 1 : *y1;
+            *x0 = x < *x0 ? x : *x0, *y0 = y < *y0 ? y : *y0, *x1 = x + pw > *x1 ? x + pw : *x1, *y1 = y + ph > *y1 ? y + ph : *y1;
         }
         break;
+    }
     case OV_TEXT_OP: *x0 -= 64, *y0 -= 64, *x1 += 64, *y1 += 64; break; /* outlines, shadows, waves */
     case OV_IMG:
         if (c->ext) *x0 = *y0 = -32768, *x1 = *y1 = 32767; /* turned: anywhere */
@@ -250,6 +265,23 @@ static void as_picture(ov_cmd *c) {
     c->font = 0, c->flip = 0;
 }
 
+/* The bands of BAND screen columns a command may draw on (the console draws the screen as strips of 32 columns, and
+ * each strip looks only at the commands of its band); none (band0 > band1) when it is off the screen. */
+static void band(ov_cmd *c) {
+    int x0, y0, x1, y1;
+    bounds(c, &x0, &y0, &x1, &y1);
+    if (c->clip) {
+        const screen_rect *r = &ov_clip[c->clip - 1];
+        x0 = x0 > r->x ? x0 : r->x, x1 = x1 < r->x + r->w ? x1 : r->x + r->w;
+        y0 = y0 > r->y ? y0 : r->y, y1 = y1 < r->y + r->h ? y1 : r->y + r->h;
+    }
+    if (x1 <= 0 || x0 >= SCREEN_W || y1 <= 0 || y0 >= SCREEN_H || x0 >= x1 || y0 >= y1) {
+        c->band0 = 1, c->band1 = 0;
+        return;
+    }
+    c->band0 = (uint8_t)(x0 < 0 ? 0 : x0 / BAND), c->band1 = (uint8_t)(((x1 > SCREEN_W ? SCREEN_W : x1) - 1) / BAND);
+}
+
 /* A drawing call's command, finished: moved by the camera; then kept for the screen's strips with the clip in force,
  * or, when the target is a canvas, drawn on it at once and taken off the list. */
 static void commit(ov_cmd *c, int text_bytes, int corners) {
@@ -259,15 +291,17 @@ static void commit(ov_cmd *c, int text_bytes, int corners) {
         ov_pts[c->str + 2 * i] = i16(ov_pts[c->str + 2 * i] - cam_x), ov_pts[c->str + 2 * i + 1] = i16(ov_pts[c->str + 2 * i + 1] - cam_y);
     if (!target) {
         as_picture(c); /* the costly ones, once, then copied */
-        if (!clipping) return;
-        if (!nclip || memcmp(&ov_clip[nclip - 1], &clip_r, sizeof clip_r)) {
-            if (nclip == OV_CLIPS) { /* better not drawn than drawn outside it */
-                forget(c, text_bytes, corners);
-                return;
+        if (clipping) {
+            if (!nclip || memcmp(&ov_clip[nclip - 1], &clip_r, sizeof clip_r)) {
+                if (nclip == OV_CLIPS) { /* better not drawn than drawn outside it */
+                    forget(c, text_bytes, corners);
+                    return;
+                }
+                ov_clip[nclip++] = clip_r;
             }
-            ov_clip[nclip++] = clip_r;
+            c->clip = (uint8_t)nclip;
         }
-        c->clip = (uint8_t)nclip;
+        band(c);
         return;
     }
     surface whole = {.px = target->pixels, .w = target->w, .h = target->h};
@@ -451,6 +485,35 @@ static int l_shade(lua_State *L) { return shape(L, OV_SHADE, false); }
 static int l_panel(lua_State *L) { return shape(L, OV_PANEL, false); }
 static int l_plate(lua_State *L) { return shape(L, OV_PLATE, true); }
 
+typedef struct {
+    lua_Integer frame, tint;
+    float scale, sx, sy, deg;
+    bool has_sx, has_sy, flip_x, flip_y, tinted;
+    const char *pal; /* (a string the table keeps alive) */
+} img_opts;
+
+static float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+/* img's options, read in one walk over the table: only the keys it has (most calls give two or three of the nine),
+ * where looking each one up was most of an img's cost on the console */
+static void img_options(lua_State *L, int t, img_opts *o) {
+    *o = (img_opts){.scale = 1};
+    lua_pushnil(L);
+    while (lua_next(L, t)) {
+        const char *k = lua_type(L, -2) == LUA_TSTRING ? lua_tostring(L, -2) : "";
+        if (!strcmp(k, "frame")) o->frame = luaL_checkinteger(L, -1);
+        else if (!strcmp(k, "flip_x")) o->flip_x = lua_toboolean(L, -1);
+        else if (!strcmp(k, "tint")) o->tint = luaL_checkinteger(L, -1), o->tinted = true;
+        else if (!strcmp(k, "scale")) o->scale = fin(luaL_checknumber(L, -1));
+        else if (!strcmp(k, "angle")) o->deg = fin(luaL_checknumber(L, -1));
+        else if (!strcmp(k, "scale_x")) o->sx = fin(luaL_checknumber(L, -1)), o->has_sx = true;
+        else if (!strcmp(k, "scale_y")) o->sy = fin(luaL_checknumber(L, -1)), o->has_sy = true;
+        else if (!strcmp(k, "flip_y")) o->flip_y = lua_toboolean(L, -1);
+        else if (!strcmp(k, "pal")) o->pal = lua_type(L, -1) == LUA_TSTRING ? lua_tostring(L, -1) : NULL;
+        lua_pop(L, 1);
+    }
+}
+
 /* img(id, x, y [, frame [, scale 1|2]]) or img(id, x, y, {frame, scale, scale_x, scale_y, flip_x, flip_y, angle}):
  * a runtime asset at screen resolution; angle in degrees, about the picture's centre */
 static int l_img(lua_State *L) {
@@ -467,21 +530,21 @@ static int l_img(lua_State *L) {
         else commit(c, 0, 0);
         return 0;
     }
-    lua_Integer f = opt_int(L, 4, "frame", 0);
+    img_opts o;
+    img_options(L, 4, &o);
+    lua_Integer f = o.frame;
     c->frame = (int16_t)(f < 0 || f >= a->frames ? 0 : f);
-    float k = opt_float(L, 4, "scale", 1, -16, 16);
-    float sx = opt_float(L, 4, "scale_x", k, -16, 16), sy = opt_float(L, 4, "scale_y", k, -16, 16);
-    float deg = opt_float(L, 4, "angle", 0, -1e6f, 1e6f);
-    if (opt_bool(L, 4, "flip_x", false)) sx = -sx;
-    if (opt_bool(L, 4, "flip_y", false)) sy = -sy;
+    float k = clampf(o.scale, -16, 16);
+    float sx = clampf(o.has_sx ? o.sx : k, -16, 16), sy = clampf(o.has_sy ? o.sy : k, -16, 16);
+    float deg = clampf(o.deg, -1e6f, 1e6f);
+    if (o.flip_x) sx = -sx;
+    if (o.flip_y) sy = -sy;
     if (deg == 0 && sx == sy && (sx == 1 || sx == 2)) c->scale = (uint8_t)sx; /* the plain ways, faster */
     else if (deg == 0 && sx == -1 && sy == 1) c->flip = 1;      /* mirrored at 1x: as fast as plain */
     else if (nxf < OV_EXT) ov_xf[nxf].sx = sx, ov_xf[nxf].sy = sy, ov_xf[nxf].deg = deg, c->ext = (uint8_t)(++nxf);
-    const char *pal = opt_str(L, 4, "pal");
-    lua_getfield(L, 4, "tint");
-    bool tinted = !lua_isnil(L, -1);
-    lua_Integer tint = tinted ? luaL_checkinteger(L, -1) : 0;
-    lua_pop(L, 1);
+    const char *pal = o.pal;
+    bool tinted = o.tinted;
+    lua_Integer tint = o.tint;
     if ((pal || tinted) && (c->ext ? straight(c) : c->scale == 1 || a->pk) && nlook < OV_EXT) { /* a variant's colours, or one colour */
         asset *pa = pal && safe_name(pal) ? gfx_asset_opt(pal) : NULL;
         ov_look[nlook].pal = pa && !pa->missing ? pa : NULL;
@@ -570,6 +633,28 @@ static int l_poly(lua_State *L) { /* poly({x0, y0, x1, y1, ...} [, colour [, fil
         lua_pop(L, 1);
     }
     return n ? polygon(L, xy, n, 2) : 0;
+}
+
+/* A swarm's points (lua_swarm.c), each drawn as the picture centred on it: one command for all of them. Only those
+ * on the screen (or the canvas) are kept, in the frame's corners (ov_pts); past their room, the rest are not drawn. */
+void draw_points(const asset *a, int frame, const float *x, const float *y, int n) {
+    ov_cmd *c = ov_add(OV_POINTS);
+    if (!c) return;
+    const int w = target ? target->w : SCREEN_W, h = target ? target->h : SCREEN_H;
+    const int ox = cam_x + a->w / 2, oy = cam_y + a->h / 2;
+    c->a = a, c->frame = (int16_t)frame, c->str = (uint16_t)npts;
+    for (int i = 0; i < n && npts + 2 <= OV_PTS; i++) {
+        int px = (int)floorf(x[i]) - ox, py = (int)floorf(y[i]) - oy;
+        if (px + a->w <= 0 || px >= w || py + a->h <= 0 || py >= h) continue;
+        ov_pts[npts++] = i16(px), ov_pts[npts++] = i16(py);
+    }
+    c->len = (uint16_t)((npts - c->str) / 2);
+    if (!c->len) {
+        nov--;
+        return;
+    }
+    c->x = i16(cam_x), c->y = i16(cam_y); /* (commit takes the camera off x, y: the points have it off already) */
+    commit(c, 0, c->len);
 }
 
 static int l_cls(lua_State *L) { /* cls([colour]): the canvas see-through (or that colour); the screen black */

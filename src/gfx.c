@@ -223,10 +223,16 @@ static unsigned slot_of(const char *key) { /* its slot, or the empty one where i
     return h;
 }
 
+static void key_of(char key[32], const char *id) { /* truncated, so long ids still hit the cache (no snprintf: hot) */
+    int i = 0;
+    for (; id && i < 31 && id[i]; i++) key[i] = id[i];
+    key[i] = 0;
+}
+
 static asset *lookup(const char *id, bool quiet) {
     static asset none;
     char key[32];
-    snprintf(key, sizeof key, "%s", id ? id : ""); /* compare truncated, so long ids still hit the cache */
+    key_of(key, id);
     unsigned h = slot_of(key);
     if (slot[h]) {
         asset *a = &assets[slot[h] - 1];
@@ -257,7 +263,7 @@ asset *gfx_asset(const char *id) { return lookup(id, false); }
 
 asset *gfx_find(const char *id) {
     char key[32];
-    snprintf(key, sizeof key, "%s", id ? id : "");
+    key_of(key, id);
     unsigned h = slot_of(key);
     return slot[h] ? &assets[slot[h] - 1] : NULL;
 }
