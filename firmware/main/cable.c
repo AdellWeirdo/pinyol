@@ -7,6 +7,8 @@
  *   data <base64>          its next bytes, at most 768 a line: ok
  *   end                    all of it: checked, the old copy replaced (its saves kept), the game started: ok
  *   abort                  what came is thrown away: ok
+ *   patch <id> <bytes>     as begin, but the files that come are added to the game already there, each replacing its
+ *                          own (new pictures for a game whose music is too big to send again): the game must be there
  * A game is written to games/.cable first (the list skips dot folders) and only replaces the old one whole. Lines that
  * are none of these go to remote.c in test builds (-DBP_REMOTE). */
 #include "cable.h"
@@ -40,6 +42,7 @@ static char line[LINE];
 static int len;
 static bool overlong, ready;
 static volatile bool wanted;
+static bool patching; /* patch, not begin: the files go into the game there */
 static char want_id[32];
 static long want_bytes;
 
@@ -127,9 +130,9 @@ static void command(const char *cmd) {
     long bytes = 0;
     if (!strcmp(cmd, "hello")) {
         say("hello 1 %s %llu", storage_card() ? "card" : "flash", (unsigned long long)(free_bytes() / 1024));
-    } else if (sscanf(cmd, "begin %31s %ld", id, &bytes) == 2) {
+    } else if (sscanf(cmd, "begin %31s %ld", id, &bytes) == 2 || sscanf(cmd, "patch %31s %ld", id, &bytes) == 2) {
         if (!safe_id(id) || bytes <= 0 || bytes > GAME_MAX) say("err not a game this console can take");
-        else snprintf(want_id, sizeof want_id, "%s", id), want_bytes = bytes, wanted = true;
+        else snprintf(want_id, sizeof want_id, "%s", id), want_bytes = bytes, patching = cmd[0] == 'p', wanted = true;
     } else if (!strcmp(cmd, "abort")) {
         say("ok"); /* nothing on its way */
     } else {
@@ -174,6 +177,24 @@ static int read_line(void) { /* the next line into `line`: its length, or -1 aft
         if (len < LINE - 1) line[len++] = c;
         else overlong = true;
     }
+}
+
+/* Every file under from into the same place under to, replacing what is there (patch). */
+static bool move_tree(const char *from, const char *to) {
+    DIR *d = opendir(from);
+    if (!d) return false;
+    bool ok = true;
+    mkdir(to, 0755);
+    for (struct dirent *e; ok && (e = readdir(d));) {
+        if (e->d_name[0] == '.') continue;
+        char a[256], b[256];
+        snprintf(a, sizeof a, "%s/%s", from, e->d_name);
+        snprintf(b, sizeof b, "%s/%s", to, e->d_name);
+        if (e->d_type == DT_DIR) ok = move_tree(a, b);
+        else remove(b), ok = !rename(a, b);
+    }
+    closedir(d);
+    return ok;
 }
 
 bool cable_receive(uint16_t *frame, char *id, size_t id_size) {
@@ -246,9 +267,24 @@ bool cable_receive(uint16_t *frame, char *id, size_t id_size) {
         } else if (!strcmp(line, "end")) {
             struct stat st;
             snprintf(path, sizeof path, "%s/game.json", tmp);
-            if (f || left || stat(path, &st)) {
+            if (f || left || (!patching && stat(path, &st))) {
                 why = "not all of it came";
                 break;
+            }
+            if (patching) { /* into the game there, file by file */
+                if (stat(dst, &st)) {
+                    why = "no such game to add to";
+                    break;
+                }
+                if (!move_tree(tmp, dst)) {
+                    why = "cannot put them in place";
+                    break;
+                }
+                remove_tree(tmp);
+                snprintf(id, id_size, "%s", want_id);
+                hal_log("cable: %s patched, %ld bytes, in %s", want_id, got, dst);
+                say("ok");
+                return true;
             }
             if (!stat(dst, &st)) { /* the old copy goes; its saves stay with the game */
                 char a[96], b[96];
