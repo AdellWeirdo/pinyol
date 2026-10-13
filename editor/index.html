@@ -125,6 +125,7 @@
         <label>Alto <input type="number" id="map-h" min="10" max="64"></label>
         <label>Fondo <input type="color" id="map-bg"></label>
         <label>La cámara sigue a <select id="map-camera"></select></label>
+        <label>Música <select id="map-music"></select></label>
         <span id="map-backdrops" class="backdrops"></span>
       </div>
       <div class="map-scroll"><canvas id="map" aria-label="El mapa del nivel"></canvas></div>
@@ -137,6 +138,7 @@
         <label>Debajo del título <input id="cover-subtitle" maxlength="60"></label>
         <label>Imagen <select id="cover-picture"></select></label>
         <label>Color de fondo <input type="color" id="cover-bg"></label>
+        <label>Música <select id="cover-music"></select></label>
         <label>Al pasar el último nivel se gana y se lee <input id="ending" maxlength="60"></label>
       </div>
     </div>
@@ -148,12 +150,15 @@
       <h2>Sonidos</h2>
       <ul id="sounds"></ul>
       <button id="sound-add" class="add">+ Nuevo sonido</button>
+      <label class="button add">Traer un sonido…<input type="file" id="sound-file" accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac" hidden></label>
+      <p class="hint">O arrástralo aquí. WAV, MP3, OGG, M4A… Un efecto dura hasta 5 s; una música, hasta 4 min, y se elige para cada nivel en Mapa.</p>
     </aside>
     <div class="work sound-work">
       <div class="recipes" id="recipes"></div>
       <div class="sound-head">
         <label>Nombre <input id="s-name" maxlength="24" spellcheck="false"></label>
         <button id="s-play" class="primary">▶ Escuchar</button>
+        <button id="s-stop" hidden>■ Parar</button>
         <button id="s-again" title="Otro sonido de la misma receta">↻ Otro</button>
         <button id="sound-del" class="danger">Quitar</button>
       </div>

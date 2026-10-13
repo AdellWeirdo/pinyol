@@ -18,6 +18,7 @@ globalThis.lua = require('../vendor/blockly/lua_compressed.js');
 const { TEMPLATES } = await import('../js/templates.js');
 const { defineBlocks, setProject, workspaceLua, templateBlocks } = await import('../js/blocks.js');
 const { buildFiles } = await import('../js/build.js');
+const { HZ, cut, wav } = await import('../js/audio.js');
 
 defineBlocks();
 const carried = [...['FONT_MAIN.fnt', 'FONT_BOLD.fnt', 'FONT_MAIN_L.fnt', 'FONT_BOLD_L.fnt']
@@ -36,4 +37,26 @@ for (const t of TEMPLATES) {
   }
   ws.dispose();
 }
-console.log('built', TEMPLATES.map(t => t.key).join(', '), 'in', out);
+
+// and the platformer with sounds brought in (tests/editor_sonido.script): a tune for the cover and the first level, an
+// effect; as the browser would make them from files, but from samples made here (Node decodes no audio files)
+{
+  const project = TEMPLATES[0].make(), notes = [262, 330, 392, 523], tune = new Float32Array(HZ * 2), boing = new Float32Array(HZ / 4);
+  for (let i = 0; i < tune.length; i++) tune[i] = 0.3 * Math.sin(2 * Math.PI * notes[Math.floor(i / (HZ / 2))] * i / HZ);
+  for (let i = 0; i < boing.length; i++) boing[i] = 0.5 * Math.sin(2 * Math.PI * (200 + i / 20) * i / HZ) * (1 - i / boing.length);
+  const music = { name: 'tema', file: 'made here', use: 'music', start: 0, end: 0, volume: 1 };
+  const effect = { name: 'boing', file: 'made here', use: 'effect', start: 0, end: 0, volume: 1 };
+  project.sounds.push(music, effect);
+  project.levels[0].music = project.cover.music = 'tema';
+  setProject(project);
+  const ws = new Blockly.Workspace();
+  Blockly.serialization.workspaces.load(templateBlocks('plataformas'), ws);
+  const code = workspaceLua(ws) + 'kit.on("press", "b", function() kit.sound("boing") end)\n';
+  const audio = [['audio/MUS_tema.wav', wav(cut(music, tune))], ['audio/SFX_boing.wav', wav(cut(effect, boing))]];
+  for (const [path, bytes] of buildFiles(project, code, carried, { audio })) {
+    mkdirSync(dirname(join(out, 'sonido', path)), { recursive: true });
+    writeFileSync(join(out, 'sonido', path), bytes);
+  }
+  ws.dispose();
+}
+console.log('built', TEMPLATES.map(t => t.key).join(', '), 'and sonido in', out);

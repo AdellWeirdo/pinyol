@@ -20,7 +20,8 @@
 --
 -- A game is levels (data.levels = {{id, name, map, objects, background, camera, backdrops}, ...}; or one map, its
 -- fields straight in data), played in order: kit.next_level() goes on, past the last one the game is won
--- (data.ending says how). data.cover = {text, subtitle, picture, tiled, background} is a title screen before them.
+-- (data.ending says how). data.cover = {text, subtitle, picture, tiled, background, music} is a title screen before
+-- them. A level's or the cover's `music` ("MUS_x": audio/MUS_x.wav) loops while it lasts; kit.music() changes it.
 -- Losing tries the level again; winning goes back to the cover.
 --
 -- Events: "start" (a game begins), "level" (a level begins: any, or the one named), "tick", "press" and "hold" (a
@@ -346,7 +347,17 @@ end
 
 function M.message(text, seconds) message, message_t = tostring(text), math.floor((seconds or 2) * 60) end
 
-function M.sound(name) if D.sounds[name] then sfx("SND_" .. name) end end
+function M.sound(name) -- made from numbers (SND_), or brought in from a file (its own name, SFX_)
+  local p = D.sounds[name]
+  if p then sfx(p.file or "SND_" .. name) end
+end
+
+local tune -- the music playing (audio/MUS_*.wav, read from the card as it plays), or nil
+function M.music(id) -- "MUS_x" or "x"; nil stops it. The same one again goes on where it is
+  if id and id:sub(1, 4) ~= "MUS_" then id = "MUS_" .. id end
+  if id ~= tune then tune = id music(id) end
+end
+function M.playing() return tune end
 
 function M.shake(px) juice.shake(px or 4) end
 
@@ -412,6 +423,7 @@ local function start_level(first) -- the level LV from its start; first: a game 
   for _, p in ipairs(LV.objects or {}) do M.spawn(p.kind, p.x, p.y) end
   fx = particles.new()
   juice.reset()
+  M.music(LV.music) -- its own, or silence
   if #D.levels > 1 and LV.name then M.message(LV.name, 1.5) end
   if first then for _, f in ipairs(handlers.start) do f() end end
   for _, h in ipairs(handlers.level) do if not h.id or h.id == LV.id then h.fn() end end
@@ -433,6 +445,7 @@ local function show_cover()
   local c = D.cover
   on_cover, objs, ended, message, going = true, {}, nil, nil, nil
   backdrop(c.background or 0x1D2B53)
+  M.music(c.music)
   if c.tiled and c.picture and D.sprites[c.picture] then -- a picture made to repeat, as behind a level
     bg(1, {image = "SPR_" .. c.picture})
     scroll(1, 0, 0)
@@ -446,8 +459,8 @@ function M.init()
   for _, l in ipairs(D.levels) do
     if l.map then map_w, map_h = math.max(map_w, l.map.w * T), math.max(map_h, l.map.h * T) end
   end
-  for name, p in pairs(D.sounds) do -- {recipe = "coin", seed = 3} or the numbers themselves
-    if p.recipe then sound("SND_" .. name, p.recipe, p.seed or 1) else sound("SND_" .. name, p) end
+  for name, p in pairs(D.sounds) do -- {recipe = "coin", seed = 3}, the numbers themselves, or {file = "SFX_x"}
+    if p.recipe then sound("SND_" .. name, p.recipe, p.seed or 1) elseif not p.file then sound("SND_" .. name, p) end
   end
   if not D.sounds.ganar then D.sounds.ganar = sound("SND_ganar", "powerup", 4) end
   if not D.sounds.perder then D.sounds.perder = sound("SND_perder", "hit", 9) end

@@ -38,7 +38,8 @@ ctest --test-dir build                       # validates every example and plays
 animation) or bring them in from image files (PNG with transparency, JPG, a row of frames; dropped or pasted), in
 any of the console's colours; paint the levels' maps with them and put the objects on them (a player who walks and
 jumps, enemies that patrol or chase, coins), with up to three pictures behind each that move slower than the camera,
-and a cover before the first; make the sounds from recipes (coin, laser, explosion, jump...) and write the rules
+and a cover before the first; make the sounds from recipes (coin, laser, explosion, jump...) or bring them in from
+files (WAV, MP3, OGG...: effects, and music for each level and the cover, cut and made louder or softer); write the rules
 with blocks ("when the hero touches a coin: remove the other, play coin, add 1 to points"; "when the hero touches
 the flag: go on to the next level"). **Jugar** plays it right there;
 **Para la consola** gives the zip for the card. **Nuevo** starts from one of four small games to change, each with
@@ -51,7 +52,7 @@ python3 tools/make_editor.py dist/editor --player build-web
 python3 -m http.server -d dist/editor    # open http://localhost:8000
 ```
 
-The editor keeps the project in the browser as it changes; **Guardar** saves it to a file (`.np2d.json`) and
+The editor keeps the project in the browser (IndexedDB) as it changes; **Guardar** saves it to a file (`.np2d.json`) and
 **Abrir** opens it again. The game it makes is ordinary Lua on the `kit` library ([lib/kit.lua](lib/kit.lua)), so it
 can be carried on by hand; it carries its own copy of kit, so it plays the same on a console with older firmware.
 

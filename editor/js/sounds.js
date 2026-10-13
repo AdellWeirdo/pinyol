@@ -1,6 +1,8 @@
-// The Sounds tab: a recipe and a seed (as sound() makes them), or the numbers moved by hand; heard at once.
+// The Sounds tab: a recipe and a seed (as sound() makes them), or the numbers moved by hand, heard at once; or a sound
+// brought in from a file (an effect, or the music of a level), cut and made louder or softer.
 import { safeName, uniqueName } from './project.js';
 import { RECIPES, WAVES, recipe, render as renderSound, play } from './synth.js';
+import { HZ, MAX_S, toBase64, samples, play as playClip, stop as stopClip } from './audio.js';
 
 const $ = id => document.getElementById(id);
 let app, cur = 0;
@@ -17,24 +19,23 @@ const WAVE_NAMES = { square: 'cuadrada', triangle: 'triangular', saw: 'sierra', 
 
 const sound = () => app.project.sounds[cur];
 export function paramsOf(s) { return s.params ? { ...s.params } : recipe(s.recipe, s.seed); }
+const hear = s => (s.file ? playClip(s).catch(() => app.toast('No se ha podido leer ese sonido')) : play(paramsOf(s)));
 
-function drawWave(p) {
-  const c = $('wave'), g = c.getContext('2d'), data = renderSound(p);
+function drawWave(data, from = 0, to = data.length, note = '') { // the samples; outside from..to dimmed (cut away)
+  const c = $('wave'), g = c.getContext('2d');
   c.width = c.clientWidth || 640;
   g.clearRect(0, 0, c.width, c.height);
-  g.strokeStyle = '#6cb4e0';
-  g.beginPath();
   const step = Math.max(1, data.length / c.width);
   for (let x = 0; x < c.width; x++) {
     let lo = 0, hi = 0;
     for (let i = Math.floor(x * step); i < Math.min(data.length, (x + 1) * step); i++) lo = Math.min(lo, data[i]), hi = Math.max(hi, data[i]);
-    g.moveTo(x + 0.5, c.height / 2 - hi * c.height / 2);
-    g.lineTo(x + 0.5, c.height / 2 - lo * c.height / 2 + 1);
+    const kept = x * step >= from && x * step < to;
+    g.fillStyle = kept ? '#6cb4e0' : '#3a3150';
+    g.fillRect(x, c.height / 2 - hi * c.height / 2, 1, (hi - lo) * c.height / 2 + 1);
   }
-  g.stroke();
   g.fillStyle = '#9c90b0';
   g.font = '12px system-ui';
-  g.fillText((data.length / 22050).toFixed(2) + ' s', 8, 16);
+  g.fillText(note || (data.length / HZ).toFixed(2) + ' s', 8, 16);
 }
 
 function renderList() {
@@ -42,52 +43,103 @@ function renderList() {
   ul.replaceChildren();
   app.project.sounds.forEach((s, i) => {
     const li = document.createElement('li');
-    li.textContent = s.name;
-    li.append(Object.assign(document.createElement('span'), { className: 'kind', textContent: s.params ? 'a mano' : RECIPES[s.recipe] || '' }));
+    li.append(Object.assign(document.createElement('span'), { textContent: s.name }));
+    const kind = s.file ? (s.use === 'music' ? 'música' : 'archivo') : s.params ? 'a mano' : RECIPES[s.recipe] || '';
+    li.append(Object.assign(document.createElement('span'), { className: 'kind', textContent: kind }));
     li.setAttribute('aria-current', String(i === cur));
     li.tabIndex = 0;
-    li.addEventListener('click', () => { cur = i; render(); play(paramsOf(app.project.sounds[i])); });
+    li.addEventListener('click', () => { cur = i; stopClip(); render(); if (s.use !== 'music') hear(s); });
     ul.append(li);
   });
+}
+
+function slider(box, label, value, min, max, step, onInput, show = v => Number(v).toFixed(2)) {
+  const l = document.createElement('label'), out = document.createElement('output'), r = document.createElement('input');
+  Object.assign(r, { type: 'range', min, max, step, value });
+  out.textContent = show(value);
+  r.addEventListener('input', () => { out.textContent = show(r.value); onInput(Number(r.value)); });
+  l.append(label, out, r);
+  box.append(l);
+  return r;
+}
+
+function renderMade(s) { // a sound made from numbers
+  const p = paramsOf(s), box = $('sliders');
+  for (const b of $('recipes').children) b.setAttribute('aria-pressed', String(!s.params && b.dataset.r === s.recipe));
+  const wave = document.createElement('label'), sel = document.createElement('select');
+  wave.textContent = 'Onda';
+  for (const w of WAVES) sel.append(new Option(WAVE_NAMES[w], w));
+  sel.value = p.wave;
+  sel.addEventListener('change', () => tweak('wave', sel.value));
+  wave.append(sel);
+  box.append(wave);
+  for (const [label, key, min, max, step] of SLIDERS)
+    slider(box, label, p[key], min, max, step, v => tweak(key, v, true), v => Number(v).toFixed(step < 1 ? 2 : 0))
+      .addEventListener('change', () => play(paramsOf(sound())));
+  drawWave(renderSound(p));
+}
+
+async function renderClip(s) { // a sound from a file: what it is for, the part kept, how loud
+  const box = $('sliders');
+  const use = document.createElement('label'), sel = document.createElement('select');
+  use.textContent = 'Es';
+  sel.append(new Option('un efecto: suena una vez (hasta 5 s)', 'effect'), new Option('música: se repite (hasta 4 min)', 'music'));
+  sel.value = s.use;
+  sel.addEventListener('change', () => { s.use = sel.value; app.forgetMusic(); app.changed(); render(); });
+  use.append(sel);
+  box.append(use);
+  let data;
+  try { data = await samples(s); } catch { drawWave(new Float32Array(1), 0, 1, 'No se ha podido leer este sonido'); return; }
+  if (sound() !== s) return; // another was chosen meanwhile
+  const dur = data.length / HZ, secs = v => Number(v).toFixed(2) + ' s';
+  const redraw = () => {
+    const from = s.start * HZ, to = Math.min(s.end > s.start ? s.end * HZ : data.length, from + MAX_S[s.use] * HZ);
+    const long = (s.end > s.start ? s.end : dur) - s.start > MAX_S[s.use];
+    drawWave(data, from, to, `${((to - from) / HZ).toFixed(2)} s de ${dur.toFixed(2)} s` + (long ? ` · se corta a ${MAX_S[s.use]} s` : ''));
+  };
+  slider(box, 'Empieza en', s.start, 0, dur, 0.01, v => { s.start = Math.min(v, dur - 0.01); app.changed(); redraw(); }, secs);
+  slider(box, 'Acaba en', s.end > s.start ? s.end : dur, 0, dur, 0.01, v => { s.end = v >= dur - 0.005 ? 0 : v; app.changed(); redraw(); }, secs);
+  slider(box, 'Volumen', s.volume, 0, 2, 0.05, v => { s.volume = v; app.changed(); });
+  redraw();
 }
 
 function render() {
   const has = app.project.sounds.length > 0;
   for (const id of ['s-name', 's-play', 's-again', 'sound-del']) $(id).disabled = !has;
   renderList();
-  if (!has) { $('sliders').replaceChildren(); $('wave').getContext('2d').clearRect(0, 0, 9999, 999); return; }
+  $('sliders').replaceChildren();
+  if (!has) { $('wave').getContext('2d').clearRect(0, 0, 9999, 999); return; }
   cur = Math.min(cur, app.project.sounds.length - 1);
-  const s = sound(), p = paramsOf(s);
+  const s = sound();
   $('s-name').value = s.name;
-  for (const b of $('recipes').children) b.setAttribute('aria-pressed', String(!s.params && b.dataset.r === s.recipe));
-  const box = $('sliders');
-  box.replaceChildren();
-  const wave = document.createElement('label');
-  wave.textContent = 'Onda';
-  const sel = document.createElement('select');
-  for (const w of WAVES) sel.append(new Option(WAVE_NAMES[w], w));
-  sel.value = p.wave;
-  sel.addEventListener('change', () => tweak('wave', sel.value));
-  wave.append(sel);
-  box.append(wave);
-  for (const [label, key, min, max, step] of SLIDERS) {
-    const l = document.createElement('label'), out = document.createElement('output'), r = document.createElement('input');
-    Object.assign(r, { type: 'range', min, max, step, value: p[key] });
-    out.textContent = Number(p[key]).toFixed(step < 1 ? 2 : 0);
-    r.addEventListener('input', () => { out.textContent = Number(r.value).toFixed(step < 1 ? 2 : 0); tweak(key, Number(r.value), true); });
-    r.addEventListener('change', () => play(paramsOf(sound())));
-    l.append(label, out, r);
-    box.append(l);
-  }
-  drawWave(p);
+  $('recipes').hidden = $('s-again').hidden = !!s.file;
+  $('s-stop').hidden = !s.file;
+  if (s.file) renderClip(s);
+  else renderMade(s);
 }
 
 function tweak(key, value, quiet) { // the numbers by hand: the sound keeps them, the recipe is where it came from
   const s = sound();
   s.params = { ...paramsOf(s), [key]: value };
   app.changed();
-  drawWave(s.params);
+  drawWave(renderSound(s.params));
   if (!quiet) { play(s.params); renderList(); }
+}
+
+async function bringIn(file) {
+  if (!file || !(/^audio\//.test(file.type) || /\.(wav|mp3|ogg|oga|m4a|aac|flac|opus|webm)$/i.test(file.name))) return;
+  if (file.size > 16 << 20) { app.toast('Es demasiado grande: hasta 16 MB'); return; }
+  const names = new Set(app.project.sounds.map(x => x.name));
+  const s = { name: uniqueName(safeName((file.name || 'sonido').replace(/\.[^.]*$/, ''), 'sonido'), names),
+              file: toBase64(new Uint8Array(await file.arrayBuffer())), use: 'effect', start: 0, end: 0, volume: 1 };
+  let data;
+  try { data = await samples(s); } catch { app.toast('No se ha podido leer ese sonido'); return; }
+  s.use = data.length / HZ > MAX_S.effect ? 'music' : 'effect'; // a long one is music
+  app.project.sounds.push(s);
+  cur = app.project.sounds.length - 1;
+  app.changed();
+  render();
+  app.toast(s.use === 'music' ? 'Traído como música: elígela para un nivel en Mapa' : 'Sonido traído');
 }
 
 export function initSounds(ctx) {
@@ -96,7 +148,7 @@ export function initSounds(ctx) {
     const b = document.createElement('button');
     b.textContent = label, b.dataset.r = r;
     b.addEventListener('click', () => {
-      if (!app.project.sounds.length) add(r);
+      if (!app.project.sounds.length || sound().file) add(r);
       const s = sound();
       s.recipe = r, s.seed = 1 + Math.floor(Math.random() * 99999), s.params = null;
       app.changed();
@@ -112,7 +164,13 @@ export function initSounds(ctx) {
     app.changed();
   };
   $('sound-add').addEventListener('click', () => { add(); render(); play(paramsOf(sound())); });
-  $('s-play').addEventListener('click', () => play(paramsOf(sound())));
+  $('sound-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; bringIn(f); });
+  const tab = $('tab-sound');
+  tab.addEventListener('dragover', e => { e.preventDefault(); tab.classList.add('dropping'); });
+  tab.addEventListener('dragleave', e => { if (e.target === tab) tab.classList.remove('dropping'); });
+  tab.addEventListener('drop', e => { e.preventDefault(); tab.classList.remove('dropping'); bringIn(e.dataTransfer.files[0]); });
+  $('s-play').addEventListener('click', () => hear(sound()));
+  $('s-stop').addEventListener('click', stopClip);
   $('s-again').addEventListener('click', () => {
     const s = sound();
     s.seed = 1 + Math.floor(Math.random() * 99999), s.params = null;
@@ -122,8 +180,10 @@ export function initSounds(ctx) {
   });
   $('sound-del').addEventListener('click', () => {
     if (!confirm(`¿Quitar el sonido «${sound().name}»?`)) return;
+    stopClip();
     app.project.sounds.splice(cur, 1);
     cur = Math.max(0, cur - 1);
+    app.forgetMusic();
     app.changed();
     render();
   });
@@ -134,5 +194,5 @@ export function initSounds(ctx) {
     app.changed();
     render();
   });
-  return { render, reset: () => { cur = 0; render(); } };
+  return { render, reset: () => { cur = 0; stopClip(); render(); } };
 }

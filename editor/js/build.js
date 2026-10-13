@@ -2,6 +2,7 @@
 // the sounds), main.lua (kit and the blocks' code), assets/SPR_<name> (each drawing in the engine's own format) and
 // the four fonts. The same files go in the browser's player and in the .zip for the console's card.
 import { TILE, MAX_PIXELS, pixelsOf } from './project.js';
+import { fileOf } from './audio.js';
 
 // ------------------------------------------------------------------ pictures in the engine's format
 
@@ -60,12 +61,13 @@ export function lua(v, indent = '') { // a value as a Lua literal
 }
 
 const hex = c => parseInt(c.slice(1), 16);
+const tune = name => (name ? 'MUS_' + name : null); // as audio.js names it
 const DRIFT = { '': () => ({}), down: v => ({ vy: v }), up: v => ({ vy: -v }), left: v => ({ vx: -v }), right: v => ({ vx: v }) };
 
 function levelData(p, l, crops) {
   const backdrops = p.drawings.filter(d => d.use === 'backdrop' && !l.hide.includes(d.name)).slice(0, 3) // layers 1-3
     .map(d => ({ sprite: d.name, parallax: d.parallax, ...DRIFT[d.drift](d.drift_speed) }));
-  return { id: l.id, name: l.name, background: hex(l.background), camera: l.camera || null, backdrops,
+  return { id: l.id, name: l.name, background: hex(l.background), camera: l.camera || null, backdrops, music: tune(l.music),
            objects: l.objects.filter(o => crops[o.kind]).map(o => ({ kind: o.kind, x: o.x + crops[o.kind].x, y: o.y + crops[o.kind].y })),
            map: l.map.tiles.length ? { w: l.map.w, h: l.map.h, tiles: l.map.tiles, cells: l.map.cells } : null };
 }
@@ -79,10 +81,13 @@ function dataLua(p, crops, start) {
                                               gravity: d.gravity ?? undefined, dir: d.behaviour === 'shot' ? d.dir : undefined };
     else if (d.use === 'tile' && d.solid) solid[d.name] = true;
   }
-  for (const s of p.sounds) sounds[s.name] = s.params ? s.params : { recipe: s.recipe, seed: s.seed };
+  for (const s of p.sounds) // made from numbers; brought in: an effect is a file, music is named by its levels
+    if (s.file) { if (s.use === 'effect') sounds[s.name] = { file: fileOf(s) }; }
+    else sounds[s.name] = s.params ? s.params : { recipe: s.recipe, seed: s.seed };
   const c = p.cover, pic = p.drawings.find(d => d.name === c.picture);
   const data = { title: p.title, tile: TILE, sprites, kinds, solid, sounds, ending: p.ending,
                  cover: c.on ? { text: p.title, subtitle: c.subtitle, background: hex(c.background), picture: pic ? pic.name : null,
+                                 music: tune(c.music),
                                  tiled: pic ? pic.use === 'backdrop' : null } : null,
                  levels: p.levels.map(l => levelData(p, l, crops)),
                  start: start || null }; // Play from a level, skipping the cover (never in the card's zip)
@@ -106,7 +111,7 @@ function _draw() kit.draw() end
 // ------------------------------------------------------------------ the folder
 
 // -> Map of path -> Uint8Array, the game's files; `carried`: [[path, bytes]] every game has (fonts, kit), already read
-export function buildFiles(p, blocksCode, carried, { start } = {}) {
+export function buildFiles(p, blocksCode, carried, { start, audio = [] } = {}) {
   const used = pixelsOf(p.drawings);
   if (used > MAX_PIXELS)
     throw new Error(`los dibujos ocupan ${used * 2 >> 10} KB y la consola guarda ${MAX_PIXELS * 2 >> 10} KB: ` +
@@ -123,6 +128,6 @@ export function buildFiles(p, blocksCode, carried, { start } = {}) {
     author: 'np2d editor', description: 'Hecho con el editor de np2d.' }, null, 2) + '\n'));
   files.set('data.lua', enc.encode(dataLua(p, crops, start)));
   files.set('main.lua', enc.encode(mainLua(p, blocksCode)));
-  for (const [path, bytes] of carried) files.set(path, bytes);
+  for (const [path, bytes] of [...carried, ...audio]) files.set(path, bytes); // audio: audio.js's WAVs
   return files;
 }

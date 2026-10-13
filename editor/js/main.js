@@ -4,6 +4,7 @@
 import { check, pack, saveLocal, loadLocal } from './project.js';
 import { TEMPLATES, templateEmpty } from './templates.js';
 import { buildFiles } from './build.js';
+import { audioFiles } from './audio.js';
 import { zip } from './zip.js';
 import { defineBlocks, setProject, workspaceLua, TOOLBOX, templateBlocks } from './blocks.js';
 import { initDrawings } from './sprites.js';
@@ -29,9 +30,9 @@ function toast(text, ms = 2500) {
 
 function changed() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
+  saveTimer = setTimeout(async () => {
     project.blocks = ws ? Blockly.serialization.workspaces.save(ws) : project.blocks;
-    if (!saveLocal(project)) toast('No se ha podido guardar en el navegador: guarda el proyecto en un archivo');
+    if (!(await saveLocal(project))) toast('No se ha podido guardar en el navegador: guarda el proyecto en un archivo');
   }, 400);
 }
 
@@ -81,10 +82,17 @@ const app = {
       }
     tabs.map.render();
   },
-  renameSound(old, name) {
+  renameSound(old, name) { // in the blocks, and as a level's or the cover's music
     const s = project.sounds.find(x => x.name === old);
     if (s) s.name = name;
-    eachField(f => f.name === 'SOUND' && f.getValue() === old, f => f.setValue(name));
+    for (const x of [...project.levels, project.cover]) if (x.music === old) x.music = name;
+    eachField(f => (f.name === 'SOUND' || f.name === 'MUSIC') && f.getValue() === old, f => f.setValue(name));
+    tabs.map.render();
+  },
+  forgetMusic() { // music that is gone, or became an effect, plays nowhere
+    const tunes = new Set(project.sounds.filter(s => s.use === 'music').map(s => s.name));
+    for (const x of [...project.levels, project.cover]) if (x.music && !tunes.has(x.music)) x.music = '';
+    tabs.map.render();
   },
 };
 
@@ -128,7 +136,8 @@ export function luaCode() { return ws ? workspaceLua(ws) : ''; }
 
 async function buildZip(opts) { // opts.start: a level to play first, skipping the cover (to try it)
   project.blocks = Blockly.serialization.workspaces.save(ws);
-  return zip(buildFiles(project, luaCode(), await getGameFiles(), opts), project.id);
+  const audio = await audioFiles(project);
+  return zip(buildFiles(project, luaCode(), await getGameFiles(), { ...opts, audio }), project.id);
 }
 
 function renderStart() { // Play from the cover or any level
@@ -198,13 +207,13 @@ function initBlockly() {
   });
 }
 
-function init() {
+async function init() {
   const ctx = app;
   tabs.draw = initDrawings(ctx);
   tabs.map = initMap(ctx);
   tabs.sound = initSounds(ctx);
   initBlockly();
-  const saved = loadLocal();
+  const saved = await loadLocal();
   if (saved) load(saved);
   else load(TEMPLATES[0].make(), templateBlocks(TEMPLATES[0].key));
 

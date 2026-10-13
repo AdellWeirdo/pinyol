@@ -12,7 +12,8 @@ const tiles = () => { const t = project ? project.drawings.filter(d => d.use ===
 const levels = () => (project ? project.levels.map(l => [l.name, l.id]) : []);
 const anyLevel = () => [['cualquiera', '_'], ...levels()];
 const someLevel = () => { const l = levels(); return l.length ? l : none; };
-const sounds = () => { const s = project ? project.sounds.map(x => [x.name, x.name]) : []; return s.length ? s : none; };
+const named = keep => () => { const s = project ? project.sounds.filter(keep).map(x => [x.name, x.name]) : []; return s.length ? s : none; };
+const sounds = named(x => x.use !== 'music'), tunes = named(x => x.use === 'music');
 const BUTTONS = [['A', 'a'], ['B', 'b'], ['C', 'c'], ['arriba', 'up'], ['abajo', 'down'], ['izquierda', 'left'],
   ['derecha', 'right'], ['START', 'start']];
 const PROPS = [['x', 'x'], ['y', 'y'], ['velocidad x', 'vx'], ['velocidad y', 'vy']];
@@ -88,6 +89,9 @@ export function defineBlocks() {
     { dropdown: kinds, name: 'KIND' }], 'statement');
   // actions
   define('kit_sound', ACTION, ['sonar', { dropdown: sounds, name: 'SOUND' }], 'statement');
+  define('kit_music', ACTION, ['poner la música', { dropdown: tunes, name: 'MUSIC' }], 'statement',
+         'Una música traída en Sonidos, en bucle (cada nivel empieza con la suya, si tiene)');
+  define('kit_music_stop', ACTION, ['parar la música'], 'statement');
   define('kit_label', ACTION, [{ value: true, name: 'TEXT', label: 'mostrar' }, { dropdown: PLACES, name: 'WHERE' }], 'statement',
          'Se queda en pantalla hasta que se cambia');
   define('kit_message', ACTION, [{ value: true, name: 'TEXT', label: 'mensaje' }, 'durante',
@@ -146,6 +150,8 @@ function defineLua() {
   F.kit_count_on = b => [`kit.count_on(${q(b.getFieldValue('KIND'))}, ${q(b.getFieldValue('TILE'))})`, O.HIGH];
   F.kit_sprite = b => `kit.set_sprite(${obj(b)}, ${q(b.getFieldValue('KIND'))})\n`;
   F.kit_sound = b => `kit.sound(${q(b.getFieldValue('SOUND'))})\n`;
+  F.kit_music = b => `kit.music(${q(b.getFieldValue('MUSIC'))})\n`;
+  F.kit_music_stop = () => 'kit.music(nil)\n';
   F.kit_label = b => `kit.label(${q(b.getFieldValue('WHERE'))}, ${text(b)}, ${q(b.getFieldValue('WHERE'))})\n`;
   F.kit_message = b => `kit.message(${text(b)}, ${Number(b.getFieldValue('SECONDS')) || 2})\n`;
   F.kit_win = b => `kit.win(${text(b)})\n`;
@@ -189,7 +195,8 @@ export const TOOLBOX = {
       { kind: 'block', type: 'kit_count_on' },
       { kind: 'block', type: 'kit_sprite', inputs: { OBJ: thisBlock() } }] },
     { kind: 'category', name: 'Acciones', colour: ACTION, contents: [
-      { kind: 'block', type: 'kit_sound' }, { kind: 'block', type: 'kit_label', inputs: { TEXT: str('Puntos: 0') } },
+      { kind: 'block', type: 'kit_sound' }, { kind: 'block', type: 'kit_music' }, { kind: 'block', type: 'kit_music_stop' },
+      { kind: 'block', type: 'kit_label', inputs: { TEXT: str('Puntos: 0') } },
       { kind: 'block', type: 'kit_message', inputs: { TEXT: str('¡Hola!') } },
       { kind: 'block', type: 'kit_win', inputs: { TEXT: str('¡Has ganado!') } },
       { kind: 'block', type: 'kit_lose', inputs: { TEXT: str('Has perdido') } }, { kind: 'block', type: 'kit_shake' },

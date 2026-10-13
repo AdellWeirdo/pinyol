@@ -5,6 +5,7 @@ export const FORMAT = 3; // 3: levels and a cover; 2: pixels in the console's co
 export const TILE = 16; // the map's grid, in the world's pixels
 export const MAP_MAX = 64; // tiles a side: the map is drawn once into a canvas of at most 1024 px
 export const LEVELS_MAX = 32;
+const FILE_MAX = 24 << 20; // a sound file kept in the project, as base64: songs of a few minutes
 export const MAX_SIDE = 512; // a drawing's width or height (a background two screens wide)
 export const MAX_PIXELS = 768 * 1024; // all drawings' frames together: 1.5 MB of the console's memory
 const SEE_THROUGH = 0xF81F; // a saved frame's see-through pixel; a real colour that is this one becomes 0xF81E
@@ -103,7 +104,7 @@ export function drawing(name, rows, colours, extra = {}) {
 
 export function newLevel(id, name) {
   return { id, name, map: { w: 15, h: 10, tiles: [], cells: new Array(150).fill(0) }, objects: [], background: '#1D2B53',
-           camera: '', hide: [] };
+           camera: '', hide: [], music: '' };
 }
 
 // made safe after loading: a file from anywhere may be anything
@@ -158,9 +159,17 @@ export function check(p) {
   for (const s of Array.isArray(p.sounds) ? p.sounds.slice(0, 48) : []) {
     const name = uniqueName(safeName(s.name, 'sonido'), snames);
     snames.add(name);
-    out.sounds.push({ name, recipe: typeof s.recipe === 'string' ? s.recipe : 'blip', seed: clampInt(s.seed, 1, 999999, 1),
-                      params: s.params && typeof s.params === 'object' ? s.params : null });
+    if (typeof s.file === 'string' && s.file && s.file.length < FILE_MAX) // brought in from a file (base64)
+      out.sounds.push({ name, file: s.file, use: s.use === 'music' ? 'music' : 'effect', start: clampNum(s.start, 0, 3600, 0),
+                        end: clampNum(s.end, 0, 3600, 0), volume: clampNum(s.volume, 0, 2, 1) });
+    else
+      out.sounds.push({ name, recipe: typeof s.recipe === 'string' ? s.recipe : 'blip', seed: clampInt(s.seed, 1, 999999, 1),
+                        params: s.params && typeof s.params === 'object' ? s.params : null });
   }
+  const tunes = new Set(out.sounds.filter(x => x.use === 'music').map(x => x.name)); // music only from the sounds there are
+  const tune = v => (tunes.has(safeName(v, '')) ? safeName(v) : '');
+  out.levels.forEach((l, i) => { l.music = tune((levels[i] || {}).music); });
+  out.cover.music = tune(c.music);
   return out;
 }
 
@@ -168,8 +177,24 @@ function colour(v, d) { return /^#[0-9a-fA-F]{6}$/.test(v) ? v : d; }
 function clampNum(v, lo, hi, d) { v = Number(v); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; }
 function clampInt(v, lo, hi, d) { return Math.round(clampNum(v, lo, hi, d)); }
 
+// The project kept in the browser as it changes: IndexedDB, which has room for songs (localStorage, before, did not)
 const KEY = 'np2d-editor-project';
-export function saveLocal(p) { try { localStorage.setItem(KEY, JSON.stringify(pack(p))); return true; } catch { return false; } }
-export function loadLocal() {
-  try { const s = localStorage.getItem(KEY); return s ? check(JSON.parse(s)) : null; } catch { return null; }
+function store(mode, use) {
+  return new Promise((done, fail) => {
+    const open = indexedDB.open('np2d-editor', 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('projects');
+    open.onerror = () => fail(open.error);
+    open.onsuccess = () => { // one connection a call, closed after: nothing held open blocks the next
+      const db = open.result, t = db.transaction('projects', mode), r = use(t.objectStore('projects'));
+      t.oncomplete = () => { db.close(); done(r.result); };
+      t.onerror = () => { db.close(); fail(t.error); };
+    };
+  });
+}
+export async function saveLocal(p) {
+  try { await store('readwrite', s => s.put(pack(p), 'current')); return true; } catch { return false; }
+}
+export async function loadLocal() {
+  try { const p = await store('readonly', s => s.get('current')); if (p) return check(p); } catch { /* none kept */ }
+  try { const s = localStorage.getItem(KEY); return s ? check(JSON.parse(s)) : null; } catch { return null; } // before
 }

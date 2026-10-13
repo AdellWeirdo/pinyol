@@ -82,6 +82,7 @@ function renderPieces() {
   cam.replaceChildren(new Option('(nadie: el primer jugador)', ''));
   for (const d of p.drawings.filter(d => d.use === 'object')) cam.append(new Option(d.name, d.name));
   cam.value = l.camera || '';
+  musicSelect($('map-music'), l.music);
   const bds = $('map-backdrops'), all = p.drawings.filter(d => d.use === 'backdrop');
   bds.replaceChildren();
   bds.hidden = !all.length;
@@ -93,6 +94,12 @@ function renderPieces() {
     lab.append(box, ' ' + d.name);
     bds.append(lab);
   }
+}
+
+function musicSelect(sel, value) { // none, or a sound brought in as music
+  sel.replaceChildren(new Option('(ninguna)', ''));
+  for (const s of app.project.sounds.filter(x => x.use === 'music')) sel.append(new Option(s.name, s.name));
+  sel.value = value || '';
 }
 
 function pieceButton(pc, d, label) {
@@ -203,6 +210,7 @@ function renderCover() {
   pic.replaceChildren(new Option('(ninguna)', ''));
   for (const x of p.drawings) pic.append(new Option(x.name, x.name));
   pic.value = c.picture;
+  musicSelect($('cover-music'), c.music);
 }
 
 // ------------------------------------------------------------------ the list of levels
@@ -240,7 +248,7 @@ function addLevel() {
   const p = app.project, from = level() || p.levels[0];
   if (p.levels.length >= LEVELS_MAX) return;
   const n = p.levels.length + 1, l = newLevel(uniqueName('nivel' + n, new Set(p.levels.map(x => x.id))), 'Nivel ' + n);
-  l.background = from.background, l.camera = from.camera, l.hide = from.hide.slice();
+  l.background = from.background, l.camera = from.camera, l.hide = from.hide.slice(), l.music = from.music;
   l.objects = from.objects.filter(o => isPlayer(o.kind)).map(o => ({ ...o })); // the player is there to start with
   p.levels.push(l);
   sel = p.levels.length - 1;
@@ -268,6 +276,7 @@ export function initMap(ctx) {
   $('map-h').addEventListener('change', e => resize(level().map.w, Number(e.target.value)));
   $('map-bg').addEventListener('input', e => { level().background = e.target.value; app.changed(); renderMap(); });
   $('map-camera').addEventListener('change', e => { level().camera = e.target.value; app.changed(); renderMap(); });
+  $('map-music').addEventListener('change', e => { level().music = e.target.value; app.changed(); });
   $('map-backdrops').addEventListener('change', e => {
     const l = level(), name = e.target.dataset.name;
     l.hide = e.target.checked ? l.hide.filter(n => n !== name) : [...l.hide, name];
@@ -295,6 +304,7 @@ export function initMap(ctx) {
   cover('cover-subtitle', 'subtitle');
   cover('cover-bg', 'background');
   cover('cover-picture', 'picture', 'change');
+  cover('cover-music', 'music', 'change');
   $('ending').addEventListener('input', e => { app.project.ending = e.target.value.slice(0, 60); app.changed(); });
   return { render, reset: () => { sel = 0; render(); } };
 }
