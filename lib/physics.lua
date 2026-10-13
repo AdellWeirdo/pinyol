@@ -20,17 +20,19 @@
 --
 -- Options of a body: bounce (0..1, 0.3), friction (0..1, 0.4), static, mass (the area by default), turns, angle
 -- (degrees), spin (degrees a tick). It is simple on purpose (no stacking of hundreds): enough for toys, puzzles
--- and arcade games of up to about 60 bodies on the console, fewer if they turn (about 25).
+-- and arcade games of up to about 60 bodies on the console. Where something that turns touches anything is worked
+-- out in C (physics_turning, src/lua_physics.c): in Lua it took the console 32 ms a tick for ten boxes.
 local M = {}
 local World = {}
 World.__index = World
 
 local SUBSTEPS = 2
-local ITERATIONS = 6 -- passes over the contacts of turning bodies each substep: stacks settle
+local ITERATIONS = 4 -- passes over the contacts of turning bodies each substep: stacks settle
 local BOUNCE_MIN = 1  -- px a tick: slower than this, turning bodies meet without bouncing
 local PUSH_BACK, SLOP = 0.2, 0.1 -- the part of an overlap undone each substep, and what is let be
 local DEG, RAD = 180 / math.pi, math.pi / 180
 local sqrt, cos, sin, abs = math.sqrt, math.cos, math.sin, math.abs
+local MAX_CORNERS = 16
 
 function M.world(o)
   o = o or {}
@@ -76,6 +78,7 @@ function World:poly(x, y, pts, o)
     hull[#hull] = nil
   end
   if #hull < 3 then error("physics poly: its corners are on a line", 2) end
+  if #hull > MAX_CORNERS then error("physics poly: " .. MAX_CORNERS .. " corners at most", 2) end
   local area, cx, cy, inertia = 0, 0, 0, 0
   for i = 1, #hull do
     local a, b = hull[i], hull[i % #hull + 1]
@@ -126,7 +129,7 @@ end
 
 -- The corners of a box or polygon on the screen, for this substep (stamp): turned by its angle about its centre.
 local function corners(b, stamp)
-  if b._stamp == stamp and stamp then return b._v end
+  if b._stamp == stamp and stamp then return b._v, b._n end
   local cx, cy = centre(b)
   local pts = b.pts
   if not pts then
@@ -135,13 +138,22 @@ local function corners(b, stamp)
   end
   local a = (b.angle or 0) * RAD
   local c, s = cos(a), sin(a)
-  local v = b._v or {}
-  for i = 1, #pts - 1, 2 do
+  local v, nrm = b._v or {}, b._n or {}
+  local n = #pts
+  for i = 1, n - 1, 2 do
     local x, y = pts[i], pts[i + 1]
     v[i], v[i + 1] = cx + x * c - y * s, cy + x * s + y * c
   end
-  b._v, b._stamp = v, stamp
-  return v
+  for i = 1, n - 1, 2 do -- each edge's outward normal (from corner i to the next)
+    local j = i + 2 > n and 1 or i + 2
+    local ex, ey = v[j] - v[i], v[j + 1] - v[i + 1]
+    local l = sqrt(ex * ex + ey * ey)
+    local nx, ny = ey / l, -ex / l
+    if (v[i] - cx) * nx + (v[i + 1] - cy) * ny < 0 then nx, ny = -nx, -ny end
+    nrm[i], nrm[i + 1] = nx, ny
+  end
+  b._v, b._n, b._stamp = v, nrm, stamp
+  return v, nrm
 end
 
 local function bounds(b, stamp)
@@ -156,7 +168,7 @@ local function bounds(b, stamp)
   return x0, y0, x1, y1
 end
 
-function World:corners(b) return corners(b) end
+function World:corners(b) return (corners(b)) end
 
 -- how a overlaps b: the direction to push b away from a (nx, ny) and how deep; nil if they do not touch
 local function contact(a, b)
@@ -248,172 +260,11 @@ local function pull(r) -- a rope: never further than its length (a stick: always
 end
 
 -- Bodies that turn: where two touch, the push between them, and the points it acts at.
-local function outward(v, i, cx, cy) -- edge i of corners v: its outward normal and first corner
-  local j = i + 2 > #v and 1 or i + 2
-  local x1, y1 = v[i], v[i + 1]
-  local ex, ey = v[j] - x1, v[j + 1] - y1
-  local l = sqrt(ex * ex + ey * ey)
-  if l < 1e-9 then return nil end
-  local nx, ny = ey / l, -ex / l
-  if (x1 - cx) * nx + (y1 - cy) * ny < 0 then nx, ny = -nx, -ny end
-  return nx, ny, x1, y1
-end
-
-local function inside(v, cx, cy, px, py)
+local function inside(v, nrm, px, py)
   for i = 1, #v - 1, 2 do
-    local nx, ny, x1, y1 = outward(v, i, cx, cy)
-    if nx and (px - x1) * nx + (py - y1) * ny > 0.01 then return false end
+    if (px - v[i]) * nrm[i] + (py - v[i + 1]) * nrm[i + 1] > 0.01 then return false end
   end
   return true
-end
-
--- the least push to part two polygons along one of a's edges' normals, and that edge (nil if one separates them)
-local function least(va, ax, ay, vb)
-  local best, bnx, bny, bi = math.huge, 0, 0, 1
-  for i = 1, #va - 1, 2 do
-    local nx, ny, x1, y1 = outward(va, i, ax, ay)
-    if nx then
-      local m = math.huge
-      for k = 1, #vb - 1, 2 do
-        local d = (vb[k] - x1) * nx + (vb[k + 1] - y1) * ny
-        if d < m then m = d end
-      end
-      if m > 0 then return nil end
-      if -m < best then best, bnx, bny, bi = -m, nx, ny, i end
-    end
-  end
-  return best, bnx, bny, bi
-end
-
-local function edge(v, i)
-  local j = i + 2 > #v and 1 or i + 2
-  return v[i], v[i + 1], v[j], v[j + 1]
-end
-
--- the part of the segment p-q on the side of o where (x - o).s >= 0 (nil if none)
-local function clip(px, py, qx, qy, ox, oy, sx, sy)
-  local dp, dq = (px - ox) * sx + (py - oy) * sy, (qx - ox) * sx + (qy - oy) * sy
-  if dp < 0 and dq < 0 then return nil end
-  if dp < 0 then
-    local t = dp / (dp - dq)
-    px, py = px + (qx - px) * t, py + (qy - py) * t
-  elseif dq < 0 then
-    local t = dp / (dp - dq)
-    qx, qy = px + (qx - px) * t, py + (qy - py) * t
-  end
-  return px, py, qx, qy
-end
-
--- Two polygons: the face of one they press on (the reference), the other's face against it (the incident),
--- clipped to the reference face's width: the one or two points they touch at, as Box2D does it.
-local function poly_poly(a, b, stamp)
-  local va, vb = corners(a, stamp), corners(b, stamp)
-  local ax, ay = centre(a)
-  local bx, by = centre(b)
-  local da, anx, any, ai = least(va, ax, ay, vb)
-  if not da then return nil end
-  local db, bnx, bny, bi = least(vb, bx, by, va)
-  if not db then return nil end
-  local rv, nx, ny, ri, iv, icx, icy, flip = va, anx, any, ai, vb, bx, by, false
-  if db < da * 0.95 - 0.01 then rv, nx, ny, ri, iv, icx, icy, flip = vb, bnx, bny, bi, va, ax, ay, true end
-  local most, ii = math.huge, 1
-  for i = 1, #iv - 1, 2 do
-    local ex, ey = outward(iv, i, icx, icy)
-    if ex and ex * nx + ey * ny < most then most, ii = ex * nx + ey * ny, i end
-  end
-  local p1x, p1y, p2x, p2y = edge(iv, ii)
-  local r1x, r1y, r2x, r2y = edge(rv, ri)
-  local tx, ty = r2x - r1x, r2y - r1y
-  local tl = sqrt(tx * tx + ty * ty)
-  tx, ty = tx / tl, ty / tl
-  p1x, p1y, p2x, p2y = clip(p1x, p1y, p2x, p2y, r1x, r1y, tx, ty)
-  if p1x then p1x, p1y, p2x, p2y = clip(p1x, p1y, p2x, p2y, r2x, r2y, -tx, -ty) end
-  local pts, depth = {}, 0
-  if p1x then
-    for _, q in ipairs({{p1x, p1y}, {p2x, p2y}}) do
-      local sep = (q[1] - r1x) * nx + (q[2] - r1y) * ny
-      if sep <= 0.01 then
-        pts[#pts + 1] = q
-        if -sep > depth then depth = -sep end
-      end
-    end
-  end
-  if #pts == 0 then pts[1], depth = {(ax + bx) / 2, (ay + by) / 2}, math.min(da, db) end
-  if flip then nx, ny = -nx, -ny end
-  return nx, ny, depth, pts
-end
-
--- a circle c against a polygon: the direction from the circle to the polygon, how deep, where
-local function circle_poly(c, b, stamp)
-  local v = corners(b, stamp)
-  local bx, by = centre(b)
-  local best, qx, qy = math.huge, 0, 0
-  for i = 1, #v - 1, 2 do
-    local j = i + 2 > #v and 1 or i + 2
-    local x1, y1, ex, ey = v[i], v[i + 1], v[j] - v[i], v[j + 1] - v[i + 1]
-    local l2 = ex * ex + ey * ey
-    local t = l2 > 0 and math.max(0, math.min(1, ((c.x - x1) * ex + (c.y - y1) * ey) / l2)) or 0
-    local px, py = x1 + ex * t, y1 + ey * t
-    local d = (px - c.x) ^ 2 + (py - c.y) ^ 2
-    if d < best then best, qx, qy = d, px, py end
-  end
-  local dist = sqrt(best)
-  if inside(v, bx, by, c.x, c.y) then
-    if dist < 1e-6 then return 0, 1, c.r, {{c.x, c.y}} end
-    return (c.x - qx) / dist, (c.y - qy) / dist, c.r + dist, {{qx, qy}}
-  end
-  if dist >= c.r or dist < 1e-9 then return nil end
-  return (qx - c.x) / dist, (qy - c.y) / dist, c.r - dist, {{qx, qy}}
-end
-
-local function turning_contact(a, b, stamp)
-  if a.kind == "circle" and b.kind == "circle" then
-    local nx, ny, d = contact(a, b)
-    if nx then return nx, ny, d, {{a.x + nx * a.r, a.y + ny * a.r}} end
-    return nil
-  end
-  if a.kind == "circle" then return circle_poly(a, b, stamp) end
-  if b.kind == "circle" then
-    local nx, ny, d, pts = circle_poly(b, a, stamp)
-    if nx then return -nx, -ny, d, pts end
-    return nil
-  end
-  return poly_poly(a, b, stamp)
-end
-
-local function cross(ax, ay, bx, by) return ax * by - ay * bx end
-
-local function impulse(c, p, jx, jy) -- applied at point p: a pushed back, b forwards; both turn by it
-  local a, b = c.a, c.b
-  a.vx, a.vy = a.vx - jx * a.inv, a.vy - jy * a.inv
-  b.vx, b.vy = b.vx + jx * b.inv, b.vy + jy * b.inv
-  if a.iinv > 0 then a.spin = a.spin - cross(p.rax, p.ray, jx, jy) * a.iinv * DEG end
-  if b.iinv > 0 then b.spin = b.spin + cross(p.rbx, p.rby, jx, jy) * b.iinv * DEG end
-end
-
--- One pass over a contact's points (Box2D's sequential impulses): each point's push adds up over the passes and
--- never pulls; friction at most mu times it; a bounce only for what came in fast.
-local function solve(c)
-  local a, b, nx, ny = c.a, c.b, c.nx, c.ny
-  local mu = sqrt(a.friction * b.friction)
-  for _, p in ipairs(c.pts) do
-    local wa, wb = (a.spin or 0) * RAD, (b.spin or 0) * RAD
-    local rvx = (b.vx - wb * p.rby) - (a.vx - wa * p.ray)
-    local rvy = (b.vy + wb * p.rbx) - (a.vy + wa * p.rax)
-    local vn = rvx * nx + rvy * ny
-    local pn = math.max(p.pn - (vn - p.bias) / p.kn, 0)
-    local dn = pn - p.pn
-    p.pn = pn
-    impulse(c, p, dn * nx, dn * ny)
-    wa, wb = (a.spin or 0) * RAD, (b.spin or 0) * RAD
-    rvx = (b.vx - wb * p.rby) - (a.vx - wa * p.ray)
-    rvy = (b.vy + wb * p.rbx) - (a.vy + wa * p.rax)
-    local tx, ty = -ny, nx
-    local pt = math.max(-mu * p.pn, math.min(mu * p.pn, p.pt - (rvx * tx + rvy * ty) / p.kt))
-    local dt = pt - p.pt
-    p.pt = pt
-    impulse(c, p, dt * tx, dt * ty)
-  end
 end
 
 local function float(w, b, stamp) -- what water does to a body in it
@@ -456,57 +307,22 @@ function World:step()
     if #self.waters > 0 then
       for _, b in ipairs(bodies) do if b.inv > 0 then float(self, b, stamp) end end
     end
-    local box, turning, warm = {}, {}, self.warm or {}
-    for i, b in ipairs(bodies) do box[i] = {bounds(b, stamp)} end
+    local box, turns = {}, false
+    for i, b in ipairs(bodies) do
+      if b.turns then turns = true else box[i] = {bounds(b, stamp)} end
+    end
     for i = 1, #bodies do
       local a, ba = bodies[i], box[i]
-      for j = i + 1, #bodies do
+      for j = ba and i + 1 or #bodies + 1, #bodies do
         local b, bb = bodies[j], box[j]
-        if (a.inv > 0 or b.inv > 0) and ba[1] < bb[3] and bb[1] < ba[3] and ba[2] < bb[4] and bb[2] < ba[4] then
-          if a.turns or b.turns then
-            local nx, ny, depth, pts = turning_contact(a, b, stamp)
-            if nx then turning[#turning + 1] = {a = a, b = b, nx = nx, ny = ny, depth = depth, pts = pts} end
-          else
-            resolve(self, a, b)
-          end
+        if bb and (a.inv > 0 or b.inv > 0) and ba[1] < bb[3] and bb[1] < ba[3] and ba[2] < bb[4] and bb[2] < ba[4] then
+          resolve(self, a, b)
         end
       end
     end
-    for _, c in ipairs(turning) do -- the points, how hard each resists a push (mass and inertia), what bounces
-      local a, b = c.a, c.b
-      local ax, ay = centre(a)
-      local bx, by = centre(b)
-      local wa, wb = (a.spin or 0) * RAD, (b.spin or 0) * RAD
-      local e = math.min(a.bounce, b.bounce)
-      local before = warm[a] and warm[a][b] -- the same contact a moment ago: its pushes, to start from
-      for k, q in ipairs(c.pts) do
-        local p = {x = q[1], y = q[2], rax = q[1] - ax, ray = q[2] - ay, rbx = q[1] - bx, rby = q[2] - by, pn = 0,
-                   pt = 0, bias = 0}
-        for _, o in ipairs(before or {}) do
-          if (o.x - p.x) ^ 2 + (o.y - p.y) ^ 2 < 4 then p.pn, p.pt = o.pn, o.pt end
-        end
-        p.kn = a.inv + b.inv + cross(p.rax, p.ray, c.nx, c.ny) ^ 2 * a.iinv + cross(p.rbx, p.rby, c.nx, c.ny) ^ 2 * b.iinv
-        p.kt = a.inv + b.inv + cross(p.rax, p.ray, -c.ny, c.nx) ^ 2 * a.iinv + cross(p.rbx, p.rby, -c.ny, c.nx) ^ 2 * b.iinv
-        local vn = ((b.vx - wb * p.rby) - (a.vx - wa * p.ray)) * c.nx + ((b.vy + wb * p.rbx) - (a.vy + wa * p.rax)) * c.ny
-        if vn < -BOUNCE_MIN then p.bias = -e * vn end -- resting, rocking: no endless tiny bounces
-        p.bias = math.max(p.bias, PUSH_BACK * math.max(c.depth - SLOP, 0) * SUBSTEPS) -- and out of each other
-        if vn < -0.5 and not c.hit then c.hit = true; self.hits_now[#self.hits_now + 1] = {a, b, -vn} end
-        c.pts[k] = p
-        impulse(c, p, p.pn * c.nx - p.pt * c.ny, p.pn * c.ny + p.pt * c.nx)
-      end
-    end
-    for _ = 1, ITERATIONS do
-      for _, c in ipairs(turning) do solve(c) end
-    end
-    self.warm = {}
-    for _, c in ipairs(turning) do
-      self.warm[c.a] = self.warm[c.a] or {}
-      self.warm[c.a][c.b] = c.pts
-    end
-    for _, b in ipairs(bodies) do
-      if b.inv > 0 and b.turns then
-        b.x, b.y = b.x + b.vx / SUBSTEPS, b.y + b.vy / SUBSTEPS
-        b.angle = (b.angle + b.spin / SUBSTEPS) % 360
+    if turns then -- where something that turns touches anything, and how it moves: in C (src/lua_physics.c)
+      for _, h in ipairs(physics_turning(bodies, ITERATIONS, BOUNCE_MIN, PUSH_BACK, SLOP, SUBSTEPS)) do
+        self.hits_now[#self.hits_now + 1] = h
       end
     end
     for _, r in ipairs(self.ropes) do pull(r) end
@@ -522,8 +338,8 @@ function World:at(x, y)
     if b.kind == "circle" then
       if (x - b.x) ^ 2 + (y - b.y) ^ 2 <= b.r * b.r then return b end
     elseif b.turns then
-      local cx, cy = centre(b)
-      if inside(corners(b), cx, cy, x, y) then return b end
+      local v, nrm = corners(b)
+      if inside(v, nrm, x, y) then return b end
     elseif x >= b.x and x < b.x + b.w and y >= b.y and y < b.y + b.h then
       return b
     end

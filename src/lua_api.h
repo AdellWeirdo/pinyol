@@ -85,3 +85,5 @@ void sound_register(lua_State *L);
 /* lua_draw.c: a swarm's points drawn, each as the picture centred on it (lua_swarm.c) */
 void draw_points(const asset *a, int frame, const float *x, const float *y, int n);
 void swarm_register(lua_State *L); /* swarm(): lua_swarm.c */
+void physics_register(lua_State *L); /* physics_turning(), for lib/physics.lua: lua_physics.c */
+void physics_free(void);
