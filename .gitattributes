@@ -4,3 +4,6 @@
 *.fnt binary
 *.wav binary
 *.ttf binary
+*.pk binary
+*.npv binary
+*.mod binary

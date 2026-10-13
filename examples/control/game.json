@@ -1,0 +1,8 @@
+{
+  "id": "control",
+  "title": "Control",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "np2d examples",
+  "description": "Realitzes l'informatiu del vespre de 1994 des de la sala de control: talles càmeres, llances el vídeo i poses rètols al ritme de la sintonia, amb el LED de la consola com a pilot vermell. Fins que s'encén una càmera que no existeix i et mira a tu."
+}

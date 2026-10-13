@@ -1,0 +1,61 @@
+// CONTROL: el que la productora diu pels auriculars (lib/story.lua). El joc salta a cada nus quan toca.
+[var punts = 0]
+[var maxim = 27]
+
+== brief
+Productora: Bona nit. Ets el realitzador de guàrdia: l'informatiu del vespre surt en directe d'aquí a un minut.
+Productora: A dalt tens les fonts: CAM 1, CAM 2, CAM 3 i el VTR. Amb esquerra i dreta en tries una.
+Productora: A la talla al programa, el monitor gran del mig. El que hi ha al programa és el que veu tothom.
+Productora: B fa rodar el vídeo i hi talla. C posa o treu el rètol. Jo et cantaré cada pas abans que toqui.
+Productora: Sigues al moment just. Ni abans ni després. Som-hi.
+
+== c1
+Productora: Preparada la u... la presentadora...
+Productora: ...i entra la U!
+== c2
+Productora: Rètol amb el nom, preparat...
+Productora: Rètol!
+== c3
+Productora: Fora rètol en tres, dos...
+Productora: Fora!
+== c4
+Productora: Vídeo de la festa major. Preparat el VTR...
+Productora: Roda VTR!
+== c5
+Productora: Acaba el vídeo. Pla general, la dos...
+Productora: La DOS!
+== c6
+Productora: Tornem a la presentadora...
+Productora: La U!
+== c7
+Productora: L'home del temps, a la tres. Atent...
+Productora: La TRES!
+== c8
+Productora: Comiat. Torna la u...
+Productora: La U!
+== c9
+Productora: Última hora. Rètol vermell, preparat...
+Productora: Rètol!
+
+== twist
+Productora: Ei. Què fa el VTR? Està rebobinant tot sol.
+Productora: I qui ha encès la CAM 00? Aquesta càmera no existeix. No l'hem instal·lat mai.
+Productora: ...un moment. Aquest d'aquí, d'esquena, amb una consoleta a les mans. Ets tu?
+[if bateria] Productora: Et queda un {bateria}% de bateria. Ho veig des d'aquí.
+Productora: Digues alguna cosa. En veu alta. Et sentim.
+
+== heard
+Productora: T'hem sentit. Escolta com sona des de la sala.
+Productora: Ara mira bé la pantalla que tens a les mans.
+[do zoom()]
+
+== silent
+Productora: No et sentim... però saps que hi ets. Nosaltres també.
+Productora: Ara mira bé la pantalla que tens a les mans.
+[do zoom()]
+
+== fi
+[if punts >= maxim - 3] Productora: Emissió impecable. Com si algú ens estigués mirant tota l'estona.
+[if punts < maxim - 3 and punts >= maxim / 2] Productora: Ha anat prou bé. Demà ho tornem a fer.
+[if punts < maxim / 2] Productora: Quin desastre. Però la gent no se n'ha adonat. Mai no se n'adonen.
+Productora: Fi de l'emissió. Apaga la consola quan vulguis... si pots.

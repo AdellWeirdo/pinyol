@@ -1,0 +1,61 @@
+// CONTROL: lo que la productora dice por los auriculares (lib/story.lua). El juego salta a cada nudo cuando toca.
+[var punts = 0]
+[var maxim = 27]
+
+== brief
+Productora: Buenas noches. Eres el realizador de guardia: el informativo de la noche sale en directo dentro de un minuto.
+Productora: Arriba tienes las fuentes: CAM 1, CAM 2, CAM 3 y el VTR. Con izquierda y derecha eliges una.
+Productora: A la corta al programa, el monitor grande del centro. Lo que está en programa es lo que ve todo el mundo.
+Productora: B lanza el vídeo y corta a él. C pone o quita el rótulo. Yo te cantaré cada paso antes de que toque.
+Productora: Sé puntual. Ni antes ni después. Vamos.
+
+== c1
+Productora: Preparada la uno... la presentadora...
+Productora: ...¡y entra la UNO!
+== c2
+Productora: Rótulo con el nombre, preparado...
+Productora: ¡Rótulo!
+== c3
+Productora: Fuera rótulo en tres, dos...
+Productora: ¡Fuera!
+== c4
+Productora: Vídeo de la fiesta mayor. Preparado el VTR...
+Productora: ¡Lanza VTR!
+== c5
+Productora: Acaba el vídeo. Plano general, la dos...
+Productora: ¡La DOS!
+== c6
+Productora: Volvemos a la presentadora...
+Productora: ¡La UNO!
+== c7
+Productora: El hombre del tiempo, en la tres. Atento...
+Productora: ¡La TRES!
+== c8
+Productora: Despedida. Vuelve la uno...
+Productora: ¡La UNO!
+== c9
+Productora: Última hora. Rótulo rojo, preparado...
+Productora: ¡Rótulo!
+
+== twist
+Productora: Eh. ¿Qué hace el VTR? Está rebobinando solo.
+Productora: ¿Y quién ha encendido la CAM 00? Esa cámara no existe. No la hemos instalado nunca.
+Productora: ...un momento. Ese de ahí, de espaldas, con una consolita en las manos. ¿Eres tú?
+[if bateria] Productora: Te queda un {bateria}% de batería. Lo veo desde aquí.
+Productora: Di algo. En voz alta. Te oímos.
+
+== heard
+Productora: Te hemos oído. Escucha cómo suena desde la sala.
+Productora: Ahora mira bien la pantalla que tienes en las manos.
+[do zoom()]
+
+== silent
+Productora: No te oímos... pero sabes que estás ahí. Nosotros también.
+Productora: Ahora mira bien la pantalla que tienes en las manos.
+[do zoom()]
+
+== fi
+[if punts >= maxim - 3] Productora: Emisión impecable. Como si alguien nos estuviera mirando todo el rato.
+[if punts < maxim - 3 and punts >= maxim / 2] Productora: Ha ido bastante bien. Mañana lo repetimos.
+[if punts < maxim / 2] Productora: Qué desastre. Pero la gente no se ha dado cuenta. Nunca se dan cuenta.
+Productora: Fin de la emisión. Apaga la consola cuando quieras... si puedes.

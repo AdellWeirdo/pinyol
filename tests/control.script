@@ -1,0 +1,53 @@
+# CONTROL: the title (the LED the console's own, the language switched and kept), the producer's briefing (LED
+# green), on air (LED red): a cut too early, a caption on the beat, the rest done by the autopilot, each judged
+# against the theme's clock; then CAM 00: the battery in her words, the player's voice heard and played back, the
+# zoom into the console's screen, the end (LED the console's again), and back to the title
+tick 30
+expect_lua state == "title"
+expect_led off
+shot control_title
+press RIGHT
+expect_lua LANG == "es" and stored("lang") == "es"
+press LEFT
+expect_lua LANG == "ca"
+press START
+expect_lua state == "brief" and s:line().who == "Productora"
+tick 20
+expect_led 00ff00
+shot control_brief
+press START
+tick 2
+expect_lua state == "air"
+expect_led ff0000
+# 2 seconds in: CAM 1 cut, but its cue is at 4: too early
+tick 118
+press A
+expect_lua pgm == 1 and grades[1] == "E" and punts == 0
+# the caption, on the beat at 8
+tick 360
+press C
+expect_lua caption == true and grades[2] == "P" and punts == 3
+shot control_air
+lua AUTO = true
+battery 0.73
+tick 2700
+expect_lua state == "twist" and s.vars.bateria == 73 and s.vars.punts == 24
+expect_lua grades[3] == "P" and grades[9] == "P"
+tick 100
+expect_lua pgm == 5
+shot control_twist
+mic 0.5 220
+tick 700
+expect_lua state == "twist2" or state == "zoom"
+expect_lua sfx("VEU") > 0
+tick 400
+expect_lua state == "zoom" or state == "end"
+shot control_zoom
+tick 400
+expect_lua state == "end" and music_time() == nil
+expect_led off
+shot control_end
+lua AUTO = false
+press START
+expect_lua state == "title"
+expect_ok

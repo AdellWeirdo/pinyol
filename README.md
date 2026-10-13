@@ -84,6 +84,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [moto](examples/moto) | a motorbike race: the road on the world's Mode 7 floor, the coast, the roadside and the rivals at full resolution over it |
 | [duelo](examples/duelo) | a fighting game as a Neo Geo's: every pixel at 480x320, a stage in two layers, fighters in 192x184 frames as packed pictures, hit flashes and sparks, a rival played by the console |
 | [sonidos](examples/sonidos) | sounds made from numbers (a factory of coins, lasers, explosions), a theremin, an engine that follows the speed, music in layers |
+| [control](examples/control) | directing a 1994 newscast from the control room: cuts, tape and captions on the beat of the theme, the producer's lines written as a story in Catalan and Spanish, the console's LED as the tally light, a video clip on a monitor; then a camera that does not exist looks at you, hears you and knows your battery |
 
 ### As an adventure made of data
 
@@ -178,7 +179,7 @@ platform/sdl/    desktop simulator, and the web players when built with Emscript
 platform/null/   bp_headless: validator and test runner without a window
 platform/web/    the web pages around the players
 firmware/        the console: ESP-IDF project, builds src/ unchanged
-examples/        games as they go on the microSD: fifteen in Lua, hola as data
+examples/        games as they go on the microSD: sixteen in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
 tests/           test scripts for the examples, and the PPU's own tests
 tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, font2fnt.py, clip2npv.py, ...
