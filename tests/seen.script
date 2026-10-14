@@ -1,0 +1,9 @@
+# img's alpha and add: half red over blue is purple, red added to blue is magenta, alpha 0 leaves what was there,
+# a turned picture is seen through too; the corners outside the picture keep their blue
+tick 2
+expect_lua pget(6, 6, "MIX") > 0x700000 and pget(6, 6, "MIX") < 0x880000 and pget(6, 6, "MIX") % 256 > 0x70 and pget(6, 6, "MIX") % 256 < 0x88
+expect_lua pget(6, 6, "ADD") > 0xF00000 and pget(6, 6, "ADD") % 256 > 0xF0
+expect_lua pget(6, 6, "NONE") == pget(0, 0, "NONE")
+expect_lua pget(8, 8, "TURN") ~= pget(0, 0, "TURN") and pget(8, 8, "TURN") % 256 > 0x70
+expect_lua pget(0, 0, "MIX") == pget(15, 15, "MIX")
+expect_ok
