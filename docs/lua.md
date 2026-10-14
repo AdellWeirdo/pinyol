@@ -354,7 +354,10 @@ smell:spread(0.4, 0.02)
 local dx, dy = smell:climb(cat.x, cat.y)     -- the cat follows its nose
 ```
 
-On a desktop a path across a 256×256 grid takes about a millisecond, one across 64×64 a twentieth of that.
+On the console a path right across a 64×64 grid full of obstacles takes about 5 ms (it looks at most of the cells;
+across a room of 30×20, about a millisecond), a distance field over 64×64 about 10 ms and a spread 2.5 ms: work out
+paths when something decides to go somewhere, not every tick for everyone, and for a crowd heading the same way use
+one `distances` for all of them.
 
 ## Playing together (link)
 

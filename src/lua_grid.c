@@ -86,87 +86,104 @@ static int g_size(lua_State *L) {
 
 /* ------------------------------------------------------------------ the search: Dijkstra, or A* with a goal */
 
-typedef struct {
-    int32_t *dist, *from, *heap, *pos; /* pos: where a cell is in the heap, -1 not in it */
-    uint8_t *done;
-    int n;
-} search;
+/* The search's memory, kept from one search to the next (PSRAM on the console: up to 1 MB for 256x256): a cell's
+ * numbers count only when its seen[] is this search's generation, so nothing is cleared between searches. The heap
+ * holds each cell's key with it: comparing never reaches back into the cells. */
+typedef struct { int32_t key, idx; } hnode;
+typedef struct { int32_t dist, from, pos; uint16_t seen; } scell; /* one cell's numbers together: one cache line */
+static struct {
+    int cap, n;
+    uint16_t gen;
+    scell *c;                   /* pos: where the cell is in the heap; -1 not in it; -2 done */
+    hnode *heap;
+    int gx, gy;                 /* the goal (A*), or gx < 0 */
+    bool diag;
+} S;
 
-static void s_free(search *s) { free(s->dist); }
+void grid_free(void) { free(S.c), memset(&S, 0, sizeof S); }
 
-static bool s_init(search *s, int cells) {
-    size_t sz = (size_t)cells * (4 * sizeof(int32_t) + 1);
-    uint8_t *m = hal_realloc_slow(NULL, sz); /* (PSRAM on the console: up to 1.1 MB for 256x256) */
-    if (!m) return false;
-    s->dist = (int32_t *)m, s->from = s->dist + cells, s->heap = s->from + cells, s->pos = s->heap + cells;
-    s->done = (uint8_t *)(s->pos + cells), s->n = 0;
-    for (int i = 0; i < cells; i++) s->dist[i] = FAR, s->from[i] = -1, s->pos[i] = -1;
-    memset(s->done, 0, (size_t)cells);
+static bool s_begin(int cells, int gx, int gy, bool diag) {
+    if (cells > S.cap) {
+        uint8_t *m = hal_realloc_slow(S.c, (size_t)cells * (sizeof(scell) + sizeof(hnode)));
+        if (!m) return false;
+        S.c = (scell *)m, S.heap = (hnode *)(S.c + cells), S.cap = cells, S.gen = 0;
+        for (int i = 0; i < cells; i++) S.c[i].seen = 0;
+    }
+    if (++S.gen == 0) { /* (after 65535 searches: once) */
+        for (int i = 0; i < S.cap; i++) S.c[i].seen = 0;
+        S.gen = 1;
+    }
+    S.n = 0, S.gx = gx, S.gy = gy, S.diag = diag;
     return true;
 }
 
-/* the heap is ordered by key: the distance, plus the estimate to the goal for A* */
-static int32_t key_of(const search *s, const grid *g, int i, int gx, int gy, bool diag) {
-    if (gx < 0) return s->dist[i];
-    int dx = abs(i % g->w - gx), dy = abs(i / g->w - gy);
-    int32_t est = diag ? STRAIGHT * (dx > dy ? dx : dy) + (DIAGONAL - STRAIGHT) * (dx < dy ? dx : dy)
-                       : STRAIGHT * (dx + dy); /* cells cost at least 1: never more than the true cost */
-    return s->dist[i] + est;
+static int32_t dist_of(int i) { return S.c[i].seen == S.gen ? S.c[i].dist : FAR; }
+
+static int32_t estimate(int x, int y) { /* never more than the true cost: cells cost at least 1 */
+    if (S.gx < 0) return 0;
+    int dx = abs(x - S.gx), dy = abs(y - S.gy);
+    return S.diag ? STRAIGHT * (dx > dy ? dx : dy) + (DIAGONAL - STRAIGHT) * (dx < dy ? dx : dy) : STRAIGHT * (dx + dy);
 }
 
-static void swap(search *s, int a, int b) {
-    int32_t t = s->heap[a];
-    s->heap[a] = s->heap[b], s->heap[b] = t;
-    s->pos[s->heap[a]] = a, s->pos[s->heap[b]] = b;
-}
+static void place(int k, hnode v) { S.heap[k] = v, S.c[v.idx].pos = k; }
 
-static void up(search *s, const grid *g, int k, int gx, int gy, bool diag) {
+static void up(int k) {
+    hnode v = S.heap[k];
     while (k > 0) {
         int p = (k - 1) / 2;
-        if (key_of(s, g, s->heap[p], gx, gy, diag) <= key_of(s, g, s->heap[k], gx, gy, diag)) break;
-        swap(s, p, k), k = p;
+        if (S.heap[p].key <= v.key) break;
+        place(k, S.heap[p]), k = p;
     }
+    place(k, v);
 }
 
-static int pop(search *s, const grid *g, int gx, int gy, bool diag) {
-    int top = s->heap[0];
-    s->pos[top] = -1;
-    if (--s->n > 0) {
-        s->heap[0] = s->heap[s->n], s->pos[s->heap[0]] = 0;
-        for (int k = 0;;) {
+static int pop(void) {
+    int top = S.heap[0].idx;
+    S.c[top].pos = -2;
+    if (--S.n > 0) {
+        hnode v = S.heap[S.n];
+        int k = 0;
+        for (;;) {
             int l = 2 * k + 1, r = l + 1, m = k;
-            if (l < s->n && key_of(s, g, s->heap[l], gx, gy, diag) < key_of(s, g, s->heap[m], gx, gy, diag)) m = l;
-            if (r < s->n && key_of(s, g, s->heap[r], gx, gy, diag) < key_of(s, g, s->heap[m], gx, gy, diag)) m = r;
+            int32_t mk = v.key;
+            if (l < S.n && S.heap[l].key < mk) m = l, mk = S.heap[l].key;
+            if (r < S.n && S.heap[r].key < mk) m = r;
             if (m == k) break;
-            swap(s, k, m), k = m;
+            place(k, S.heap[m]), k = m;
         }
+        place(k, v);
     }
     return top;
 }
 
-static void relax(search *s, const grid *g, int i, int32_t d, int from, int gx, int gy, bool diag) {
-    if (d >= s->dist[i]) return;
-    s->dist[i] = d, s->from[i] = from;
-    if (s->pos[i] < 0) s->heap[s->n] = i, s->pos[i] = s->n++;
-    up(s, g, s->pos[i], gx, gy, diag);
+static void relax(int i, int x, int y, int32_t d, int from) {
+    scell *c = &S.c[i];
+    if (c->seen != S.gen) c->seen = S.gen, c->dist = FAR, c->from = -1, c->pos = -1;
+    if (d >= c->dist || c->pos == -2) return;
+    c->dist = d, c->from = from;
+    hnode v = {d + estimate(x, y), i};
+    if (c->pos < 0) S.heap[S.n] = v, c->pos = S.n++;
+    else S.heap[c->pos].key = v.key;
+    up(c->pos);
 }
 
-/* From the cells already in the heap, until the goal is done (gx >= 0) or nothing is left, or past budget. */
-static void run(search *s, const grid *g, int gx, int gy, bool diag, int32_t budget) {
-    int goal = gx >= 0 ? gy * g->w + gx : -1;
-    while (s->n > 0) {
-        int i = pop(s, g, gx, gy, diag);
-        s->done[i] = 1;
+/* From the cells in the heap, until the goal is done (gx >= 0) or nothing is left, or past budget. */
+static void run(const grid *g, int32_t budget) {
+    int goal = S.gx >= 0 ? S.gy * g->w + S.gx : -1, w = g->w, h = g->h;
+    while (S.n > 0) {
+        int i = pop();
         if (i == goal) return;
-        int x = i % g->w, y = i / g->w;
-        for (int d = 0; d < (diag ? 8 : 4); d++) {
+        int x = i % w, y = i / w;
+        int32_t base = S.c[i].dist;
+        for (int d = 0; d < (S.diag ? 8 : 4); d++) {
             int nx = x + DX[d], ny = y + DY[d];
-            if (!on(g->w, g->h, nx, ny)) continue;
-            int j = ny * g->w + nx;
-            if (!g->cost[j] || s->done[j]) continue;
-            if (d >= 4 && (!g->cost[y * g->w + nx] || !g->cost[ny * g->w + x])) continue; /* no cutting corners */
-            int32_t nd = s->dist[i] + (d < 4 ? STRAIGHT : DIAGONAL) * g->cost[j];
-            if (nd <= budget) relax(s, g, j, nd, i, gx, gy, diag);
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+            int j = i + DY[d] * w + DX[d];
+            uint8_t c = g->cost[j];
+            if (!c) continue;
+            if (d >= 4 && (!g->cost[i + DX[d]] || !g->cost[i + DY[d] * w])) continue; /* no cutting corners */
+            int32_t nd = base + (d < 4 ? STRAIGHT : DIAGONAL) * c;
+            if (nd <= budget) relax(j, nx, ny, nd, i);
         }
     }
 }
@@ -178,26 +195,21 @@ static int g_path(lua_State *L) { /* g:path(x0, y0, x1, y1 [, {diagonal}]) */
     if (!cell(L, 2, g->w, g->h, &x0, &y0) || !cell(L, 4, g->w, g->h, &x1, &y1)) return lua_pushnil(L), 1;
     int a = y0 * g->w + x0, b = y1 * g->w + x1;
     if (!g->cost[b]) return lua_pushnil(L), 1;
-    search s;
-    if (!s_init(&s, g->w * g->h)) return luaL_error(L, "grid path: out of memory");
-    s.dist[a] = 0, s.heap[0] = a, s.pos[a] = 0, s.n = 1;
-    run(&s, g, x1, y1, diag, FAR - 255 * DIAGONAL);
-    if (s.dist[b] == FAR) {
-        s_free(&s);
-        return lua_pushnil(L), 1;
-    }
+    if (!s_begin(g->w * g->h, x1, y1, diag)) return luaL_error(L, "grid path: out of memory");
+    relax(a, x0, y0, 0, -1);
+    run(g, FAR - 255 * DIAGONAL);
+    if (dist_of(b) == FAR) return lua_pushnil(L), 1;
     int len = 0;
-    for (int i = b; i != a; i = s.from[i]) len++;
+    for (int i = b; i != a; i = S.c[i].from) len++;
     lua_createtable(L, len, 0);
     int k = len;
-    for (int i = b; i != a; i = s.from[i], k--) {
+    for (int i = b; i != a; i = S.c[i].from, k--) {
         lua_createtable(L, 2, 0);
         lua_pushinteger(L, i % g->w), lua_rawseti(L, -2, 1);
         lua_pushinteger(L, i / g->w), lua_rawseti(L, -2, 2);
         lua_rawseti(L, -2, k);
     }
-    lua_pushnumber(L, s.dist[b] / (lua_Number)STRAIGHT);
-    s_free(&s);
+    lua_pushnumber(L, dist_of(b) / (lua_Number)STRAIGHT);
     return 2;
 }
 
@@ -208,21 +220,18 @@ static int g_reach(lua_State *L) { /* g:reach(x, y, budget [, {diagonal}]) */
     bool diag = diagonal_opt(L, 5);
     lua_newtable(L);
     if (!cell(L, 2, g->w, g->h, &x, &y) || budget < 0) return 1;
-    search s;
-    if (!s_init(&s, g->w * g->h)) return luaL_error(L, "grid reach: out of memory");
-    int a = y * g->w + x;
-    s.dist[a] = 0, s.heap[0] = a, s.pos[a] = 0, s.n = 1;
-    run(&s, g, -1, -1, diag, (int32_t)(budget * STRAIGHT + 0.5f));
+    if (!s_begin(g->w * g->h, -1, -1, diag)) return luaL_error(L, "grid reach: out of memory");
+    relax(y * g->w + x, x, y, 0, -1);
+    run(g, (int32_t)(budget * STRAIGHT + 0.5f));
     int k = 0;
     for (int i = 0; i < g->w * g->h; i++) {
-        if (s.dist[i] == FAR) continue;
+        if (dist_of(i) == FAR) continue;
         lua_createtable(L, 3, 0);
         lua_pushinteger(L, i % g->w), lua_rawseti(L, -2, 1);
         lua_pushinteger(L, i / g->w), lua_rawseti(L, -2, 2);
-        lua_pushnumber(L, s.dist[i] / (lua_Number)STRAIGHT), lua_rawseti(L, -2, 3);
+        lua_pushnumber(L, S.c[i].dist / (lua_Number)STRAIGHT), lua_rawseti(L, -2, 3);
         lua_rawseti(L, -2, ++k);
     }
-    s_free(&s);
     return 1;
 }
 
@@ -256,8 +265,7 @@ static int g_distances(lua_State *L) { /* g:distances(x, y | {{x, y}, ...} [, {d
     grid *g = check_grid(L);
     int cells = g->w * g->h, opt = lua_istable(L, 2) ? 3 : 4;
     bool diag = diagonal_opt(L, opt);
-    search s;
-    if (!s_init(&s, cells)) return luaL_error(L, "grid distances: out of memory");
+    if (!s_begin(cells, -1, -1, diag)) return luaL_error(L, "grid distances: out of memory");
     int x, y;
     if (lua_istable(L, 2)) {
         int n = (int)lua_rawlen(L, 2);
@@ -268,17 +276,19 @@ static int g_distances(lua_State *L) { /* g:distances(x, y | {{x, y}, ...} [, {d
                 x = lua_isnumber(L, -2) ? (int)floorf(fin(lua_tonumber(L, -2))) : -1;
                 y = lua_isnumber(L, -1) ? (int)floorf(fin(lua_tonumber(L, -1))) : -1;
                 lua_pop(L, 2);
-                if (on(g->w, g->h, x, y) && g->cost[y * g->w + x]) relax(&s, g, y * g->w + x, 0, -1, -1, -1, diag);
+                if (on(g->w, g->h, x, y) && g->cost[y * g->w + x]) relax(y * g->w + x, x, y, 0, -1);
             }
             lua_pop(L, 1);
         }
     } else if (cell(L, 2, g->w, g->h, &x, &y) && g->cost[y * g->w + x]) {
-        relax(&s, g, y * g->w + x, 0, -1, -1, -1, diag);
+        relax(y * g->w + x, x, y, 0, -1);
     }
-    run(&s, g, -1, -1, diag, FAR - 255 * DIAGONAL);
+    run(g, FAR - 255 * DIAGONAL);
     layer *l = new_layer(L, 1, 0);
-    for (int i = 0; i < cells; i++) l->v[i] = s.dist[i] == FAR ? HUGE_VALF : s.dist[i] / (float)STRAIGHT;
-    s_free(&s);
+    for (int i = 0; i < cells; i++) {
+        int32_t d = dist_of(i);
+        l->v[i] = d == FAR ? HUGE_VALF : d / (float)STRAIGHT;
+    }
     return 1;
 }
 
@@ -318,22 +328,29 @@ static int l_spread(lua_State *L) { /* l:spread(rate, fade) */
     const grid *g = grid_of(L);
     float rate = fin(luaL_checknumber(L, 2)), fade = fin(luaL_optnumber(L, 3, 0));
     rate = rate < 0 ? 0 : rate > 1 ? 1 : rate, fade = fade < 0 ? 0 : fade > 1 ? 1 : fade;
-    for (int y = 0; y < l->h; y++)
-        for (int x = 0; x < l->w; x++) {
-            int i = y * l->w + x;
-            if (!g->cost[i] || isinf(l->v[i])) {
-                l->tmp[i] = g->cost[i] ? l->v[i] : 0;
+    const int w = l->w, h = l->h;
+    const float keep = 1 - fade, big = 1e30f; /* (unreachable cells of a distance layer are infinite) */
+    const float *v = l->v;
+    const uint8_t *c = g->cost;
+    for (int y = 0; y < h; y++) {
+        const float *row = v + y * w;
+        const uint8_t *crow = c + y * w;
+        float *out = l->tmp + y * w;
+        for (int x = 0; x < w; x++) {
+            float here = row[x];
+            if (!crow[x] || !(here < big)) {
+                out[x] = crow[x] ? here : 0;
                 continue;
             }
             float sum = 0;
             int n = 0;
-            for (int d = 0; d < 4; d++) {
-                int nx = x + DX[d], ny = y + DY[d], j = ny * l->w + nx;
-                if (on(l->w, l->h, nx, ny) && g->cost[j] && !isinf(l->v[j])) sum += l->v[j], n++;
-            }
-            float v = n ? l->v[i] + rate * (sum / n - l->v[i]) : l->v[i];
-            l->tmp[i] = v * (1 - fade);
+            if (x > 0 && crow[x - 1] && row[x - 1] < big) sum += row[x - 1], n++;
+            if (x + 1 < w && crow[x + 1] && row[x + 1] < big) sum += row[x + 1], n++;
+            if (y > 0 && crow[x - w] && row[x - w] < big) sum += row[x - w], n++;
+            if (y + 1 < h && crow[x + w] && row[x + w] < big) sum += row[x + w], n++;
+            out[x] = (n ? here + rate * (sum / n - here) : here) * keep;
         }
+    }
     float *t = l->v;
     l->v = l->tmp, l->tmp = t;
     return 0;

@@ -1006,6 +1006,7 @@ void v2_free(void) {
     link_stop();
     mic_close();
     physics_free();
+    grid_free();
     device_reset();
     if (Ls) lua_close(Ls);
     Ls = NULL;
