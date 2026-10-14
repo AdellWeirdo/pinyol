@@ -282,7 +282,7 @@ svg .was { stroke: #6e76b3; stroke-dasharray: 4 4; }
 }
 
 /* ------------------------------------------------------------------ made by Codex */
-.jobs { display: grid; gap: var(--s5); list-style: none; padding: 0; margin: 0; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); }
+.jobs { display: grid; gap: var(--s5); list-style: none; padding: 0; margin: 0; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); }
 .job blockquote { margin: var(--s2) 0; padding: var(--s3) var(--s4); border-left: 3px solid var(--cherry); background: var(--ink); border-radius: 0 var(--radius-s) var(--radius-s) 0; }
 .job blockquote p { margin: 0; color: var(--text); font-size: var(--t-small); font-style: italic; }
 .job blockquote p::before { content: "«"; } .job blockquote p::after { content: "»"; }
