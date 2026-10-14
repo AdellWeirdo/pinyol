@@ -1,0 +1,8 @@
+{
+  "id": "laberinto",
+  "title": "Laberinto",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Primera persona a la manera de Wolfenstein 3D: un laberinto visto desde dentro, columna a columna, con texturas, fantasmas y gemas. Todo dibujado con código."
+}

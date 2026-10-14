@@ -305,6 +305,29 @@ A clip moves on by itself with the ticks (one frame every 4 ticks at 15 fps), in
 A 240×160 clip at 15 fps takes about 50-100 KB a second of card: fine on the microSD, big for a game in the
 console's flash.
 
+## First person
+
+`raycast(canvas, view)` draws a map of walls seen from inside it onto a canvas, a column at a time, as Wolfenstein 3D
+did: walls textured and darker far away, the floor darker towards the horizon, sprites standing in the maze hidden by
+the walls in front. The game shows the canvas as it likes: `img("VIEW", 0, 0, {scale = 2})` fills the screen from a
+240×160 view. `examples/laberinto` is a whole game.
+
+```lua
+canvas("VIEW", 240, 160)                                   -- in _init
+local dist, wall = raycast("VIEW", {
+  map = {"#####", "#...#", "#.#.D", "#####"},             -- a character a square; space or . is open
+  walls = {["#"] = "TEX_STONE", D = 0x40A060},             -- a wall's picture (frame 0 wraps a square) or colour
+  x = 1.5, y = 1.5, angle = 0, fov = 66,                   -- in squares; degrees, 0 east, 90 south
+  fog = 12, ceiling = 0x303040, floor = 0x505050,          -- squares to black (0: none)
+  sprites = {{x = 3.5, y = 1.5, picture = "GHOST", frame = 0, scale = 1}},
+})
+```
+
+It returns the distance to the wall in the middle of the view (along the view, in squares) and that wall's
+character: what a shot straight ahead would hit, and how far. Walking, colliding and the ghosts' thinking are the
+game's, in Lua, on the same map. Wall and sprite pictures are plain ones (not `--packed`); a whole view of 240×160
+is about 38,000 pixels.
+
 ## Swarms
 
 Bullets, sparks, rain, stars, a crowd: many things that move the same simple way. Moved and drawn from Lua, each one

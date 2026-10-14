@@ -1,0 +1,30 @@
+# Laberinto: the title (the view turning), walking and turning in the maze, a wall that stops you, a ghost shot,
+# a gem taken, a ghost that costs a life, the five gems and the way out
+tick 30
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "play" and P.x == 1.5
+hold UP 30
+expect_lua P.x > 2.5 and P.y == 1.5
+hold UP 120
+expect_lua P.x < 7
+shot pasillo
+hold RIGHT 30
+expect_lua P.a > 80 and P.a < 100
+lua P.x, P.y, P.a = 9.5, 5.5, 0 ghosts[1].x, ghosts[1].y = 11.5, 5.5
+press A
+tick 2
+lua n = 0 for _ in ipairs(ghosts) do n = n + 1 end
+expect_lua n == 2
+lua P.x, P.y = 6.5, 1.5
+tick 2
+expect_lua gems == 1
+shot gema
+lua ghosts[1].x, ghosts[1].y = P.x + 0.2, P.y
+tick 3
+expect_lua lives == 2
+lua gems = 5 P.x, P.y, P.a = 14.3, 14.5, 0 P.hurt = 999
+hold UP 20
+expect_lua state == "won"
+expect_ok

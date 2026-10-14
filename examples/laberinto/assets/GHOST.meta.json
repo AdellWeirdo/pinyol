@@ -1,0 +1,30 @@
+{
+  "asset": "GHOST",
+  "type": "sprite",
+  "w": 32,
+  "h": 32,
+  "frames": 2,
+  "frame_ms": [
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1
+  ],
+  "anchor": [
+    16,
+    31
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "mask1"
+  },
+  "memory_bytes": {
+    "pixels": 4096,
+    "mask": 256,
+    "total": 4352
+  }
+}

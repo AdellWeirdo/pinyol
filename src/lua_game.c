@@ -1051,6 +1051,7 @@ static void api(lua_State *L) {
     clip_register(L); /* video on canvases: lua_clip.c */
     device_register(L); /* the LED and the battery: lua_device.c */
     grid_register(L);   /* a game's thinking on a grid: lua_grid.c */
+    ray_register(L);    /* first person: lua_ray.c */
     static const struct { const char *n; int v; } K[] = {
         {"BG0", PPU_BG0}, {"BG1", PPU_BG1}, {"BG2", PPU_BG2}, {"BG3", PPU_BG3}, {"OBJ", PPU_OBJ}, {"BACK", PPU_BACK},
         {"FX", PPU_FX}, {"ALL", 0x3F}, {"FLIP_X", F_FLIPX}, {"FLIP_Y", F_FLIPY}, {"BLEND", F_BLEND},

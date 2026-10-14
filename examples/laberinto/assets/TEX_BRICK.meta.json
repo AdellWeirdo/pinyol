@@ -1,0 +1,28 @@
+{
+  "asset": "TEX_BRICK",
+  "type": "background",
+  "w": 32,
+  "h": 32,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    16,
+    31
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "none"
+  },
+  "memory_bytes": {
+    "pixels": 2048,
+    "mask": 0,
+    "total": 2048
+  }
+}
