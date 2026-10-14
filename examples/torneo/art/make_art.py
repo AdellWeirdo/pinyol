@@ -27,9 +27,11 @@ COLOURS = 15                                    # and see-through: a CPS2 palett
 FAR_W, FAR_H = 640, 262                          # the courtyard, down to just under the floor's top
 FLOOR_W, FLOOR_H = 820, 72                       # the floor, from the screen's row 248 to the bottom
 FIGHTERS = ("alba", "gorm")
-# the sheets' rows, in the strip's order: (sheet, row, anchor); 30 frames
-ROWS = (("a", 0, "center"), ("a", 1, "center"), ("b", 0, "left"), ("b", 1, "left"), ("c", 0, "center"),
-        ("c", 1, "center"))
+# the sheets' rows, in the strip's order: (sheet, row, anchor, the frame whose body sets the row's scale, and that
+# body's height against standing). A slash's first frame holds the sword up and a jump's is a crouch: their scale comes
+# from a frame of known height (a crouch is about 0.6 of standing). 30 frames
+ROWS = (("a", 0, "center", 0, 1.0), ("a", 1, "center", 0, 1.0), ("b", 0, "left", 4, 1.0), ("b", 1, "left", 4, 1.0),
+        ("c", 0, "center", 0, 1.0), ("c", 1, "center", 0, 0.6))
 
 
 def solid(img: Image.Image) -> Image.Image:  # see-through or not, nothing between
@@ -72,11 +74,12 @@ def rows(sheet: Image.Image) -> list[Image.Image]:  # two rows of frames, cut at
     return [sheet.crop((0, 0, sheet.width, cut)), sheet.crop((0, cut, sheet.width, sheet.height))]
 
 
-def fitted(row: Image.Image, like: Path, anchor: str, t: Path, name: str) -> list[Image.Image]:
+def fitted(row: Image.Image, like: Path, anchor: str, t: Path, name: str, scale_frame: int = 0,
+           height: float = 1.0) -> list[Image.Image]:
     src, out = t / f"{name}.png", t / name
     row.save(src)
     cmd = [sys.executable, str(FIT), str(src), str(out), "--like", str(like), "--split", "5", "--anchor", anchor,
-           "--keep-main"]
+           "--keep-main", "--scale-frame", str(scale_frame), "--height", str(round(BODY * height))]
     if subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:  # no real alpha
         subprocess.run(cmd + ["--key-bg"], check=True, stdout=subprocess.DEVNULL)
     return [Image.open(p) for p in sorted(out.glob("*.png"))][:5]
@@ -119,9 +122,9 @@ def fighter(raw: Path, name: str) -> None:
         t = Path(t)
         placed(Image.open(raw / f"{name}_ref.png")).save(t / "like.png")
         frames = []
-        for sheet, r, anchor in ROWS:
+        for sheet, r, anchor, k, height in ROWS:
             row = rows(solid(Image.open(raw / f"{name}_{sheet}.png")))[r]
-            got = fitted(row, t / "like.png", anchor, t, f"{sheet}{r}")
+            got = fitted(row, t / "like.png", anchor, t, f"{sheet}{r}", k, height)
             frames += [grounded(f) for f in got] if (sheet, r) == ("c", 1) else got
         save_fighter(name, frames)
 

@@ -3,7 +3,7 @@
   "type": "sprite",
   "format": "packed",
   "bpp": 4,
-  "colours": 15,
+  "colours": 13,
   "w": 176,
   "h": 160,
   "frames": 10,
@@ -37,7 +37,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 49772,
+    "total": 42190,
     "as_rgb565": 563200
   }
 }

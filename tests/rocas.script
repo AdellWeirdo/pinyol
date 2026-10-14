@@ -1,0 +1,29 @@
+# Rocas: the title, turning and thrusting, a shot that splits a rock in two, hyperspace, a rock that costs a life, the
+# end of the game; nothing but lines drawn every frame
+tick 30
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "play" and rocks[4] ~= nil
+hold RIGHT 10
+expect_lua S.a > 0.5
+hold UP 20
+expect_lua math.abs(S.vx) + math.abs(S.vy) > 1
+lua r = rocks[1] r.x, r.y, r.vx, r.vy, r.size = S.x + math.sin(S.a) * 60, S.y - math.cos(S.a) * 60, 0, 0, 32 S.vx, S.vy = 0, 0
+lua n0 = 0 for _ in ipairs(rocks) do n0 = n0 + 1 end
+press A
+tick 12
+lua n1 = 0 for _ in ipairs(rocks) do n1 = n1 + 1 end
+expect_lua n1 == n0 + 1 and score == 20
+shot disparo
+press B
+expect_lua S.safe >= 28
+tick 40
+lua r = rocks[1] r.x, r.y, r.vx, r.vy = S.x, S.y, 0, 0
+tick 2
+expect_lua S.dead > 0 and lives == 2
+lua lives = 0
+tick 100
+expect_lua state == "over"
+shot fin
+expect_ok

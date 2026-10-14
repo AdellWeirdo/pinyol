@@ -2,8 +2,8 @@
   "asset": "BG_FRONT",
   "type": "background",
   "format": "packed",
-  "bpp": 4,
-  "colours": 5,
+  "bpp": 8,
+  "colours": 60,
   "w": 480,
   "h": 320,
   "frames": 1,
@@ -19,7 +19,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 17340,
+    "total": 37747,
     "as_rgb565": 307200
   }
 }

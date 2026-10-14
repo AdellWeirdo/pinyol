@@ -1,0 +1,25 @@
+# Ladrillos: the title, serving, the ball breaking a brick (score, sparks), losing a ball, the next level, the end
+tick 30
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "play" and bricks[60] ~= nil and not ball.served
+hold LEFT 10
+expect_lua pad.x < 52
+press A
+expect_lua ball.served
+lua ball.x, ball.y, ball.vx, ball.vy = bricks[55].x + 5, bricks[55].y + 10, 0, -1.5
+tick 8
+expect_lua bricks[60] == nil and score > 0
+shot golpe
+lua ball.x, ball.y, ball.vx, ball.vy = 64, 125, 0, 2
+tick 10
+expect_lua lives == 2 and not ball.served
+lua bricks = {}
+tick 2
+expect_lua level == 2
+shot nivel2
+lua lives = 1 ball.served = true ball.x, ball.y, ball.vy = 64, 125, 2
+tick 10
+expect_lua state == "over"
+expect_ok

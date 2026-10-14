@@ -1,0 +1,8 @@
+{
+  "id": "huevos",
+  "title": "Huevos",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un juego de bolsillo de pantalla LCD: figuras fijas que se encienden y se apagan sobre un dibujo impreso, a pasos y con pitidos. Todo dibujado con polígonos."
+}

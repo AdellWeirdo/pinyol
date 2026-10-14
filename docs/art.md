@@ -22,9 +22,10 @@ assets/  what the engine reads (.pk / .tiles / .map / .pal + .meta.json)
 A game looks like the console it is made for. Pick one with whoever the game is for (ask, if they have not said),
 then make every picture by that look's rules and start from its example. The engine moves all of them.
 
-Not every look needs an image model. The small ones (Game Boy, Spectrum, 16-bit) are best **drawn by code** in the
-game's `art.py`, from pictures written as text and simple shapes, as their examples do: no quota, and pixels exactly
-where they should be. A game can even draw everything while it runs, with no pictures at all (`examples/inventos`).
+Not every look needs an image model. The small ones (Game Boy, Spectrum, 16-bit, PICO-8, LCD, vector, first person)
+are best **drawn by code** in the game's `art.py`, from pictures written as text and simple shapes, as their examples
+do: no quota, and pixels exactly where they should be. A game can even draw everything while it runs, with no
+pictures at all (`examples/inventos`, `rocas`, `ladrillos`, `huevos`, `tormenta`).
 Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and CPS2.
 
 ### Game Boy: `examples/bolsillo`
@@ -78,6 +79,39 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
   per move.
 - Generated art. Style line: *mid-1990s 2D arcade fighting game sprite, hand-pixelled, bold dark outline, cel
   shading with 3 or 4 tones per material, about 15 colours in total, anime-influenced proportions*.
+
+### PICO-8: `examples/ladrillos`
+
+- A 128×128 canvas, cleared and drawn again every frame with `cls`, `rect`, `circ`, `line` and `pset` (as PICO-8
+  code is written), shown twice as big in the middle: `img("P8", 112, 32, {scale = 2})`.
+- PICO-8's **sixteen colours** and no others; letters four of its pixels wide (Press Start 2P at 8 pixels).
+- No pictures at all; little square-wave blips.
+
+### Pocket LCD games: `examples/huevos`
+
+- Every figure is a fixed shape, either **on** (black) or **off** (a faint ghost that still shows), over a picture
+  printed in colour behind the glass. Draw the glass, the printed picture and every figure's ghost once on a canvas;
+  each frame show it and draw only what is on.
+- Things move a step at a time with a beep, faster as the score grows; the score in seven-segment digits.
+- All polygons (`poly`, `circ`, `rect`): no pictures.
+
+### Vector arcade: `examples/rocas`
+
+- Nothing but bright lines on black, at the screen's full resolution, each with a soft glow (a dim copy one pixel to
+  each side, then the line); letters made of strokes too.
+- No pictures at all.
+
+### First person: `examples/laberinto`
+
+- `raycast()` (docs/lua.md, "First person") draws the maze seen from inside onto a 240×160 canvas, shown twice as
+  big under a status bar; walls are 32×32 textures, sprites 32×32 pictures standing in the maze.
+- Art by code (stone, brick, wood, a door; a ghost, a gem, a lamp) or generated at 32 or 64 pixels.
+
+### A vertical screen: `examples/tormenta`
+
+- The game drawn on a **320×480 canvas standing up**, shown turned a quarter round (`img(..., {angle = 90})`): the
+  console is held on its side, its left edge down. Read the arrows turned the same way.
+- Hundreds of bullets as swarms (they draw on the canvas too).
 
 Name the look, never a company's game or characters: the art must be the game's own.
 

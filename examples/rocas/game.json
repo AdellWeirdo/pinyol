@@ -1,0 +1,8 @@
+{
+  "id": "rocas",
+  "title": "Rocas",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un juego a la manera de las máquinas vectoriales: solo líneas brillantes sobre negro, hasta las letras. Sin una sola imagen."
+}

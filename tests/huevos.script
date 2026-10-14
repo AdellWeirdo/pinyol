@@ -1,0 +1,26 @@
+# Huevos: the title, the cook's four corners, an egg caught (score), an egg that breaks (a chick runs off), three
+# broken eggs and the end
+tick 30
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "play"
+hold RIGHT 2
+hold DOWN 2
+expect_lua pose == 4
+lua eggs = {{r = 4, k = 5}}
+tick 40
+expect_lua score == 1
+shot pillado
+lua eggs = {{r = 1, k = 5}}
+tick 40
+expect_lua misses == 1
+shot roto
+tick 60
+lua eggs = {{r = 1, k = 5}}
+tick 40
+tick 60
+lua eggs = {{r = 2, k = 5}}
+tick 40
+expect_lua state == "over" and misses == 3
+expect_ok

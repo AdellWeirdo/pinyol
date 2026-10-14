@@ -2,8 +2,8 @@
   "asset": "BG_DUNGEON",
   "type": "background",
   "format": "packed",
-  "bpp": 4,
-  "colours": 15,
+  "bpp": 8,
+  "colours": 163,
   "w": 720,
   "h": 320,
   "frames": 1,
@@ -19,7 +19,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 122448,
+    "total": 237944,
     "as_rgb565": 460800
   }
 }

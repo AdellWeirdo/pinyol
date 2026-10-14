@@ -2,9 +2,9 @@
   "asset": "BG_PILLAR",
   "type": "background",
   "format": "packed",
-  "bpp": 4,
-  "colours": 4,
-  "w": 96,
+  "bpp": 8,
+  "colours": 30,
+  "w": 83,
   "h": 320,
   "frames": 1,
   "frame_ms": [
@@ -14,12 +14,12 @@
     0
   ],
   "anchor": [
-    48,
+    41,
     319
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 12963,
-    "as_rgb565": 61440
+    "total": 20757,
+    "as_rgb565": 53120
   }
 }

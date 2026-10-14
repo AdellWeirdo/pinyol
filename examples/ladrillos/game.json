@@ -1,0 +1,8 @@
+{
+  "id": "ladrillos",
+  "title": "Ladrillos",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un rompeladrillos a la manera de PICO-8: una pantalla de 128x128 en sus dieciséis colores, pintada entera cada fotograma. Sin una sola imagen."
+}

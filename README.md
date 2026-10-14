@@ -1,5 +1,7 @@
 # pinyol
 
+<p align="center"><img src="docs/logo.png" alt="pinyol" width="480"></p>
+
 A small C engine for 2D games on the **RetroGo** console, an open-source handheld built on an ESP32-S3 (480×320 touch screen, buttons, speaker, microSD).
 
 A game is **a folder**: copy it to the console's microSD under `games/<id>/` and it appears in the game list. The same folder runs in a desktop simulator and in the browser. There are two kinds:
@@ -18,7 +20,13 @@ takes them again).
 | ![A Game Boy Advance platformer with parallax mountains and water](docs/looks/gba.png) | ![A 16-bit speed platformer: checkered earth, a sea moved line by line](docs/looks/16bits.png) |
 | **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), all its art drawn by code |
 | ![A Neo Geo fighting game: two big fighters on a pier at sunset](docs/looks/neogeo.png) | ![A CPS2 fighting game: fighters in 15 colours on a floor in perspective](docs/looks/cps2.png) |
-| **Neo Geo**: [duelo](examples/duelo) | **CPS2**: [torneo](examples/torneo) (stand-in art for now) |
+| **Neo Geo**: [duelo](examples/duelo) | **CPS2**: [torneo](examples/torneo) |
+| ![A PICO-8 brick breaker: 128x128 in sixteen colours](docs/looks/pico8.png) | ![A pocket LCD game: a cook catching eggs, figures on or off](docs/looks/lcd.png) |
+| **PICO-8**: [ladrillos](examples/ladrillos), no pictures | **Pocket LCD**: [huevos](examples/huevos), all polygons |
+| ![A vector arcade game: glowing lines on black](docs/looks/vector.png) | ![A vertical shoot-'em-up, shown turned: hold the console on its side](docs/looks/vertical.png) |
+| **Vector arcade**: [rocas](examples/rocas), no pictures | **Vertical screen**: [tormenta](examples/tormenta), the console on its side |
+| ![A first-person maze: stone corridors and a ghost, Wolfenstein-style](docs/looks/firstperson.png) | ![A ZX Spectrum loading screen: a miner in a crystal cave, two colours a block](docs/looks/loading.png) |
+| **First person**: [laberinto](examples/laberinto), `raycast()` | **ZX Spectrum**: [cinta](examples/cinta)'s tape loading |
 
 ## Quick start
 
@@ -109,6 +117,11 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [bolsillo](examples/bolsillo) | a platformer as a Game Boy's: a 160x144 screen in four tones inside a drawn console, C changes the tones; all its art drawn by code |
 | [cinta](examples/cinta) | a game as a ZX Spectrum's, from the tape loading (striped border, the screen in its own order): blocks of two colours, sprites that clash, a flashing key, air running out |
 | [veloz](examples/veloz) | a speed platformer as the 16-bit consoles': a sea moved line by line, a sky in a gradient, pools seen through, a Mode 7 title; a pangolin that rolls into a ball |
+| [ladrillos](examples/ladrillos) | a brick breaker as a PICO-8 cartridge: a 128x128 screen in its sixteen colours, drawn again every frame; no pictures |
+| [huevos](examples/huevos) | a pocket LCD game: figures on or off (their ghosts still show) over a printed picture, a step and a beep at a time |
+| [rocas](examples/rocas) | a vector arcade game: bright lines with a glow, even the letters; no pictures |
+| [tormenta](examples/tormenta) | a vertical shoot-'em-up played with the console on its side: a standing canvas shown turned, hundreds of bullets |
+| [laberinto](examples/laberinto) | first person as Wolfenstein 3D drew it: raycast() draws the maze from inside, textured and fogged, ghosts and gems standing in it |
 | [sonidos](examples/sonidos) | sounds made from numbers (a factory of coins, lasers, explosions), a theremin, an engine that follows the speed, music in layers |
 | [control](examples/control) | directing a 1994 newscast from the control room: cuts, tape and captions on the beat of the theme, the producer's lines written as a story in Catalan and Spanish, the console's LED as the tally light, a video clip on a monitor; then a camera that does not exist looks at you, hears you and knows your battery |
 

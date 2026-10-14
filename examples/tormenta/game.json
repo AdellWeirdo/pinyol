@@ -1,0 +1,8 @@
+{
+  "id": "tormenta",
+  "title": "Tormenta",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un matamarcianos vertical a la manera de las recreativas con la pantalla girada: se juega con la consola de lado, entre cientos de balas. Todo dibujado con código."
+}

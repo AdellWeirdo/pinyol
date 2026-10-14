@@ -1,0 +1,27 @@
+# Tormenta: the title (turned a quarter round), moving with the arrows read turned, firing, a wave shot down, a bullet
+# that costs a life, the boss and its spiral, the end
+tick 30
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "play" and lives == 3
+lua x0, y0 = ship.x, ship.y
+hold DOWN 10
+expect_lua ship.x > x0
+hold RIGHT 10
+expect_lua ship.y < y0
+hold A 120
+expect_lua score > 0
+shot oleada
+lua ship.safe = 0
+lua bullets:add(ship.x, ship.y, 0, 0)
+tick 2
+expect_lua lives == 2
+lua foes = {} wave = 5
+tick 200
+expect_lua boss ~= nil
+shot jefe
+lua boss.hp, ship.x, ship.safe, lives = 1, boss.x, 999, 3
+hold A 40
+expect_lua state == "won"
+expect_ok
