@@ -18,6 +18,10 @@ brew install cmake sdl2 uv          # macOS; Linux: cmake, libsdl2-dev, uv
 cmake -B build && cmake --build build
 ```
 
+If `cmake`, SDL2 or `uv` are missing, install them yourself with that `brew` line: it needs the network and writes
+outside this folder, so ask the user to approve it. Homebrew itself (https://brew.sh) needs the user's password: if
+`brew` is missing, ask them to install it.
+
 ## Make a game
 
 ```sh

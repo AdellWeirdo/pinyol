@@ -32,6 +32,14 @@ ctest --test-dir build                       # validates every example and plays
 
 ## Make your own game
 
+### With a coding agent
+
+On a Mac, install [Homebrew](https://brew.sh) (it brings git and Apple's compiler with it) and an agent, for example
+Codex: `brew install codex`, then `codex login` with a ChatGPT account. Clone this repository, open the agent in its
+folder (`codex`) and ask for the game you want, in any language. It reads [AGENTS.md](AGENTS.md), installs what is
+missing (approve it when it asks: installing runs outside its sandbox), builds the engine, makes the game in
+`games/<id>/` and plays it with a test to check it. `./build/pinyol_sim --game games/<id>` plays it on your screen.
+
 ### Without code: the editor
 
 `editor/` is a web page for making a game without programming: draw the pictures pixel by pixel (with frames for
