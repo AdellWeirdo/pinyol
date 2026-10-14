@@ -1,5 +1,5 @@
 -- Laberinto: first person, the way Wolfenstein 3D drew it: raycast() (docs/lua.md "First person") draws the maze
--- seen from inside onto a 240x160 canvas, a column at a time, walls textured and darker far away, the ghosts, gems
+-- seen from inside onto a 240x144 canvas, a column at a time, walls textured and darker far away, the ghosts, gems
 -- and lamps standing in it hidden by the walls in front; the game shows it twice as big under a status bar.
 -- Up and down walk, left and right turn (with B held, they step sideways). A shoots straight ahead. Take the five
 -- gems and find the green door; the ghosts take a life when they reach you.
@@ -50,7 +50,7 @@ end
 
 function _init()
   show(0)
-  canvas("VIEW", 240, 160)
+  canvas("VIEW", 240, 144) -- (the status bar covers the rest)
   sound("SFX_SHOT", {wave = "noise", freq = 1200, slide = -2000, sustain = 0.02, decay = 0.15, volume = 0.35})
   sound("SFX_GEM", "coin", 4)
   sound("SFX_HURT", "hit", 3)

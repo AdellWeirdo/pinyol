@@ -270,3 +270,24 @@ What it took, each step measured on the same scenes:
 
 Lua is what is left: on the console, each thing moved and drawn from a script costs some 50 us, so about 60-70 of
 them a frame, besides any number in swarms. The strips take 5 to 10 ms of the 16.6.
+
+## The looks on the console (2026-10-14)
+
+Each look's example played on the board by its own perf script (autotest builds, a perf line a second). First the
+numbers as written, then after what the board showed was fixed.
+
+| Example (look) | First | Now | What it took |
+|---|---|---|---|
+| torneo (CPS2: a floor drawn in 36 bands of rows) | 60-61 | 60-61 | nothing: the bands are a plain picture's rows |
+| mazmorra (CPS2), rocas (vector), bolsillo (Game Boy), huevos (LCD) | 60-61 | 60-61 | nothing |
+| cinta (Spectrum) | 49-61 | 49-61 | (the tape's colour phase dips to 42 a moment) |
+| ladrillos (PICO-8) | 46-55 | 56-60 | the bricks on a canvas of their own, drawn again when one breaks, not 120 rectangles a frame |
+| veloz (16-bit) | 40-59 | 40-59 | its far layers as tiles, not bitmaps; the sea's per-line scroll and the blended pools are what is left |
+| gotico (32-bit) | 31 | 59-61 | a shared buffer raced between the two cores (a heap assertion: fixed); mixing in the packed blit itself, one multiply a pixel; the moonbeams mixed into the background by make_art.py |
+| laberinto (first person) | 20-31 | 38-60 | raycast() draws in bands of 16 columns in internal memory, copied to the canvas a row at a time (the canvas is in PSRAM: a pixel per row was most of it); a 240×144 view |
+| tormenta (vertical) | 20 | 30 | a 160×240 canvas shown twice as big (clearing a 320×480 one was 18 ms a frame); a right-angle turn's row worked out once a line. What is left is the strips reading the turned canvas, 22 ms of CPU: 60 would need the screen drawn upright natively (the panel is 320×480 to begin with) |
+
+Costs worth knowing when making a game: a pixel mixed with what is under it (img's alpha or add) costs about three
+drawn plainly, so a few big see-through pictures fill a frame; writing a whole canvas in PSRAM costs about 1 ms per
+10,000 pixels written one at a time; a 240×160 canvas shown twice as big is cheap (15.5 ms a frame including
+everything else, at 60).

@@ -1,6 +1,6 @@
 """The pictures of examples/gotico, at the game's size, as a 32-bit console's gothic action game has them: characters
 in up to 256 colours (8 bits a pixel packed), many frames; a castle hall that repeats (mirrored every other time),
-columns in front of everyone; and the light: a soft glow for candles and moonbeams, drawn here, that the game adds
+columns in front of everyone, moonbeams mixed into the hall; and a soft glow for candles, drawn here, that the game adds
 to or mixes with what is under it (img's add and alpha).
 
     uv run --with pillow examples/gotico/art/make_art.py RAW_DIR     # from the generated images
@@ -91,8 +91,24 @@ def save_strip(name: str, frames: list[Image.Image], colours: int) -> None:
     print(f"{name}: {len(frames)} frames of {w}x{h}")
 
 
+def moonlit(hall: Image.Image) -> Image.Image:
+    """Moonbeams mixed into the hall here, not by the game: they move with the hall, and a mixed pixel is dear on the
+    console (two beams mixed while playing took a third of a frame)."""
+    out = hall.convert("RGB")
+    px = out.load()
+    for x0 in (100, 460):
+        for y in range(320):
+            half = 20 + y * 40 // 320
+            for x in range(x0 + 60 - half, x0 + 60 + half):
+                if 0 <= x < out.width:
+                    k = (1 - abs(x - x0 - 60) / half) * (0.5 + 0.5 * (1 - y / 320)) * 0.3
+                    r, g, b = px[x, y]
+                    px[x, y] = (round(r + (120 - r) * k), round(g + (150 - g) * k), round(b + (255 - b) * k))
+    return out
+
+
 def lights() -> None:
-    """A round glow (a candle's) and a beam of moonlight, soft: drawn opaque, the game sees them through or adds them."""
+    """A round glow (a candle's), soft: drawn opaque, the game adds it to what is under it."""
     glow = Image.new("RGBA", (96, 96))
     for y in range(96):
         for x in range(96):
@@ -101,13 +117,6 @@ def lights() -> None:
                 k = (1 - d) ** 2
                 glow.putpixel((x, y), (round(255 * k), round(150 * k), round(60 * k), 255))
     glow.save(HERE / "glow.png")
-    beam = Image.new("RGBA", (120, 320))
-    for y in range(320):
-        half = 20 + y * 40 // 320
-        for x in range(60 - half, 60 + half):
-            k = (1 - abs(x - 60) / half) * (0.5 + 0.5 * (1 - y / 320))
-            beam.putpixel((x, y), (round(120 * k), round(150 * k), round(255 * k), 255))
-    beam.save(HERE / "beam.png")
 
 
 def lluna(raw: Path) -> None:
@@ -136,8 +145,9 @@ def creatures(raw: Path) -> None:
 def scenery(raw: Path) -> None:
     far = Image.open(raw / "hall_far.png").convert("RGB")
     far = far.resize((HALL_W, round(far.height * HALL_W / far.width)), Image.LANCZOS)
-    far.crop((0, far.height - 320, HALL_W, far.height)).quantize(256, method=Image.Quantize.MEDIANCUT,
-                                                                  dither=Image.Dither.NONE).convert("RGB").save(HERE / "hall_far.png")
+    far = far.crop((0, far.height - 320, HALL_W, far.height))
+    far = moonlit(far)
+    far.quantize(256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert("RGB").save(HERE / "hall_far.png")
     near = solid(Image.open(raw / "hall_near.png"))
     near = solid(near.resize((HALL_W, round(near.height * HALL_W / near.width)), Image.LANCZOS))
     quantized(near.crop((0, 0, HALL_W, 320)), 128).save(HERE / "hall_near.png")  # the columns, not the railing below

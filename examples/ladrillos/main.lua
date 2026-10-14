@@ -19,6 +19,16 @@ pad, ball = {}, {}
 local t, shake, sparks = 0, 0, {}
 local look = {scale = 2}
 
+local function paint_bricks() -- the bricks on their own canvas, drawn again only when one breaks
+  target("BRICKS")
+  cls(P8[1])
+  for _, k in ipairs(bricks) do
+    rect(k.x, k.y, BW, BH, P8[k.colour])
+    rect(k.x, k.y + BH - 1, BW, 1, P8[k.colour == 10 and 9 or 5]) -- a shadow under each brick
+  end
+  target()
+end
+
 local function load_level(n)
   bricks = {}
   for r = 1, ROWS do
@@ -29,12 +39,14 @@ local function load_level(n)
     end
   end
   pad = {x = 52, w = 24}
+  paint_bricks()
   ball = {x = 64, y = 116, vx = 0, vy = 0, served = false}
 end
 
 function _init()
   show(0) -- no 240x160 world: the canvas is the screen
   canvas("P8", 128, 128)
+  canvas("BRICKS", 128, 128)
   sound("SFX_PAD", {wave = "square", freq = 330, sustain = 0.02, decay = 0.05, volume = 0.25})
   sound("SFX_WALL", {wave = "square", freq = 220, sustain = 0.02, decay = 0.04, volume = 0.2})
   sound("SFX_LOSE", {wave = "square", freq = 440, slide = -600, sustain = 0.15, decay = 0.2, volume = 0.3})
@@ -74,6 +86,7 @@ local function update_ball()
       local oy = math.min(b.y + 2 - k.y, k.y + BH - (b.y - 2))
       if ox < oy then b.vx = -b.vx else b.vy = -b.vy end
       table.remove(bricks, i)
+      paint_bricks()
       score = score + 10 * (7 - k.row)
       sparkle(k)
       shake = 4
@@ -120,14 +133,11 @@ end
 function _draw()
   cls(P8[0])
   target("P8")
-  cls(P8[1])
   if state == "title" then
+    cls(P8[1])
     for i = 0, 15 do circ(64 + math.cos(t / 30 + i / 2.5) * 40, 70 + math.sin(t / 22 + i / 2.5) * 20, 3, P8[i]) end
   else
-    for _, k in ipairs(bricks) do
-      rect(k.x, k.y, BW, BH, P8[k.colour])
-      rect(k.x, k.y + BH - 1, BW, 1, P8[k.colour == 10 and 9 or 5]) -- a shadow under each brick
-    end
+    img("BRICKS", 0, 0) -- (the background with the bricks: one picture, not 120 rectangles a frame)
     rect(pad.x, 120, pad.w, 3, P8[7])
     rect(pad.x + 1, 121, pad.w - 2, 1, P8[6])
     circ(ball.x, ball.y, 2, P8[7])

@@ -30,8 +30,8 @@ local function overlap(ax, ay, aw, ah, bx, by, bw, bh)
 end
 
 local function play_layers()
-  bg(3, {image = "FAR", prio = 3, mosaic = true})
-  bg(2, {image = "HILLS", prio = 2, mosaic = true})
+  bg(3, {map = "FAR", prio = 3, mosaic = true})
+  bg(2, {map = "HILLS", prio = 2, mosaic = true})
   bg(1, {map = "LEVEL", prio = 1, wrap = false, mosaic = true})
   bg(0, {map = "WATER", prio = 0, wrap = false})
   blend(BG0, BG1 | BG2 | BG3 | OBJ | BACK, 9, 7) -- the pools: seen through

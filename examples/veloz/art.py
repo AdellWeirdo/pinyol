@@ -7,7 +7,7 @@
     uv run examples/veloz/art.py      # art/*.png and assets/
 
 The world is 240x160 and its layers are the console's own: BG1 the level in 8x8 tiles (checkered earth, grass), BG2
-hills with palms (a bitmap), BG3 mountains and a sea whose every line the game moves at its own speed (as a Mega
+hills with palms (a bitmap), BG3 mountains and a sea (both in tiles, as those consoles had them) whose every line the game moves at its own speed (as a Mega
 Drive game did with its per-line scroll), BG0 a pool of water seen through (as a SNES blended it). The sprites are
 32x32 and 15 colours or fewer each: the pangolin running and rolled into a ball, a beetle, a gem, a spring, the
 goal; ROLL is the title's floor for Mode 7.
@@ -227,8 +227,8 @@ def main() -> None:
     convert("level.png", "LEVEL", "--tiles", "--palette", "WORLD")
     convert("water.png", "WATER", "--tiles", "--palette", "WORLD")
     convert("roll.png", "ROLL", "--tiles", "--affine", "--palette", "WORLD")
-    convert("hills.png", "HILLS", "--type", "background")
-    convert("far.png", "FAR", "--type", "background")
+    convert("hills.png", "HILLS", "--tiles", "--palette", "WORLD")  # tiles: far cheaper for the PPU than bitmaps
+    convert("far.png", "FAR", "--tiles", "--palette", "WORLD")
     convert("hero.png", "HERO", "--indexed", "--frames", "8", "--palette", "OBJ")
     convert("beetle.png", "BEETLE", "--indexed", "--frames", "2", "--palette", "OBJ")
     convert("gem.png", "GEM", "--indexed", "--frames", "4", "--palette", "OBJ")

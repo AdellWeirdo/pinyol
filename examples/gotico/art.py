@@ -8,7 +8,7 @@
 
 art/ holds the pictures at the game's size (art/make_art.py made them): the castle hall (repeated, mirrored every
 other time) and its columns in front, Lluna's twenty frames (0-4 standing, 5-9 walking, 10-14 the whip, 15-19 a jump),
-a bat (five frames), the ghost, the boss skull, and two lights, a glow and a moonbeam. All in up to 256 colours.
+a bat (five frames), the ghost, the boss skull, and a candle's glow. All in up to 256 colours.
 """
 from __future__ import annotations
 
@@ -34,7 +34,6 @@ def main() -> None:
     convert("ghost.png", "SPR_GHOST")
     convert("boss.png", "SPR_BOSS")
     convert("glow.png", "FX_GLOW")
-    convert("beam.png", "FX_BEAM")
     sys.path.insert(0, str(ROOT / "tools"))
     import font2fnt
     font2fnt.build("jacquard12", str(HERE / "fonts" / "gothic.fnt"), None, 2)

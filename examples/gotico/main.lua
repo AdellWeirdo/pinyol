@@ -1,6 +1,6 @@
 -- Gótico: a castle hall at night, the way a 32-bit console's gothic action game drew it (art.py): characters in up
 -- to 256 colours; light that adds up (candle glows and fireballs drawn with img's add) and things half seen through
--- (moonbeams, a ghost, the afterimages of a dash: img's alpha); a boss that turns and swells (img's angle and scale),
+-- (a ghost, the afterimages of a dash: img's alpha; the moonbeams are mixed into the hall by art/make_art.py); a boss that turns and swells (img's angle and scale),
 -- as a PlayStation or a Saturn turned and scaled its sprites; columns in front of everyone.
 -- Lluna: arrows walk, up jumps, A lashes the whip, B dashes back leaving afterimages. Reach the skull and break it.
 local juice = require("juice")
@@ -165,7 +165,6 @@ end
 
 local MIRROR = {flip_x = true}
 local GLOW = {add = true, scale = 1}
-local BEAM = {alpha = 0.3}
 
 local function hall(c)
   local first = (c // 2) // HALL_W
@@ -173,7 +172,6 @@ local function hall(c)
     local x = w * HALL_W - c // 2
     if w % 2 == 1 then img("BG_HALL", x, 0, MIRROR) else img("BG_HALL", x, 0) end
   end
-  for i = 0, 3 do img("FX_BEAM", 60 + i * 300 - (c // 2) % 300, 0, BEAM) end -- moonlight, half seen
   for _, x in ipairs(CANDLES) do -- the candles' glow, added to what is under it, flickering
     local sx = x - c
     if sx > -60 and sx < 540 then

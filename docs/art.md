@@ -75,7 +75,9 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
 
 - Pictures at 480×320. Characters about 90 pixels tall in **up to 256 colours** (8 bits packed), many frames.
 - **Light and transparency**: candle glows and fire added to what is under them (`img(..., {add = true})`), ghosts,
-  moonbeams and the afterimages of a dash half seen through (`{alpha = 0.5}`); glows and beams drawn by code.
+  the afterimages of a dash half seen through (`{alpha = 0.5}`); glows drawn by code. On the console a mixed
+  pixel costs about three drawn plainly: keep them to what moves (light that moves with a background goes into the
+  background, as `gotico`'s moonbeams).
 - Sprites that **turn and swell** (`angle`, `scale`): a boss that sways and breathes.
 - Generated art. Style line: *late-1990s 32-bit console 2D sprite art, gothic action game: richly detailed
   hand-pixelled sprite with up to 256 colours, smooth careful shading, crisp pixel edges*.

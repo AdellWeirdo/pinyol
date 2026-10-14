@@ -3,7 +3,7 @@
   "type": "background",
   "format": "packed",
   "bpp": 8,
-  "colours": 153,
+  "colours": 159,
   "w": 720,
   "h": 320,
   "frames": 1,
@@ -19,7 +19,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 237924,
+    "total": 237936,
     "as_rgb565": 460800
   }
 }
