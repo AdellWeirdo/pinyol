@@ -102,8 +102,11 @@ def hero() -> str:
 <div class="actions"><a class="btn btn-primary" href="#aspectos">Jugar ahora</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
 <p class="meta">Código MIT · arte y sonido CC0 · {len(LOOKS) + len(OTHERS) + len(CODEX)} juegos de ejemplo</p>
 </div>
-<div><div class="device" data-live role="img" aria-label="La consola mostrando, uno tras otro, los doce aspectos"><div class="screen">{imgs}</div></div>
-<p class="screen-label pixel">480×320 · 60 fps · en la placa</p></div>
+<div><div class="board" data-live role="img" aria-label="La consola, una placa Freenove FNK0104N, con su pantalla mostrando uno tras otro los doce aspectos">
+<span class="hole tl"></span><span class="hole bl"></span><span class="hole tr"></span><span class="hole br"></span>
+<span class="mic" aria-hidden="true">MIC</span><span class="mic-hole"></span><span class="keys" aria-hidden="true"><i></i><i></i></span>
+<div class="glass"><div class="screen">{imgs}</div></div></div>
+<p class="screen-label pixel">Freenove FNK0104N · 480×320 · 60 fps en la placa</p></div>
 </div></section>"""
 
 
