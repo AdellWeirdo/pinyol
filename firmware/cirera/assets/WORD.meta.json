@@ -1,0 +1,25 @@
+{
+  "asset": "WORD",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 136,
+  "w": 303,
+  "h": 197,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    151,
+    196
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 19233,
+    "as_rgb565": 119382
+  }
+}

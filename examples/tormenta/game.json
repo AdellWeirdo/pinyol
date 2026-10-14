@@ -1,6 +1,7 @@
 {
   "id": "tormenta",
   "title": "Tormenta",
+  "subtitle": "Recreativa vertical",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

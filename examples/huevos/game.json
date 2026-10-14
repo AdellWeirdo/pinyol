@@ -1,6 +1,7 @@
 {
   "id": "huevos",
   "title": "Huevos",
+  "subtitle": "Maquinita LCD",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

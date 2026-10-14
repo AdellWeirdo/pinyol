@@ -1,6 +1,7 @@
 {
   "id": "bolsillo",
   "title": "Bolsillo",
+  "subtitle": "Game Boy",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

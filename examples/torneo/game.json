@@ -1,6 +1,7 @@
 {
   "id": "torneo",
   "title": "Torneo del castillo",
+  "subtitle": "CPS2",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

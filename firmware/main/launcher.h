@@ -20,7 +20,9 @@ int launcher_scan(launcher_game *g, int max);
 /* The console's game list until a row is chosen: its index, -1 for "Apagar" or LAUNCHER_CABLE. Returns once nothing
  * is held. */
 int launcher_choose(uint16_t *frames[2], const launcher_game *g, int n);
-/* pinyol's logo on the ink, the screen while the console starts (no font needed: before launcher_scan works). */
-void launcher_splash(uint16_t *frame);
+/* The ink, with pinyol's logo or without (the menu game draws its own), while the console starts. */
+void launcher_splash(uint16_t *frame, bool with_logo);
+/* The console's menu game (CONSOLE_MENU_ID), found by launcher_scan and kept out of its list; NULL: none. */
+const char *launcher_menu_dir(void);
 /* One line of text and, when percent >= 0, a progress bar: the screen for a firmware update. */
 void launcher_message(uint16_t *frame, const char *text, int percent);

@@ -1,0 +1,27 @@
+{
+  "asset": "SKY",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 2,
+  "w": 480,
+  "h": 320,
+  "frames": 2,
+  "frame_ms": [
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1
+  ],
+  "anchor": [
+    240,
+    319
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 6290,
+    "as_rgb565": 614400
+  }
+}

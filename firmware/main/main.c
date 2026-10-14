@@ -13,6 +13,7 @@
 #include "bench.h"
 #include "bp.h"
 #include "display.h"
+#include "esp_app_desc.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -87,6 +88,31 @@ void hal_audio_lock(void) { xSemaphoreTake(audio_mutex, portMAX_DELAY); }
 void hal_audio_unlock(void) { xSemaphoreGive(audio_mutex); }
 bool hal_can_switch_game(void) { return true; }
 void hal_switch_game(void) { switch_req = true; }
+
+/* The console's menu is a pinyol game (firmware/cirera, CONSOLE_MENU_ID): these give it the list (src/lua_console.c). */
+static launcher_game games[LAUNCHER_MAX];
+static int ngames, played = -1;     /* the list, and the one played last (-1: none yet) */
+static bool woke = true;            /* the menu's first run since power-on: it plays its intro */
+static char launch_id[32];          /* what the menu chose */
+int hal_games(hal_game *g, int max, int *last, bool *cold) {
+    int n = ngames < max ? ngames : max;
+    for (int i = 0; i < n; i++) {
+        g[i] = (hal_game){.flash = !strncmp(games[i].dir, "/flash/", 7), .no_music = games[i].no_music};
+        snprintf(g[i].id, sizeof g[i].id, "%s", games[i].id);
+        snprintf(g[i].title, sizeof g[i].title, "%s", games[i].title);
+        snprintf(g[i].subtitle, sizeof g[i].subtitle, "%s", games[i].subtitle);
+    }
+    *last = played, *cold = woke;
+    return n;
+}
+bool hal_game_cover(const char *id, uint16_t *px, int w, int h) {
+    for (int i = 0; i < ngames; i++)
+        if (!strcmp(games[i].id, id)) return console_dir_cover(games[i].dir, px, w, h);
+    return false;
+}
+void hal_launch(const char *id) { snprintf(launch_id, sizeof launch_id, "%s", id); }
+void hal_power_off(void) { power_off(); }
+const char *hal_firmware(void) { return esp_app_get_description()->version; }
 
 static struct { int64_t world, wait, first, rest; } strip_us; /* where a frame's time goes (perf_report) */
 
@@ -380,6 +406,30 @@ static void bench_play(void) {
 }
 #endif
 
+#define MENU_FAILED (-10) /* the menu game would not start, or stopped on an error: the list in C from then on */
+#define MENU_AGAIN (-11)  /* it ended without choosing (MENU held two seconds): it runs again */
+/* The console's menu, a pinyol game: it runs until it launches a game (console_launch) or switches the console off.
+ * The index of the game it chose, LAUNCHER_CABLE, MENU_AGAIN or MENU_FAILED. */
+static int menu_choose(void) {
+    launcher_game m = {0};
+    snprintf(m.id, sizeof m.id, "%s", CONSOLE_MENU_ID);
+    snprintf(m.dir, sizeof m.dir, "%s", launcher_menu_dir());
+    launch_id[0] = 0;
+    if (!start_game(&m)) return MENU_FAILED;
+    play();
+    bool failed = layer_top() == L_ERROR;
+    game_shutdown();
+    woke = false;
+    if (cable_wanted()) return LAUNCHER_CABLE;
+    if (failed) {
+        hal_log("menu: stopped on an error; the list drawn in C from now on");
+        return MENU_FAILED;
+    }
+    for (int k = 0; k < ngames; k++)
+        if (!strcmp(games[k].id, launch_id)) return k;
+    return MENU_AGAIN;
+}
+
 void app_main(void) {
     audio_mutex = xSemaphoreCreateMutex();
     for (int i = 0; i < 2; i++) frames[i] = heap_caps_malloc(SCREEN_W * SCREEN_H * 2, MALLOC_CAP_SPIRAM);
@@ -401,10 +451,10 @@ void app_main(void) {
     remote_init();
 #endif
     hal_log("Cirera | PSRAM free %u KB", (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
-    static launcher_game games[LAUNCHER_MAX];
-    int n = storage_mount() ? launcher_scan(games, LAUNCHER_MAX) : 0;
+    int n = ngames = storage_mount() ? launcher_scan(games, LAUNCHER_MAX) : 0;
+    bool menu = launcher_menu_dir() != NULL; /* the menu game; without it (or when it fails), the list drawn in C */
     audio_out_init(input_bus());
-    launcher_splash(frame); /* pinyol's logo while the rest starts, before the light */
+    launcher_splash(frame, !menu); /* the ink while the rest starts; pinyol's logo too, unless the menu builds it */
     display_present(frame);
     display_backlight(100);
     display_start_task();
@@ -421,13 +471,22 @@ void app_main(void) {
 #endif
     run_tests(games, n);
     for (int next = -1;;) { /* next: a game to start without the list, the one that just came over the cable */
-        int i = next >= 0 ? next : launcher_choose(frames, games, n);
+        int i = next;
+        if (i < 0 && menu) {
+            i = menu_choose();
+            if (i == MENU_FAILED) menu = false; /* from now on, the list drawn in C */
+            if (i == MENU_FAILED || i == MENU_AGAIN) continue;
+        } else if (i < 0) {
+            i = launcher_choose(frames, games, n);
+        }
         next = -1;
         if (i == LAUNCHER_CABLE) {
             next = receive(games, &n);
+            ngames = n;
             continue;
         }
         if (i < 0) power_off();
+        played = i;
         if (!start_game(&games[i])) { /* a broken folder: said on screen, then the list again */
             launcher_message(frames[0], "No se puede abrir este juego", -1);
             vTaskDelay(pdMS_TO_TICKS(2000));
@@ -435,6 +494,6 @@ void app_main(void) {
         }
         play();
         game_shutdown();
-        if (cable_wanted()) next = receive(games, &n);
+        if (cable_wanted()) next = receive(games, &n), ngames = n;
     }
 }

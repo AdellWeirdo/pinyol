@@ -1,6 +1,7 @@
 {
   "id": "laberinto",
   "title": "Laberinto",
+  "subtitle": "Primera persona",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

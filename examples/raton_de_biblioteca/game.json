@@ -1,6 +1,7 @@
 {
   "id": "raton_de_biblioteca",
   "title": "Ratón de biblioteca",
+  "subtitle": "Game Boy · hecho por Codex",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "Codex (OpenAI), de un solo encargo",

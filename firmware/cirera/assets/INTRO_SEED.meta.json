@@ -1,0 +1,33 @@
+{
+  "asset": "INTRO_SEED",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 172,
+  "w": 303,
+  "h": 197,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    151,
+    196
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 33827,
+    "as_rgb565": 596910
+  }
+}

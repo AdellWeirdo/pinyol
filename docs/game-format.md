@@ -62,10 +62,12 @@ Check it with `pinyol_headless --game games/mygame --validate`. Zero errors mean
 | `audio/` | the music.json title and end cues, at least | `<ID>.wav` (section 13). The validator checks almost every sound referenced from data (not conduit `sfx`/`sfx_turn` or the music.json `title`/`end` `ambient`); at runtime a missing sound is silent. |
 | `fonts/` | yes | `FONT_MAIN.fnt`, `FONT_MAIN_L.fnt`, `FONT_BOLD.fnt`, `FONT_BOLD_L.fnt` (section 15). The game does not start without all four. |
 | `saves/` | created by the engine | Save slots and `settings.txt`. Desktop tools can redirect it with `--saves DIR`. |
+| `cover.rgb565` | no | The game's cover in the console's menu: 240×160 RGB565, little endian (`tools/cover.py` makes it from the game's title screen or any picture). Without one, an adventure's `assets/BG_TITLE.rgb565` of that size is used, or the menu draws a card with the title. |
 
-On the console the microSD holds `games/<id>/`. The firmware's game list shows up to 4 folders that contain a
-parseable `game.json`, with their `title` (folder name if missing) and `subtitle`. If `assets/BG_TITLE.rgb565` is
-exactly 240×160 it becomes the list thumbnail. The list borrows `FONT_BOLD_L` and `FONT_MAIN` from the first game.
+On the console the microSD holds `games/<id>/`. The console's menu (`firmware/cirera`, a pinyol game itself) shows
+every folder that contains a parseable `game.json`, with its `title` (folder name if missing), its `subtitle` and its
+cover. If that menu cannot run, the firmware's own list (`firmware/main/launcher.c`) shows them instead, borrowing
+`FONT_BOLD_L` and `FONT_MAIN` from the first game.
 
 ### Saves
 

@@ -1,6 +1,7 @@
 {
   "id": "plataformas",
   "title": "Plataformas",
+  "subtitle": "Game Boy Advance",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

@@ -1,6 +1,7 @@
 {
   "id": "gotico",
   "title": "Gótico",
+  "subtitle": "PlayStation · Saturn",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

@@ -1,6 +1,7 @@
 {
   "id": "ladrillos",
   "title": "Ladrillos",
+  "subtitle": "PICO-8",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

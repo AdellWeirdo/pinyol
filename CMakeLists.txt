@@ -174,12 +174,16 @@ foreach(s ${SCRIPTS})
       continue()
     endif()
     set(game ${CMAKE_BINARY_DIR}/editor/${CMAKE_MATCH_1}) # a template of the editor, built by make_editor_game
+  elseif(n STREQUAL "cirera")
+    set(game ${CMAKE_CURRENT_SOURCE_DIR}/firmware/cirera) # the console's menu
   elseif(NOT IS_DIRECTORY ${game})
     set(game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/${n}) # games that only exist to be tested
   endif()
   add_test(NAME script_${n} COMMAND pinyol_headless --game ${game}
            --saves ${CMAKE_BINARY_DIR}/saves_${n} --fresh --script ${s} --check-strips)
 endforeach()
+# the console's menu (a game too) lists the examples as the console lists its games
+set_tests_properties(script_cirera PROPERTIES ENVIRONMENT "PINYOL_GAMES=${CMAKE_CURRENT_SOURCE_DIR}/examples")
 # a canvas shown turned, changed every frame, must look different from one frame to the next (not a kept copy)
 add_test(NAME turned_canvas COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/turned \
   --saves ${CMAKE_BINARY_DIR}/saves_turned_crc --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/turned.script \

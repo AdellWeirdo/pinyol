@@ -29,6 +29,24 @@ void hal_log(const char *fmt, ...);
  * leave this game for the list once the current tick ends. Desktop platforms answer false and do nothing. */
 bool hal_can_switch_game(void);
 void hal_switch_game(void);
+/* The console's games, for its menu: the game CONSOLE_MENU_ID, a pinyol game (lua_console.c). hal_games fills up
+ * to max (never the menu itself), *last the index of the one played last (-1: none), *cold true the first time since
+ * power-on; hal_game_cover reads the game's cover (COVER_W x COVER_H, RGB565); hal_launch starts that game once the
+ * menu ends; hal_power_off switches off. Desktops list the folders in $PINYOL_GAMES (console_dir_*). */
+#define CONSOLE_MENU_ID "cirera"
+#define COVER_W 240
+#define COVER_H 160
+typedef struct {
+    char id[32], title[48], subtitle[64];
+    bool flash, no_music; /* in the console's flash, so without its music */
+} hal_game;
+int hal_games(hal_game *g, int max, int *last, bool *cold);
+bool hal_game_cover(const char *id, uint16_t *px, int w, int h);
+void hal_launch(const char *id);
+void hal_power_off(void);
+const char *hal_firmware(void); /* the console's firmware version, for its menu (a desktop: "escritorio") */
+int console_dir_games(const char *root, hal_game *g, int max);              /* the folders in root that are games */
+bool console_dir_cover(const char *dir, uint16_t *px, int w, int h);        /* dir's cover.rgb565 (or BG_TITLE) */
 void hal_audio_lock(void);
 void hal_audio_unlock(void);
 /* Samples between the end of a block audio_mix has just made and the moment its first sample is heard, after what is

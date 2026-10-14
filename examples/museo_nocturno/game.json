@@ -1,6 +1,7 @@
 {
   "id": "museo_nocturno",
   "title": "Museo de Medianoche",
+  "subtitle": "Primera persona · hecho por Codex",
   "engine": "pinyol@2",
   "main": "main.lua",
   "description": "Recupera cinco cuadros robados en un museo oscuro y escapa sin dejar que te atrapen los vigilantes.",

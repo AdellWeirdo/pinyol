@@ -1,6 +1,7 @@
 {
   "id": "rocas",
   "title": "Rocas",
+  "subtitle": "Vectorial",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

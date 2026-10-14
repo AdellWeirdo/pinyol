@@ -1,6 +1,7 @@
 {
   "id": "veloz",
   "title": "Pangolín veloz",
+  "subtitle": "Mega Drive · SNES",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

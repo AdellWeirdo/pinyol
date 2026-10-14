@@ -9,6 +9,12 @@ project(pinyol_console)
 # Re-run `idf.py reconfigure` after changing a game's files.
 #   idf.py -DFLASH_GAME="/abs/games/a;/abs/games/b" build
 set(FLASH_GAME ${CMAKE_SOURCE_DIR}/../examples/hola CACHE STRING "Game folders baked into the flash (a ;-list)")
+# The console's menu is a pinyol game too (cirera/: the logo's intro, the covers): always in the flash, unless
+# -DFLASH_MENU=OFF (the list drawn in C, launcher.c, is then the menu; it is also the fallback if this one fails).
+option(FLASH_MENU "The menu game, cirera/, in the flash" ON)
+if(FLASH_MENU)
+  list(APPEND FLASH_GAME ${CMAKE_SOURCE_DIR}/cirera)
+endif()
 set(GAME_IMG ${CMAKE_BINARY_DIR}/game_image)
 set(FLASH_IDS "")
 file(REMOVE_RECURSE ${GAME_IMG})

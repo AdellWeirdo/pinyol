@@ -51,6 +51,7 @@ static void logo(uint16_t *px, const uint8_t *src, int w, int h, int x, int y) {
 
 static font bold, regular;
 static int last; /* the row chosen last time: back from a game, its own row is the one marked */
+static char menu_dir[96]; /* the console's menu, a pinyol game (CONSOLE_MENU_ID): not in the list, run before it */
 
 static uint16_t avg4(uint16_t a, uint16_t b, uint16_t c, uint16_t d) { /* RGB565, channel by channel */
     int r = (a >> 11) + (b >> 11) + (c >> 11) + (d >> 11);
@@ -81,6 +82,10 @@ static void add_games(const char *root, bool flash, launcher_game *g, int *n, in
     if (!d) return;
     for (struct dirent *e; *n < max && (e = readdir(d));) {
         bool dup = e->d_name[0] == '.';
+        if (!strcmp(e->d_name, CONSOLE_MENU_ID)) { /* the menu: the card's copy first, as for any game */
+            if (!menu_dir[0]) snprintf(menu_dir, sizeof menu_dir, "%s/games/%s", root, e->d_name);
+            continue;
+        }
         for (int i = 0; i < *n && !dup; i++) dup = !strcmp(g[i].id, e->d_name); /* the card's copy has the music */
         if (dup) continue;
         launcher_game *x = &g[*n];
@@ -109,6 +114,7 @@ int launcher_scan(launcher_game *g, int max) {
         free(g[i].thumb);
         g[i].thumb = NULL;
     }
+    menu_dir[0] = 0; /* the menu found again too: one sent over the cable to the card replaces the flash's */
     add_games("/sdcard", false, g, &n, max);
     add_games("/flash", true, g, &n, max);
     char path[160];
@@ -218,7 +224,10 @@ void launcher_message(uint16_t *frame, const char *text, int percent) {
     display_submit(frame);
 }
 
-void launcher_splash(uint16_t *frame) {
+void launcher_splash(uint16_t *frame, bool with_logo) {
     for (int i = 0; i < SCREEN_W * SCREEN_H; i++) frame[i] = L_BG;
-    logo(frame, logo_big_start, LOGO_B_W, LOGO_B_H, (SCREEN_W - LOGO_B_W) / 2, (SCREEN_H - LOGO_B_H) / 2 - 8);
+    if (with_logo)
+        logo(frame, logo_big_start, LOGO_B_W, LOGO_B_H, (SCREEN_W - LOGO_B_W) / 2, (SCREEN_H - LOGO_B_H) / 2 - 8);
 }
+
+const char *launcher_menu_dir(void) { return menu_dir[0] ? menu_dir : NULL; }

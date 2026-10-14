@@ -1050,6 +1050,7 @@ static void api(lua_State *L) {
     physics_register(L); /* bodies that turn, for lib/physics.lua: lua_physics.c */
     clip_register(L); /* video on canvases: lua_clip.c */
     device_register(L); /* the LED and the battery: lua_device.c */
+    console_register(L); /* the console's games, for its menu: lua_console.c */
     grid_register(L);   /* a game's thinking on a grid: lua_grid.c */
     ray_register(L);    /* first person: lua_ray.c */
     static const struct { const char *n; int v; } K[] = {

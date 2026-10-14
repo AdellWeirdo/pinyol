@@ -1,0 +1,7 @@
+{
+  "id": "cirera",
+  "title": "Cirera",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "description": "La lista de juegos de la consola Cirera, hecha con pinyol: la intro con el logo y los juegos como portadas."
+}

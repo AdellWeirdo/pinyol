@@ -542,6 +542,10 @@ that the cat's console is running out, a story that knows the player is charging
 | `led(0xRRGGBB)` | the console's pilot LED in that colour. It has red and green only: red, green, yellow, orange (no blue). In a browser, a light in the corner of the screen |
 | `led()` | the LED back to the console's own (charging, battery); it is also given back when the game ends. A battery about to die blinks it red whatever the game asked |
 | `battery()` | `level, charging`: 0 (empty) to 1 (full) and whether it is charging; `nil` where it cannot be told (a desktop with no battery, browsers without the Battery API). On the console the level is a guess from the voltage, and says little while the cable is in |
+| `console_games()` | `list, last, cold`: the console's games, each `{id, title, subtitle, flash, music}`; the index of the one played last (`nil`: none); `true` the first time since the console woke. The console's menu is a pinyol game itself (`firmware/cirera`): these are for it. On a desktop, the game folders in `$PINYOL_GAMES` |
+| `console_cover(id, canvas)` | the game's cover (its `cover.rgb565`, 240x160; an adventure's title picture otherwise) on that canvas, and its average colour; `nil` if it has none |
+| `console_launch(id)` | ends this game and starts that one |
+| `console_off()`, `console_version()` | switches the console off; the firmware's version |
 
 ## Libraries built in
 

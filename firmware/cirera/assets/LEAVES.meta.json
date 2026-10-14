@@ -1,0 +1,35 @@
+{
+  "asset": "LEAVES",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 172,
+  "w": 303,
+  "h": 197,
+  "frames": 6,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "anchor": [
+    151,
+    196
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 16391,
+    "as_rgb565": 716292
+  }
+}

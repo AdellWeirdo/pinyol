@@ -1,0 +1,24 @@
+# Cirera's menu (firmware/cirera): the intro, skipped; the games of $PINYOL_GAMES (the examples) with their covers;
+# moving along the row and back; B asks before switching off, B again says no; A launches the chosen game
+tick 20
+expect_lua state == "intro"
+press A
+tick 2
+expect_lua state == "list" and GAMES[3] ~= nil
+shot lista
+press RIGHT
+tick 30
+expect_lua sel == 2
+press LEFT
+press LEFT
+tick 10
+expect_lua sel == 1
+press B
+tick 2
+shot apagar
+press B
+tick 2
+press A
+tick 12
+expect_lua state == "launch"
+expect_ok

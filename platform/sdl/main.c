@@ -416,3 +416,22 @@ int main(int argc, char **argv) {
 
 bool hal_can_switch_game(void) { return false; }
 void hal_switch_game(void) {}
+
+/* The console's games, for its menu (src/lua_console.c): here the folders in $PINYOL_GAMES; a launch ends the run. */
+static int last_game = -1;
+int hal_games(hal_game *g, int max, int *last, bool *cold) {
+    static bool woke = true;
+    *last = last_game, *cold = woke;
+    woke = false;
+    return console_dir_games(getenv("PINYOL_GAMES"), g, max);
+}
+bool hal_game_cover(const char *id, uint16_t *px, int w, int h) {
+    const char *root = getenv("PINYOL_GAMES");
+    char dir[512];
+    if (!root) return false;
+    snprintf(dir, sizeof dir, "%s/%s", root, id);
+    return console_dir_cover(dir, px, w, h);
+}
+void hal_launch(const char *id) { hal_log("console: launch %s", id); }
+void hal_power_off(void) { hal_log("console: off"); }
+const char *hal_firmware(void) { return "escritorio"; }

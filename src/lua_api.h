@@ -91,6 +91,7 @@ void clip_register(lua_State *L); /* video(): clips on a canvas, lua_clip.c */
 void clip_tick(void);             /* each tick: the clips playing move on */
 void clip_free_all(void);
 void device_register(lua_State *L); /* led(), battery(): lua_device.c */
+void console_register(lua_State *L); /* the console's games, for its menu: lua_console.c */
 void grid_register(lua_State *L);   /* grid(): paths, reach, distances, layers: lua_grid.c */
 void ray_register(lua_State *L);    /* raycast(): a first-person view onto a canvas, lua_ray.c */
 void grid_free(void);               /* (its search's memory, when the game ends) */

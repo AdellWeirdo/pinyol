@@ -1,6 +1,7 @@
 {
   "id": "duelo",
   "title": "Duelo en el puerto",
+  "subtitle": "Neo Geo",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

@@ -1,6 +1,7 @@
 {
   "id": "oxigeno",
   "title": "Oxígeno 48K",
+  "subtitle": "ZX Spectrum · hecho por Codex",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "Codex (OpenAI), de un solo encargo",

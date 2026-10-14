@@ -1,6 +1,7 @@
 {
   "id": "cinta",
   "title": "Cinta",
+  "subtitle": "ZX Spectrum",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",
