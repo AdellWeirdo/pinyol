@@ -1,7 +1,13 @@
 set(EMBED "")
 if(BP_BENCH STREQUAL "play") # the end-to-end tests the play bench runs (main.c, bench_play)
-  set(EMBED EMBED_TXTFILES ${CMAKE_CURRENT_LIST_DIR}/../../../Bajopueblo-ESP/tests/scripts/e2e_full.script
-                           ${CMAKE_CURRENT_LIST_DIR}/../../../Geumgye-ESP/tests/scripts/e2e_lectura.script)
+  set(PLAY_SCRIPTS ${CMAKE_CURRENT_LIST_DIR}/../../../Bajopueblo-ESP/tests/scripts/e2e_full.script
+                   ${CMAKE_CURRENT_LIST_DIR}/../../../Geumgye-ESP/tests/scripts/e2e_lectura.script)
+  foreach(s ${PLAY_SCRIPTS})
+    if(NOT EXISTS ${s})
+      message(FATAL_ERROR "BP_BENCH=play plays Bajo Pueblo's and Geumgye's tests (not part of np2d): ${s} is missing")
+    endif()
+  endforeach()
+  set(EMBED EMBED_TXTFILES ${PLAY_SCRIPTS})
 endif()
 idf_component_register(SRCS main.c display.c sd.c input.c audio_out.c power.c launcher.c ota.c cable.c remote.c bench.c link_radio.c
                        INCLUDE_DIRS .

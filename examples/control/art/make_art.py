@@ -1,4 +1,4 @@
-"""The pictures of examples/control, from the images they were generated as (big, kept in web-retrogo/assets/control):
+"""The pictures of examples/control, from the images they were generated as (big, not kept here):
 the control room, each camera's shot at the two sizes its monitors show it, the CCTV view of the player for the
 end, and the report the VTR plays (a slow pan across the square, made into a clip with tools/clip2npv.py).
 
