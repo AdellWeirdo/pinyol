@@ -169,6 +169,7 @@ def translate(html: str, lang: str) -> str:
     out = re.sub(r"""((?:src|href|manifest|data-play)="|url\(')(""" + "|".join(re.escape(p) for p in LOCAL) + ")",
                  r"\1../\2", out)
     out = out.replace('href="../play/player.html?', f'href="../play/player.html?lang={lang}&amp;')  # the player in lang too
+    out = out.replace('href="../editor/"', f'href="../editor/?lang={lang}"')  # and the editor
     out = re.sub(r'<link rel="canonical" href="([^"]+)">', lambda m: f'<link rel="canonical" href="{m[1]}{page_path(lang)}">', out)
     return re.sub(r'<nav class="langs".*?</nav>', lambda _: switcher(lang), out, count=1, flags=re.S)
 

@@ -86,9 +86,14 @@ soroll) i Vídeo (un vídeo portat d'un fitxer o un GIF, a pantalla completa o e
 ser també un `.mod` de tracker. La portada és a més la imatge del joc al menú de la consola, amb una línia, qui l'ha
 fet i de què va. **Jugar** el juga allà mateix; **Pasar a la consola** l'envia pel cable USB (Chrome i Edge, amb Web Serial) o dona el zip per a la targeta.
 Una guia curta acompanya qui l'obre per primer cop (un altre cop amb **?**); tot funciona també amb el teclat, i en un
-mòbil o una tauleta. **Nuevo** comença des d'un de quatre jocs petits per canviar, cadascun amb els seus dibuixos,
-nivells i regles: un joc de plataformes, una aventura vista des de dalt (claus i portes), un matamarcians i un
-trencaclosques d'empènyer caixes. La interfície és en castellà. Necessita al costat el reproductor web (mira
+mòbil o una tauleta. Un joc té un **aspecte** (Game Boy,
+PICO-8, ZX Spectrum, 16 bits o lliure): els colors de la seva consola per a tots els dibuixos, les seves rajoles (de 8 o
+16 píxels), la seva lletra i els colors dels seus textos; i un idioma per a les frases que diu el motor. Els objectes
+poden tenir animacions amb nom (quiet, caminar, cop), i els blocs de Vidas y tiempo posen cors i un compte enrere a la
+pantalla. **Nuevo** comença des d'un de cinc jocs per canviar, cadascun amb els seus dibuixos, nivells i regles: un joc
+de plataformes, una aventura vista des de dalt (claus i portes), un matamarcians, un trencaclosques d'empènyer caixes i
+**Abella**, un joc de Game Boy sencer en tres nivells (fet en directe a l'editor, i el primer de la Biblioteca del
+web). La interfície és en castellà, català i anglès. Necessita al costat el reproductor web (mira
 [més avall](#comparteix-un-joc-juga-hi-al-navegador) com compilar-lo):
 
 ```sh

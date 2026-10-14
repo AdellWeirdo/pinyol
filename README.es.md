@@ -85,9 +85,14 @@ soplas, cuánto ruido) y Vídeo (un vídeo traído de un archivo o un GIF, a pan
 puede ser también un `.mod` de tracker. La portada es además la imagen del juego en el menú de la consola, con una
 línea, quién lo ha hecho y de qué va. **Jugar** lo juega ahí mismo; **Pasar a la consola** lo manda por el cable USB (Chrome y Edge, con Web Serial) o da el
 zip para la tarjeta. Una guía corta acompaña a quien lo abre por primera vez (otra vez con **?**); todo funciona también
-con el teclado, y en un móvil o una tableta. **Nuevo** empieza desde uno de cuatro juegos pequeños para cambiar, cada
-uno con sus dibujos, niveles y reglas: un plataformas, una aventura vista desde arriba (llaves y puertas), un
-matamarcianos y un puzle de empujar cajas. La interfaz está en castellano. Necesita al lado el reproductor web (mira
+con el teclado, y en un móvil o una tableta. Un juego tiene un
+**aspecto** (Game Boy, PICO-8, ZX Spectrum, 16 bits o libre): los colores de su consola para todos los dibujos, sus
+baldosas (de 8 o 16 píxeles), su letra y los colores de sus textos; y un idioma para las frases que dice el motor. Los
+objetos pueden tener animaciones con nombre (quieto, andar, golpe), y los bloques de Vidas y tiempo ponen corazones y
+una cuenta atrás en la pantalla. **Nuevo** empieza desde uno de cinco juegos para cambiar, cada uno con sus dibujos,
+niveles y reglas: un plataformas, una aventura vista desde arriba (llaves y puertas), un matamarcianos, un puzle de
+empujar cajas y **Abella**, un juego de Game Boy entero en tres niveles (hecho en directo en el editor, y el primero de
+la Biblioteca de la web). La interfaz está en castellano, catalán e inglés. Necesita al lado el reproductor web (mira
 [más abajo](#comparte-un-juego-juégalo-en-el-navegador) cómo compilarlo):
 
 ```sh
