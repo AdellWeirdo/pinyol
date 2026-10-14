@@ -295,19 +295,22 @@ static void tearing_signal(void) {
 
 static void sd_speed(void) {
     if (!storage_mount()) { LOG("SD: not mounted"); return; }
-    char best[300] = "";
+    char best[600] = "";
     long best_size = 0;
-    const char *dirs[] = {"/sdcard/games/bajopueblo/audio", "/sdcard/games/geumgye/audio"};
-    for (size_t d = 0; d < 2; d++) {
-        DIR *dir = opendir(dirs[d]);
+    DIR *games = opendir("/sdcard/games"); /* the biggest audio file of any game */
+    for (struct dirent *g; games && (g = readdir(games));) {
+        char audio[300];
+        snprintf(audio, sizeof audio, "/sdcard/games/%s/audio", g->d_name);
+        DIR *dir = opendir(audio);
         for (struct dirent *e; dir && (e = readdir(dir));) {
-            char path[300];
+            char path[600];
             struct stat st;
-            snprintf(path, sizeof path, "%s/%s", dirs[d], e->d_name);
+            snprintf(path, sizeof path, "%s/%s", audio, e->d_name);
             if (!stat(path, &st) && st.st_size > best_size) best_size = st.st_size, snprintf(best, sizeof best, "%s", path);
         }
         if (dir) closedir(dir);
     }
+    if (games) closedir(games);
     if (!best_size) { LOG("SD: no large file to read"); return; }
     uint8_t *buf = ialloc(64 * 1024);
     if (!buf) return;
@@ -485,6 +488,10 @@ void bench_run(void) {
 #include "bp.h"
 
 #define V1_SAVES "/sdcard/np2d_bench_saves" /* never the game's own saves/ */
+/* What to measure is on the card, not in the firmware: each /sdcard/np2d_bench/<game id>.v1 measures every zone of
+ * /sdcard/games/<game id>, then the screens on each of its lines, "<zone> <screen> <screen>...": play, inv,
+ * dlg:<dialogue>, inv+dlg:<dialogue>, ill:<illustration>, inv+ill:<illustration>, puz:<puzzle>. */
+#define BENCH_DIR "/sdcard/np2d_bench"
 
 static float best_ms(void (*fn)(void *), void *arg) {
     uint32_t best = UINT32_MAX;
@@ -606,7 +613,8 @@ static void profile_screens(const char *dir, const char *zone, const char *const
                 cJSON_ArrayForEach(it, G.items) flagf_set(1, "item:%s%s", it->string, "");
                 layer_push(L_INV);
             }
-            dlg_say("KLAUS", "La fuente sigue ahí. Pero hay una calle detrás que no reconozco.", strchr(m, ':') + 1);
+            dlg_say(G.pl.speaker, "Una línea de prueba, tan larga como las de un juego, sobre su ilustración.",
+                    strchr(m, ':') + 1);
         } else if (!strcmp(m, "inv")) {
             cJSON_ArrayForEach(it, G.items) flagf_set(1, "item:%s%s", it->string, "");
             layer_push(L_INV);
@@ -627,14 +635,28 @@ void bench_v1_run(void) {
     if (!storage_mount()) { LOG("v1: no card"); return; }
     LOG("v1 start | free internal %u KB, PSRAM %u KB", (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
         (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
-    static const char *const bp[] = {"play", "dlg:D_ALCALDESA", "inv", "puz:P01", "puz:P03"};
-    static const char *const gg[] = {"play", "dlg:D_M01.noticia", "inv", "puz:P01", "puz:T02"};
-    static const char *const bp4[] = {"play", "dlg:D_PANADERA", "inv+dlg:D_PANADERA", "ill:ILL_PHOTO",
-                                      "inv+ill:ILL_PHOTO"};
-    profile_game("/sdcard/games/bajopueblo");
-    profile_game("/sdcard/games/geumgye");
-    profile_screens("/sdcard/games/bajopueblo", "Z04", bp4, 5);
-    profile_screens("/sdcard/games/bajopueblo", "Z01", bp, 5);
-    profile_screens("/sdcard/games/geumgye", "M01", gg, 5);
+    static char ids[8][256];
+    int n = 0;
+    DIR *d = opendir(BENCH_DIR);
+    for (struct dirent *e; d && n < 8 && (e = readdir(d));) {
+        size_t len = strlen(e->d_name);
+        if (len > 3 && !strcmp(e->d_name + len - 3, ".v1")) snprintf(ids[n++], sizeof ids[0], "%.*s", (int)(len - 3), e->d_name);
+    }
+    if (d) closedir(d);
+    if (!n) LOG("v1: no " BENCH_DIR "/<game id>.v1");
+    for (int i = 0; i < n; i++) {
+        char game[300], list[300];
+        snprintf(game, sizeof game, "/sdcard/games/%s", ids[i]);
+        snprintf(list, sizeof list, BENCH_DIR "/%s.v1", ids[i]);
+        profile_game(game);
+        FILE *f = fopen(list, "r");
+        for (char line[256]; f && fgets(line, sizeof line, f);) { /* "<zone> <screen> <screen>...", # a comment */
+            const char *w[9];
+            int k = 0;
+            for (char *t = strtok(line, " \t\r\n"); t && k < 9; t = strtok(NULL, " \t\r\n")) w[k++] = t;
+            if (k >= 2 && w[0][0] != '#') profile_screens(game, w[0], w + 1, k - 1);
+        }
+        if (f) fclose(f);
+    }
     LOG("v1 done");
 }

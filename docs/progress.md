@@ -7,7 +7,7 @@ What was done, measured and left, step by step. Newest at the bottom. The plan i
 
 Measured on the board, CPU per frame for the world plus all 15 panel strips (the DMA of the strips overlaps it):
 
-| Screen | Bajo Pueblo | Geumgye |
+| Screen | Adventure A | Adventure B |
 |---|---|---|
 | Walking | 5.3 ms | 6.4 ms |
 | Dialogue | 8.2-8.8 ms | 8.6 ms |
@@ -17,10 +17,10 @@ Measured on the board, CPU per frame for the world plus all 15 panel strips (the
 
 What it took, all pixel-identical (48 scripts, CRC per frame, strips checked against whole frames):
 
-- Cut-corner cards (Geumgye's theme) drawn column by column, each pixel once: shadow only where it shows, ink on
+- Cut-corner cards (adventure B's theme) drawn column by column, each pixel once: shadow only where it shows, ink on
   the border, paper inside, and only the columns inside the window. Before: three full-area passes, and the corner
   rows became one-pixel runs on a turned strip.
-- Masked blits copy or skip 8 pixels per mask byte on plain buffers: Bajo Pueblo's world went from ~4.5 to ~2 ms.
+- Masked blits copy or skip 8 pixels per mask byte on plain buffers: adventure A's world went from ~4.5 to ~2 ms.
 - gfx_blit2x on windows walks columns with a stepping pointer.
 - Dialogue choices count their wrapped lines once (cached until the choices or the font change): a 4-choice menu
   wrapped text ~20 times per strip, 300 times a frame.
@@ -35,7 +35,7 @@ The zone is drawn before waiting (`game_draw_world`), so only the fast strip com
 the pulse came less than 3 ms ago the frame goes straight out instead of waiting a whole refresh.
 
 Real play: steady 60-61 fps (the panel refreshes at 61.5 Hz), about 5 ms a frame left waiting for the scan. Still
-slower: Bajo Pueblo's bag (about 15 ms of drawing) and an item's close-up over the bag (about 35 ms a frame).
+slower: adventure A's bag (about 15 ms of drawing) and an item's close-up over the bag (about 35 ms a frame).
 
 **Board note (night of 2026-10-12):** after many flash/reset cycles the board's USB stopped answering (esptool: "No
 serial data received"); it needs the cable unplugged and plugged back in. Until then the console runs the play bench
@@ -52,7 +52,7 @@ serial data received"); it needs the cable unplugged and plugged back in. Until 
   240×160, scaled 2× into the panel strips with text and panels drawn on top at 480×320.
 - **np2d@2, games in Lua** (e68b9b2): Lua 5.4 with 32-bit numbers on every platform, in a sandbox (memory quota,
   instruction budget per call, no io/os/debug, source-only `load`, `require` inside the game folder). The API is in
-  [lua.md](lua.md). v1 games (Bajo Pueblo, Geumgye) run as before, unchanged to the pixel.
+  [lua.md](lua.md). v1 games (the data adventures) run as before, unchanged to the pixel.
 - **Three genres as examples** (48f0194, a8cff5a): `plataformas` (platformer: parallax, see-through water with a wavy
   line scroll, mosaic transitions), `naves` (shoot-'em-up: per-line star parallax, a turning affine planet,
   blended explosions, a bomb flash), `carreras` (Mode 7 kart race: perspective floor, rivals as scaled sprites
@@ -79,8 +79,8 @@ serial data received"); it needs the cable unplugged and plugged back in. Until 
 - **Share and play in the browser:** `tools/pack_game.py` makes `<id>.zip`; `player.html` plays any game zip from a
   URL or dropped on the page, with on-screen buttons on phones and saves in the browser.
 - **Checks on the console:** all five Lua examples pass their tests on the board at 60 fps in play (plataformas'
-  end screen with a full-screen fade: 51-54 fps). Bajo Pueblo and Geumgye's play bench after the IRAM and cache
-  changes: no regression (55-61 fps in play, Geumgye a steady 60-61; Bajo Pueblo's bag with a dialogue over it is
+  end screen with a full-screen fade: 51-54 fps). The two adventures' play bench after the IRAM and cache
+  changes: no regression (55-61 fps in play, adventure B a steady 60-61; adventure A's bag with a dialogue over it is
   still ~32 ms a frame, as before).
 
 ## 2026-10-12 · A fifth genre, safety, and the slow screens again
@@ -98,8 +98,8 @@ serial data received"); it needs the cable unplugged and plugged back in. Until 
   in the web player, names that could reach outside the game folder. Known limit: a game can still stall itself
   inside one C call (a pathological Lua string pattern); on the console the watchdog restarts it.
 - **The web:** `tools/make_gallery.py` builds a shelf of games (each playable and downloadable) for the site.
-- **Bajo Pueblo and Geumgye's bag:** what lies under the bag and the notebook is drawn only where it shows. Per
-  screen on the console: Bajo Pueblo's bag 14.7 → 10.4 ms, bag with a dialogue 20.2 → 14.2 ms, Geumgye's bag
+- **The adventures' bag:** what lies under the bag and the notebook is drawn only where it shows. Per
+  screen on the console: adventure A's bag 14.7 → 10.4 ms, bag with a dialogue 20.2 → 14.2 ms, adventure B's bag
   13.9 → 9.9 ms. Then occlusion for the whole stack and a faster 2× blit: an item's close-up 14.8 → 11.6 ms (60 fps),
   over the bag 27.2 → 18.5 ms (still ~30 fps there).
 

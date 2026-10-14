@@ -1,6 +1,6 @@
 /* Rhythm puzzles (C2 dossier p.21, the bell): repeat a pattern heard before. Three slots, each a short
  * or long pulse, confirmed explicitly; the comparison is symbolic, never timing or volume. With
- * "symbols" (Geumgye P01: body, memory, will) each slot cycles through those instead, drawn with
+ * "symbols" (say body, memory, will) each slot cycles through those instead, drawn with
  * "icons" when given; "buttons" relabels the three buttons. Buttons:
  * left/right choose, A changes the slot or presses the focused button, C hears the clue again, B leaves.
  * After "assist_after" tries a button fills in the rhythm heard. No penalty, ever; the rhythm is also
@@ -49,7 +49,7 @@ static int btn_x(int i) {
 }
 static int btn_w(void) { return assisted() ? 136 : 150; }
 
-/* B leaves keeping what was placed (Geumgye §05); "tries_flag" keeps the tries in a flag, so the help
+/* B leaves keeping what was placed; "tries_flag" keeps the tries in a flag, so the help
  * that comes after "assist_after" survives leaving and saves (§27). */
 void pattern_open(cJSON *def) {
     int kept[SLOTS] = {0};
@@ -71,7 +71,7 @@ static int wanted(int i) {
     return w && w[0] == 'l' ? LONG : SHORT;
 }
 
-/* Geumgye P01 (§08): "hint_after" tries in, the first slot is marked and stays marked ("hint_flag", kept
+/* "hint_after" tries in, the first slot is marked and stays marked ("hint_flag", kept
  * like the tries); "clear_on_wrong" empties the slots after a wrong order, with "sfx_wrong". */
 static void keep_hint(void) {
     const char *hf = jstr(B.def, "hint_flag");

@@ -79,15 +79,16 @@ reached 46-60 fps, because one core writing that frame and the other reading it 
 Now there is no 480×320 frame on the console. Each 32-row panel strip (32 frame columns) is drawn straight from the
 game into internal RAM, already turned and byte-swapped (`gfx_turned`), while the previous strip goes out by DMA; the
 zone is drawn into `G.world` once a frame. Every pixel is the same as drawing the whole frame: all 48 test scripts of
-Bajo Pueblo and Geumgye give the same CRC as the previous engine on all 72,600 frames, and with `--check-strips` every
+two np2d@1 adventures (A and B, games of their own) give the same CRC as the previous engine on all 72,600 frames, and with `--check-strips` every
 frame is also drawn as strips (both orientations, both byte orders) and compared.
 
-Real play on the board, end-to-end tests, frames drawn as fast as they come (`-DBP_BENCH=play`):
+Real play on the board, end-to-end tests, frames drawn as fast as they come (`-DBP_BENCH=play`; each test is on the card,
+`/sdcard/np2d_bench/<game id>.script`, played on `/sdcard/games/<game id>`):
 
 | | Drawing every tick, v1 | Strips |
 |---|---|---|
-| Bajo Pueblo, 5 s windows | 25-60 fps | 43-73 fps (the low ones: bag and dialogue screens) |
-| Geumgye, 5 s windows | 46-56 fps | 57-74 fps |
+| Adventure A, 5 s windows | 25-60 fps | 43-73 fps (the low ones: bag and dialogue screens) |
+| Adventure B, 5 s windows | 46-56 fps | 57-74 fps |
 | The bag open | 31 ms a frame | 20 ms |
 | Bag and dialogue | 48 ms | 45 ms |
 
@@ -95,7 +96,7 @@ What made the strips fast enough, measured per frame: the 2× upscale written as
 (8.9 → 2.0 ms), fills and shades the same way (a shade on swapped bytes is a mask and a one-bit rotation), cut-corner
 panels filled as one rectangle between the corners, and the current objective looked up once a frame instead of once
 per strip. Still over 16.7 ms: dialogue, bag and puzzle screens (about 20 ms); the zone itself takes up to 4.5 ms in
-Bajo Pueblo.
+adventure A.
 
 ## Lua games on the PPU (2026-10-12)
 
@@ -126,21 +127,22 @@ What it took, in order of what it gave:
 5. Affine layers that do not wrap only walk the span of each line inside the map; mosaic samples once per block;
    fades through per-channel tables; lines with nothing for the blend to touch are copied straight out.
 
-All of it pixel-identical: the 48 Bajo Pueblo and Geumgye scripts and the four Lua scripts give the same CRC on every
+All of it pixel-identical: the 48 scripts of adventures A and B and the four Lua scripts give the same CRC on every
 frame, and `tests/ppu_test.c` checks the shortcuts against the plain path and the clipped affine path against the
 formula on 200 random matrices.
 
 ## The bag screens (2026-10-12)
 
-Bajo Pueblo and Geumgye's bag and notebook are opaque panels over 87% of the screen. Drawing the zone (scaled 2×),
+The adventures' bag and notebook are opaque panels over 87% of the screen. Drawing the zone (scaled 2×),
 the layers below and the shade only in the four bands around the panel's middle (`game_draw`, `gfx_clip`), per
-screen with the strips (`-DBP_BENCH=v1`):
+screen with the strips (`-DBP_BENCH=v1`; the screens are listed on the card, `/sdcard/np2d_bench/<game id>.v1`,
+format in `firmware/main/bench.c`):
 
 | Screen | Before | After |
 |---|---|---|
-| Bajo Pueblo, the bag | 14.7 ms | 10.4 ms |
-| Bajo Pueblo, the bag with a dialogue | 20.2 ms | 14.2 ms |
-| Geumgye, the bag | 13.9 ms | 9.9 ms |
+| Adventure A, the bag | 14.7 ms | 10.4 ms |
+| Adventure A, the bag with a dialogue | 20.2 ms | 14.2 ms |
+| Adventure B, the bag | 13.9 ms | 9.9 ms |
 
 Then the same for the whole layer stack (each layer says which opaque panels it leaves; the zone and the shades are
 drawn only where they show, the panel layers whole) and a 2× blit that writes whole blocks on the strips:

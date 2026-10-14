@@ -1,13 +1,14 @@
-/* Side-view boss arena (Geumgye dossier v1.1 §10-§12): one mecha against one boss with a fixed pattern
+/* Side-view boss arena: one mecha against one boss with a fixed pattern
  * sequence. Move, attack, guard, perfect guard, dodge with invulnerability, resonance, a second phase,
  * exposure, guided breathing and the Canto; defeat offers retry, leave or help. An arena with "goals"
- * (S08 cockpit simulation) ends when the player has blocked, hit, dodged and breathed instead: the
+ * (a cockpit simulation) ends when the player has blocked, hit, dodged and breathed instead: the
  * target is exposed once the others are done, and breathing finishes it. Every number lives in
- * arena.json (defaults below are the dossier's); times are 60 Hz ticks and distances are world pixels
+ * arena.json (defaults below); times are 60 Hz ticks and distances are world pixels
  * between body centres. Bodies never overlap, so the player always stays left of the boss and nobody
- * has to turn round. A boss with "repair" (Geumgye chapter 3, the Blind Regulator) is a fixed machine: its
+ * has to turn round. A boss with "repair" is a fixed machine: its
  * protection drops only from blows while its "vulnerable" pattern recovers (one blow a window), then it keeps
- * attacking while Pau repairs it over "cycles" passes of its phase 2 sequence, and ends stable, never beaten. */
+ * attacking while the player repairs it over "cycles" passes of its phase 2 sequence, and ends stable, never beaten. */
+#include <ctype.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +16,7 @@
 #include "bp.h"
 #include "gfx_px.h"
 
-/* Bulgasari's patterns, then the Custodian's (Geumgye chapter 2 §06): a raised plate that stops frontal blows, a
+/* The boss's patterns: charge, bite and slam; a raised plate that stops frontal blows, a
  * guardable sweep, a containment pulse on the player's floor sector and three marks swept left to right. */
 enum { PAT_CHARGE, PAT_BITE, PAT_SLAM, PAT_SHIELD, PAT_SWEEP, PAT_PULSE, PAT_MARKS, NPAT };
 enum { G_GUARD, G_HIT, G_DODGE, G_BREATH, NGOALS };
@@ -405,7 +406,7 @@ static void boss_tick(void) {
         if (A.phase2_due) { /* once: a short shake without damage, then the phase 2 sequence */
             A.phase2_due = false, A.phase = 2, A.seq_i = 0;
             const cJSON *in = jget(jget(A.def, "boss"), "interlude");
-            if (in) { /* the Custodian kneels, out of reach, while Pau cuts its power; pulses leave a safe zone */
+            if (in) { /* the boss kneels, out of reach, while the player cuts its power; pulses leave a safe zone */
                 bark(NPAT + 1, "interlude");
                 sfx("interlude");
                 A.inter_t = 0;
@@ -534,7 +535,7 @@ void arena_start(const char *id) {
     }
 }
 
-/* S09: before the fight Bulgasari retches up an old weapon; it arcs out and stays on the ground. */
+/* Before the fight the boss spits out an old weapon; it arcs out and stays on the ground. */
 static bool spitting(void) { return A.spit_t > 0 && A.spit_t < SPIT_T; }
 
 static void spit_tick(void) {
@@ -542,7 +543,7 @@ static void spit_tick(void) {
     if (A.spit_t == SPIT_T) dlg_open(jstr(A.def, "intro"));
 }
 
-/* After the chapter, the fight can be replayed (Geumgye §27): the state is the finished game's, a win hands
+/* After the chapter, the fight can be replayed: the state is the finished game's, a win hands
  * nothing again and nothing is saved inside the arena, so a power cut lands on the completed chapter. */
 void arena_practice(bool on) { A.practice = on; }
 
@@ -658,7 +659,7 @@ static void sprite(surface *s, const char *id, int frame, float x) {
     gfx_blit_ex(s, h, frame, (int)floorf(sx_(x) - h->ax * k), (int)floorf(sy_((float)K.floor_y) - h->ay * k), k, k, 0, NULL, -1);
 }
 
-/* Frames by state (Geumgye §22). An action's frames are split over its phases by arena.json "frames": how many
+/* Frames by state. An action's frames are split over its phases by arena.json "frames": how many
  * go to each phase (a punch [2, 2, 1]: wind-up, active, recovery), and inside a phase they follow its progress.
  * Without "frames" each phase shows one frame, as before; a count of 0 shows the idle pose instead. */
 static int phased(const cJSON *spec, const int *def, int phase, int t, int len) {
@@ -915,7 +916,7 @@ static void bands(surface *s, int x0, int t) { /* two bands of pixel light cross
     }
 }
 
-static void falling_iron(surface *s, int bx, int t) { /* Bulgasari lets go of the metal it swallowed */
+static void falling_iron(surface *s, int bx, int t) { /* the boss lets go of the metal it swallowed */
     for (int k = 0; k < 6; k++) {
         int t0 = 4 + k * 6, x = bx - 22 + k * 9, y = K.floor_y - 14 - (k * 7) % 12;
         if (t < t0) continue;
@@ -999,7 +1000,10 @@ static void repair_hud(surface *s) {
 }
 
 static void draw_hud(surface *s) {
-    label(s, 12, 6, "GEUMGYE");
+    char title[48]; /* the game's, in capitals */
+    snprintf(title, sizeof title, "%s", jstr(G.game, "title") ? jstr(G.game, "title") : "");
+    for (char *c = title; *c; c++) *c = (char)toupper((unsigned char)*c);
+    label(s, 12, 6, title);
     bar(s, 12, 32, 144, A.hp, K.hp, C_OCHRE);
     if (!K.repair) bar(s, 12, 46, 144, A.res, 100, C_BLUEGRAY);
     const char *boss = jstr(A.def, "boss_name") ? jstr(A.def, "boss_name") : "";

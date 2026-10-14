@@ -234,7 +234,7 @@ void listen_render(surface *s) {
         gfx_panel(s, 8, y, SCREEN_W - 16, h);
         /* what kind of sound it is (C2): real and located, an echo, or something familiar; label, never colour alone */
         const char *kind = jstr(Li->def, "kind") ? jstr(Li->def, "kind") : "";
-        const char *lbl = jstr(Li->def, "label") ? jstr(Li->def, "label") /* a game's own reading (Geumgye: the receiver) */
+        const char *lbl = jstr(Li->def, "label") ? jstr(Li->def, "label") /* a game's own reading (say, the receiver) */
                         : !strcmp(kind, "eco") ? "Eco" : !strcmp(kind, "familiar") ? "Familiar ?" : !strcmp(kind, "fisico") ? "Sonido real" : "Sonido";
         uint16_t pc = !strcmp(kind, "eco") ? C_TERRA : !strcmp(kind, "familiar") ? C_BROWN : C_BLUEGRAY;
         int level = jint(Li->def, "level", 0), bars = level ? 3 * 10 + 6 : 0; /* signal strength 1-3, by size too */

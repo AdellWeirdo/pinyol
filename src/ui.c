@@ -76,7 +76,7 @@ static void menu_add(menu *m, int id, const char *label, bool on) {
 
 enum { M_CONTINUE, M_NEW, M_LARGE, M_PORTRAITS, M_BAG, M_NOTES, M_SAVE, M_TITLE, M_ASSIST, M_VOLUME, M_TONES, M_GAMES };
 
-/* game.json "title_layout": {"logo": [cx, y], "menu": [x, y], "sub": [cx, y]}; defaults are Bajo Pueblo's. */
+/* game.json "title_layout": {"logo": [cx, y], "menu": [x, y], "sub": [cx, y]}, with defaults. */
 static int title_pos(const char *key, int i, int dflt) { return jai(jget(jget(G.game, "title_layout"), key), i, dflt); }
 
 static int menu_tick(menu *m, int *sel) {
@@ -166,7 +166,8 @@ void title_render(surface *s) {
         gfx_blit(s, logo, 0, title_pos("logo", 0, 132) - logo->w / 2, title_pos("logo", 1, 6), 0, false);
     } else {
         gfx_panel(s, 24, 60, 220, 90);
-        text_center(s, &G.bold_l, 134, 90, jstr(G.game, "title") ? jstr(G.game, "title") : "Bajo Pueblo", C_INK);
+        const char *t = jstr(G.game, "title") ? jstr(G.game, "title") : jstr(G.game, "id");
+        text_center(s, &G.bold_l, 134, 90, t ? t : "", C_INK);
     }
     const char *sub = jstr(G.game, "subtitle") ? jstr(G.game, "subtitle") : "";
     int sw = font_width(ui_bold(), sub, -1) + 24, sx = title_pos("sub", 0, 132) - sw / 2;

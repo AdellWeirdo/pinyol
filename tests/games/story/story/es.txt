@@ -1,4 +1,4 @@
-// Bajopueblo, una escena de prueba (tests/story.script)
+// Una escena de prueba (tests/story.script)
 [var confianza = 0]
 [var nombre = "Klaus"]
 [var llave = false]

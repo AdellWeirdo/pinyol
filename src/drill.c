@@ -1,4 +1,4 @@
-/* Timed exercises (Geumgye dossier v1.1: S02 training, S07 repair, P02 door echo). A puzzle of
+/* Timed exercises (a training, a repair, an echo at a door). A puzzle of
  * "type": "drill" is a list of steps played one at a time over the zone, with no damage and no overall
  * time limit:
  *   "press":  A inside a window that opens after a lead-in.
@@ -9,7 +9,7 @@
  * after "guided_after" a rhythm only asks for a press with each shown pulse and a press waits for A with its
  * window open, never expiring. C replays a rhythm's demonstration, or restarts a press with the "help" text;
  * B leaves (not with "stay": a scene with nowhere to go back to). "step_flag" keeps the steps already done (value = steps done), so leaving or a power cut resumes
- * there. "indicators" (Geumgye chapter 3, P32: current and edge) are two labelled lamps stacked over the zone that each
+ * there. "indicators" (say, current and edge) are two labelled lamps stacked over the zone that each
  * step turns on at its "ready" ticks; the window opens with the last. Timing is ticks of simulation, never the
  * sound, so it plays muted too. */
 #include <stdlib.h>

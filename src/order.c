@@ -1,4 +1,4 @@
-/* Ordering puzzles (Geumgye chapter 2, P22 «ordenar la señal»): message cards, each with a visible mark (01, 02,
+/* Ordering puzzles: message cards, each with a visible mark (01, 02,
  * 03...), in slots that must end up in the cards' listed order. A takes a card and A on another slot swaps them
  * (A on the same slot puts it back); B lets go of a taken card, or leaves keeping the order. «Confirmar» checks
  * it: a wrong order keeps every card where it is and frames the ones out of place. After "assist_after" wrong

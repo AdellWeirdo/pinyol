@@ -5,7 +5,7 @@ A small C engine for 2D games on the **RetroGo** console, an open-source handhel
 A game is **a folder**: copy it to the console's microSD under `games/<id>/` and it appears in the game list. The same folder runs in a desktop simulator and in the browser. There are two kinds:
 
 - **Lua games** (`"engine": "np2d@2"`), any genre. The engine gives them a virtual console modelled on the Game Boy Advance: four background layers (tiles, rotated and scaled, Mode 7), 128 sprites, palettes, transparency, windows, mosaic and per-line effects, with text drawn on top at full resolution. They hold 60 fps on the console. Beyond the screen and the buttons: the microphone (level, pitch, claps, recordings), stories written as plain text, a song's clock for rhythm games, bodies that tip over, roll and float, video clips on canvases, the console's LED and battery, and consoles playing together. The API: [docs/lua.md](docs/lua.md).
-- **Adventures made of data** (`"engine": "np2d@1"`): JSON for zones, dialogues, items, puzzles and events, no code. Bajo Pueblo and Geumgye (two games in their own repositories, not part of np2d) are made this way: [docs/game-format.md](docs/game-format.md).
+- **Adventures made of data** (`"engine": "np2d@1"`): JSON for zones, dialogues, items, puzzles and events, no code. The engine's first games were made this way: [docs/game-format.md](docs/game-format.md).
 
 ![Four Lua games: a platformer, a shoot-'em-up, a Mode 7 kart race and the starting template](docs/examples.png)
 
@@ -108,7 +108,7 @@ uv run tools/new_game.py games/mygame --title "My Game"
 - **Sound**: WAV, PCM 16-bit mono at 22,050 Hz.
 - **Fonts**: `tools/font2fnt.py` turns a TTF, OTF, BDF or PNG sheet into the engine's FNT format; twelve free pixel
   fonts come with it (`third_party/fonts`), so each game can have its own letters.
-- **Tests**: a script plays the game with real input and checks flags, zones and screens. See [tests/hola.script](tests/hola.script); run it with `./build/bp_headless --game DIR --fresh --script FILE`, and `tools/record.sh` records the run as a video.
+- **Tests**: a script plays the game with real input and checks flags, zones and screens. See [tests/hola.script](tests/hola.script); run it with `./build/bp_headless --game DIR --fresh --script FILE`, and `tools/record.sh DIR FILE out.mp4` records the run as a video.
 
 ## A game in its own repo
 
@@ -123,7 +123,7 @@ enable_testing()
 add_test(NAME validate COMMAND bp_headless --game ${GAME_DIR} --validate)
 ```
 
-Bajo Pueblo and Geumgye are built this way.
+The data adventures np2d started with are built this way.
 
 ## Share a game, play it in the browser
 
@@ -194,7 +194,7 @@ The world is 240×160 logical pixels drawn at 2× into a 480×320 frame; text an
 
 ## Status
 
-np2d was written for two games, *Bajo Pueblo* and *Geumgye*, and then opened up with Lua for any genre. What to know:
+np2d was first written for two data adventures, and then opened up with Lua for any genre. What to know:
 
 - The Lua API (`np2d@2`) is new and may still change; the data format (`np2d@1`) is stable.
 - The built-in interface text of data adventures (menus, pause, bag) is in Spanish.

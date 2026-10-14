@@ -123,7 +123,7 @@ void content_free(void) {
     }
 }
 
-/* game.json "theme" (UI colours, corners) and "player": the defaults are Bajo Pueblo's. */
+/* game.json "theme" (UI colours, corners) and "player", with their defaults. */
 static void content_theme(void) {
     ui_theme *t = &G.th;
     const cJSON *th = jget(G.game, "theme");
@@ -187,7 +187,7 @@ bool content_load(void) {
 }
 
 /* A game without items has no bag (MENU pauses instead); one without notebook content has no notebook. */
-bool content_has_bag(void) { /* only once something is in it: a game can start without one (Geumgye) */
+bool content_has_bag(void) { /* only once something is in it: a game can start without one */
     const cJSON *it;
     cJSON_ArrayForEach(it, G.items) if (flagf_get("item:%s%s", it->string, "")) return true;
     return false;

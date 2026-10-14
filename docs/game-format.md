@@ -474,7 +474,7 @@ played (a broken one fails the script).
 - The atlas is always the asset `TS_ATLAS`: 16×16 cells, numbered row by row (columns = atlas width / 16).
   Indexes go up to 254 (255 means empty).
 - An `"atlas"` key appears in the example games; the engine ignores it.
-- A game that only uses painted backgrounds can map every character to `null` (Geumgye does).
+- A game that only uses painted backgrounds can map every character to `null`.
 
 ### Zone files: zones/&lt;ID&gt;.json
 
@@ -852,7 +852,7 @@ validator checks that every message fits the panel (section 16).
 
 | Type | What it is | When `do` runs |
 |---|---|---|
-| absent | Place a translucent tracing over a plan (built for Bajo Pueblo, see quirks) | the moment it is solved |
+| absent | Place a translucent tracing over a plan (built for the first game, see quirks) | the moment it is solved |
 | `"pattern"` | Repeat a three-step pattern (short/long pulses, or symbols) | when the player closes it solved |
 | `"drill"` | Timed button exercises over the zone | when every step is done |
 | `"conduit"` | Turn elbow pieces until the signal goes through | when the player closes it solved |
@@ -1477,7 +1477,7 @@ expect sign_read
 
 ## 19. Known quirks and current limitations
 
-The engine grew out of two games (Bajo Pueblo, then Geumgye) and still carries some of their assumptions.
+The engine grew out of two games and still carries some of their assumptions.
 
 - **Player defaults are the first game's.** Without a `player` key the player is speaker `"KLAUS"` with sprites
   `KL_*`, the portrait falls back to `"PT_KLAUS"`, and the options offer "Bolso: mochila/bandolera", which swaps in
@@ -1497,7 +1497,7 @@ The engine grew out of two games (Bajo Pueblo, then Geumgye) and still carries s
   override some of them: `verb`, `bag_label`, pattern `buttons`/`labels`, order `buttons`, conduit labels and
   `assist_button`, drill texts, listening `label`, arena `leave_label`/`goal_labels`/repair labels, chapter
   `after.label`/`load_label`, `end_text`.
-- **The default puzzle type is hardwired to Bajo Pueblo's P01.** It refuses to open unless the player carries
+- **The default puzzle type is hardwired to the first game's P01.** It refuses to open unless the player carries
   items `IT_PHOTO` and `IT_PLAN` ("Necesito la foto y el plano para compararlos."), sets the flag `p01_opened`
   itself, shows the solved state when the flag `photo_plan_linked` is set (your `do` must set it), and saves the
   tracing position in every save file.
@@ -1510,10 +1510,10 @@ The engine grew out of two games (Bajo Pueblo, then Geumgye) and still carries s
 - `["open", ID]` stays true after a default-type puzzle is closed, until another puzzle opens or a new game or
   save is started.
 - **The flag `time_segment`** (value 1) tints `exterior` zones for dusk.
-- **The arena HUD is Geumgye's:** it always prints "GEUMGYE" top-left, the Canto plates read "CUERPO",
+- **The arena HUD is the second game's:** it prints the game's title in capitals top-left, the Canto plates read "CUERPO",
   "MEMORIA", "VOLUNTAD", and sprite prefixes default to `GG` (player) and `BU` (boss).
 - **Order puzzle row icons** are fixed drawings (a rectangle, two hands, three waves) picked by card index.
-- **Title fallback:** with no `LOGO` asset and no `title`, the title screen says "Bajo Pueblo".
+- **Title fallback:** with no `LOGO` asset and no `title`, the title screen shows the game's `id`.
 - `tiles.json` `"atlas"` is ignored: the atlas is always `TS_ATLAS`.
 - `meta.json` `frame_ms` must be an array; a plain number is ignored.
 - A prop with a `layer` value other than `low`, `top`, `front`, `lit` is never drawn.

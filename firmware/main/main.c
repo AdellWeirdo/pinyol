@@ -183,13 +183,12 @@ static void tick(const hal_input *in) {
 }
 
 #ifdef BP_BENCH_PLAY
-/* -DBP_BENCH=play: each game's end-to-end test, read from the card, plays for 75 s while perf lines are logged; a
- * restart ends each run and RTC memory says which game is next. Saves go to their own folder, never the game's. */
+/* -DBP_BENCH=play: the end-to-end tests on the card, /sdcard/np2d_bench/<game id>.script, each played on
+ * /sdcard/games/<game id> for 75 s while perf lines are logged; a restart ends each run and RTC memory says which test
+ * is next. Saves go to their own folder, never the game's. */
 #include <sys/stat.h>
 #include "esp_attr.h"
 #include "esp_system.h"
-extern const char e2e_bajopueblo[] asm("_binary_e2e_full_script_start");
-extern const char e2e_geumgye[] asm("_binary_e2e_lectura_script_start");
 static RTC_NOINIT_ATTR uint32_t play_next, play_magic;
 static int64_t play_deadline;
 #endif
@@ -341,35 +340,42 @@ static void run_tests(const launcher_game *g, int n) {
 
 #ifdef BP_BENCH_PLAY
 static void bench_play(void) {
-    static const struct { const char *dir, *script, *name; } runs[] = {
-        {"/sdcard/games/bajopueblo", e2e_bajopueblo, "e2e_full"}, {"/sdcard/games/geumgye", e2e_geumgye, "e2e_lectura"}};
     if (play_magic != 0x6E703264 || esp_reset_reason() != ESP_RST_SW) play_magic = 0x6E703264, play_next = 0;
-    if (play_next >= sizeof runs / sizeof runs[0]) {
-        hal_log("BENCH play done");
+    static char name[256], src[300], dir[300];
+    uint32_t k = 0;
+    *name = 0;
+    DIR *d = opendir("/sdcard/np2d_bench");
+    for (struct dirent *e; d && (e = readdir(d));) { /* the play_next-th test, in the folder's order */
+        size_t n = strlen(e->d_name);
+        if (n > 7 && !strcmp(e->d_name + n - 7, ".script") && k++ == play_next) {
+            snprintf(name, sizeof name, "%.*s", (int)(n - 7), e->d_name);
+            break;
+        }
+    }
+    if (d) closedir(d);
+    if (!*name) {
+        hal_log(play_next ? "BENCH play done" : "BENCH play: no /sdcard/np2d_bench/<game id>.script");
         play_magic = 0; /* a reset starts the series again */
         return;
     }
-    int i = (int)play_next++;
-    mkdir("/sdcard/np2d_bench", 0755);
+    play_next++;
+    const char *path = "/sdcard/np2d_bench_saves/run.script";
+    snprintf(src, sizeof src, "/sdcard/np2d_bench/%s.script", name);
+    snprintf(dir, sizeof dir, "/sdcard/games/%s", name);
     mkdir("/sdcard/np2d_bench_saves", 0755);
-    char path[96];
-    snprintf(path, sizeof path, "/sdcard/np2d_bench/%s.script", runs[i].name);
-    FILE *f = fopen(path, "w");
-    if (!f) return;
-    for (const char *l = runs[i].script; *l;) { /* without "shot" lines, as the autotest images */
-        const char *e = strchr(l, '\n');
-        size_t n = e ? (size_t)(e - l + 1) : strlen(l);
-        if (strncmp(l, "shot ", 5)) fwrite(l, 1, n, f);
-        l += n;
-    }
-    fclose(f);
-    bp_config cfg = {runs[i].dir, "/sdcard/np2d_bench_saves"};
+    FILE *in = fopen(src, "r"), *out = fopen(path, "w");
+    for (char line[512]; in && out && fgets(line, sizeof line, in);)
+        if (strncmp(line, "shot ", 5)) fputs(line, out); /* without "shot" lines, as the autotest images */
+    if (in) fclose(in);
+    if (!out) return;
+    fclose(out);
+    bp_config cfg = {dir, "/sdcard/np2d_bench_saves"};
     if (!game_init(&cfg)) return;
-    hal_log("BENCH play %s at %d ticks a frame", runs[i].name, TICKS_PER_FRAME);
+    hal_log("BENCH play %s at %d ticks a frame", name, TICKS_PER_FRAME);
     perf = (typeof(perf)){.since = esp_timer_get_time()};
     play_deadline = esp_timer_get_time() + 75000000;
     script_run(path, script_frame);
-    hal_log("BENCH play %s ended before its time", runs[i].name);
+    hal_log("BENCH play %s ended before its time", name);
     esp_restart();
 }
 #endif

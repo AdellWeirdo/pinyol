@@ -25,7 +25,7 @@ static bool tick_input(uint16_t held, bool touch, int px, int py) {
 
 static bool tick(uint16_t held) { return tick_input(held, false, 0, 0); }
 static int pace; /* "pace N": idle ticks after every press, to record a run at a human (reading) speed */
-static int read_cps; /* "read CPS": each line waits as long as reading it takes (a duration run, Geumgye §02) */
+static int read_cps; /* "read CPS": each line waits as long as reading it takes (a duration run) */
 static const char *last_read;
 
 static bool idle(int n) {

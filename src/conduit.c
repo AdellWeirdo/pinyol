@@ -1,4 +1,4 @@
-/* Conduit puzzles (Geumgye chapter 2, P21 «reconstruir el conductor»): elbow pieces on a small grid, each turned a
+/* Conduit puzzles: elbow pieces on a small grid, each turned a
  * quarter clockwise with A, must carry the signal from an input side of one cell to an output side of another.
  * Elbows join two neighbouring sides: 0 N-E, 1 E-S, 2 S-W, 3 W-N (a turn adds one). The panel lights every piece
  * the signal reaches from the input, with a white line too so it reads without colour, and labels the joints of

@@ -15,7 +15,7 @@ end
 
 function _draw()
   cls(0x182030)
-  text("Bajopueblo", 240, 40, {font = "large", align = "center", color = 0xE8D8B0})
+  text("Una noche", 240, 40, {font = "large", align = "center", color = 0xE8D8B0})
   s:draw()
 end
 

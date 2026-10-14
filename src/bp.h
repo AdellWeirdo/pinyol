@@ -1,4 +1,4 @@
-/* Bajo Pueblo engine core: shared types, the single game state G, and module APIs. */
+/* np2d engine core: shared types, the single game state G, and module APIs. */
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
@@ -46,7 +46,7 @@
 
 /* ------------------------------------------------------------------ public API */
 typedef struct {
-    const char *game_dir; /* folder copied to the SD card, e.g. sd/games/bajopueblo */
+    const char *game_dir; /* folder copied to the SD card, e.g. sd/games/mygame */
     const char *save_dir; /* NULL = <game_dir>/saves */
 } bp_config;
 
@@ -598,7 +598,7 @@ typedef struct {
     const char *using_item;
     bool large_text, portraits;
     int volume; /* 0..VOLUME_MAX, pause menu */
-    bool tones; /* speakers' "blip" while their text runs (Geumgye §23), pause menu */
+    bool tones; /* speakers' "blip" while their text runs, pause menu */
     bool bag; /* Klaus carries: false = backpack (dossier), true = crossbody bag (Options) */
     char toast[96];
     float toast_ms;
