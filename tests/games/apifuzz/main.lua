@@ -21,7 +21,8 @@ local VALUES = {0, 1, -1, 2, 3, 4, 7, 15, 16, 31, 127, 128, 255, 256, 1023, 1024
   "coin", "laser", "random", "SND", {wave = "noise", freq = 1e9, slide = -1e9, sustain = 1e9, lowpass = 0 / 0,
   resonance = 1, again = 0.0001, arp = 0, volume = 2}, {pitch = 1e9, loop = true, gain = -5}, {pitch = 0 / 0}}
 -- The newer functions get their own storm with its own random numbers, so the one above keeps its sequence
-local NEW = {"mic", "mic_record", "music_time", "file", "physics_step", "video", "led", "battery", "grid"}
+local NEW = {"mic", "mic_record", "music_time", "file", "physics_step", "video", "led", "battery", "grid", "btnr", "btnt",
+             "btnb"}
 local NEW_VALUES = {0, 1, -1, 0.5, 1e9, -1e9, 0 / 0, 1 / 0, "", "x", "../x", "SND", "STARS", "bad.txt", true, false,
   {}, {1, 2, 3}, {canvas = "CANV", loop = true, speed = -16}, {canvas = "../x"}, {speed = 0 / 0},
   {{kind = "poly", pts = {0, 0, 1e9, 0 / 0, -1e9, 5}, turns = true, inv = 1, iinv = 1e9},

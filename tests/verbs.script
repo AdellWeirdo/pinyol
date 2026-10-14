@@ -1,0 +1,144 @@
+# Buttons: let go, held ticks, repeat after holding, a press kept for a few ticks; actions over buttons
+tick 2
+hold DOWN 30
+expect_lua held_max == 30 and reps == 1 + 5 and btnt("down") == 0 and btnr("down")
+tick 1
+expect_lua not btnr("down")
+expect_lua_error btnr("x")
+lua buffered = 0
+press B
+tick 3
+expect_lua buffered == 1
+lua buffered = 0
+tick 10
+expect_lua buffered == 0
+expect_lua input.held("fire") == 0 and select(1, input.dir()) == 0
+# timers and scripts that wait
+lua n_every = 0 juice.after(0.5, function() note("after") end) juice.every(0.25, function() n_every = n_every + 1 end, 3)
+tick 29
+expect_lua count(log_) == 0 or log_[count(log_)] ~= "after"
+tick 1
+expect_lua log_[count(log_)] == "after"
+tick 30
+expect_lua n_every == 3
+lua log_ = {} juice.script(function() note("a") juice.wait(0.5) note("b") juice.wait_until(function() return btnp("a") end) note("c") end)
+tick 1
+expect_lua count(log_) == 1
+tick 30
+expect_lua count(log_) == 2
+press A
+tick 1
+expect_lua count(log_) == 3 and log_[3] == "c"
+lua h = juice.script(function() juice.wait(1) note("never") end) juice.cancel(h)
+tick 70
+expect_lua log_[count(log_)] == "c"
+# tweens: delayed, chained, looping, yoyo
+lua o = {x = 0, y = 0} tw = juice.tween(o, {x = 10}, 0.5, "linear"):delay(0.5) tw:after(o, {y = 20}, 0.5, "linear")
+tick 30
+expect_lua o.x == 0
+tick 30
+expect_lua o.x == 10 and o.y == 0
+tick 30
+expect_lua o.y == 20 and not juice.running(tw)
+lua p = {x = 0} juice.tween(p, {x = 10}, 0.25, "linear"):yoyo():loops(1)
+tick 15
+expect_lua p.x == 10
+tick 15
+expect_lua p.x == 0 and not juice.busy(p)
+# two chains on one thing ending on the same tick; a chained tween cancelled before it starts; a thing cancelled while
+# a chain of another waits to move it
+lua q = {x = 0, y = 0} juice.tween(q, {x = 1}, 0.1):after(q, {x = 0}, 0.1) juice.tween(q, {y = 1}, 0.1):after(q, {y = 0}, 0.1)
+tick 15
+expect_lua q.x == 0 and q.y == 0
+lua r = {x = 0} tb = juice.tween(r, {x = 5}, 0.1, "linear"):after(r, {x = 9}, 0.1) juice.cancel(tb)
+tick 15
+expect_lua r.x == 5 and not juice.busy(r)
+lua s1, s2 = {x = 0}, {y = 0} juice.tween(s1, {x = 1}, 0.1):after(s2, {y = 7}, 0.1) juice.cancel(s2)
+tick 15
+expect_lua s1.x == 1 and s2.y == 0
+# animations: names, timing, events, what comes next, back and forth, once
+lua a:play("run")
+expect_lua a.frame == 1
+tick 6
+expect_lua a.frame == 2
+lua a:play("run")
+expect_lua a.frame == 2
+lua a:play("shoot")
+tick 3
+expect_lua a.frame == 6 and fired == 1
+tick 6
+expect_lua a.name == "idle" and a.frame == 0
+lua a:play("bob")
+tick 4
+expect_lua a.frame == 9
+tick 2
+expect_lua a.frame == 8
+lua a:play("once")
+tick 4
+expect_lua a.done and a.frame == 2
+expect_lua_error a:play("nope")
+# the camera: a dead zone, catching up, the level's bounds, forward only, a look elsewhere
+lua c:snap()
+expect_lua c.x == 0 and c.y == 0
+lua hero.x = 260 c:update()
+expect_lua c.x == 0
+lua hero.x = 400
+tick 20
+expect_lua math.abs((c.x + 240) - (400 - 40)) < 1
+lua hero.x = 5000
+tick 40
+expect_lua c.x == 2000 - 480
+lua c.forward_only = true hero.x = 100
+tick 20
+expect_lua c.x == 2000 - 480
+lua c.forward_only = false c:look(1000, 160)
+tick 30
+expect_lua math.abs(c.x + 240 - 1000) < 41
+expect_lua c:visible(1000, 100, 10, 10) and not c:visible(0, 0, 10, 10)
+lua c:look(1200)
+tick 2
+lua c:look()
+# scenes: entered with arguments, an overlay pushed (the one under is drawn but not ticked), popped with a result
+expect_lua scene.top() == title and log_[1] == "title enter 1" or true
+lua log_ = {} t0 = title.ticks scene.push(pause)
+tick 5
+expect_lua scene.top() == pause and scene.depth() == 2 and title.ticks == t0 + 1
+shot verbs_pause
+lua scene.pop("ok")
+tick 1
+expect_lua scene.top() == title and log_[1] == "title pause" and log_[3] == "title resume ok"
+lua z = 0 juice.every(0.05, function() z = z + 1 end) juice.script(function() juice.wait(10) note("leaked") end)
+lua scene.go(level, {n = 2}, {fade = 0.2})
+tick 3
+shot verbs_fade
+tick 10
+expect_lua scene.top() == level and scene.depth() == 1
+tick 10
+expect_lua log_[count(log_)] == "level enter 2"
+lua z0 = z
+tick 10
+expect_lua z == z0 and z0 > 0
+# text with marks: colours, waves, a pause and another speed while typing, a sound, [[ for a bracket
+expect_lua rich.plain("Hola [c=FF8040]fuego[/c] y [[x]") == "Hola fuego y [x]"
+lua sound("DING", "coin", 1) shown_text = rich.new("Uno[wait=10] dos [speed=0.5][sfx=DING][wave]tres[/wave] [c=#40FF80]cuatro[/c]", {width = 200})
+expect_lua shown_text.total == 19 or error(shown_text.total)
+tick 3
+expect_lua shown_text.shown == 3
+tick 10
+expect_lua shown_text.shown == 3
+tick 6
+expect_lua shown_text.shown > 3 and not shown_text.done
+tick 40
+expect_lua shown_text.done
+lua rich_label = "[c=FF8040]Vidas[/c] [wave]3[/wave]"
+tick 1
+shot verbs_rich
+lua shown_text = rich.new("ab[speed=0]cd")
+tick 200
+expect_lua shown_text.done
+lua shown_text = rich.new("[shake]¡Ay![/shake] Pulsa [c=FFE070]A[/c] para seguir, que el texto es largo y tiene que pasar a la línea siguiente.", {width = 220})
+lua shown_text:skip()
+expect_lua shown_text.done and shown_text.shown == shown_text.total
+tick 2
+shot verbs_rich2
+expect_ok

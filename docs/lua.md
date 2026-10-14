@@ -47,7 +47,10 @@ A Lua error stops the game and shows the message on screen; `bp_headless --valid
 | Call | Returns |
 |---|---|
 | `btn(name)` | true while held. Names: `"up" "down" "left" "right" "a" "b" "c" "start" "menu"` |
-| `btnp(name)` | true on the tick it was pressed |
+| `btnp(name)` | true on the tick it was pressed. `btnp(name, hold, every)` also repeats while held: again after `hold` ticks, then every `every` ticks (a menu that scrolls on its own) |
+| `btnr(name)` | true on the tick it was let go (a charged shot fires on release) |
+| `btnt(name)` | ticks it has been held, 0 when it is not (a long press, how charged) |
+| `btnb(name, window)` | true if it was pressed in the last `window` ticks (6 if left out) and not used yet; true once, then used. A jump pressed just before landing still jumps |
 | `touch()` | `x, y, down, tapped`, in world pixels |
 | `t()` | seconds since the game started |
 | `ticks()` | ticks since the game started (60 a second) |
@@ -525,12 +528,17 @@ library can be copied into a game and changed. Each file in `lib/` says how to u
 
 | `require` | For |
 |---|---|
-| `"juice"` | what makes a game feel alive: `juice.tween(obj, {x = 100}, 0.5, "out_back")` moves fields with an ease (`linear`, `in_quad`, `out_quad`, `in_out_quad`, `in_cubic`, `out_cubic`, `in_out_cubic`, `in_back`, `out_back`, `out_elastic`, `out_bounce`, `in_bounce`); `juice.shake(px)`, `juice.freeze(ticks)`, `juice.flash(colour, ticks)`; `juice.update()` in `_update` (true while frozen), `camera(juice.offset())` and `juice.draw()` in `_draw` |
+| `"juice"` | what makes a game feel alive: `juice.tween(obj, {x = 100}, 0.5, "out_back")` moves fields with an ease (`linear`, `in_quad`, `out_quad`, `in_out_quad`, `in_cubic`, `out_cubic`, `in_out_cubic`, `in_back`, `out_back`, `out_elastic`, `out_bounce`, `in_bounce`), and chains: `:delay(s)`, `:loops(n)` (-1 for ever), `:yoyo()`, `:on_done(fn)`, `:after(obj, to, secs, ease)` (the next one). Time: `juice.after(secs, fn)`, `juice.every(secs, fn, times)`, `juice.script(fn)` (a function that waits: `juice.wait(secs)`, `juice.wait_until(test)`, `juice.wait_for(tween)`), `juice.cancel(handle or obj)`. `juice.shake(px)`, `juice.freeze(ticks)`, `juice.flash(colour, ticks)`; `juice.update()` in `_update` (true while frozen), `camera(juice.offset())` and `juice.draw()` in `_draw` |
 | `"particles"` | sparks, smoke, dust, confetti: `fx = particles.new()`, `fx:burst(x, y, n, {speed, angle, spread, gravity, drag, life, size, colours, shape})`, `fx:update()`, `fx:draw()` |
 | `"physics"` | things that fall, bounce, slide, tip over, roll, float and hit: `w = physics.world({gravity})`, `w:circle(x, y, r, {bounce, friction, static, mass, turns})`, `w:box(x, y, w, h, {...})`, `w:poly(x, y, {x0, y0, x1, y1, ...}, {...})` (a convex shape: rocks, ramps, hulls), `w:rope(a, b, length, {stick})`, `w:water(x, y, w, h, {lift, drag, flow_x, flow_y})` (it floats, slows down and drifts with the current: a river, a raft), `w:step()`, `w:hits()`, `w:at(x, y)`, `w:corners(body)`, `w:remove(body)`. With `turns = true` a box tips over and a circle rolls; draw it with `img(id, b.x, b.y, {angle = b.angle})` (or `poly(w:corners(b))`). Each step is worked out in C (a world holds up to 256 bodies); bodies that do not turn move exactly as they did when the library was Lua |
 | `"kit"` | a whole game from data and events, as the [editor](../README.md#without-code-the-editor) makes them: `kit.setup(data)` with levels (each a map of tiles and objects, played in order: `kit.next_level()`, `kit.goto_level(id)`; a `cover` before them, an `ending` after), objects and their kinds (`"platformer"`, `"topdown"`, `"grid"`, `"patrol"`, `"chase"`, `"shot"`, `"push"`, `"still"`); `kit.on("touch", "heroe", "moneda", function(este, otro) ... end)` and `"start"`, `"level"`, `"out"`, `"tick"`, `"press"`, `"hold"`, `"tile"`, `"every"`, `"tap"`; `kit.spawn`, `kit.destroy`, `kit.count_on(kind, tile)`, `kit.retry()`, `kit.music(id)` (each level and the cover may have their own), `kit.label`, `kit.sound`, `kit.win`, `kit.lose`; `kit.init()`, `kit.update()`, `kit.draw()` in the three callbacks; up to three pictures behind the map, repeated, each moving with the camera by its parallax (`backdrops`). All of it at the top of [lib/kit.lua](../lib/kit.lua) |
 | `"keyboard"` | writing with the d-pad or a finger: `kb = keyboard.new({title, text, max, colours})`, `kb:update()` returns `"ok"` or `"cancel"` when done, `kb:draw()`, `kb.text` |
 | `"story"` | conversations and stories that branch, written as plain text: [below](#stories) |
+| `"input"` | the game's own actions, so code says `"jump"` and not `"b"`: `input.map({jump = {"b"}, fire = {"a", "c"}})`, `input.down`, `input.pressed(name, hold, every)`, `input.released`, `input.held`, `input.buffered(name, window)`; `input.dir()` (-1, 0 or 1 each, diagonals too; with left and right both held, the last pressed). A name that is not an action is a button |
+| `"anim"` | animations with names, like Aseprite's tags: `a = anim.new({run = {frames = {1, 2, 3, 4}, fps = 10}, shoot = {frames = {5, 6}, ms = {60, 120}, loop = false, next = "idle", events = {[2] = "fire"}}, bob = {frames = {0, 1, 2}, mode = "pingpong"}})`, `a:play("run")` (playing it already: it goes on), `a:update()` each tick, `a.frame` to draw, `a:on("fire", fn)` on that frame, `a.done` when one that does not loop is over |
+| `"cam"` | a camera that follows: `c = cam.new({bounds = {0, 0, 3840, 320}, deadzone = {80, 60}, lerp = 0.15, lead = 40, forward_only})`, `c:follow(hero)`, `c:update()` each tick, `c:apply()` in `_draw` (with juice's shake), `c:snap()`, `c:look(x, y)` for a while, `c:visible(x, y, w, h)`. `c.x, c.y` is the top-left corner seen |
+| `"scene"` | a game as scenes on a stack (the title, a level, the pause): tables with `enter(args)`, `leave()`, `pause()`, `resume(result)`, `update()`, `draw()`; `scene.go(s, args, {fade = 0.4})` (the scenes leaving lose their sprites and juice's tweens, timers and scripts), `scene.push(s, args)`, `scene.pop(result)`, `scene.top()`, `scene.depth()`; a scene with `overlay = true` is drawn over the one under it, which waits. `scene.update()` and `scene.draw()` in the callbacks |
+| `"rich"` | text with marks, for any text and for [stories](#stories): `rich.draw(str, x, y, opts)` at once, or `r = rich.new(str, opts)` typed out (`r:update()`, `r:draw(x, y)`, `r:skip()`, `r.done`); options `font`, `color`, `width` (wraps), `speed`, `line`, `outline`, `shadow`, `blip`. `rich.plain(str)` without the marks |
 
 ### Stories
 
@@ -574,6 +582,11 @@ Abuela: La Raíz guarda lo que el pueblo olvida.
 | `[do code]` | Lua: the story's variables are its globals, and the game's functions are there too (`sfx`, `music`, its own) |
 | `[var name = expr]` | a variable and its first value, unless a saved story has it already |
 | `// text` | a comment |
+
+Inside any line, marks: `[color=FF8040]` or `[c=FF8040]` ... `[/c]` a colour, `[wave]` ... `[/wave]` letters that
+float, `[shake]` ... `[/shake]` letters that tremble (`[wave=3]` how much), `[wait=30]` a pause of 30 ticks while the
+letters come, `[speed=0.5]` letters a tick from there, `[sfx=ID]` a sound when the letters reach it, `[img=ID]` a
+small picture among the words, `[[` a `[`. They are [rich](#libraries-built-in)'s, which a game can use for any text.
 
 ```lua
 local story = require("story")

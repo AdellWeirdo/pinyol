@@ -17,6 +17,7 @@
 -- s:go("start"); s:update() and s:draw() each tick; store("story", s.vars) to save where the story's variables are.
 local story = {}
 story.__index = story
+local rich = require("rich") -- a line's text may carry marks: [c=FF8040]color[/c], [wave], [wait=20], [sfx=ID]...
 
 local function trim(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 
@@ -205,7 +206,7 @@ function story:_run()
     elseif ins.cond and not ins.cond() then
     elseif ins.op == "say" then
       self.line_ = {who = ins.who, mood = ins.mood, text = render(ins.text)}
-      self.shown, self.total = 0, utf8.len(self.line_.text) or #self.line_.text
+      self:_typeset()
       return
     elseif ins.op == "do" then
       ins.fn()
@@ -271,9 +272,8 @@ function story:update()
   local go = btnp("a") or tapped
   if self.line_ then
     if self.shown < self.total then
-      local before = math.floor(self.shown)
-      self.shown = go and self.total or math.min(self.total, self.shown + ui.speed)
-      if ui.blip and math.floor(self.shown / ui.blip_every) > math.floor(before / ui.blip_every) then sfx(ui.blip, 0.5) end
+      if go then self.rt:skip() else self.rt:update() end
+      self.shown = math.max(self.shown, self.rt.shown)
     elseif go then
       self:next()
     end
@@ -306,6 +306,23 @@ function story:_row_at(x, y)
   if i >= 1 and i <= #self.choices_ then return i end
 end
 
+function story:_text_x() -- where a line's text starts and how wide it may be (a portrait takes the left)
+  local ui, l = self.ui, self.line_
+  local x, w = ui.x + ui.pad, ui.w - 2 * ui.pad
+  local face = l.who and (ui.portraits[l.who .. "_" .. (l.mood or "")] or ui.portraits[l.who])
+  local fw = face and imgsize(face)
+  if fw then x, w = x + fw + ui.pad, w - fw - ui.pad end
+  return x, w, face
+end
+
+function story:_typeset() -- the line laid out, with its marks, to be typed
+  local ui = self.ui
+  local _, w = self:_text_x()
+  self.rt = rich.new(self.line_.text, {font = ui.font, color = ui.color, width = w, speed = ui.speed, blip = ui.blip,
+                                       blip_every = ui.blip_every})
+  self.shown, self.total = 0, self.rt.total
+end
+
 function story:draw()
   if self.done or not (self.line_ or self.choices_) then return end
   local ui = self.ui
@@ -318,20 +335,19 @@ function story:draw()
   local x, w = ui.x + ui.pad, ui.w - 2 * ui.pad
   if self.line_ then
     local l = self.line_
-    local face = l.who and (ui.portraits[l.who .. "_" .. (l.mood or "")] or ui.portraits[l.who])
+    local tx, tw, face = self:_text_x()
     if face then
-      local fw, fh = imgsize(face)
-      if fw then
-        img(face, x, ui.y - fh + ui.h - ui.pad)
-        x, w = x + fw + ui.pad, w - fw - ui.pad
-      end
+      local _, fh = imgsize(face)
+      img(face, x, ui.y - fh + ui.h - ui.pad)
     end
+    x, w = tx, tw
     local y = ui.y + ui.pad
     if l.who then
       local _, h = text(l.who, x, y, {color = ui.name_color, font = ui.font})
       y = y + h + 2
     end
-    text(l.text, x, y, {color = ui.color, font = ui.font, width = w, chars = math.floor(self.shown)})
+    self.rt.shown = self.shown
+    self.rt:draw(x, y)
     if self.shown >= self.total and ticks() % 40 < 26 then
       tri(ui.x + ui.w - 20, ui.y + ui.h - 14, ui.x + ui.w - 10, ui.y + ui.h - 14, ui.x + ui.w - 15, ui.y + ui.h - 8,
           ui.name_color)

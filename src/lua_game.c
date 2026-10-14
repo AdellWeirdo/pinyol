@@ -348,8 +348,69 @@ static int act_bit(const char *name) {
     return 0;
 }
 
+/* Each button's story, kept every tick before _update: how long it has been held, when it was last pressed, whether it
+ * was let go this tick, and whether btnb has used that press already. */
+#define NBUTTONS 16
+static struct { uint16_t prev, released, used; uint32_t held_t[NBUTTONS], pressed_at[NBUTTONS]; } BT;
+
+static int bit_index(int bit) {
+    int i = 0;
+    while (bit > 1) bit >>= 1, i++;
+    return i;
+}
+
+static void buttons_tick(void) {
+    uint16_t h = G.in.held;
+    BT.released = BT.prev & ~h;
+    for (int i = 0; i < NBUTTONS; i++) {
+        uint16_t bit = (uint16_t)(1u << i);
+        BT.held_t[i] = (h & bit) ? BT.held_t[i] + 1 : 0;
+        if (G.in.pressed & bit) BT.pressed_at[i] = (uint32_t)G.ticks, BT.used &= (uint16_t)~bit;
+    }
+    BT.prev = h;
+}
+
+static int checked_bit(lua_State *L) {
+    int bit = act_bit(luaL_checkstring(L, 1));
+    if (!bit) return luaL_error(L, "no button called \"%s\" (up down left right a b c start menu)", lua_tostring(L, 1));
+    return bit;
+}
+
 static int l_btn(lua_State *L) { lua_pushboolean(L, G.in.held & act_bit(luaL_checkstring(L, 1))); return 1; }
-static int l_btnp(lua_State *L) { lua_pushboolean(L, G.in.pressed & act_bit(luaL_checkstring(L, 1))); return 1; }
+
+/* btnp(name [, hold, every]): true on the tick it was pressed; with hold, again after it has been held that many ticks
+ * and then every `every` ticks (a menu's cursor, a fast scroll) */
+static int l_btnp(lua_State *L) {
+    int bit = act_bit(luaL_checkstring(L, 1));
+    bool on = (G.in.pressed & bit) != 0;
+    if (!on && bit && !lua_isnoneornil(L, 2)) {
+        lua_Integer hold = luaL_checkinteger(L, 2), every = luaL_optinteger(L, 3, hold);
+        uint32_t t = BT.held_t[bit_index(bit)];
+        if (hold < 1) hold = 1;
+        if (every < 1) every = 1;
+        on = t > (uint32_t)hold && (t - 1 - (uint32_t)hold) % (uint32_t)every == 0;
+    }
+    lua_pushboolean(L, on);
+    return 1;
+}
+
+static int l_btnr(lua_State *L) { lua_pushboolean(L, BT.released & checked_bit(L)); return 1; } /* let go this tick */
+
+static int l_btnt(lua_State *L) { /* btnt(name) -> ticks it has been held (0: up) */
+    lua_pushinteger(L, (lua_Integer)BT.held_t[bit_index(checked_bit(L))]);
+    return 1;
+}
+
+/* btnb(name [, window]): was it pressed in the last `window` ticks (6) and not used yet? A jump pressed just before
+ * landing still jumps. Answering true uses that press. */
+static int l_btnb(lua_State *L) {
+    int bit = checked_bit(L), i = bit_index(bit);
+    lua_Integer window = luaL_optinteger(L, 2, 6);
+    bool on = !(BT.used & bit) && BT.pressed_at[i] && (lua_Integer)(G.ticks - BT.pressed_at[i]) < window;
+    if (on) BT.used |= (uint16_t)bit;
+    lua_pushboolean(L, on);
+    return 1;
+}
 
 static int l_touch(lua_State *L) { /* in the 240x160 world's pixels */
     lua_pushinteger(L, G.in.px / 2);
@@ -969,7 +1030,7 @@ static int l_stored(lua_State *L) {
 
 static void api(lua_State *L) {
     static const luaL_Reg F[] = {
-        {"btn", l_btn}, {"btnp", l_btnp}, {"touch", l_touch}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
+        {"btn", l_btn}, {"btnp", l_btnp}, {"btnr", l_btnr}, {"btnt", l_btnt}, {"btnb", l_btnb}, {"touch", l_touch}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
         {"pal", l_pal}, {"palette", l_palette}, {"backdrop", l_backdrop}, {"bg", l_bg}, {"scroll", l_scroll},
         {"affine", l_affine}, {"rot", l_rot}, {"mode7", l_mode7}, {"project", l_project}, {"mget", l_mget},
         {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_backdrop", l_line_backdrop},
@@ -1002,6 +1063,7 @@ static void api(lua_State *L) {
 /* ------------------------------------------------------------------ lifecycle */
 
 void v2_free(void) {
+    memset(&BT, 0, sizeof BT);
     clip_free_all();
     link_stop();
     mic_close();
@@ -1091,6 +1153,7 @@ void v2_tick(void) {
     if (menu_held == 2 * TICK_HZ && hal_can_switch_game()) hal_switch_game(); /* MENU held 2 s: back to the list */
     link_tick((uint32_t)G.ticks); /* what other consoles sent, before the game looks */
     mic_tick();                   /* and what the microphone heard */
+    buttons_tick();               /* each button's story */
     clip_tick();                  /* the clips playing move on a frame */
     uint32_t t = hal_micros();
     call("_update", 0);
