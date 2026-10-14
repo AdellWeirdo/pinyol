@@ -328,6 +328,34 @@ orbs:draw("SPR_ORB")                                          -- in _draw
 Which one is where changes as they go (the last takes the place of one that leaves): keep anything a single one needs
 in Lua tables instead. `examples/nubes` fires its shots and the battleship's orbs this way.
 
+## Grids
+
+A game's thinking on a grid of cells, done in C: where to walk round the furniture, how far a unit can move this turn,
+where a crowd heads, a smell or a noise spreading through the rooms. Cells count from 0, as `mget`'s.
+
+| Call | Does |
+|---|---|
+| `g = grid(w, h [, cost])` | a grid of up to 256×256 cells, each costing `cost` (1) to enter; 0 is a wall, up to 255 (mud, stairs, a guarded door) |
+| `g:set(x, y, cost)`, `g:get(x, y)`, `g:size()` | |
+| `g:path(x0, y0, x1, y1 [, {diagonal = true}])` | the cheapest way there (A*): a list of `{x, y}` steps, the first after the start, the last the goal, and its cost; `nil` if there is none. Diagonal steps cost 1.4 and never cut a wall's corner |
+| `g:reach(x, y, budget [, {diagonal}])` | every cell it can get to for that much: a list of `{x, y, cost}` (a tactics unit's moves) |
+| `g:distances(x, y [, {diagonal}])` or `g:distances({{x, y}, ...})` | a layer: each cell's cost to the nearest target (`nil` where none can be reached). Many walkers each take `f:descend(x, y)`: one search for all of them |
+| `l = g:layer([value])` | a number on every cell: a smell, a noise, heat, danger |
+| `l:get(x, y)`, `l:set(x, y, v)`, `l:add(x, y, v)`, `l:fill(v)` | |
+| `l:spread(rate [, fade])` | once: each open cell moves `rate` (0 to 1) of the way to its open neighbours' mean, then all fade by `fade` (0 to 1). Walls hold nothing |
+| `l:climb(x, y)`, `l:descend(x, y)` | `dx, dy`: to the open neighbour with the most (follow a smell) or the least (walk down a distance field, flee a noise); `0, 0` when none is better |
+
+```lua
+local g = grid(30, 20)                       -- the house, from the level: walls 0, rugs 1, the cat flap 3
+local path = g:path(cat.x, cat.y, bowl.x, bowl.y)
+local smell = g:layer()
+smell:add(fish.x, fish.y, 50)                -- each tick: the fish smells, it spreads and fades
+smell:spread(0.4, 0.02)
+local dx, dy = smell:climb(cat.x, cat.y)     -- the cat follows its nose
+```
+
+On a desktop a path across a 256×256 grid takes about a millisecond, one across 64×64 a twentieth of that.
+
 ## Playing together (link)
 
 Consoles near each other running the same game can send each other messages: no router, no internet. On the

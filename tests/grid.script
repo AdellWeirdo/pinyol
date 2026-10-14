@@ -1,0 +1,36 @@
+# Grids: the cheapest path round walls (4 ways and 8, never cutting a corner), round mud when that is cheaper, none
+# to a cell walled in; how far a unit gets for a budget; a distance field a crowd walks down; a smell that spreads
+# through the open cells and fades, followed uphill to where it comes from. Costs as Dijkstra in Python finds them.
+new
+tick 1
+lua p, c = g:path(0, 0, 9, 6) shown = p
+expect_lua c == 15 and good(p, 0, 0, 9, 6) and count(p) == 15
+lua q, cd = g:path(0, 0, 9, 6, {diagonal = true})
+expect_lua math.abs(cd - 14.4) < 1e-4 and good(q, 0, 0, 9, 6, true)
+lua m, cm = g:path(6, 1, 9, 1)
+expect_lua cm == 5 and g:get(m[1][1], m[1][2]) == 1
+expect_lua g:path(0, 0, 4, 1) == nil
+lua z, cz = g:path(3, 3, 3, 3)
+expect_lua cz == 0 and count(z) == 0
+expect_lua g:path(0, 0, 50, 50) == nil and g:get(-1, 0) == nil
+expect_lua count(g:reach(0, 0, 4)) == 11 and count(g:reach(0, 0, -1)) == 0
+shot grid_path
+# a distance field from the bottom right corner: walking down it from the top left takes 15 steps
+lua f = g:distances(9, 6) x, y, steps = 0, 0, 0
+expect_lua f:get(0, 0) == 15 and f:get(9, 6) == 0 and f:get(1, 1) == nil
+lua for _ = 1, 40 do local dx, dy = f:descend(x, y) if dx == 0 and dy == 0 then break end x, y, steps = x + dx, y + dy, steps + 1 end
+expect_lua x == 9 and y == 6 and steps <= 15
+lua f2 = g:distances({{0, 0}, {9, 6}})
+expect_lua f2:get(0, 0) == 0 and f2:get(9, 6) == 0 and f2:get(5, 3) < 8
+# a smell: put down at one cell, spread, fading; walls hold none; uphill leads back to it
+lua s = g:layer() s:set(0, 6, 100) for _ = 1, 30 do s:spread(0.5, 0.01) end
+expect_lua s:get(0, 6) > s:get(3, 6) and s:get(3, 6) > 0 and s:get(1, 1) == 0
+lua x, y = 5, 6 for _ = 1, 20 do local dx, dy = s:climb(x, y) x, y = x + dx, y + dy end
+expect_lua x == 0 and y == 6
+lua s:fill(2) s:add(4, 4, 3)
+expect_lua s:get(4, 4) == 5 and s:get(0, 0) == 2
+expect_lua_error grid(0, 5)
+expect_lua_error grid(300, 5)
+expect_lua_error g:set(0, 0, 256)
+expect_lua_error g:path("a", 0, 1, 1)
+expect_ok
