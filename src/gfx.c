@@ -605,6 +605,20 @@ void gfx_blit_lit(surface *s, const asset *a, int x, int y, int shade, bool dusk
     blit_packed(s, a, 0, x, y, a->h, false, NULL, -1, (shade > 15 ? 15 : shade) | (dusk_tint ? LIGHT_DUSK : 0));
 }
 
+void gfx_blit_lit_rows(surface *s, const asset *a, int frame, int x, int y, int rows, int shade, bool dusk_tint) {
+    if (frame < 0 || frame >= a->frames) frame = 0;
+    if (rows > a->h) rows = a->h;
+    if (rows <= 0) return;
+    if (!a->pk) { /* (as gfx_blit_lit: drawn, then shaded and tinted where it is) */
+        gfx_blit_rows(s, a, frame, x, y, rows);
+        surface in = gfx_clip(s, x, y, a->w, rows);
+        for (int k = 0; k < shade; k++) gfx_shade(&in, 0, 0, SCREEN_W, SCREEN_H);
+        if (dusk_tint) gfx_tint_dusk(&in);
+        return;
+    }
+    blit_packed(s, a, frame, x, y, rows, false, NULL, -1, (shade > 15 ? 15 : shade) | (dusk_tint ? LIGHT_DUSK : 0));
+}
+
 void gfx_blit_flip(surface *s, const asset *a, int frame, int x, int y, bool flip_x, const asset *pal, int tint) {
     if (frame < 0 || frame >= a->frames) frame = 0;
     if (a->pk) {

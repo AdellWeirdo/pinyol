@@ -163,6 +163,8 @@ void gfx_blit_mixed(surface *s, const asset *a, int frame, int x, int y, bool fl
 /* Frame 0, then halved `shade` times (gfx_shade) and tinted to dusk (gfx_tint_dusk): for a packed picture, in its
  * palette, the same pixels without going over them again */
 void gfx_blit_lit(surface *s, const asset *a, int x, int y, int shade, bool dusk);
+/* The same for any frame, its top `rows` only (a figure going down a step) */
+void gfx_blit_lit_rows(surface *s, const asset *a, int frame, int x, int y, int rows, int shade, bool dusk);
 /* From now on every packed picture is drawn pulled towards amber (0: not; 1-3: more): the Canto's light, in the
  * palettes, set before the strips and back to 0 after them */
 void gfx_light_warm(int level);

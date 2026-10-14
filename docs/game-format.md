@@ -504,6 +504,16 @@ The zone ID is the file name and must be at most 7 characters.
 | `no_player` | bool | `false` | The player is not drawn (a scene without them, or seated inside a machine). |
 | `on_enter` | effects | none | Run every time the zone is entered, including when a save is loaded there. |
 
+**HD zones.** When the `bg` has a twin `<bg>_HD` (a picture twice its size, usually packed), the screen shows that
+picture at full resolution and the world doubled over it. With `"hd_sprites": true` in `game.json`, a sprite, prop or
+NPC whose `<sprite>_HD` exists is drawn at full resolution too:
+- Its anchor is in screen pixels, and its frames are laid out as the world sprite's.
+- Klaus's walk may have more frames per direction, which play faster.
+- It is lit as the world (`shade`, dusk).
+- The parts of the HD background that must cover it are drawn over it again at full resolution: the `occluders`, and
+  each `foreground` polygon (`[[x, y], ...]` in world px). `FG_<zone ID>` is then not used.
+- Sprites without an HD twin are still drawn into the world.
+
 Entering a zone: sets `visited:<ID>`, updates music and ambience, runs `on_enter`, autosaves (when entered
 through an exit or a `zone` effect and no sequence is running) and shows the arrival card.
 
