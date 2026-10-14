@@ -295,3 +295,5 @@ svg .was { stroke: #6e76b3; stroke-dasharray: 4 4; }
 .install li { margin-bottom: var(--s1); }
 .install .note { display: block; margin: var(--s3) 0 0; color: var(--text-3); font-size: var(--t-small); }
 esp-web-install-button:not(:defined) [slot="unsupported"], esp-web-install-button:not(:defined) [slot="not-allowed"] { display: none; }
+.jobs .cart { grid-column: auto; } /* not the shelf's spans */
+:root { --mdc-theme-primary: #c41d38; --mdc-theme-on-primary: #fff; } /* ESP Web Tools' install dialog, in pinyol's cherry */
