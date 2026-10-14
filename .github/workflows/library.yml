@@ -6,12 +6,14 @@ on:
   issues:
     types: [opened, edited, labeled]
 permissions: {}
-concurrency:
-  group: library-${{ github.event.issue.number }}
-  cancel-in-progress: true
 jobs:
   check:
     if: contains(github.event.issue.labels.*.name, 'biblioteca') && (github.event.action != 'labeled' || github.event.label.name == 'aprobado')
+    # here, not on the workflow: an issue sent with the form is "opened" and "labeled" (biblioteca) at once, and that
+    # second run, which checks nothing, would cancel the first
+    concurrency:
+      group: library-${{ github.event.issue.number }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     permissions:
       contents: read
