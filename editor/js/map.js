@@ -1,7 +1,7 @@
 // The Map tab: the game's levels in the order they are played, and its cover. A level is tiles painted on a grid,
 // objects put where they start, its size, background colour, the pictures behind it and whom the camera follows;
 // shown at twice the world's pixels, as on the console's screen. The cover is the title screen before them.
-import { TILE, MAP_MAX, LEVELS_MAX, newLevel, uniqueName } from './project.js';
+import { MAP_MAX, LEVELS_MAX, FONTS, LANGS, newLevel, uniqueName, lookOf } from './project.js';
 import { drawPixels, thumbnail } from './sprites.js';
 
 const $ = id => document.getElementById(id);
@@ -12,6 +12,8 @@ let kb = { x: 0, y: 0 }; // the keyboard's cursor, in tiles
 const undo = [], redo = []; // the level's map and objects before each change (any level: the snapshot says which)
 
 const level = () => app.project.levels[sel];
+const T = () => app.project.tile || 16; // the map's grid, in the world's pixels (the look's tiles: 16 or 8)
+const MIN = () => [240 / T(), 160 / T()]; // a map at least as big as the screen, in tiles
 const byName = name => app.project.drawings.find(d => d.name === name);
 const isPlayer = kind => { const d = byName(kind); return d && (d.behaviour === 'platformer' || d.behaviour === 'topdown'); };
 
@@ -34,7 +36,7 @@ function backdropsOf(l) { // the pictures behind a level, nearest first (at most
 
 function renderMap() {
   const p = app.project, l = level(), m = l.map, c = $('map'), g = c.getContext('2d');
-  c.width = m.w * TILE * S, c.height = m.h * TILE * S;
+  c.width = m.w * T() * S, c.height = m.h * T() * S;
   g.imageSmoothingEnabled = false;
   g.fillStyle = l.background;
   g.fillRect(0, 0, c.width, c.height);
@@ -42,13 +44,13 @@ function renderMap() {
     g.save();
     g.scale(S, S);
     g.fillStyle = g.createPattern(imageOf(d), 'repeat');
-    g.fillRect(0, 0, m.w * TILE, m.h * TILE);
+    g.fillRect(0, 0, m.w * T(), m.h * T());
     g.restore();
   }
   for (let y = 0; y < m.h; y++)
     for (let x = 0; x < m.w; x++) {
       const t = m.cells[y * m.w + x], d = t && byName(m.tiles[t - 1]);
-      if (d) g.drawImage(imageOf(d), x * TILE * S, y * TILE * S, d.w * S, d.h * S);
+      if (d) g.drawImage(imageOf(d), x * T() * S, y * T() * S, d.w * S, d.h * S);
     }
   for (const o of l.objects) {
     const d = byName(o.kind);
@@ -57,15 +59,15 @@ function renderMap() {
   }
   g.strokeStyle = 'rgba(255,255,255,0.07)';
   g.lineWidth = 1;
-  for (let x = 1; x < m.w; x++) { g.beginPath(); g.moveTo(x * TILE * S + 0.5, 0); g.lineTo(x * TILE * S + 0.5, c.height); g.stroke(); }
-  for (let y = 1; y < m.h; y++) { g.beginPath(); g.moveTo(0, y * TILE * S + 0.5); g.lineTo(c.width, y * TILE * S + 0.5); g.stroke(); }
+  for (let x = 1; x < m.w; x++) { g.beginPath(); g.moveTo(x * T() * S + 0.5, 0); g.lineTo(x * T() * S + 0.5, c.height); g.stroke(); }
+  for (let y = 1; y < m.h; y++) { g.beginPath(); g.moveTo(0, y * T() * S + 0.5); g.lineTo(c.width, y * T() * S + 0.5); g.stroke(); }
   g.strokeStyle = 'rgba(242,178,51,0.5)'; // what one screen shows
   g.strokeRect(0.5, 0.5, 240 * S - 1, 160 * S - 1);
   if (document.activeElement === c) { // the keyboard's cursor
     kb = { x: Math.min(kb.x, m.w - 1), y: Math.min(kb.y, m.h - 1) };
     g.strokeStyle = '#6cb4e0';
     g.lineWidth = 2;
-    g.strokeRect(kb.x * TILE * S + 1, kb.y * TILE * S + 1, TILE * S - 2, TILE * S - 2);
+    g.strokeRect(kb.x * T() * S + 1, kb.y * T() * S + 1, T() * S - 2, T() * S - 2);
   }
 }
 
@@ -89,6 +91,7 @@ function renderPieces() {
   $('level-down').disabled = sel === p.levels.length - 1;
   $('level-del').disabled = p.levels.length < 2;
   $('map-w').value = l.map.w, $('map-h').value = l.map.h, $('map-bg').value = l.background;
+  [$('map-w').min, $('map-h').min] = MIN();
   const cam = $('map-camera');
   cam.replaceChildren(new Option('(el jugador)', ''));
   for (const d of p.drawings.filter(d => d.use === 'object')) cam.append(new Option(d.name, d.name));
@@ -159,7 +162,7 @@ function objectAt(x, y) {
 }
 
 function setTile(x, y, name) {
-  const m = level().map, tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+  const m = level().map, tx = Math.floor(x / T()), ty = Math.floor(y / T());
   if (tx < 0 || ty < 0 || tx >= m.w || ty >= m.h) return false;
   let v = 0;
   if (name) {
@@ -197,7 +200,7 @@ function act(e, first, p = at(e)) {
 
 function mapKeys(e) { // arrows move the cursor a tile; Space or Enter puts the piece; Delete takes away
   const m = level().map, d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
-  const centre = () => ({ x: kb.x * TILE + TILE / 2, y: kb.y * TILE + TILE / 2 });
+  const centre = () => ({ x: kb.x * T() + T() / 2, y: kb.y * T() + T() / 2 });
   if (d) kb = { x: Math.max(0, Math.min(m.w - 1, kb.x + d[0])), y: Math.max(0, Math.min(m.h - 1, kb.y + d[1])) };
   else if (e.key === ' ' || e.key === 'Enter') act({ buttons: 1 }, true, centre());
   else if (e.key === 'Delete' || e.key === 'Backspace') act({ buttons: 2 }, true, centre());
@@ -205,15 +208,16 @@ function mapKeys(e) { // arrows move the cursor a tile; Space or Enter puts the 
   e.preventDefault();
   renderMap();
   const c = $('map'), box = c.parentElement; // the cursor stays in view
-  const cx = kb.x * TILE * S, cy = kb.y * TILE * S;
-  if (cx < box.scrollLeft || cx + TILE * S > box.scrollLeft + box.clientWidth) box.scrollLeft = cx - box.clientWidth / 2;
-  if (cy < box.scrollTop || cy + TILE * S > box.scrollTop + box.clientHeight) box.scrollTop = cy - box.clientHeight / 2;
+  const cx = kb.x * T() * S, cy = kb.y * T() * S;
+  if (cx < box.scrollLeft || cx + T() * S > box.scrollLeft + box.clientWidth) box.scrollLeft = cx - box.clientWidth / 2;
+  if (cy < box.scrollTop || cy + T() * S > box.scrollTop + box.clientHeight) box.scrollTop = cy - box.clientHeight / 2;
 }
 
 function resize(w, h) {
   const m = level().map, asked = [w, h];
-  w = Math.max(15, Math.min(MAP_MAX, w | 0)), h = Math.max(10, Math.min(MAP_MAX, h | 0));
-  if (asked[0] !== w || asked[1] !== h) app.toast(`Un mapa mide de 15 × 10 a ${MAP_MAX} × ${MAP_MAX} baldosas: queda en ${w} × ${h}.`);
+  const [mw, mh] = MIN();
+  w = Math.max(mw, Math.min(MAP_MAX, w | 0)), h = Math.max(mh, Math.min(MAP_MAX, h | 0));
+  if (asked[0] !== w || asked[1] !== h) app.toast(`Un mapa mide de ${mw} × ${mh} a ${MAP_MAX} × ${MAP_MAX} baldosas: queda en ${w} × ${h}.`);
   remember();
   const cells = new Array(w * h).fill(0);
   for (let y = 0; y < Math.min(h, m.h); y++) for (let x = 0; x < Math.min(w, m.w); x++) cells[y * w + x] = m.cells[y * m.w + x];
@@ -224,8 +228,20 @@ function resize(w, h) {
 
 // ------------------------------------------------------------------ the cover
 
-function paintCover(g) { // as kit.lua draws it, at the screen's 480×320
-  const p = app.project, c = p.cover;
+// the game's letters for the preview: the engine's own (Pixelify Sans), or fonts/<id>/font.woff2, loaded once
+const faces = new Map();
+function fontFamily(id) {
+  if (!id || !FONTS[id]) return Promise.resolve('"Pixelify Sans"');
+  if (!faces.has(id)) {
+    const f = new FontFace('pinyol-' + id, `url(fonts/${id}/font.woff2)`);
+    document.fonts.add(f);
+    faces.set(id, f.load().then(() => `"pinyol-${id}"`, () => '"Pixelify Sans"'));
+  }
+  return faces.get(id);
+}
+
+function paintCover(g, family = '"Pixelify Sans"') { // as kit.lua draws it, at the screen's 480×320
+  const p = app.project, c = p.cover, st = lookOf(p).style || { text: '#ffffff', outline: '#202020', accent: '#ffe070' };
   g.imageSmoothingEnabled = false;
   g.fillStyle = c.background;
   g.fillRect(0, 0, 480, 320);
@@ -246,20 +262,21 @@ function paintCover(g) { // as kit.lua draws it, at the screen's 480×320
   g.textAlign = 'center';
   g.lineJoin = 'round';
   const say = (text, y, size, colour) => {
-    g.font = `700 ${size}px "Pixelify Sans", monospace`;
-    g.lineWidth = 5, g.strokeStyle = '#202020', g.fillStyle = colour;
+    g.font = `700 ${size}px ${family}, monospace`;
+    g.lineWidth = 5, g.strokeStyle = st.outline, g.fillStyle = colour;
     g.strokeText(text, 240, y);
     g.fillText(text, 240, y);
   };
-  say(p.title, 118, 44, '#ffffff');
-  say(c.subtitle, 254, 17, '#ffe070');
+  say(p.title, 118, 44, st.text);
+  say(c.subtitle, 254, 17, st.accent);
 }
 
 // The cover as the console's menu shows a game: 240×160 RGB565, little endian (the game's cover.rgb565)
 export async function coverBytes() {
-  await document.fonts.load('700 44px "Pixelify Sans"'); // not drawn in a fallback font when the tab was never opened
+  const family = await fontFamily(app.project.font);
+  await document.fonts.load(`700 44px ${family}`); // not drawn in a fallback font when the tab was never opened
   const big = Object.assign(document.createElement('canvas'), { width: 480, height: 320 });
-  paintCover(big.getContext('2d'));
+  paintCover(big.getContext('2d'), family);
   const small = Object.assign(document.createElement('canvas'), { width: 240, height: 160 }), g = small.getContext('2d');
   g.drawImage(big, 0, 0, 240, 160); // halved, smoothly: the title's letters stay readable
   const px = g.getImageData(0, 0, 240, 160).data, out = new Uint8Array(240 * 160 * 2);
@@ -273,6 +290,9 @@ export async function coverBytes() {
 function renderCover() {
   const p = app.project, c = p.cover, cv = $('cover-preview');
   paintCover(cv.getContext('2d'));
+  fontFamily(p.font).then(family => { if (app.project === p) paintCover(cv.getContext('2d'), family); }); // once loaded
+  $('game-font').value = p.font || '';
+  $('game-lang').value = p.lang || 'es';
   cv.classList.toggle('off', !c.on);
   $('cover-on').checked = c.on;
   $('cover-subtitle').value = c.subtitle;
@@ -324,6 +344,8 @@ function addLevel() {
   const p = app.project, from = level() || p.levels[0];
   if (p.levels.length >= LEVELS_MAX) return;
   const n = p.levels.length + 1, l = newLevel(uniqueName('nivel' + n, new Set(p.levels.map(x => x.id))), 'Nivel ' + n);
+  const [mw, mh] = MIN(); // small tiles: a screen is more of them
+  if (l.map.w < mw || l.map.h < mh) Object.assign(l.map, { w: mw, h: mh, cells: new Array(mw * mh).fill(0) });
   l.background = from.background, l.camera = from.camera, l.hide = from.hide.slice(), l.music = from.music;
   l.objects = from.objects.filter(o => isPlayer(o.kind)).map(o => ({ ...o })); // the player is there to start with
   p.levels.push(l);
@@ -401,6 +423,10 @@ export function initMap(ctx) {
   cover('cover-picture', 'picture', 'change');
   cover('cover-music', 'music', 'change');
   $('ending').addEventListener('input', e => { app.project.ending = e.target.value.slice(0, 60); app.changed(); });
+  for (const [k, name] of Object.entries(FONTS)) $('game-font').append(new Option(name, k));
+  $('game-font').addEventListener('change', e => { app.project.font = e.target.value; app.changed(); render(); });
+  for (const [k, name] of Object.entries(LANGS)) $('game-lang').append(new Option(name, k));
+  $('game-lang').addEventListener('change', e => { app.project.lang = e.target.value; app.changed(); }); // kit's sentences
   for (const [id, key, max] of [['game-tagline', 'tagline', 40], ['game-author', 'author', 40], ['game-about', 'about', 140]])
     $(id).addEventListener('input', e => { app.project[key] = e.target.value.slice(0, max); app.changed(); });
   return { render, reset: () => { sel = 0; piece = null; undo.length = redo.length = 0; render(); } };

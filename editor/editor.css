@@ -213,6 +213,10 @@ dialog p { text-align: center; margin: 6px 0; }
 #cover-preview.off { opacity: .35; }
 fieldset.game-info { border: 1px solid var(--line); border-radius: var(--radius); padding: 2px 12px 8px; margin: 10px 0 0; }
 fieldset.game-info legend { color: var(--ink); font-weight: 600; padding: 0 4px; }
+.anim-rows { display: grid; gap: 6px; margin: 4px 0; }
+.anim-row { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.anim-row span { min-width: 4.5em; color: var(--ink); }
+.anim-row input { width: 4.5em; }
 label.inline { display: flex; align-items: center; gap: 8px; margin: 0; }
 
 /* sounds */

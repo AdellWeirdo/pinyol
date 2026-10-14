@@ -15,6 +15,7 @@
 <header class="top">
   <h1 class="brand"><span class="logo"><img src="logo.png" alt="pinyol" width="57" height="36"></span><span class="sub">editor</span></h1>
   <input id="title" class="title" aria-label="Nombre del juego" maxlength="40" spellcheck="false">
+  <label class="look">Aspecto <select id="look"></select></label>
   <span id="saved" class="saved"></span>
   <nav class="actions" aria-label="Proyecto">
     <div class="menu">
@@ -100,6 +101,12 @@
         <label id="jump-row">Salto <input type="range" id="d-jump" min="0" max="8" step="0.1"><output id="o-jump"></output></label>
         <label class="check"><input type="checkbox" id="d-gravity"> Cae (le afecta la gravedad)</label>
         <label>Pausa entre fotogramas (0: sin animar) <input type="range" id="d-animate" min="0" max="30" step="1"><output id="o-animate"></output></label>
+        <fieldset class="use anims">
+          <legend>Animaciones</legend>
+          <label class="check"><input type="checkbox" id="anims-on"> Fotogramas distintos para estar quieto, andar y recibir un golpe</label>
+          <div id="anims-rows" class="anim-rows"></div>
+          <p class="hint">Andar se ve mientras se mueve; quieto, mientras no; golpe, con el bloque «hace la animación de golpe».</p>
+        </fieldset>
       </div>
       <button id="drawing-del" class="danger">Quitar este dibujo</button>
     </aside>
@@ -155,6 +162,8 @@
         <label>Dibujo <select id="cover-picture"></select></label>
         <label>Color de fondo <input type="color" id="cover-bg"></label>
         <label>Música <select id="cover-music"></select></label>
+        <label>Letra de los textos del juego <select id="game-font"></select></label>
+        <label>Idioma del juego <select id="game-lang"></select></label>
         <label>Mensaje al ganar (tras el último nivel) <input id="ending" maxlength="60"></label>
         <fieldset class="game-info">
           <legend>En el menú de la consola</legend>

@@ -1,0 +1,24 @@
+# The editor's Abella (Game Boy) template: its cover, then the meadow; pollen from a flower to the hive; a wasp's sting
+# takes a heart and plays the dizzy frame; with none left, the record is kept and the level lost, in Catalan
+tick 30
+expect_lua kit.state() == "cover"
+press A
+tick 100
+expect_lua kit.level() == "nivel1" and meta == 5 and kit.lives() == 3
+hold UP 90
+hold LEFT 40
+tick 2
+expect_lua pol == 1 and kit.player().sprite == "abella_pol"
+hold RIGHT 40
+hold DOWN 70
+tick 2
+expect_lua mel == 1 and pol == 0 and total == 1 and kit.player().sprite == "abella"
+lua v = kit.first("vespa") v.x, v.y = kit.player().x, kit.player().y
+tick 2
+expect_lua kit.lives() == 2 and kit.player().frame == 2
+shot abella_sting
+lua kit.add_lives(-2)
+tick 2
+expect_lua stored("rècord", 0) == 1
+shot abella_lost
+expect_ok

@@ -1,7 +1,7 @@
 // The Drawings tab: pixel by pixel in the console's colours (a palette at hand, or any other), with frames for
 // animation; pictures brought in from files; and what each drawing is for (a tile of the map, solid or not, an
 // object that moves in some way, or a picture behind the map).
-import { PALETTE, COLOUR_NAMES, BEHAVIOURS, SHOT_DIRS, DRIFTS, DRAWING, SIZES, MAX_SIDE, MAX_BYTES, blankFrame, safeName, uniqueName, rgb565, hex565, rgbOf, hexOf, } from './project.js';
+import { PALETTE, COLOUR_NAMES, BEHAVIOURS, SHOT_DIRS, DRIFTS, DRAWING, SIZES, MAX_SIDE, MAX_BYTES, MAX_FRAMES, ANIMS, blankFrame, safeName, uniqueName, rgb565, hex565, rgbOf, hexOf, lookOf, lookColour, checkAnims, } from './project.js';
 import { sizeOf, bytesOf } from './build.js';
 
 const $ = id => document.getElementById(id);
@@ -178,7 +178,7 @@ function renderFrames() {
   });
   if (focused) box.querySelector('[aria-pressed="true"]')?.focus();
   $('frame-del').disabled = d.frames.length < 2;
-  $('frame-add').disabled = d.frames.length >= 8;
+  $('frame-add').disabled = d.frames.length >= MAX_FRAMES;
 }
 
 function renderProps() {
@@ -201,7 +201,32 @@ function renderProps() {
   $('drift-row').hidden = !d.drift;
   for (const k of ['speed', 'jump', 'animate', 'parallax', 'drift_speed']) { $('d-' + k).value = d[k]; $('o-' + k).textContent = d[k]; }
   $('drawing-del').disabled = app.project.drawings.length < 2;
+  renderAnims(d);
 }
+
+// named animations: which frames are still, walking, hit (counted from 1 here, from 0 in the project)
+function renderAnims(d) {
+  const n = d.frames.length, on = !!d.anims, rows = $('anims-rows');
+  $('anims-on').checked = on;
+  rows.hidden = !on;
+  rows.replaceChildren(...Object.entries(ANIMS).map(([k, label]) => {
+    const r = (d.anims && d.anims[k]) || [0, 0], row = document.createElement('div');
+    row.className = 'anim-row';
+    const num = (v, which) => {
+      const i = Object.assign(document.createElement('input'), { type: 'number', min: 1, max: n, value: v + 1 });
+      i.setAttribute('aria-label', `${label}: ${which}`);
+      i.addEventListener('change', () => {
+        const cur = (d.anims && d.anims[k]) || [0, 0], next = which === 'desde' ? [i.value - 1, cur[1]] : [cur[0], i.value - 1];
+        d.anims = checkAnims({ ...d.anims, [k]: next }, n);
+        changed();
+      });
+      return i;
+    };
+    row.append(Object.assign(document.createElement('span'), { textContent: label }), 'del', num(r[0], 'desde'), 'al', num(r[1], 'hasta'));
+    return row;
+  }));
+}
+
 
 function render() {
   if (!app.project.drawings.length) return;
@@ -216,6 +241,21 @@ function select(i) { cur = i; frame = 0; anim = 0; render(); }
 function setTool(t) {
   tool = t;
   for (const b of document.querySelectorAll('[data-tool]')) b.setAttribute('aria-pressed', String(b.dataset.tool === t));
+}
+
+// the colours at hand: the look's (only those, unless its console had more), or pinyol's 24
+export function renderPalette() {
+  const look = lookOf(app.project), list = look.palette || PALETTE;
+  const names = look.palette ? look.names || look.palette : COLOUR_NAMES;
+  $('palette').replaceChildren(...list.map((hex, i) => {
+    const b = document.createElement('button'), v = hex565(hex);
+    b.style.background = hexOf(v), b.dataset.c = v, b.title = names[i];
+    b.setAttribute('aria-label', names[i]);
+    b.addEventListener('click', () => setColour(v));
+    return b;
+  }));
+  $('colour-any').closest('label').hidden = !!look.palette && !look.snap;
+  setColour(lookColour(look, colour));
 }
 
 function setColour(v) {
@@ -267,13 +307,13 @@ function importPixels() {
   g.imageSmoothingEnabled = $('import-smooth').checked;
   g.imageSmoothingQuality = 'high';
   g.drawImage(incoming.bmp, 0, 0, tw, th);
-  const data = g.getImageData(0, 0, tw, th).data, frames = [];
+  const data = g.getImageData(0, 0, tw, th).data, frames = [], look = lookOf(app.project); // in the look's colours
   for (let k = 0; k < n; k++) {
     const f = blankFrame(fw, th);
     for (let y = 0; y < th; y++)
       for (let x = 0; x < fw; x++) {
         const i = (y * tw + k * fw + x) * 4;
-        if (data[i + 3] >= 128) f[y * fw + x] = rgb565(data[i], data[i + 1], data[i + 2]); // half see-through: gone
+        if (data[i + 3] >= 128) f[y * fw + x] = lookColour(look, rgb565(data[i], data[i + 1], data[i + 2])); // half see-through: gone
       }
     frames.push(f);
   }
@@ -359,16 +399,13 @@ function initImport() {
 
 export function initDrawings(ctx) {
   app = ctx;
-  const pal = $('palette');
-  PALETTE.forEach((hex, i) => {
-    const b = document.createElement('button'), v = hex565(hex);
-    b.style.background = hexOf(v), b.dataset.c = v, b.title = COLOUR_NAMES[i];
-    b.setAttribute('aria-label', COLOUR_NAMES[i]);
-    b.addEventListener('click', () => setColour(v));
-    pal.append(b);
+  renderPalette();
+  $('colour-any').addEventListener('input', e => setColour(lookColour(lookOf(app.project), hex565(e.target.value))));
+  $('anims-on').addEventListener('change', e => { // the frames shared out: the first still, the rest walking, the last a hit
+    const d = drawing(), last = d.frames.length - 1;
+    d.anims = e.target.checked ? checkAnims({ idle: [0, 0], walk: [Math.min(1, last), last], hit: [last, last] }, last + 1) : null;
+    changed();
   });
-  $('colour-any').addEventListener('input', e => setColour(hex565(e.target.value)));
-  setColour(colour);
   for (const [k, label] of Object.entries(BEHAVIOURS)) $('d-behaviour').append(new Option(label, k));
   for (const [k, label] of Object.entries(SHOT_DIRS)) $('d-dir').append(new Option(label, k));
   for (const [k, label] of Object.entries(DRIFTS)) $('d-drift').append(new Option(label, k));
@@ -400,7 +437,7 @@ export function initDrawings(ctx) {
   $('clear').addEventListener('click', () => { const d = drawing(); snapshot(); d.frames[frame] = blankFrame(d.w, d.h); changed(); });
   $('frame-add').addEventListener('click', () => {
     const d = drawing();
-    if (d.frames.length >= 8) return;
+    if (d.frames.length >= MAX_FRAMES) return;
     if (!fits({ ...d, frames: [...d.frames, d.frames[frame]] }, d)) { app.toast(TOO_BIG); return; }
     snapshot();
     d.frames.splice(frame + 1, 0, d.frames[frame].slice());
@@ -417,8 +454,9 @@ export function initDrawings(ctx) {
   });
   $('drawing-add').addEventListener('click', () => {
     const names = new Set(app.project.drawings.map(d => d.name));
-    if (!fits({ ...DRAWING, w: 16, h: 16, frames: [blankFrame(16, 16)] })) { app.toast(TOO_BIG); return; }
-    app.project.drawings.push({ ...DRAWING, name: uniqueName('dibujo', names), w: 16, h: 16, frames: [blankFrame(16, 16)] });
+    const t = app.project.tile || 16; // a tile, unless told otherwise: the map's size
+    if (!fits({ ...DRAWING, w: t, h: t, frames: [blankFrame(t, t)] })) { app.toast(TOO_BIG); return; }
+    app.project.drawings.push({ ...DRAWING, name: uniqueName('dibujo', names), w: t, h: t, frames: [blankFrame(t, t)] });
     select(app.project.drawings.length - 1);
     app.changed();
   });

@@ -1,7 +1,7 @@
 // From a project to a game folder pinyol plays: game.json, data.lua (the drawings' sizes, kinds, the map, the objects,
 // the sounds), main.lua (kit and the blocks' code), assets/SPR_<name> (each drawing in the engine's own format) and
 // the four fonts. The same files go in the browser's player and in the .zip for the console's card.
-import { TILE, MAX_BYTES } from './project.js';
+import { MAX_BYTES, lookOf } from './project.js';
 import { fileOf } from './audio.js';
 import { bytesOf as videoBytes } from './videos.js';
 
@@ -122,6 +122,13 @@ export function lua(v, indent = '') { // a value as a Lua literal
 }
 
 const hex = c => parseInt(c.slice(1), 16);
+// kit.lua's own sentences (data.words) in the game's language; Spanish is kit's
+const WORDS = {
+  ca: { start: 'Prem A per començar', to_cover: 'A: a la portada', again: 'A: una altra partida', retry: 'A: torna-ho a provar',
+        fell: "T'has caigut!", won: 'Has guanyat!', lost: 'Has perdut', no_lives: 'Sense vides!', time_up: "S'ha acabat el temps!" },
+  en: { start: 'Press A to start', to_cover: 'A: back to the cover', again: 'A: play again', retry: 'A: try again',
+        fell: 'You fell!', won: 'You won!', lost: 'You lost', no_lives: 'No lives left!', time_up: "Time's up!" },
+};
 const tune = name => (name ? 'MUS_' + name : null); // as audio.js names it
 const DRIFT = { '': () => ({}), down: v => ({ vy: v }), up: v => ({ vy: -v }), left: v => ({ vx: -v }), right: v => ({ vx: v }) };
 
@@ -139,14 +146,17 @@ function dataLua(p, crops, start) {
     const c = crops[d.name];
     sprites[d.name] = { w: c.w, h: c.h, frames: d.frames.length };
     if (d.use === 'object') kinds[d.name] = { behaviour: d.behaviour, speed: d.speed, jump: d.jump, animate: d.animate,
-                                              gravity: d.gravity ?? undefined, dir: d.behaviour === 'shot' ? d.dir : undefined };
+                                              gravity: d.gravity ?? undefined, dir: d.behaviour === 'shot' ? d.dir : undefined,
+                                              anims: d.anims || undefined };
     else if (d.use === 'tile' && d.solid) solid[d.name] = true;
   }
   for (const s of p.sounds) // made from numbers; brought in: an effect is a file, music is named by its levels
     if (s.file || s.song) { if (s.use === 'effect') sounds[s.name] = { file: fileOf(s) }; } // songs are music
     else sounds[s.name] = s.params ? s.params : { recipe: s.recipe, seed: s.seed };
   const c = p.cover, pic = p.drawings.find(d => d.name === c.picture);
-  const data = { title: p.title, tile: TILE, sprites, kinds, solid, sounds, ending: p.ending,
+  const st = lookOf(p).style; // the texts' and hearts' colours in the look's palette
+  const style = st ? Object.fromEntries(Object.entries(st).map(([k, v]) => [k, hex(v)])) : undefined;
+  const data = { title: p.title, tile: p.tile || 16, style, words: WORDS[p.lang], sprites, kinds, solid, sounds, ending: p.ending,
                  cover: c.on ? { text: p.title, subtitle: c.subtitle, background: hex(c.background), picture: pic ? pic.name : null,
                                  music: tune(c.music),
                                  tiled: pic ? pic.use === 'backdrop' : null } : null,

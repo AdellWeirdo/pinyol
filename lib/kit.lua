@@ -34,6 +34,13 @@
 -- an answer. Videos (video/<id>.npv): kit.video(id, "full") over the game, which waits until it ends (A skips it);
 -- kit.video(id, corner) in a window, looping, while the game goes on; kit.video() takes it away. The microphone:
 -- kit.mic_level() 0..100, kit.mic_note() Hz. On firmware without a microphone or video these do nothing.
+--
+-- Named animations: a kind's anims = {idle = {first, last}, walk = {...}, hit = {...}} (frames from 0) play by
+-- themselves, walk while it moves, idle while it stands; kit.play(o, "hit") plays the hit once. Lives:
+-- kit.set_lives(n) shows hearts, kit.add_lives(-1) takes one; at none, "no_lives" fires (or the level is lost) and
+-- trying the level again gives them back. kit.countdown(seconds) shows a clock; at 0, "time_up" fires (or the level
+-- is lost). kit.label(key, text, where, style): "normal", "shadow", "wave", "big", "gradient". data.style =
+-- {text, outline, accent, bad, heart} are its colours (a look's palette) and data.words its sentences (its language).
 local juice = require("juice")
 local particles = require("particles")
 
@@ -59,19 +66,28 @@ local clock = 0
 
 local BUTTONS = {a = true, b = true, c = true, up = true, down = true, left = true, right = true, start = true}
 
+local lives, lives_start, countdown -- the hearts and the clock, once a block sets them (countdown in ticks)
+local WORDS = {start = "Pulsa A para empezar", to_cover = "A: a la portada", again = "A: otra partida",
+               retry = "A: probar otra vez", fell = "¡Te has caído!", won = "¡Has ganado!", lost = "Has perdido",
+               no_lives = "¡Sin vidas!", time_up = "¡Se acabó el tiempo!"}
+local STYLE = {text = 0xFFFFFF, outline = 0x202020, accent = 0xFFE070, bad = 0xFF7060, heart = 0xFF4060}
+local W, S = WORDS, STYLE             -- the game's own (data.words, data.style), these where it says nothing
+
 local talk                            -- what is being said: {lines = {{who, text}...}, i, shown, ask, sel}
 local vid                             -- the video showing: {clip, canvas, where}
 local listening, blow_t, blowing = false, 0, false -- the microphone, once a block uses it
 
 local function reset_handlers()
   handlers = {start = {}, level = {}, tick = {}, press = {}, hold = {}, touch = {}, tile = {}, out = {}, every = {},
-              tap = {}, clap = {}, blow = {}, answer = {}, video_end = {}}
+              tap = {}, clap = {}, blow = {}, answer = {}, video_end = {}, no_lives = {}, time_up = {}}
 end
 reset_handlers()
 
 function M.setup(data)
   D = data or {}
   T = D.tile or 16
+  W = setmetatable(D.words or {}, {__index = WORDS})
+  S = setmetatable(D.style or {}, {__index = STYLE})
   D.kinds, D.sprites, D.solid, D.sounds = D.kinds or {}, D.sprites or {}, D.solid or {}, D.sounds or {}
   if not D.levels then -- one map, the way games were before levels
     D.levels = {{id = "nivel1", map = D.map, objects = D.objects, background = D.background, camera = D.camera,
@@ -96,7 +112,8 @@ function M.on(what, a, b, c)
   elseif what == "touch" or what == "tile" then list[#list + 1] = {a = a, b = b, fn = c}
   elseif what == "out" then list[#list + 1] = {a = a, fn = b}
   elseif what == "every" then list[#list + 1] = {ticks = math.max(1, math.floor((tonumber(a) or 1) * 60 + 0.5)), fn = b}
-  elseif what == "tap" or what == "clap" or what == "blow" or what == "video_end" then list[#list + 1] = a
+  elseif what == "tap" or what == "clap" or what == "blow" or what == "video_end" or what == "no_lives"
+         or what == "time_up" then list[#list + 1] = a
   elseif what == "answer" then list[#list + 1] = type(a) == "function" and {fn = a} or {n = a, fn = b} end
 end
 
@@ -329,6 +346,29 @@ function M.player() -- whom the camera follows, or the first player-like object
 end
 
 function M.set_sprite(o, name) if o and D.sprites[name] then o.sprite = name end end
+function M.play(o, name) -- a named animation once: "hit" (walk and idle play by themselves)
+  local k = o and D.kinds[o.kind]
+  local r = k and k.anims and k.anims[name]
+  if r and name == "hit" then o.hit_t = (math.abs(r[2] - r[1]) + 1) * ((k.animate or 0) > 0 and k.animate or 6) end
+end
+
+-- lives and a countdown: shown once set
+function M.set_lives(n) lives = math.max(0, math.min(99, math.floor(tonumber(n) or 0))) lives_start = lives end
+function M.lives() return lives or 0 end
+function M.add_lives(n)
+  if not lives then return end
+  local before = lives
+  lives = math.max(0, math.min(99, lives + math.floor(tonumber(n) or 0)))
+  if before > 0 and lives == 0 then
+    if #handlers.no_lives > 0 then for _, f in ipairs(handlers.no_lives) do f() end else M.lose(W.no_lives) end
+  end
+end
+function M.countdown(seconds) countdown = math.max(0, math.floor((tonumber(seconds) or 0) * 60 + 0.5)) end
+function M.add_time(seconds)
+  if countdown then countdown = math.max(0, countdown + math.floor((tonumber(seconds) or 0) * 60 + 0.5)) end
+end
+function M.time_left() return countdown and (countdown + 59) // 60 or 0 end
+function M.stop_countdown() countdown = nil end
 
 -- what the blocks read and change: an object that is not there (nil, or gone) is quietly left alone
 local PROPS = {x = true, y = true, vx = true, vy = true}
@@ -469,7 +509,18 @@ local function behave(o)
   local W, H = world() -- players stay inside the world (a platformer may still fall out of the bottom)
   if b == "platformer" or b == "topdown" or b == "grid" then o.x = math.max(0, math.min(W - o.w, o.x)) end
   if b == "topdown" or b == "grid" then o.y = math.max(0, math.min(H - o.h, o.y)) end
-  if (k.animate or 0) > 0 then -- frames go round while it moves (or always, for things that are not players)
+  if k.anims then -- named: walk while it moves, idle while it stands, a hit once when told
+    local s = D.sprites[o.sprite]
+    local last = (s and s.frames or 1) - 1
+    local r = ((o.hit_t or 0) > 0 and k.anims.hit) or ((o.vx ~= 0 or o.vy ~= 0) and k.anims.walk) or k.anims.idle
+    local a, z = 0, last
+    if r then a, z = math.max(0, math.min(r[1], last)), math.max(0, math.min(r[2], last)) end
+    if (o.hit_t or 0) > 0 then o.hit_t = o.hit_t - 1 end
+    if r ~= o.anim_r then o.anim_r, o.anim = r, 0 end -- a new animation starts from its first frame
+    o.anim = o.anim + 1
+    local every = (k.animate or 0) > 0 and k.animate or 6
+    o.frame = a + ((o.anim - 1) // every) % (math.max(a, z) - a + 1)
+  elseif (k.animate or 0) > 0 then -- frames go round while it moves (or always, for things that are not players)
     local moving = o.vx ~= 0 or o.vy ~= 0 or (b ~= "platformer" and b ~= "topdown" and b ~= "grid" and b ~= "push")
     o.anim = moving and o.anim + 1 or 0
     local s = D.sprites[o.sprite]
@@ -483,9 +534,9 @@ end
 
 -- ------------------------------------------------------------------ what the blocks do besides
 
-function M.label(key, text, where) -- a text on the screen from now on (where: "top_left", "top", "top_right", "bottom")
-  if text == nil then labels[key] = nil return end
-  labels[key] = {text = tostring(text), where = where or "top_left"}
+function M.label(key, text, where, style) -- a text on the screen from now on (where: "top_left", "top", "top_right",
+  if text == nil then labels[key] = nil return end            -- "bottom"...; style: "normal", "shadow", "wave", "big"...)
+  labels[key] = {text = tostring(text), where = where or "top_left", style = style}
 end
 
 function M.message(text, seconds) message, message_t = tostring(text), math.floor((seconds or 2) * 60) end
@@ -509,8 +560,8 @@ function M.burst(x, y, colour, n)
 end
 function M.burst_at(o, colour) if o then M.burst(o.x + o.w / 2, o.y + o.h / 2, colour) end end
 
-function M.win(text) ended = {text = text or "¡Has ganado!", won = true} M.sound("ganar") end
-function M.lose(text) ended = {text = text or "Has perdido", won = false} M.sound("perder") end
+function M.win(text) ended = {text = text or W.won, won = true} M.sound("ganar") end
+function M.lose(text) ended = {text = text or W.lost, won = false} M.sound("perder") end
 
 -- levels: changed once this tick is over (a touch that sends to the next level is in the middle of the objects)
 function M.goto_level(which)
@@ -540,6 +591,8 @@ end
 
 local function start_level(first) -- the level LV from its start; first: a game begins with it
   objs, contacts, on_tile, message, ended, timer, going = {}, {}, {}, nil, nil, 0, nil
+  countdown = nil                                   -- each level sets its own clock
+  if lives and lives <= 0 then lives = lives_start end -- out of lives: trying again gives them back
   cells, talk = {}, nil
   backdrop(LV.background or 0x6CB4E0)
   local layers = 0
@@ -578,7 +631,7 @@ local function play_level(i, first)
 end
 
 local function begin_game(which) -- labels last the whole game; "start" fires once the first level is there
-  labels = {}
+  labels, lives, lives_start, countdown = {}, nil, nil, nil
   M.video()
   local i = 1
   for k, l in ipairs(D.levels) do if k == which or l.id == which then i = k end end
@@ -633,6 +686,12 @@ function M.update()
   if video_update() or talk_update() then return end -- a video or a conversation: the game waits
   if juice.update() then return end
   timer = timer + 1
+  if countdown and countdown > 0 then
+    countdown = countdown - 1
+    if countdown == 0 then
+      if #handlers.time_up > 0 then for _, f in ipairs(handlers.time_up) do f() end else M.lose(W.time_up) end
+    end
+  end
   hear()
   for _, h in ipairs(handlers.press) do if btnp(h.button) then h.fn() end end
   for _, h in ipairs(handlers.hold) do if btn(h.button) then h.fn() end end
@@ -646,7 +705,7 @@ function M.update()
       o.alive = false
       local told = false
       for _, h in ipairs(handlers.out) do if h.a == o.kind then h.fn(o) told = true end end
-      if o == player and not told and not ended then M.lose("¡Te has caído!") end
+      if o == player and not told and not ended then M.lose(W.fell) end
     end
   end
   local now = {}
@@ -700,6 +759,35 @@ end
 local PLACES = {top_left = {12, 8, "left"}, top = {240, 8, "center"}, top_right = {468, 8, "right"},
                 bottom = {240, 290, "center"}, bottom_left = {12, 290, "left"}, bottom_right = {468, 290, "right"}}
 
+local function label_style(style, align) -- a label's options for text()
+  local o = {font = "bold", color = S.text, outline = S.outline, align = align}
+  if style == "shadow" then o.outline, o.shadow, o.shadow_x, o.shadow_y = nil, S.outline, 1, 1
+  elseif style == "wave" then o.wave = 2
+  elseif style == "big" then o.font = "large_bold"
+  elseif style == "gradient" then o.gradient = S.accent end
+  return o
+end
+
+local HEART = {".XX.XX.", "XXXXXXX", "XXXXXXX", ".XXXXX.", "..XXX..", "...X..."}
+local function draw_hearts(n, y) -- at the top right, 2 screen pixels a dot, outlined
+  local shown = math.min(n, 8)
+  for i = 1, shown do
+    local x = 468 - i * 18 + 4
+    for pass = 1, 2 do
+      for r, row in ipairs(HEART) do
+        for c = 1, #row do
+          if row:sub(c, c) == "X" then
+            if pass == 1 then rect(x + (c - 1) * 2 - 2, y + (r - 1) * 2 - 2, 6, 6, S.outline)
+            else rect(x + (c - 1) * 2, y + (r - 1) * 2, 2, 2, S.heart) end
+          end
+        end
+      end
+    end
+    rect(x + 2, y + 2, 2, 2, S.text)
+  end
+  if n > shown then text("x" .. n, 468 - shown * 18 - 4, y - 2, {font = "bold", color = S.text, outline = S.outline, align = "right"}) end
+end
+
 local function draw_cover()
   local c = D.cover
   local s = not c.tiled and c.picture and D.sprites[c.picture]
@@ -710,11 +798,10 @@ local function draw_cover()
     local k = math.max(1, math.min(SCREEN_W // s.w, SCREEN_H // s.h))
     img("SPR_" .. c.picture, (SCREEN_W - s.w * k) // 2, (SCREEN_H - s.h * k) // 2, {frame = 0, scale = k})
   end
-  text(c.text or D.title or "", SCREEN_W // 2, 80, {font = "large_bold", scale = 2, color = 0xFFFFFF, outline = 0x202020,
+  text(c.text or D.title or "", SCREEN_W // 2, 80, {font = "large_bold", scale = 2, color = S.text, outline = S.outline,
                                                    align = "center", width = 440})
   if (clock // 30) % 2 == 0 then
-    text(c.subtitle or "Pulsa A para empezar", SCREEN_W // 2, 236, {font = "bold", color = 0xFFE070,
-                                                                    outline = 0x202020, align = "center"})
+    text(c.subtitle or W.start, SCREEN_W // 2, 236, {font = "bold", color = S.accent, outline = S.outline, align = "center"})
   end
 end
 
@@ -746,20 +833,27 @@ function M.draw()
   camera()
   for _, l in pairs(labels) do
     local at = PLACES[l.where] or PLACES.top_left
-    text(l.text, at[1], at[2], {font = "bold", color = 0xFFFFFF, outline = 0x202020, align = at[3]})
+    text(l.text, at[1], at[2], label_style(l.style, at[3]))
+  end
+  if lives then draw_hearts(lives, labels.top_right and 34 or 10) end
+  if countdown then
+    local left = (countdown + 59) // 60
+    local o = label_style(nil, "center")
+    if left <= 10 then o.color = (clock // 15) % 2 == 0 and S.bad or S.text end
+    text(string.format("%d:%02d", left // 60, left % 60), SCREEN_W // 2, labels.top and 32 or 8, o)
   end
   if message and message_t > 0 and not ended then
-    text(message, SCREEN_W // 2, 140, {font = "large_bold", color = 0xFFFFFF, outline = 0x202020, align = "center",
+    text(message, SCREEN_W // 2, 140, {font = "large_bold", color = S.text, outline = S.outline, align = "center",
                                        width = 440})
   end
   video_draw()
   talk_draw()
   if ended then
     shade(0, 0, SCREEN_W, SCREEN_H)
-    text(ended.text, SCREEN_W // 2, 120, {font = "large_bold", color = ended.won and 0xFFE070 or 0xFF7060,
-                                          outline = 0x202020, align = "center", width = 440})
-    text(ended.won and (D.cover and "A: a la portada" or "A: otra partida") or "A: probar otra vez", SCREEN_W // 2, 180,
-         {font = "bold", color = 0xFFFFFF, outline = 0x202020, align = "center"})
+    text(ended.text, SCREEN_W // 2, 120, {font = "large_bold", color = ended.won and S.accent or S.bad,
+                                          outline = S.outline, align = "center", width = 440})
+    text(ended.won and (D.cover and W.to_cover or W.again) or W.retry, SCREEN_W // 2, 180,
+         {font = "bold", color = S.text, outline = S.outline, align = "center"})
   end
   juice.draw()
 end

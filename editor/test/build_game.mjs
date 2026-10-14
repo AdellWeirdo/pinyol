@@ -28,11 +28,13 @@ const carried = [...['FONT_MAIN.fnt', 'FONT_BOLD.fnt', 'FONT_MAIN_L.fnt', 'FONT_
 
 rmSync(out, { recursive: true, force: true });
 for (const t of TEMPLATES) {
-  const project = t.make();
+  const project = await t.make();
   setProject(project);
   const ws = new Blockly.Workspace();
-  Blockly.serialization.workspaces.load(templateBlocks(t.key), ws);
-  for (const [path, bytes] of buildFiles(project, workspaceLua(ws), carried)) {
+  Blockly.serialization.workspaces.load(t.blocks ? await t.blocks() : templateBlocks(t.key), ws);
+  const lettered = carried.map(([path, bytes]) => [path, project.font && /^fonts\/FONT_/.test(path) ? // its own letters
+    readFileSync(join(editor, 'fonts', project.font, path.slice(6))) : bytes]);
+  for (const [path, bytes] of buildFiles(project, workspaceLua(ws), lettered, { audio: await audioFiles(project) })) {
     mkdirSync(dirname(join(out, t.key, path)), { recursive: true });
     writeFileSync(join(out, t.key, path), bytes);
   }
@@ -114,4 +116,38 @@ for (const t of TEMPLATES) {
   }
   ws.dispose();
 }
-console.log('built', TEMPLATES.map(t => t.key).join(', '), ', sonido and conversa in', out);
+// and the platformer in the Game Boy's look, with its letters, named animations, lives, a countdown and a styled label
+// (tests/editor_extras.script)
+{
+  const { LOOKS, lookColour } = await import('../js/project.js');
+  const project = TEMPLATES[0].make(), look = LOOKS.gameboy, hero = project.drawings.find(d => d.name === 'heroe');
+  Object.assign(project, { look: 'gameboy', font: 'silkscreen' });
+  for (const d of project.drawings) d.frames = d.frames.map(f => f.map(v => lookColour(look, v)));
+  hero.frames.push(hero.frames[0].map(v => (v < 0 ? v : lookColour(look, 0)))); // a third frame: the hit, all dark
+  hero.anims = { idle: [0, 0], walk: [0, 1], hit: [2, 2] };
+  setProject(project);
+  const V = (name, id) => ({ name, id }), n = v => ({ block: { type: 'math_number', fields: { NUM: v } } });
+  const set = (id, v) => ({ type: 'variables_set', fields: { VAR: { id } }, inputs: { VALUE: n(v) } });
+  const ev = (type, fields, body, x) => ({ type, fields, x, y: 0, inputs: { DO: { block: body } } });
+  const blocks = { variables: [V('tiempo', 't'), V('sinvidas', 's')], blocks: { languageVersion: 0, blocks: [
+    ev('kit_start', {}, { type: 'kit_set_lives', fields: { N: 2 }, next: { block: { type: 'kit_countdown', fields: { SECONDS: 3 },
+      next: { block: { type: 'kit_label', fields: { WHERE: 'top_left', STYLE: 'wave' },
+                       inputs: { TEXT: { block: { type: 'text', fields: { TEXT: 'Hola' } } } } } } } } }, 0),
+    ev('kit_press', { BUTTON: 'b' }, { type: 'kit_lose_life' }, 300),
+    ev('kit_press', { BUTTON: 'c' }, { type: 'kit_play_hit', inputs: { OBJ: { block: { type: 'kit_player' } } } }, 600),
+    ev('kit_time_up', {}, set('t', 1), 900),
+    ev('kit_no_lives', {}, set('s', 1), 1200),
+  ] } };
+  const ws = new Blockly.Workspace();
+  Blockly.serialization.workspaces.load(blocks, ws);
+  const code = workspaceLua(ws);
+  for (const want of ['kit.set_lives(2)', 'kit.countdown(3)', '"wave")', 'kit.add_lives(-1)', 'kit.play(kit.player(), "hit")', '"time_up"'])
+    if (!code.includes(want)) throw new Error('extras: no ' + want + ' in\n' + code);
+  const lettered = carried.map(([path, bytes]) => [path, /^fonts\/FONT_/.test(path) ? readFileSync(join(editor, 'fonts/silkscreen', path.slice(6))) : bytes]);
+  for (const [path, bytes] of buildFiles(project, code, lettered)) {
+    mkdirSync(dirname(join(out, 'extras', path)), { recursive: true });
+    writeFileSync(join(out, 'extras', path), bytes);
+  }
+  ws.dispose();
+}
+console.log('built', TEMPLATES.map(t => t.key).join(', '), ', sonido, conversa and extras in', out);

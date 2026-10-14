@@ -1,0 +1,21 @@
+# The editor's platformer in the Game Boy's look (its palette, its letters, its colours for texts and hearts), with
+# named animations (a hit played by a block), lives (one taken by B, none left fires its event) and a countdown
+tick 30
+press A
+tick 10
+expect_lua kit.lives() == 2 and kit.time_left() == 3
+shot extras_hud
+press B
+tick 2
+expect_lua kit.lives() == 1
+press C
+tick 1
+expect_lua kit.player().frame == 2 and kit.player().hit_t > 0
+tick 30
+expect_lua kit.player().frame == 0
+tick 200
+expect_lua tiempo == 1 and kit.time_left() == 0
+press B
+tick 2
+expect_lua sinvidas == 1 and kit.lives() == 0
+expect_ok

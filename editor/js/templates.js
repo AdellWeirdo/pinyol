@@ -1,7 +1,7 @@
 // The games "Nuevo" starts from: a platformer, an adventure seen from above, a space shooter and a box-pushing puzzle,
 // each with its own drawings (original, as characters or as code), levels, sounds and a cover; their blocks are in
 // blocks.js (templateBlocks). And an empty game.
-import { FORMAT, TILE, DRAWING, blankFrame, rgb565, drawing, newLevel } from './project.js';
+import { FORMAT, TILE, DRAWING, blankFrame, rgb565, drawing, newLevel, check } from './project.js';
 
 // an explorer of our own: a blue woolly hat, an amber coat, boots; two frames of walking
 const HERO = [
@@ -353,4 +353,7 @@ export const TEMPLATES = [
   { key: 'aventura', label: 'Aventura desde arriba', make: templateAdventure },
   { key: 'naves', label: 'Naves', make: templateShooter },
   { key: 'puzle', label: 'Puzle de cajas', make: templatePuzzle },
+  { key: 'abella', label: 'Abella (Game Boy)', // a whole game, its data loaded only when chosen (abella.js)
+    make: async () => check(structuredClone((await import('./abella.js')).ABELLA)),
+    blocks: async () => (await import('./abella.js')).ABELLA_BLOCKS },
 ];

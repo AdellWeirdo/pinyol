@@ -42,6 +42,56 @@ export const DRAWING = { use: 'tile', solid: false, behaviour: 'still', speed: 1
                          dir: 'forward', parallax: 0.5, drift: '', drift_speed: 0.5 };
 
 export const SIZES = [8, 16, 24, 32, 48, 64];
+export const MAX_FRAMES = 16; // a drawing's frames: room for named animations (still, walking, hit)
+export const ANIMS = { idle: 'Quieto', walk: 'Andar', hit: 'Golpe' }; // kit.lua's named animations
+export const LANGS = { es: 'Castellano', ca: 'Català', en: 'English' }; // a game's own language: kit's sentences in it
+
+// The letters a game can have: the engine's own, or one of these (fonts/<id>/: the four FONT_*.fnt the game carries,
+// made by tools/font2fnt.py from third_party/fonts, and font.woff2 for the cover's preview)
+export const FONTS = { '': 'La del motor', silkscreen: 'Silkscreen', micro5: 'Micro 5', pressstart2p: 'Press Start 2P',
+                       jersey15: 'Jersey 15' };
+
+// A game's look, as a console drew it: its colours (only those, or any snapped to the console's own), the size of its
+// map's tiles, its letters, and the colours of the game's own texts and hearts (kit.lua's data.style)
+const MD = c => Math.min(252, Math.round(c / 36) * 36); // a Mega Drive's 512 colours: 8 steps a channel
+export const LOOKS = {
+  '': { name: 'Libre', palette: null, tile: 16, font: '' },
+  gameboy: { name: 'Game Boy', tile: 16, font: 'silkscreen', background: '#9BBC0F',
+             palette: ['#0F380F', '#306230', '#8BAC0F', '#9BBC0F'],
+             names: ['verde negro', 'verde oscuro', 'verde claro', 'verde pálido'],
+             style: { text: '#9BBC0F', outline: '#0F380F', accent: '#8BAC0F', bad: '#9BBC0F', heart: '#306230' } },
+  pico8: { name: 'PICO-8', tile: 8, font: 'micro5', background: '#1D2B53',
+           palette: null, // PALETTE's first 16, below
+           style: { text: '#FFF1E8', outline: '#000000', accent: '#FFEC27', bad: '#FF004D', heart: '#FF004D' } },
+  spectrum: { name: 'ZX Spectrum', tile: 8, font: 'pressstart2p', background: '#000000',
+              palette: ['#000000', '#0000D7', '#D70000', '#D700D7', '#00D700', '#00D7D7', '#D7D700', '#D7D7D7',
+                        '#0000FF', '#FF0000', '#FF00FF', '#00FF00', '#00FFFF', '#FFFF00', '#FFFFFF'],
+              names: ['negro', 'azul', 'rojo', 'magenta', 'verde', 'cian', 'amarillo', 'blanco', 'azul brillante',
+                      'rojo brillante', 'magenta brillante', 'verde brillante', 'cian brillante', 'amarillo brillante',
+                      'blanco brillante'],
+              style: { text: '#FFFFFF', outline: '#000000', accent: '#FFFF00', bad: '#FF0000', heart: '#FF0000' } },
+  '16bits': { name: '16 bits', tile: 16, font: 'jersey15', snap: true, // any colour, as one of the console's 512
+              palette: ['#000000', '#242424', '#6C6C6C', '#B4B4B4', '#FCFCFC', '#480000', '#B42424', '#FC4848',
+                        '#FC9048', '#FCD86C', '#FCFC90', '#244800', '#48906C', '#6CD848', '#B4FC6C', '#002448',
+                        '#0048B4', '#2490FC', '#6CD8FC', '#B4FCFC', '#480048', '#902490', '#D848B4', '#FC90D8',
+                        '#482400', '#906C48', '#D8B490', '#FCD8B4', '#244848', '#486C90', '#9090D8', '#D8D8FC'] },
+};
+LOOKS.pico8.palette = PALETTE.slice(0, 16);
+LOOKS.pico8.names = COLOUR_NAMES.slice(0, 16);
+export const lookOf = p => LOOKS[p && p.look] || LOOKS[''];
+
+// the colour a look allows nearest to an RGB565 one: its palette's closest, or snapped to the console's own
+export function lookColour(look, v) {
+  if (v < 0 || !look.palette || look === LOOKS['']) return v;
+  const [r, g, b] = rgbOf(v);
+  if (look.snap) return rgb565(MD(r), MD(g), MD(b));
+  let best = v, d = Infinity;
+  for (const hex of look.palette) {
+    const [pr, pg, pb] = rgbOf(hex565(hex)), e = (pr - r) ** 2 * 3 + (pg - g) ** 2 * 4 + (pb - b) ** 2 * 2;
+    if (e < d) d = e, best = hex565(hex);
+  }
+  return best;
+}
 
 // a name a file and Lua can take: lowercase letters, digits, _ (accents dropped, spaces as _)
 export function safeName(s, fallback = 'cosa') {
@@ -57,6 +107,18 @@ export function uniqueName(name, taken) {
 }
 
 export function blankFrame(w, h) { return new Array(w * h).fill(-1); }
+
+// named animations: {idle: [first, last], walk: [...], hit: [...]}, frames from 0; null without any
+export function checkAnims(a, frames) {
+  if (!a || typeof a !== 'object') return null;
+  const out = {};
+  for (const k of Object.keys(ANIMS))
+    if (Array.isArray(a[k]) && a[k].length === 2) {
+      const [x, y] = a[k].map(v => clampInt(v, 0, frames - 1, 0));
+      out[k] = [Math.min(x, y), Math.max(x, y)];
+    }
+  return Object.keys(out).length ? out : null;
+}
 
 // ------------------------------------------------------------------ colours as the console has them
 
@@ -117,13 +179,15 @@ export function check(p) {
   const out = { format: FORMAT, id: safeName(p.id, 'juego'), title: String(p.title || 'Juego').slice(0, 40), drawings: [],
                 author: String(p.author || '').slice(0, 40), about: String(p.about || '').slice(0, 140), // game.json's
                 tagline: String(p.tagline || '').slice(0, 40), // the line under the name in the console's menu
+                look: LOOKS[p.look] ? p.look : '', tile: p.tile === 8 ? 8 : 16, font: FONTS[p.font] !== undefined ? p.font : '',
+                lang: LANGS[p.lang] ? p.lang : 'es',
                 levels: [], sounds: [], videos: [], blocks: p.blocks && typeof p.blocks === 'object' ? p.blocks : null };
   const names = new Set();
   const old = !(p.format >= 2), palette = PALETTE.map(hex565); // format 1: indices into the palette
   const pixel = v => (!Number.isInteger(v) || v < 0 ? -1 : old ? (v < palette.length ? palette[v] : -1) : v <= 0xFFFF ? v : -1);
   for (const d of Array.isArray(p.drawings) ? p.drawings.slice(0, 64) : []) {
     const w = clampInt(d.w, 1, MAX_SIDE, 16), h = clampInt(d.h, 1, MAX_SIDE, 16);
-    const frames = (Array.isArray(d.frames) ? d.frames.slice(0, 8) : []).map(f =>
+    const frames = (Array.isArray(d.frames) ? d.frames.slice(0, MAX_FRAMES) : []).map(f =>
       (typeof f === 'string' ? decodeFrame(f, w * h) : null) ||
       Array.from({ length: w * h }, (_, i) => (Array.isArray(f) ? pixel(f[i]) : -1)));
     const name = uniqueName(safeName(d.name), names);
@@ -134,7 +198,8 @@ export function check(p) {
                         speed: clampNum(d.speed, 0, 6, 1.5), jump: clampNum(d.jump, 0, 10, 4.5),
                         animate: clampNum(d.animate, 0, 60, 8), parallax: clampNum(d.parallax, 0, 1, 0.5),
                         gravity: typeof d.gravity === 'boolean' ? d.gravity : null, dir: SHOT_DIRS[d.dir] ? d.dir : 'forward',
-                        drift: DRIFTS[d.drift] !== undefined ? d.drift : '', drift_speed: clampNum(d.drift_speed, 0, 4, 0.5) });
+                        drift: DRIFTS[d.drift] !== undefined ? d.drift : '', drift_speed: clampNum(d.drift_speed, 0, 4, 0.5),
+                        anims: checkAnims(d.anims, frames.length || 1) });
   }
   const levels = Array.isArray(p.levels) ? p.levels : [{ id: 'nivel1', name: 'Nivel 1', map: p.map, objects: p.objects,
     background: p.background, camera: p.camera, hide: [] }]; // before levels: one map

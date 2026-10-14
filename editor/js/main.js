@@ -1,14 +1,14 @@
 // The editor: the project kept in the browser as it changes, the tabs, and the game built from it for the player
 // (Jugar), the console's card (a .zip) or the console itself over its cable.
 /* global Blockly */
-import { check, pack, safeName, saveLocal, loadLocal } from './project.js';
+import { check, pack, safeName, saveLocal, loadLocal, LOOKS, MAP_MAX, lookColour, hex565, hexOf } from './project.js';
 import { TEMPLATES, templateEmpty } from './templates.js';
 import { buildFiles } from './build.js';
 import { audioFiles } from './audio.js';
 import { zip } from './zip.js';
 import { cableWorks, send } from './cable.js';
 import { defineBlocks, setProject, workspaceLua, TOOLBOX, templateBlocks } from './blocks.js';
-import { initDrawings } from './sprites.js';
+import { initDrawings, renderPalette } from './sprites.js';
 import { initMap, coverBytes } from './map.js';
 import { initSounds } from './sounds.js';
 import { initVideos } from './videos.js';
@@ -20,7 +20,7 @@ const $ = id => document.getElementById(id);
 const GAME_FILES = ['fonts/FONT_MAIN.fnt', 'fonts/FONT_BOLD.fnt', 'fonts/FONT_MAIN_L.fnt', 'fonts/FONT_BOLD_L.fnt',
   'lib/kit.lua', 'lib/juice.lua', 'lib/particles.lua'];
 const TOUCH = matchMedia('(pointer: coarse)').matches;
-let project, ws, tabs = {}, saveTimer = 0, gameFiles = null, loading = false, blocksBroken = false;
+let project, ws, tabs = {}, saveTimer = 0, loading = false, blocksBroken = false;
 
 // A message at the bottom: read aloud, long enough to read; an error stays until closed; an action can undo something.
 function toast(text, { error = false, action = null } = {}) {
@@ -133,11 +133,51 @@ function dropTile(level, name) {
   m.cells = m.cells.map(c => (c === i + 1 ? 0 : c > i + 1 ? c - 1 : c));
 }
 
+// A look chosen: every drawing and background in its colours, its letters, and its tiles while the maps are empty
+function applyLook(key) {
+  const look = LOOKS[key] || LOOKS[''], p = project, was = p.look || '';
+  if (key === was) return;
+  const painted = p.drawings.some(d => d.frames.some(f => f.some(v => v >= 0)));
+  if (look.palette && painted &&
+      !confirm(`Aspecto ${look.name}: los dibujos y los colores de fondo pasan a sus colores (al más parecido). ¿Seguir?`)) {
+    $('look').value = was;
+    return;
+  }
+  const colour = hex => hexOf(lookColour(look, hex565(hex)));
+  p.look = key || '';
+  p.font = look.font;
+  for (const d of p.drawings) d.frames = d.frames.map(f => f.map(v => lookColour(look, v)));
+  for (const x of [...p.levels, p.cover]) x.background = look.background && !painted ? look.background : colour(x.background);
+  const old = p.tile || 16, tiles = p.drawings.some(d => d.use === 'tile' && d.w !== look.tile);
+  let said = `Aspecto ${look.name}.`;
+  if (look.tile !== old) {
+    if (tiles || p.levels.some(l => l.map.cells.some(Boolean))) {
+      said += ` Las baldosas siguen de ${old} × ${old}: ya hay mapas o baldosas de ese tamaño (${look.name} las usaba de ${look.tile}).`;
+    } else { // empty maps: the same world, in tiles of the new size
+      p.tile = look.tile;
+      for (const l of p.levels) {
+        const w = Math.max(240 / p.tile, Math.min(MAP_MAX, Math.round(l.map.w * old / p.tile)));
+        const h = Math.max(160 / p.tile, Math.min(MAP_MAX, Math.round(l.map.h * old / p.tile)));
+        Object.assign(l.map, { w, h, cells: new Array(w * h).fill(0) });
+      }
+      said += ` Baldosas de ${p.tile} × ${p.tile}.`;
+    }
+  }
+  renderPalette();
+  tabs.draw.reset();
+  tabs.map.reset();
+  changed();
+  toast(said);
+}
+
 function load(p, blocks) {
   project = p;
   project.videos = project.videos || []; // (templates and projects from before videos)
   setProject(project);
   $('title').value = project.title;
+  if (!$('look').options.length) for (const [k, l] of Object.entries(LOOKS)) $('look').append(new Option(l.name, k));
+  $('look').value = project.look || '';
+  renderPalette();
   blocksBroken = false;
   if (ws) {
     loading = true;
@@ -174,15 +214,23 @@ async function replace(p, blocks, said) {
 
 // ------------------------------------------------------------------ the game
 
-async function getGameFiles() { // -> [[path in the game, bytes]]
-  if (gameFiles) return gameFiles;
-  const out = [];
-  for (const f of GAME_FILES) {
+const fetched = new Map(); // what every game carries, read once
+async function fetchBytes(f) {
+  if (!fetched.has(f)) {
     const r = await fetch(f);
     if (!r.ok) throw new Error('falta ' + f + ' (¿se ha montado el editor con tools/make_editor.py?)');
-    out.push([f.replace(/^lib\//, ''), new Uint8Array(await r.arrayBuffer())]);
+    fetched.set(f, new Uint8Array(await r.arrayBuffer()));
   }
-  return (gameFiles = out);
+  return fetched.get(f);
+}
+async function getGameFiles() { // -> [[path in the game, bytes]]: kit and its libraries, and the game's letters
+  const out = [];
+  for (const f of GAME_FILES) {
+    const font = f.match(/^fonts\/(FONT_\w+\.fnt)$/); // the game's own letters, when it chose some
+    const from = font && project.font ? `fonts/${project.font}/${font[1]}` : f;
+    out.push([f.replace(/^lib\//, ''), await fetchBytes(from)]);
+  }
+  return out;
 }
 
 export function luaCode() { return ws ? workspaceLua(ws) : ''; }
@@ -334,7 +382,8 @@ function initMenu() { // Nuevo: a list that opens under the button, closes with 
     });
     list.append(b);
   };
-  for (const t of TEMPLATES) fresh(t.label, () => replace(t.make(), templateBlocks(t.key), `Juego nuevo: ${t.label}.`));
+  for (const t of TEMPLATES)
+    fresh(t.label, async () => replace(await t.make(), t.blocks ? await t.blocks() : templateBlocks(t.key), `Juego nuevo: ${t.label}.`));
   fresh('Vacío', () => replace(templateEmpty(), { blocks: { languageVersion: 0, blocks: [] } }, 'Juego nuevo, vacío.'));
 }
 
@@ -380,6 +429,7 @@ async function init() {
   initTabs();
   initMenu();
   initConsole();
+  $('look').addEventListener('change', e => applyLook(e.target.value));
   $('title').addEventListener('change', e => { // the game's folder on the card follows its name: two games, two folders
     project.title = e.target.value.trim().slice(0, 40) || 'Juego';
     project.id = safeName(project.title, 'juego');

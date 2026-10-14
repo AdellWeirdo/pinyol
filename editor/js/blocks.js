@@ -25,9 +25,10 @@ const PLACES = [['arriba a la izquierda', 'top_left'], ['arriba', 'top'], ['arri
 const COLOURS = [['amarillas', '0xFFE070'], ['blancas', '0xFFFFFF'], ['rojas', '0xFF4040'], ['verdes', '0x60E060'],
   ['azules', '0x50A0FF'], ['moradas', '0xC070FF']];
 
-const EVENT = 40, OBJECT = 200, ACTION = 290, INPUT = 160, MIC = 330, TALK = 20, VIDEO = 260, SAVE = 120;
+const EVENT = 40, OBJECT = 200, ACTION = 290, INPUT = 160, MIC = 330, TALK = 20, VIDEO = 260, SAVE = 120, LIVES = 0;
+const STYLES = [['normal', 'normal'], ['con sombra', 'shadow'], ['ondulada', 'wave'], ['grande', 'big'], ['en degradado', 'gradient']];
 export const EVENTS = new Set(['kit_start', 'kit_level', 'kit_tick', 'kit_press', 'kit_hold', 'kit_touch', 'kit_tile', 'kit_out',
-  'kit_every', 'kit_tap', 'kit_clap', 'kit_blow', 'kit_answer', 'kit_video_end']);
+  'kit_every', 'kit_tap', 'kit_clap', 'kit_blow', 'kit_answer', 'kit_video_end', 'kit_no_lives', 'kit_time_up']);
 
 // define(type, colour, parts, kind): parts are text and fields/inputs in order; kind: 'event', 'statement', a value type
 function define(type, colour, parts, kind, tooltip) {
@@ -96,7 +97,8 @@ export function defineBlocks() {
   define('kit_music', ACTION, ['poner la música', { dropdown: tunes, name: 'MUSIC' }], 'statement',
          'Una música traída en Sonidos, en bucle (cada nivel empieza con la suya, si tiene)');
   define('kit_music_stop', ACTION, ['parar la música'], 'statement');
-  define('kit_label', ACTION, [{ value: true, name: 'TEXT', label: 'mostrar' }, { dropdown: PLACES, name: 'WHERE' }], 'statement',
+  define('kit_label', ACTION, [{ value: true, name: 'TEXT', label: 'mostrar' }, { dropdown: PLACES, name: 'WHERE' }, 'con letra',
+    { dropdown: STYLES, name: 'STYLE' }], 'statement',
          'Se queda en pantalla hasta que se cambia');
   define('kit_message', ACTION, [{ value: true, name: 'TEXT', label: 'mostrar el mensaje' }, 'durante',
     { number: 2, min: 0.1, max: 60, step: 0.1, name: 'SECONDS' }, 'segundos'], 'statement');
@@ -112,6 +114,22 @@ export function defineBlocks() {
   define('kit_goto_level', ACTION, ['ir a', { dropdown: someLevel, name: 'LEVEL' }], 'statement');
   define('kit_set_tile', ACTION, ['poner', { dropdown: () => [['nada', '_'], ...tiles().filter(t => t[1] !== '_')], name: 'TILE' },
     { value: true, name: 'X', check: 'Number', label: 'en x' }, { value: true, name: 'Y', check: 'Number', label: 'y' }], 'statement');
+  // named animations: walk and idle play by themselves; a hit when told
+  define('kit_play_hit', OBJECT, [{ value: true, name: 'OBJ', check: 'Obj', label: 'animación de golpe de' }], 'statement',
+         'Los fotogramas de golpe de su dibujo, una vez (se eligen en Dibujos, en Animaciones)');
+  // lives and a countdown: hearts and a clock on the screen
+  define('kit_set_lives', LIVES, ['empezar con', { number: 3, min: 0, max: 99, name: 'N' }, 'vidas'], 'statement',
+         'Se ven como corazones arriba a la derecha');
+  define('kit_lose_life', LIVES, ['quitar una vida'], 'statement', 'Sin ninguna, se pierde (o pasa lo que diga «cuando se acaban las vidas»)');
+  define('kit_add_lives', LIVES, [{ value: true, name: 'V', check: 'Number', label: 'sumar a las vidas' }], 'statement');
+  define('kit_lives', LIVES, ['vidas que quedan'], 'Number');
+  define('kit_no_lives', LIVES, ['cuando se acaban las vidas'], 'event', 'Sin este evento, se pierde y se prueba el nivel otra vez');
+  define('kit_countdown', LIVES, ['cuenta atrás de', { number: 60, min: 1, max: 3600, name: 'SECONDS' }, 'segundos'], 'statement',
+         'Un reloj arriba en el centro');
+  define('kit_add_time', LIVES, [{ value: true, name: 'V', check: 'Number', label: 'sumar segundos al reloj' }], 'statement');
+  define('kit_time_left', LIVES, ['segundos que quedan'], 'Number');
+  define('kit_stop_countdown', LIVES, ['parar el reloj'], 'statement');
+  define('kit_time_up', LIVES, ['cuando se acaba el tiempo'], 'event', 'Sin este evento, se pierde y se prueba el nivel otra vez');
   // saved in the console: still there when it is turned off and on (store, stored)
   const KEEP = 'Se queda en la consola aunque la apagues. Úsalo al acabar un nivel o la partida, no en «a cada momento»';
   define('kit_store', SAVE, ['guardar como', { text: 'récord', name: 'KEY' }, { value: true, name: 'V', label: 'el valor' }],
@@ -183,7 +201,8 @@ function defineLua() {
   F.kit_sound = b => `kit.sound(${q(b.getFieldValue('SOUND'))})\n`;
   F.kit_music = b => `kit.music(${q(b.getFieldValue('MUSIC'))})\n`;
   F.kit_music_stop = () => 'kit.music(nil)\n';
-  F.kit_label = b => `kit.label(${q(b.getFieldValue('WHERE'))}, ${text(b)}, ${q(b.getFieldValue('WHERE'))})\n`;
+  F.kit_label = b => { const st = b.getFieldValue('STYLE'); // (normal: as labels always were)
+    return `kit.label(${q(b.getFieldValue('WHERE'))}, ${text(b)}, ${q(b.getFieldValue('WHERE'))}${st && st !== 'normal' ? ', ' + q(st) : ''})\n`; };
   F.kit_message = b => `kit.message(${text(b)}, ${Number(b.getFieldValue('SECONDS')) || 2})\n`;
   F.kit_win = b => `kit.win(${text(b)})\n`;
   F.kit_lose = b => `kit.lose(${text(b)})\n`;
@@ -210,6 +229,17 @@ function defineLua() {
   F.kit_video_window = b => `kit.video(${q(b.getFieldValue('VIDEO'))}, ${q(b.getFieldValue('WHERE'))})\n`;
   F.kit_video_stop = () => 'kit.video()\n';
   F.kit_video_end = b => on('"video_end"', b);
+  F.kit_play_hit = b => `kit.play(${obj(b)}, "hit")\n`;
+  F.kit_set_lives = b => `kit.set_lives(${Number(b.getFieldValue('N')) || 0})\n`;
+  F.kit_lose_life = () => 'kit.add_lives(-1)\n';
+  F.kit_add_lives = b => `kit.add_lives(${val(b, 'V')})\n`;
+  F.kit_lives = () => ['kit.lives()', O.HIGH];
+  F.kit_no_lives = b => on('"no_lives"', b);
+  F.kit_countdown = b => `kit.countdown(${Number(b.getFieldValue('SECONDS')) || 60})\n`;
+  F.kit_add_time = b => `kit.add_time(${val(b, 'V')})\n`;
+  F.kit_time_left = () => ['kit.time_left()', O.HIGH];
+  F.kit_stop_countdown = () => 'kit.stop_countdown()\n';
+  F.kit_time_up = b => on('"time_up"', b);
   const key = b => q(b.getFieldValue('KEY').trim() || 'récord');
   F.kit_store = b => `store(${key(b)}, ${val(b, 'V')})\n`;
   F.kit_store_max = b => `do local v = ${val(b, 'V')} if v > (tonumber(stored(${key(b)}, 0)) or 0) then store(${key(b)}, v) end end\n`;
@@ -241,7 +271,8 @@ export const TOOLBOX = {
       { kind: 'block', type: 'kit_change', inputs: { OBJ: thisBlock(), V: num(1) } },
       { kind: 'block', type: 'kit_get', inputs: { OBJ: thisBlock() } }, { kind: 'block', type: 'kit_count' },
       { kind: 'block', type: 'kit_count_on' },
-      { kind: 'block', type: 'kit_sprite', inputs: { OBJ: thisBlock() } }] },
+      { kind: 'block', type: 'kit_sprite', inputs: { OBJ: thisBlock() } },
+      { kind: 'block', type: 'kit_play_hit', inputs: { OBJ: thisBlock() } }] },
     { kind: 'category', name: 'Acciones', colour: ACTION, contents: [
       { kind: 'block', type: 'kit_sound' }, { kind: 'block', type: 'kit_music' }, { kind: 'block', type: 'kit_music_stop' },
       { kind: 'block', type: 'kit_label', inputs: { TEXT: str('Puntos: 0') } },
@@ -261,6 +292,12 @@ export const TOOLBOX = {
       { kind: 'block', type: 'kit_answer' }] },
     { kind: 'category', name: 'Vídeo', colour: VIDEO, contents: ['kit_video_full', 'kit_video_window', 'kit_video_stop',
       'kit_video_end'].map(type => ({ kind: 'block', type })) },
+    { kind: 'category', name: 'Vidas y tiempo', colour: LIVES, contents: [
+      { kind: 'block', type: 'kit_set_lives' }, { kind: 'block', type: 'kit_lose_life' },
+      { kind: 'block', type: 'kit_add_lives', inputs: { V: num(1) } }, { kind: 'block', type: 'kit_lives' },
+      { kind: 'block', type: 'kit_no_lives' }, { kind: 'block', type: 'kit_countdown' },
+      { kind: 'block', type: 'kit_add_time', inputs: { V: num(10) } }, { kind: 'block', type: 'kit_time_left' },
+      { kind: 'block', type: 'kit_stop_countdown' }, { kind: 'block', type: 'kit_time_up' }] },
     { kind: 'category', name: 'Guardar', colour: SAVE, contents: [
       { kind: 'block', type: 'kit_store_max', inputs: { V: num(0) } },
       { kind: 'block', type: 'kit_store', inputs: { V: num(1) } }, { kind: 'block', type: 'kit_stored' }] },
