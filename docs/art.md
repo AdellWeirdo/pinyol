@@ -17,6 +17,23 @@ assets/  what the engine reads (.pk / .tiles / .map / .pal + .meta.json)
 
 `examples/duelo/art/make_art.py` is the shortest whole example of the middle step: read it next to this page.
 
+## 0. Choose a look
+
+A game looks like the console it is made for. Pick one with whoever the game is for (ask, if they have not said),
+then make every picture by that look's numbers and start from its examples. The engine moves all of them.
+
+| | Game Boy Advance | Neo Geo | CPS2 |
+|---|---|---|---|
+| Examples to start from | `plataformas`, `naves`, `carreras`, `puzle`, `aldea` | `duelo`, `calle`, `asalto`, `nubes`, `futbol`, `moto` | `torneo`, `mazmorra` |
+| Where it is drawn | the world, 240×160 shown twice as big (`bg`, `spr`) | pictures at 480×320 (`img`, `--packed`) | pictures at 480×320 (`img`, `--packed`) |
+| A character | 16 to 32 pixels tall, 8 to 16 colours | 150 to 180 pixels tall, 64 colours or more | 125 to 140 pixels tall, **15 colours and see-through** (`--colours 16`) |
+| Backgrounds | 8×8 tiles (`--tiles`), shared palettes (`--palette`), Mode 7 floors | wide layers at full resolution, many colours | wide layers; a floor in perspective drawn in bands of rows (`torneo`) |
+| Zoom and turning | sprites turn and scale (`spr_mat`); Mode 7 | yes: `img(..., {scale})`, a camera that zooms | **none**: everyone keeps the size they were drawn at; the camera only pans |
+| Also | per-line effects, blending, mosaic, windows | big frames, many of them; flashes (`tint`) | other colours for the same character (`pal`), pillars in front of everyone, many frames per move |
+| The prompts' style line | *16-bit handheld pixel art, 4 to 8 colours per sprite, hard pixel edges, no anti-aliasing* | *mid-1990s Neo Geo sprite art, 3 to 4 tones per material, hard pixel edges, no anti-aliasing* | *mid-1990s 2D arcade fighting game sprite, hand-pixelled, bold dark outline, cel shading with 3 or 4 tones per material, about 15 colours in total, anime-influenced proportions* |
+
+Name the look, never a company's game or characters: the art must be the game's own.
+
 ## 1. Decide the sizes first
 
 Two kinds of picture, and a game can mix them:

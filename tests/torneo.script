@@ -1,0 +1,50 @@
+# Torneo: the title (picking the same fighter twice: the rival in other colours), a round's intro, walking, a slash and
+# a kick that land, a jump, guarding, a K.O. that ends the round, two rounds to the end
+tick 30
+expect_lua state == "title"
+press UP
+expect_lua rival == 1
+shot titulo
+press A
+expect_lua state == "intro" and p[1].name == "ALBA" and p[2].name == "ALBA" and p[2].pal == "SPR_ALBA_B"
+tick 100
+expect_lua state == "fight"
+lua p[2].cpu = false
+hold RIGHT 30
+expect_lua p[1].x > 330
+lua p[1].x, p[2].x = 300, 400
+press A
+tick 6
+expect_lua p[2].hp < 100
+shot tajo
+tick 30
+lua p[2].hp, p[2].act = 100, "idle"
+press B
+tick 8
+expect_lua p[2].hp == 88
+shot patada
+tick 30
+press UP
+tick 12
+expect_lua p[1].y < -20 and p[1].act == "jump"
+shot salto
+tick 40
+expect_lua p[1].y == 0 and p[1].act == "idle"
+lua p[2].x, p[2].act, p[2].t, p[2].move = p[1].x + 100, "attack", 0, MOVES.slash
+hold LEFT 6
+expect_lua p[1].act == "block" and p[1].hp == 98
+lua p[2].hp = 0
+tick 10
+expect_lua state == "ko" and p[1].wins == 1
+shot ko
+tick 160
+expect_lua state == "intro" and round == 2
+lua p[2].hp = 0
+tick 100
+tick 170
+expect_lua state == "over" and p[1].wins == 2
+shot gana
+tick 70
+press A
+expect_lua state == "title"
+expect_ok

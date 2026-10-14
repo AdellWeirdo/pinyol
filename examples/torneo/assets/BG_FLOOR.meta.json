@@ -1,0 +1,28 @@
+{
+  "asset": "BG_FLOOR",
+  "type": "background",
+  "w": 820,
+  "h": 72,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    410,
+    71
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "none"
+  },
+  "memory_bytes": {
+    "pixels": 118080,
+    "mask": 0,
+    "total": 118080
+  }
+}

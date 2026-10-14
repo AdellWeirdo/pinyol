@@ -1,0 +1,35 @@
+# Mazmorra: the title, walking down the corridor until the camera stops and a group comes, a slash and a kick at a
+# goblin's depth (it flashes, goes down), a skeleton's blow hurting Alba, the dungeon cleared at the end
+tick 30
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "play"
+hold RIGHT 160
+expect_lua cam >= 300 and foes[1] ~= nil
+shot grupo
+lua foes[1].x, foes[1].y, foes[1].act, foes[1].cool = alba.x + 70, alba.y, "walk", 999 alba.dir = 1
+press A
+tick 20
+expect_lua foes[1].hp == 1 and alba.act ~= "attack"
+shot tajo
+lua foes[1].act, foes[1].t, foes[1].x, foes[1].y = "walk", 0, alba.x + 80, alba.y
+tick 2
+press B
+tick 24
+expect_lua foes[1].act == "down"
+lua hp0 = alba.hp alba.hurt = 0
+lua foes[2].x, foes[2].y, foes[2].act, foes[2].t, foes[2].dir = alba.x + 60, alba.y, "strike", 0, -1
+tick 10
+expect_lua alba.hp < hp0
+shot golpe
+lua for _, f in ipairs(foes) do f.hp = 0 f.act = "down" f.t = 0 end
+tick 60
+expect_lua foes[1] == nil
+lua group = 99 alba.x = 4000 cam = 3800
+tick 3
+lua alba.x = 4300
+tick 120
+expect_lua state == "clear"
+shot fin
+expect_ok

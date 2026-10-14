@@ -1,0 +1,8 @@
+{
+  "id": "torneo",
+  "title": "Torneo del castillo",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Lucha uno contra uno a la manera de la CPS2: luchadores de 16 colores y treinta fotogramas, sin zoom, un suelo en perspectiva dibujado por franjas y columnas por delante."
+}

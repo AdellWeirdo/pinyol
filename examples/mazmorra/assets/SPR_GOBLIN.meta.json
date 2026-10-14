@@ -1,0 +1,43 @@
+{
+  "asset": "SPR_GOBLIN",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 15,
+  "w": 176,
+  "h": 160,
+  "frames": 10,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "anchor": [
+    110,
+    156
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 31205,
+    "as_rgb565": 563200
+  }
+}

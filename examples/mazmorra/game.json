@@ -1,0 +1,8 @@
+{
+  "id": "mazmorra",
+  "title": "La mazmorra",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un beat'em up a la manera de la CPS2: personajes de 16 colores sin zoom, goblins y esqueletos en grupos, antorchas vivas y columnas que pasan por delante."
+}
