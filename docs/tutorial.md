@@ -1,6 +1,6 @@
 # Your first game, step by step
 
-From nothing to a game you can play on the RetroGo console, in the browser and on your computer. Every step below
+From nothing to a game you can play on the Cirera console, in the browser and on your computer. Every step below
 was done exactly as written, and the game at the end passes its test. Allow an hour.
 
 What you will make: *Mi cueva*, a room to explore with gems to pick up against the clock, with sounds and music.

@@ -100,7 +100,7 @@ local function interact() -- what is in front of you
     elseif has_key then
       opened = true
       tone(2, "C5", {wave = "square", vol = 0.3, decay = 0.1})
-      talk({"¡Clic! La llave gira...", "Dentro hay un mapa de una consola: la RetroGo. ¡Fin de la aventura!"}, nil, nil,
+      talk({"¡Clic! La llave gira...", "Dentro hay un mapa de una consola: la Cirera. ¡Fin de la aventura!"}, nil, nil,
            function()
              state, timer = "fin", 0
              local best = stored("best")

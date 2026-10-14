@@ -1,5 +1,6 @@
 idf_component_register(SRCS main.c display.c sd.c input.c audio_out.c power.c launcher.c ota.c cable.c remote.c bench.c link_radio.c
                        INCLUDE_DIRS .
+                       EMBED_FILES logo_small.rgb565 logo_big.rgb565 # pinyol's logo on the ink (brand.py)
                        REQUIRES pinyol_core esp_timer esp_psram esp_driver_spi esp_driver_ledc esp_driver_gpio
                                 esp_driver_sdmmc esp_driver_i2c esp_driver_i2s esp_adc fatfs sdmmc vfs wear_levelling app_update
                                 esp_driver_usb_serial_jtag mbedtls esp_wifi esp_event)

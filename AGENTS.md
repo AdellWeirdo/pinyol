@@ -1,6 +1,6 @@
 # pinyol: notes for coding agents
 
-pinyol is a 2D engine for the RetroGo handheld (ESP32-S3, 480x320). Games are Lua folders that run the same in the
+pinyol is a 2D engine for the Cirera handheld (ESP32-S3, 480x320). Games are Lua folders that run the same in the
 desktop simulator, the browser and the console. If you were asked to make a game, make it in `games/<id>/` and leave
 `src/`, `lib/` and `examples/` alone.
 

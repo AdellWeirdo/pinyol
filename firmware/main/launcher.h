@@ -20,5 +20,7 @@ int launcher_scan(launcher_game *g, int max);
 /* The console's game list until a row is chosen: its index, -1 for "Apagar" or LAUNCHER_CABLE. Returns once nothing
  * is held. */
 int launcher_choose(uint16_t *frames[2], const launcher_game *g, int n);
+/* pinyol's logo on the ink, the screen while the console starts (no font needed: before launcher_scan works). */
+void launcher_splash(uint16_t *frame);
 /* One line of text and, when percent >= 0, a progress bar: the screen for a firmware update. */
 void launcher_message(uint16_t *frame, const char *text, int percent);

@@ -1,6 +1,6 @@
 # Measurements on the board
 
-What the pieces of a GBA-like software renderer cost on the RetroGo console (ESP32-S3R8 at 240 MHz, octal PSRAM at
+What the pieces of a GBA-like software renderer cost on the Cirera console (ESP32-S3R8 at 240 MHz, octal PSRAM at
 80 MHz, ST77922 over QSPI at 80 MHz). Measured on 2026-10-11 with `firmware/main/bench.c`:
 
 ```sh

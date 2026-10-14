@@ -1,4 +1,4 @@
-# ConsolaS3 firmware (Freenove FNK0104N, ESP32-S3R8): a game list and the pinyol engine (../src, built unchanged as
+# Cirera firmware (Freenove FNK0104N, ESP32-S3R8): a game list and the pinyol engine (../src, built unchanged as
 # the pinyol_core component) playing any game folder on the card; main/ is this console's platform (pins: docs/hardware.md).
 cmake_minimum_required(VERSION 3.16)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)

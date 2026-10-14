@@ -1,15 +1,16 @@
 @font-face { font-family: "Pixelify Sans"; src: url(fonts/PixelifySans.ttf); font-display: swap; }
 
 :root {
-  --bg: #17141f;
-  --panel: #221d2e;
-  --panel-2: #2b2539;
-  --line: #3a3150;
-  --field: #7a6c94; /* what can be typed in or chosen: 3:1 against the panels (WCAG 1.4.11) */
-  --ink: #f1e9da;
-  --muted: #9c90b0;
-  --amber: #f2b233;
-  --amber-ink: #2a1a08;
+  /* pinyol's colours (its site and brand manual): ink blues, paper, gold for what is chosen */
+  --bg: #0b0e1f;
+  --panel: #131837;
+  --panel-2: #1c2350;
+  --line: #2b3368;
+  --field: #6e76b3; /* what can be typed in or chosen: 3:1 against the panels (WCAG 1.4.11) */
+  --ink: #eef0ff;
+  --muted: #8f97cc;
+  --amber: #ffc94a;
+  --amber-ink: #0b0e1f;
   --sky: #6cb4e0;
   --red: #e8443a;
   --radius: 6px;
@@ -70,8 +71,8 @@ label > input, label > select { color: var(--ink); }
   background: linear-gradient(180deg, #2a2338, var(--panel));
   border-bottom: 1px solid var(--line);
 }
-.brand { display: flex; align-items: baseline; gap: 6px; margin: 0; font-size: inherit; }
-.logo { font: 700 24px var(--pixel); color: var(--amber); text-shadow: 2px 2px 0 #7e2553; }
+.brand { display: flex; align-items: center; gap: 8px; margin: 0; font-size: inherit; }
+.logo { display: block; line-height: 0; } .logo img { height: 36px; width: auto; }
 .brand .sub { font: 16px var(--pixel); color: var(--muted); }
 .title {
   flex: 1; min-width: 0; max-width: 360px;

@@ -53,7 +53,7 @@ function renderMap() {
   for (const o of l.objects) {
     const d = byName(o.kind);
     if (d) g.drawImage(imageOf(d), o.x * S, o.y * S, d.w * S, d.h * S);
-    if (o.kind === l.camera) { g.strokeStyle = '#f2b233'; g.lineWidth = 2; g.strokeRect(o.x * S - 1, o.y * S - 1, (d ? d.w : 16) * S + 2, (d ? d.h : 16) * S + 2); }
+    if (o.kind === l.camera) { g.strokeStyle = '#ffc94a'; g.lineWidth = 2; g.strokeRect(o.x * S - 1, o.y * S - 1, (d ? d.w : 16) * S + 2, (d ? d.h : 16) * S + 2); }
   }
   g.strokeStyle = 'rgba(255,255,255,0.07)';
   g.lineWidth = 1;

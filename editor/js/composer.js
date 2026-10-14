@@ -6,7 +6,7 @@ import { play, stop, position } from './audio.js';
 
 const $ = id => document.getElementById(id);
 const CW = 18, RH = 16, LABEL = 52, GAP = 12; // a step's width, a row's height, the names' column, between the parts
-const COLOURS = { lead: '#f2b233', bass: '#6cb4e0', drums: '#e86fa8' };
+const COLOURS = { lead: '#ffc94a', bass: '#6cb4e0', drums: '#e86fa8' };
 let app, s, cur = { part: 'lead', row: 0, step: 0 }, drag = null, raf = 0, stretch = false; // stretch: taps lengthen
 
 function layout() { // each part's first row and how many: lead, bass, drums
@@ -70,7 +70,7 @@ function draw() {
   const c = $('song-grid'), L = layout(), w = LABEL + s.song.steps * CW, h = L.drums.y + L.drums.n * RH;
   if (c.width !== w || c.height !== h) c.width = w, c.height = h;
   const g = c.getContext('2d');
-  g.fillStyle = '#17141f';
+  g.fillStyle = '#0b0e1f';
   g.fillRect(0, 0, w, h);
   g.font = '11px system-ui';
   g.textBaseline = 'middle';

@@ -6,7 +6,7 @@
 
 <p align="center"><img src="docs/logo.png" alt="pinyol" width="480"></p>
 
-A small C engine for 2D games on the **RetroGo** console, an open-source handheld built on an ESP32-S3 (480×320 touch screen, buttons, speaker, microSD).
+A small C engine for 2D games on the **Cirera** console, an open-source handheld built on an ESP32-S3 (480×320 touch screen, buttons, speaker, microSD).
 
 A game is **a folder**: copy it to the console's microSD under `games/<id>/` and it appears in the game list. The same folder runs in a desktop simulator and in the browser. There are two kinds:
 

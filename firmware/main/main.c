@@ -1,4 +1,4 @@
-/* ConsolaS3 platform (docs/firmware-plan.md): the engine in src/ runs unchanged; this file is its main loop. The
+/* Cirera platform (docs/firmware-plan.md): the engine in src/ runs unchanged; this file is its main loop. The
  * console boots into its game list (launcher.c); a game runs at TICK_HZ with a fixed step, one frame drawn every
  * other tick, until its title's "Otros juegos" sends it back. Autotest builds first play the scripts in the flash
  * image (/flash/autotest/<game>/) and log PASS or FAIL. */
@@ -400,11 +400,11 @@ void app_main(void) {
 #ifdef BP_REMOTE
     remote_init();
 #endif
-    hal_log("ConsolaS3 | PSRAM free %u KB", (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
+    hal_log("Cirera | PSRAM free %u KB", (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
     static launcher_game games[LAUNCHER_MAX];
     int n = storage_mount() ? launcher_scan(games, LAUNCHER_MAX) : 0;
     audio_out_init(input_bus());
-    for (int i = 0; i < SCREEN_W * SCREEN_H; i++) frame[i] = D_INK; /* the list's background, before the light */
+    launcher_splash(frame); /* pinyol's logo while the rest starts, before the light */
     display_present(frame);
     display_backlight(100);
     display_start_task();

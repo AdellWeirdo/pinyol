@@ -1,4 +1,4 @@
-# Hardware: the RetroGo console (Freenove FNK0104N, ESP32-S3)
+# Hardware: the Cirera console (Freenove FNK0104N, ESP32-S3)
 
 Pins and peripherals for the firmware (Freenove FNK0104N = LCDWIKI ES3C35P), each with its source.
 

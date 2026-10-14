@@ -77,7 +77,7 @@ PAGE = """<!doctype html>
 <main>
   <header>
     <h1>Juegos <span>pinyol</span></h1>
-    <p class="lede">Para la consola RetroGo y para el navegador. Juega aquí, o descarga el .zip y descomprímelo en la
+    <p class="lede">Para la consola Cirera y para el navegador. Juega aquí, o descarga el .zip y descomprímelo en la
     carpeta <code>games/</code> de la tarjeta microSD.</p>
   </header>
   <ul class="shelf">

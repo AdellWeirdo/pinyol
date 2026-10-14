@@ -3,7 +3,7 @@
 An pinyol@2 game is a folder with a `game.json`, a `main.lua` and its assets. The engine gives it a virtual console
 modelled on the Game Boy Advance: a 240×160 picture built from four background layers and 128 sprites, palettes,
 transparency, windows and per-line effects, with text and panels drawn on top at the screen's full 480×320. It runs
-the same on the RetroGo console, the desktop simulator and the browser.
+the same on the Cirera console, the desktop simulator and the browser.
 
 ```
 games/mygame/
