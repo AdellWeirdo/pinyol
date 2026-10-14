@@ -2,11 +2,13 @@
 making-of. build.py renders it into dist/index.html."""
 from __future__ import annotations
 
+import re
 from html import escape
 
 import charts
 
 REPO = "https://github.com/ipaud/pinyol"
+RAW = "https://raw.githubusercontent.com/ipaud/pinyol/main"  # the Library's games, read when the page opens
 SITE = "https://ipaud.github.io/pinyol/"  # where it will be published (GitHub Pages); only og:image needs it
 
 # The twelve looks: their example, the console it follows, its frame rate on the console as (slowest, fastest
@@ -83,7 +85,7 @@ def header() -> str:
 <a class="logo" href="#top" aria-label="pinyol, inicio"><img src="img/logo.png" alt="" width="64" height="42"></a>
 <nav aria-label="Secciones"><ul>
 <li class="keep"><a href="#aspectos">Juegos</a></li><li><a href="#rendimiento">Rendimiento</a></li>
-<li><a href="#hazlo">Haz uno</a></li><li><a href="#consola">La consola</a></li><li><a href="#making">Cómo se hizo</a></li>
+<li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz uno</a></li><li><a href="#consola">La consola</a></li><li><a href="#making">Cómo se hizo</a></li>
 <li class="keep"><a href="{REPO}">GitHub</a></li></ul></nav>
 </div></header>"""
 
@@ -164,6 +166,17 @@ def make_one() -> str:
 </div></section>"""
 
 
+def library() -> str:
+    """People's games (tools/library.py publishes them in library/): site.js reads the list when the page opens."""
+    return f"""<section id="biblioteca" aria-labelledby="biblioteca-t"><div class="wrap">
+<h2 id="biblioteca-t">La Biblioteca</h2>
+<p class="intro">Juegos hechos por la gente con pinyol: se juegan aquí y se descargan para la consola. ¿Has hecho uno? Súbelo con un formulario: un robot lo abre, lo juega diez segundos y, cuando lo revisamos, aparece aquí.</p>
+<div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="#hazlo">Cómo se hace un juego</a></div>
+<div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}">
+<p class="lib-state">La Biblioteca necesita JavaScript para cargarse. Sus juegos también están en <a href="{REPO}/tree/main/library">GitHub</a>.</p></div>
+</div></section>"""
+
+
 def codex() -> str:
     jobs = "".join(f"""<li class="cart job">
 <div class="shot"><img src="img/codex/{j['id']}.png" alt="{escape(j['alt'])}" width="480" height="320" loading="lazy" decoding="async"></div>
@@ -235,11 +248,30 @@ def footer() -> str:
 <span>Código MIT · arte y sonido CC0</span><a href="{REPO}">GitHub</a><a href="{REPO}/blob/main/docs/measurements.md">Mediciones</a></div></footer>"""
 
 
+NEW_TAB = " (se abre en una pestaña nueva)"
+
+
+def new_tabs(html: str) -> str:
+    """Links that leave the page (other sites, the player, the editor) open in a new tab, so the page stays open; the
+    tab is said to screen readers too."""
+    def one(m: re.Match) -> str:
+        attrs, inner = m[1], m[2]
+        href = re.search(r'href="([^"]*)"', attrs)
+        if not href or " download" in attrs or not href[1].startswith(("http", "play/", "editor/")):
+            return m[0]
+        if "aria-label=" in attrs:
+            attrs = re.sub(r'aria-label="([^"]*)"', lambda a: f'aria-label="{a[1]}{NEW_TAB}"', attrs)
+        else:
+            inner += f'<span class="sr">{NEW_TAB}</span>'
+        return f'<a{attrs} target="_blank" rel="noopener">{inner}</a>'
+    return re.sub(r"<a(\s[^>]*)>(.*?)</a>", one, html, flags=re.S)
+
+
 def render(board: dict, stats: dict, fw: dict | None) -> str:
     desc = "pinyol: un motor de juegos libre con doce aspectos retro (Game Boy, Neo Geo, CPS2, PlayStation…) que corre a 60 fps en una consola ESP32-S3 y en el navegador."
-    csp = ("default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; "
-           "connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'")
-    return f"""<!doctype html>
+    csp = ("default-src 'self'; img-src 'self' data: https://raw.githubusercontent.com; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; "
+           "connect-src 'self' https://raw.githubusercontent.com; object-src 'none'; base-uri 'self'; form-action 'none'")
+    return new_tabs(f"""<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -265,10 +297,11 @@ def render(board: dict, stats: dict, fw: dict | None) -> str:
 {performance(board, stats['tests'])}
 {make_one()}
 {codex()}
+{library()}
 {console(fw)}
 {making(stats)}
 </main>
 {footer()}
 </body>
 </html>
-"""
+""")

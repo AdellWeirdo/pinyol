@@ -1,0 +1,48 @@
+name: Subir un juego a la Biblioteca
+description: Tu juego hecho con pinyol, en la Biblioteca de la web, para jugarlo en el navegador y descargarlo para la consola.
+title: "Biblioteca: "
+labels: [biblioteca]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Un robot comprobará tu juego (lo abre, lo juega diez segundos y saca su portada) y te contestará aquí. Si todo va bien, lo revisamos y aparece en https://ipaud.github.io/pinyol/#biblioteca.
+        El .zip es el de `python3 tools/pack_game.py games/<id>`, el del editor («Guardar archivo») o tu carpeta del juego comprimida. Máximo 8 MB.
+  - type: input
+    id: titulo
+    attributes:
+      label: Título
+      description: Como quieres que salga en la Biblioteca (máximo 48 caracteres).
+    validations:
+      required: true
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: Descripción
+      description: Una o dos frases. Cómo se juega, qué tiene de especial.
+    validations:
+      required: true
+  - type: textarea
+    id: zip
+    attributes:
+      label: El juego (.zip)
+      description: Arrastra aquí el .zip de tu juego.
+    validations:
+      required: true
+  - type: dropdown
+    id: licencia
+    attributes:
+      label: Licencia
+      description: Con qué licencia lo publicas. CC0 es dominio público; CC BY 4.0 pide que te citen; MIT es la del código del motor.
+      options: ["CC0", "CC BY 4.0", "MIT"]
+    validations:
+      required: true
+  - type: checkboxes
+    id: permisos
+    attributes:
+      label: Permisos
+      options:
+        - label: El juego es mío, o tengo permiso de quien hizo cada parte (código, dibujos, música).
+          required: true
+        - label: Acepto que se publique en la Biblioteca con la licencia que he elegido.
+          required: true

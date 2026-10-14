@@ -297,3 +297,9 @@ svg .was { stroke: #6e76b3; stroke-dasharray: 4 4; }
 esp-web-install-button:not(:defined) [slot="unsupported"], esp-web-install-button:not(:defined) [slot="not-allowed"] { display: none; }
 .jobs .cart { grid-column: auto; } /* not the shelf's spans */
 :root { --mdc-theme-primary: #c41d38; --mdc-theme-on-primary: #fff; } /* ESP Web Tools' install dialog, in pinyol's cherry */
+
+/* ------------------------------------------------------------------ the Library */
+.library { margin-top: var(--s6); }
+.lib-state { padding: var(--s5); border-radius: var(--radius); border: 1.5px dashed var(--line); color: var(--text-2); margin: 0; }
+.lib-state .btn { min-height: 40px; margin-left: var(--s2); }
+.job .shot:empty { background: repeating-linear-gradient(45deg, var(--ink-2) 0 12px, var(--ink-3) 12px 24px); }

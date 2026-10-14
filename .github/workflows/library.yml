@@ -1,0 +1,70 @@
+# The Library: a game sent with the issue form (.github/ISSUE_TEMPLATE/biblioteca.yml) is checked by a job that can
+# write nothing (it runs the sender's game); a second job, which runs no game code, answers on the issue and, once a
+# maintainer adds the label "aprobado", publishes the game into library/ (tools/library.py), where the site reads it.
+name: library
+on:
+  issues:
+    types: [opened, edited, labeled]
+permissions: {}
+concurrency:
+  group: library-${{ github.event.issue.number }}
+  cancel-in-progress: true
+jobs:
+  check:
+    if: contains(github.event.issue.labels.*.name, 'biblioteca') && (github.event.action != 'labeled' || github.event.label.name == 'aprobado')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libsdl2-dev
+          python3 -m pip install --user pillow
+      - name: Build the headless player
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --target pinyol_headless -j4
+      - name: Fetch and check the game
+        env:
+          BODY: ${{ github.event.issue.body }} # read by the script, never pasted into a shell line
+        run: python3 tools/library.py check-issue --out checked --headless build/pinyol_headless
+      - uses: actions/upload-artifact@v4
+        with:
+          name: checked
+          path: checked
+          retention-days: 7
+  answer:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: checked
+          path: checked
+      - name: Answer, and publish when approved
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+          APPROVED: ${{ github.event.action == 'labeled' && github.event.label.name == 'aprobado' }}
+        run: |
+          ok=$(python3 -c "import json; print(json.load(open('checked/result.json'))['ok'])")
+          if [ "$APPROVED" = true ] && [ "$ok" = True ]; then
+            id=$(python3 tools/library.py publish checked --issue "$ISSUE" --author "$AUTHOR" | tail -1)
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add library
+            git commit -m "library: $id (#$ISSUE)"
+            git push
+            gh issue comment "$ISSUE" --body "Publicado en la Biblioteca: https://ipaud.github.io/pinyol/#biblioteca ¡Gracias!"
+            gh issue close "$ISSUE"
+          else
+            python3 tools/library.py comment checked > answer.md
+            gh issue comment "$ISSUE" --body-file answer.md
+          fi
