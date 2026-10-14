@@ -1,43 +1,57 @@
-/* The heavy part of lib/physics.lua for bodies that turn, in C: on the console Lua took 32 ms a tick for ten boxes.
- * One call per substep, from World:step:
+/* lib/physics.lua's world, stepped in C: on the console Lua took 32 ms a tick for ten turning boxes, and 25 boxes
+ * and 30 circles did not fit in a frame. One call a tick, from World:step:
  *
- *   physics_turning(bodies, iterations, bounce_min, push_back, slop, substeps) -> hits {{a, b, speed}, ...}
+ *   physics_step(world, substeps, iterations, bounce_min, push_back, slop) -> hits {{a, b, speed}, ...}
  *
- * It finds where bodies touch when one of them turns (circles, boxes, convex polygons: the faces they press on,
- * clipped to one or two points, as Box2D-lite), works out the pushes between them (sequential impulses, accumulated
- * and warm-started from the last substep, a Baumgarte push out of overlaps, a bounce only above bounce_min), then
- * moves the bodies that turn. Bodies that do not turn are left to the Lua code (lib/physics.lua), which also moved
- * them already: here they are only something to push against (and they take the push back). */
+ * It reads the bodies, ropes and waters once, runs the substeps here and writes back what moved:
+ *   - each substep: gravity; bodies that do not turn move; water lifts, slows and carries what is in it;
+ *   - bodies that do not turn, against each other: pushed apart and bounced as the Lua code always did, operation
+ *     for operation in 32-bit floats and with no fused multiply-adds (-ffp-contract=off), so old games move exactly
+ *     as before and two consoles playing together agree;
+ *   - where something that turns touches anything (circles, boxes, convex polygons): the faces they press on, clipped
+ *     to one or two points as Box2D-lite does, sequential impulses accumulated and warm-started from the substep
+ *     before, a Baumgarte push out of overlaps, a bounce only above bounce_min; then what turns moves;
+ *   - ropes: never further than their length (sticks: always exactly). */
 #include <math.h>
 #include <stdlib.h>
 
 #include "lua_api.h"
 
-#define MAXB 256    /* bodies in a world looked at here */
+#define MAXB 256    /* bodies in a world */
 #define MAXC 16     /* corners of a polygon (physics.lua checks it) */
-#define MAXK 512    /* contacts in one substep */
+#define MAXK 512    /* contacts of turning bodies in one substep */
+#define MAXR 128    /* ropes */
+#define MAXW 16     /* waters */
+#define MAXH 256    /* hits reported in one step */
 #define DEG (180.0f / 3.14159265f)
 #define RAD (3.14159265f / 180.0f)
 
 typedef struct {
-    int kind;                  /* 0 circle, 1 box, 2 polygon */
+    int kind;                  /* 0 circle, 1 box, 2 polygon; -1 something else (left alone) */
     float x, y, w, h, r;       /* as in Lua: a box's x, y is its top-left corner */
     float cx, cy, vx, vy, spin, angle, inv, iinv, bounce, friction;
     bool turns, touched;
-    int n;                     /* corners */
-    float v[2 * MAXC], nrm[2 * MAXC];
+    const void *ptr;           /* its table: ropes and the warm start find it by this */
+    int n, nl;                 /* corners on the screen, and its own (relative to its centre) */
+    float lp[2 * MAXC], v[2 * MAXC], nrm[2 * MAXC];
     float x0, y0, x1, y1;      /* bounds */
 } pbody;
 
 typedef struct { float rax, ray, rbx, rby, kn, kt, pn, pt, bias, px, py; } cpoint;
 typedef struct { int a, b, np; float nx, ny, depth, mu; cpoint p[2]; } contact;
 typedef struct { const void *a, *b; int np; float px[2], py[2], pn[2], pt[2]; } warm_t;
+typedef struct { int a, b; float len, stiff; bool stick; } rope;
+typedef struct { float x, y, w, h, lift, drag, fx, fy; } water;
+typedef struct { int a, b; float speed; } hit;
 
-/* ~170 KB, in the slow memory (PSRAM on the console), made the first time a game has a body that turns */
+/* ~180 KB, in the slow memory (PSRAM on the console), made the first time a game steps a world */
 static struct work {
     pbody b[MAXB];
     contact c[MAXK];
-    warm_t w[2][MAXK]; /* the last substep's contacts, and this one's */
+    warm_t w[2][MAXK]; /* the last substep's contacts of turning bodies, and this one's */
+    rope r[MAXR];
+    water z[MAXW];
+    hit h[MAXH];
 } *X;
 static int nw[2], cur;
 #define B (X->b)
@@ -53,36 +67,37 @@ static float num_field(lua_State *L, int t, const char *k, float d) {
     return v;
 }
 
-/* The corners of a box or polygon on the screen, turned about its centre, and each edge's outward normal. */
-static void shape(lua_State *L, int t, pbody *b) {
-    float lp[2 * MAXC];
-    if (b->kind == 1) {
-        float hw = b->w / 2, hh = b->h / 2;
-        float q[8] = {-hw, -hh, hw, -hh, hw, hh, -hw, hh};
-        memcpy(lp, q, sizeof q);
-        b->n = 4;
-    } else {
-        lua_getfield(L, t, "pts");
-        int n = lua_istable(L, -1) ? (int)lua_rawlen(L, -1) / 2 : 0;
-        if (n > MAXC) n = MAXC;
-        for (int i = 0; i < 2 * n; i++) {
-            lua_rawgeti(L, -1, i + 1);
-            lp[i] = fin(lua_tonumber(L, -1));
-            lua_pop(L, 1);
-        }
-        lua_pop(L, 1);
-        b->n = n;
+static bool bool_field(lua_State *L, int t, const char *k) {
+    lua_getfield(L, t, k);
+    bool v = lua_toboolean(L, -1);
+    lua_pop(L, 1);
+    return v;
+}
+
+static void centre(pbody *b) {
+    if (b->kind == 1) b->cx = b->x + b->w / 2, b->cy = b->y + b->h / 2;
+    else b->cx = b->x, b->cy = b->y;
+}
+
+/* Where a box or polygon's corners are now (turned about its centre), each edge's outward normal, its bounds. */
+static void shape(pbody *b) {
+    centre(b);
+    if (b->kind == 0) {
+        b->x0 = b->x - b->r, b->y0 = b->y - b->r, b->x1 = b->x + b->r, b->y1 = b->y + b->r;
+        return;
+    }
+    if (!b->turns && b->kind == 1) { /* (as the Lua code bounds a box that does not turn) */
+        b->x0 = b->x, b->y0 = b->y, b->x1 = b->x + b->w, b->y1 = b->y + b->h;
     }
     float a = b->angle * RAD, c = cosf(a), s = sinf(a);
-    b->x0 = b->y0 = 1e30f, b->x1 = b->y1 = -1e30f;
+    float x0 = 1e30f, y0 = 1e30f, x1 = -1e30f, y1 = -1e30f;
+    b->n = b->nl;
     for (int i = 0; i < b->n; i++) {
-        float x = lp[2 * i], y = lp[2 * i + 1], wx = b->cx + x * c - y * s, wy = b->cy + x * s + y * c;
+        float x = b->lp[2 * i], y = b->lp[2 * i + 1], wx = b->cx + x * c - y * s, wy = b->cy + x * s + y * c;
         b->v[2 * i] = wx, b->v[2 * i + 1] = wy;
-        if (wx < b->x0) b->x0 = wx;
-        if (wx > b->x1) b->x1 = wx;
-        if (wy < b->y0) b->y0 = wy;
-        if (wy > b->y1) b->y1 = wy;
+        x0 = wx < x0 ? wx : x0, x1 = wx > x1 ? wx : x1, y0 = wy < y0 ? wy : y0, y1 = wy > y1 ? wy : y1;
     }
+    if (b->turns || b->kind == 2) b->x0 = x0, b->y0 = y0, b->x1 = x1, b->y1 = y1;
     for (int i = 0; i < b->n; i++) {
         int j = (i + 1) % b->n;
         float ex = b->v[2 * j] - b->v[2 * i], ey = b->v[2 * j + 1] - b->v[2 * i + 1], l = sqrtf(ex * ex + ey * ey);
@@ -98,30 +113,36 @@ static bool read_body(lua_State *L, int t, pbody *b) {
     b->kind = !k ? -1 : !strcmp(k, "circle") ? 0 : !strcmp(k, "box") ? 1 : !strcmp(k, "poly") ? 2 : -1;
     lua_pop(L, 1);
     if (b->kind < 0) return false;
+    b->ptr = lua_topointer(L, t);
     b->x = num_field(L, t, "x", 0), b->y = num_field(L, t, "y", 0);
     b->vx = num_field(L, t, "vx", 0), b->vy = num_field(L, t, "vy", 0);
     b->inv = num_field(L, t, "inv", 0), b->iinv = num_field(L, t, "iinv", 0);
     b->bounce = num_field(L, t, "bounce", 0.3f), b->friction = num_field(L, t, "friction", 0.4f);
-    lua_getfield(L, t, "turns");
-    b->turns = lua_toboolean(L, -1);
-    lua_pop(L, 1);
+    b->turns = bool_field(L, t, "turns");
     b->spin = b->turns ? num_field(L, t, "spin", 0) : 0, b->angle = b->turns ? num_field(L, t, "angle", 0) : 0;
-    b->touched = false;
+    b->touched = false, b->n = b->nl = 0;
     if (b->kind == 0) {
         b->r = num_field(L, t, "r", 1);
-        b->cx = b->x, b->cy = b->y;
-        b->x0 = b->x - b->r, b->y0 = b->y - b->r, b->x1 = b->x + b->r, b->y1 = b->y + b->r;
-        b->n = 0;
-        return true;
-    }
-    if (b->kind == 1) {
+    } else if (b->kind == 1) {
         b->w = num_field(L, t, "w", 1), b->h = num_field(L, t, "h", 1);
-        b->cx = b->x + b->w / 2, b->cy = b->y + b->h / 2;
+        float hw = b->w / 2, hh = b->h / 2, q[8] = {-hw, -hh, hw, -hh, hw, hh, -hw, hh};
+        memcpy(b->lp, q, sizeof q);
+        b->nl = 4;
     } else {
-        b->cx = b->x, b->cy = b->y;
+        lua_getfield(L, t, "pts");
+        int n = lua_istable(L, -1) ? (int)lua_rawlen(L, -1) / 2 : 0;
+        if (n > MAXC) n = MAXC;
+        for (int i = 0; i < 2 * n; i++) {
+            lua_rawgeti(L, -1, i + 1);
+            b->lp[i] = fin(lua_tonumber(L, -1));
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1);
+        b->nl = n;
+        if (n < 3) return false;
     }
-    shape(L, t, b);
-    return b->n >= 3;
+    shape(b);
+    return true;
 }
 
 /* The least push to part two polygons along one of a's normals, and that edge; false if one separates them. */
@@ -265,23 +286,130 @@ static void solve(contact *c) {
     a->vx = avx, a->vy = avy, a->spin = aw * DEG, b->vx = bvx, b->vy = bvy, b->spin = bw * DEG;
 }
 
-static int l_physics_turning(lua_State *L) {
-    luaL_checktype(L, 1, LUA_TTABLE);
-    int iterations = (int)luaL_checkinteger(L, 2), substeps = (int)luaL_checkinteger(L, 6);
-    float bounce_min = fin(luaL_checknumber(L, 3)), push_back = fin(luaL_checknumber(L, 4)), slop = fin(luaL_checknumber(L, 5));
-    int n = (int)lua_rawlen(L, 1);
-    if (n > MAXB) return luaL_error(L, "physics: %d bodies at most in a world with bodies that turn", MAXB);
-    if (iterations < 1 || iterations > 32 || substeps < 1) return luaL_error(L, "physics: bad step settings");
-    if (!X && !(X = hal_realloc_slow(NULL, sizeof *X))) return luaL_error(L, "physics: out of memory");
-    bool any = false;
-    for (int i = 0; i < n; i++) {
-        lua_rawgeti(L, 1, i + 1);
-        if (!read_body(L, lua_gettop(L), &B[i])) B[i].kind = -1;
-        any |= B[i].turns && B[i].kind >= 0;
-        lua_pop(L, 1);
+/* ------------------------------------------------------------------ bodies that do not turn: as the Lua code did */
+
+/* How a overlaps b: the direction to push b away from a and how deep; false if they do not touch. */
+static bool plain_contact(const pbody *a, const pbody *b, float *nx, float *ny, float *d) {
+    if (a->kind == 1 && b->kind == 0) {
+        if (!plain_contact(b, a, nx, ny, d)) return false;
+        *nx = -*nx, *ny = -*ny;
+        return true;
     }
-    lua_newtable(L); /* the hits */
-    if (!any) return 1;
+    if (a->kind == 0 && b->kind == 0) {
+        float dx = b->x - a->x, dy = b->y - a->y;
+        float dist = sqrtf(dx * dx + dy * dy), sum = a->r + b->r;
+        if (dist >= sum) return false;
+        if (dist < 1e-6f) return *nx = 0, *ny = -1, *d = sum, true;
+        return *nx = dx / dist, *ny = dy / dist, *d = sum - dist, true;
+    }
+    if (a->kind == 0) { /* a circle against a box: from the box's nearest point */
+        float bx1 = b->x + b->w, by1 = b->y + b->h;
+        float px = fmaxf(b->x, fminf(a->x, bx1)), py = fmaxf(b->y, fminf(a->y, by1));
+        float dx = px - a->x, dy = py - a->y, d2 = dx * dx + dy * dy;
+        if (d2 >= a->r * a->r) return false;
+        if (d2 > 1e-9f) {
+            float dist = sqrtf(d2);
+            return *nx = dx / dist, *ny = dy / dist, *d = a->r - dist, true;
+        }
+        float left = a->x - b->x, right = bx1 - a->x, top = a->y - b->y, bottom = by1 - a->y; /* the centre inside */
+        float m = left;
+        if (right < m) m = right;
+        if (top < m) m = top;
+        if (bottom < m) m = bottom;
+        if (m == top) return *nx = 0, *ny = 1, *d = top + a->r, true;
+        if (m == bottom) return *nx = 0, *ny = -1, *d = bottom + a->r, true;
+        if (m == left) return *nx = 1, *ny = 0, *d = left + a->r, true;
+        return *nx = -1, *ny = 0, *d = right + a->r, true;
+    }
+    float ox = fminf(a->x + a->w, b->x + b->w) - fmaxf(a->x, b->x); /* two boxes: by the axis they overlap least on */
+    float oy = fminf(a->y + a->h, b->y + b->h) - fmaxf(a->y, b->y);
+    if (ox <= 0 || oy <= 0) return false;
+    float ax = a->x + a->w / 2, ay = a->y + a->h / 2, bx = b->x + b->w / 2, by = b->y + b->h / 2;
+    if (ox < oy) return *nx = bx >= ax ? 1 : -1, *ny = 0, *d = ox, true;
+    return *nx = 0, *ny = by >= ay ? 1 : -1, *d = oy, true;
+}
+
+static int nhits;
+
+static void add_hit(int a, int b, float speed) {
+    if (nhits < MAXH) X->h[nhits++] = (hit){a, b, speed};
+}
+
+static void resolve(int ia, int ib) {
+    pbody *a = &B[ia], *b = &B[ib];
+    float nx, ny, depth;
+    if (!plain_contact(a, b, &nx, &ny, &depth)) return;
+    float im = a->inv + b->inv;
+    if (im == 0) return;
+    float push = fmaxf(depth - 0.01f, 0) / im * 0.9f; /* apart, by how light each is */
+    a->x = a->x - nx * push * a->inv, a->y = a->y - ny * push * a->inv;
+    b->x = b->x + nx * push * b->inv, b->y = b->y + ny * push * b->inv;
+    float rvx = b->vx - a->vx, rvy = b->vy - a->vy;
+    float vn = rvx * nx + rvy * ny;
+    if (vn >= 0) return; /* already parting */
+    float e = fminf(a->bounce, b->bounce);
+    if (-vn < 0.4f) e = 0; /* resting: no endless tiny bounces */
+    float j = -(1 + e) * vn / im;
+    a->vx = a->vx - j * nx * a->inv, a->vy = a->vy - j * ny * a->inv;
+    b->vx = b->vx + j * nx * b->inv, b->vy = b->vy + j * ny * b->inv;
+    float tx = rvx - vn * nx, ty = rvy - vn * ny; /* friction, along the surface */
+    float tl = sqrtf(tx * tx + ty * ty);
+    if (tl > 1e-6f) {
+        tx = tx / tl, ty = ty / tl;
+        float jt = fmaxf(-j * sqrtf(a->friction * b->friction),
+                         fminf(j * sqrtf(a->friction * b->friction), -(rvx * tx + rvy * ty) / im));
+        a->vx = a->vx - jt * tx * a->inv, a->vy = a->vy - jt * ty * a->inv;
+        b->vx = b->vx + jt * tx * b->inv, b->vy = b->vy + jt * ty * b->inv;
+    }
+    if (-vn > 0.5f) add_hit(ia, ib, -vn);
+}
+
+static void pull(const rope *r) { /* a rope: never further than its length (a stick: always exactly) */
+    pbody *a = &B[r->a], *b = &B[r->b];
+    centre(a), centre(b);
+    float dx = b->cx - a->cx, dy = b->cy - a->cy;
+    float d = sqrtf(dx * dx + dy * dy);
+    float im = a->inv + b->inv;
+    if (d < 1e-6f || im == 0 || (!r->stick && d <= r->len)) return;
+    float nx = dx / d, ny = dy / d, off = (d - r->len) * r->stiff / im;
+    a->x = a->x + nx * off * a->inv, a->y = a->y + ny * off * a->inv;
+    b->x = b->x - nx * off * b->inv, b->y = b->y - ny * off * b->inv;
+    float vn = (b->vx - a->vx) * nx + (b->vy - a->vy) * ny; /* and their speeds along it agree */
+    if (r->stick || vn > 0) {
+        float j = vn / im;
+        a->vx = a->vx + j * nx * a->inv, a->vy = a->vy + j * ny * a->inv;
+        b->vx = b->vx - j * nx * b->inv, b->vy = b->vy - j * ny * b->inv;
+    }
+}
+
+static void float_in(pbody *b, const water *z, int nz, float gravity, int substeps) { /* what water does */
+    if (b->turns || b->kind == 2) shape(b);
+    else if (b->kind == 0) b->x0 = b->x - b->r, b->y0 = b->y - b->r, b->x1 = b->x + b->r, b->y1 = b->y + b->r;
+    else b->x0 = b->x, b->y0 = b->y, b->x1 = b->x + b->w, b->y1 = b->y + b->h;
+    for (int k = 0; k < nz; k++) {
+        const water *q = &z[k];
+        if (!(b->x1 > q->x && b->x0 < q->x + q->w && b->y1 > q->y && b->y0 < q->y + q->h)) continue;
+        float h = b->y1 - b->y0;
+        float under = fminf(1, (b->y1 - fmaxf(b->y0, q->y)) / fmaxf(h, 1e-6f));
+        float lift = gravity * q->lift * under / (float)substeps, drag = q->drag * under / (float)substeps;
+        b->vy = b->vy - lift;
+        b->vx = b->vx + (q->fx - b->vx) * drag, b->vy = b->vy + (q->fy - b->vy) * drag;
+        if (b->turns && b->kind != 0 && b->inv > 0) { /* pushed up where it is under: it tips back level */
+            float sx = 0, n = 0;
+            for (int i = 0; i < b->n; i++) {
+                float d = b->v[2 * i + 1] - q->y;
+                if (d > 0) sx += b->v[2 * i] * d, n += d;
+            }
+            if (n > 0) b->spin = b->spin - (sx / n - b->cx) * lift / b->inv * b->iinv * DEG;
+        }
+        if (b->turns) b->spin = b->spin * (1 - drag);
+    }
+}
+
+/* The contacts of bodies that turn, worked out and solved; then they move. */
+static void turning(lua_State *L, int n, int iterations, float bounce_min, float push_back, float slop, int substeps) {
+    for (int i = 0; i < n; i++)
+        if (B[i].kind >= 0) shape(&B[i]);
     int nc = 0, prev = cur, next = cur ^ 1;
     nw[next] = 0;
     for (int i = 0; i < n; i++) {
@@ -296,11 +424,10 @@ static int l_physics_turning(lua_State *L) {
             c->a = i, c->b = j;
             c->mu = sqrtf(a->friction * b->friction);
             float e = a->bounce < b->bounce ? a->bounce : b->bounce, aw = a->spin * RAD, bw = b->spin * RAD;
-            const void *pa = (lua_rawgeti(L, 1, i + 1), lua_topointer(L, -1)), *pb = (lua_rawgeti(L, 1, j + 1), lua_topointer(L, -1));
             const warm_t *old = NULL;
             for (int k = 0; k < nw[prev] && !old; k++)
-                if (W[prev][k].a == pa && W[prev][k].b == pb) old = &W[prev][k];
-            bool hit = false;
+                if (W[prev][k].a == a->ptr && W[prev][k].b == b->ptr) old = &W[prev][k];
+            bool hitting = false;
             for (int k = 0; k < c->np; k++) {
                 cpoint *p = &c->p[k];
                 p->rax = p->px - a->cx, p->ray = p->py - a->cy, p->rbx = p->px - b->cx, p->rby = p->py - b->cy;
@@ -317,22 +444,15 @@ static int l_physics_turning(lua_State *L) {
                 if (vn < -bounce_min) p->bias = -e * vn; /* resting, rocking: no endless tiny bounces */
                 float out = push_back * (c->depth > slop ? c->depth - slop : 0) * (float)substeps;
                 if (out > p->bias) p->bias = out; /* and out of each other */
-                if (vn < -0.5f && !hit) {
-                    hit = true;
-                    lua_createtable(L, 3, 0);
-                    lua_pushvalue(L, -3), lua_rawseti(L, -2, 1);
-                    lua_pushvalue(L, -2), lua_rawseti(L, -2, 2);
-                    lua_pushnumber(L, -vn), lua_rawseti(L, -2, 3);
-                    lua_rawseti(L, -4, (lua_Integer)lua_rawlen(L, -4) + 1);
-                }
+                if (vn < -0.5f && !hitting) hitting = true, add_hit(i, j, -vn);
                 push(a, b, p, p->pn * c->nx - p->pt * c->ny, p->pn * c->ny + p->pt * c->nx);
             }
-            lua_pop(L, 2);
-            if (nw[next] < MAXK) W[next][nw[next]++] = (warm_t){.a = pa, .b = pb, .np = c->np};
+            if (nw[next] < MAXK) W[next][nw[next]++] = (warm_t){.a = a->ptr, .b = b->ptr, .np = c->np};
             a->touched = b->touched = true;
             nc++;
         }
     }
+    (void)L;
     for (int it = 0; it < iterations; it++)
         for (int k = 0; k < nc; k++) solve(&C[k]);
     for (int k = 0; k < nc && k < nw[next]; k++) /* this substep's pushes, for the next */
@@ -340,22 +460,114 @@ static int l_physics_turning(lua_State *L) {
             W[next][k].px[m] = C[k].p[m].px, W[next][k].py[m] = C[k].p[m].py, W[next][k].pn[m] = C[k].p[m].pn,
             W[next][k].pt[m] = C[k].p[m].pt;
     cur = next;
-    for (int i = 0; i < n; i++) { /* what turns moves now; what was pushed takes its new speed */
+    for (int i = 0; i < n; i++) { /* what turns moves now */
         pbody *b = &B[i];
-        if (b->kind < 0 || b->inv <= 0 || !(b->turns || b->touched)) continue;
-        lua_rawgeti(L, 1, i + 1);
+        if (b->kind < 0 || b->inv <= 0 || !b->turns) continue;
+        b->x += b->vx / (float)substeps, b->y += b->vy / (float)substeps;
+        float a = fmodf(b->angle + b->spin / (float)substeps, 360);
+        b->angle = a < 0 ? a + 360 : a;
+    }
+}
+
+/* physics_step(world, substeps, iterations, bounce_min, push_back, slop) -> the hits of the step */
+static int l_physics_step(lua_State *L) {
+    luaL_checktype(L, 1, LUA_TTABLE);
+    int substeps = (int)luaL_checkinteger(L, 2), iterations = (int)luaL_checkinteger(L, 3);
+    float bounce_min = fin(luaL_checknumber(L, 4)), push_back = fin(luaL_checknumber(L, 5)), slop = fin(luaL_checknumber(L, 6));
+    if (iterations < 1 || iterations > 32 || substeps < 1 || substeps > 8) return luaL_error(L, "physics: bad step settings");
+    float gravity = num_field(L, 1, "gravity", 0.25f);
+    lua_getfield(L, 1, "bodies"); /* 7 */
+    lua_getfield(L, 1, "ropes");  /* 8 */
+    lua_getfield(L, 1, "waters"); /* 9 */
+    if (!lua_istable(L, 7)) return luaL_error(L, "physics: a world has bodies");
+    int n = (int)lua_rawlen(L, 7);
+    if (n > MAXB) return luaL_error(L, "physics: %d bodies at most in a world", MAXB);
+    if (!X && !(X = hal_realloc_slow(NULL, sizeof *X))) return luaL_error(L, "physics: out of memory");
+    bool any_turns = false;
+    for (int i = 0; i < n; i++) {
+        lua_rawgeti(L, 7, i + 1);
+        if (!lua_istable(L, -1) || !read_body(L, lua_gettop(L), &B[i])) B[i].kind = -1;
+        any_turns |= B[i].kind >= 0 && B[i].turns;
+        lua_pop(L, 1);
+    }
+    int nr = 0, nz = 0;
+    for (int k = 1; lua_istable(L, 8) && k <= (int)lua_rawlen(L, 8) && nr < MAXR; k++) { /* ropes, by their bodies */
+        lua_rawgeti(L, 8, k);
+        if (lua_istable(L, -1)) {
+            int t = lua_gettop(L), ia = -1, ib = -1;
+            lua_getfield(L, t, "a");
+            const void *pa = lua_topointer(L, -1);
+            lua_getfield(L, t, "b");
+            const void *pb = lua_topointer(L, -1);
+            lua_pop(L, 2);
+            for (int i = 0; i < n && (ia < 0 || ib < 0); i++) {
+                if (B[i].kind < 0) continue;
+                if (B[i].ptr == pa) ia = i;
+                if (B[i].ptr == pb) ib = i;
+            }
+            if (ia >= 0 && ib >= 0 && ia != ib)
+                X->r[nr++] = (rope){ia, ib, num_field(L, t, "len", 0), num_field(L, t, "stiff", 0.8f), bool_field(L, t, "stick")};
+        }
+        lua_pop(L, 1);
+    }
+    for (int k = 1; lua_istable(L, 9) && k <= (int)lua_rawlen(L, 9) && nz < MAXW; k++) {
+        lua_rawgeti(L, 9, k);
+        if (lua_istable(L, -1)) {
+            int t = lua_gettop(L);
+            X->z[nz++] = (water){num_field(L, t, "x", 0), num_field(L, t, "y", 0), num_field(L, t, "w", 0),
+                                  num_field(L, t, "h", 0), num_field(L, t, "lift", 2), num_field(L, t, "drag", 0.05f),
+                                  num_field(L, t, "flow_x", 0), num_field(L, t, "flow_y", 0)};
+        }
+        lua_pop(L, 1);
+    }
+    nhits = 0;
+    for (int step = 0; step < substeps; step++) {
+        for (int i = 0; i < n; i++) { /* (what turns moves after its contacts are worked out) */
+            pbody *b = &B[i];
+            if (b->kind < 0 || b->inv <= 0) continue;
+            b->vy = b->vy + gravity / (float)substeps;
+            if (!b->turns) b->x = b->x + b->vx / (float)substeps, b->y = b->y + b->vy / (float)substeps;
+        }
+        for (int i = 0; nz && i < n; i++)
+            if (B[i].kind >= 0 && B[i].inv > 0) float_in(&B[i], X->z, nz, gravity, substeps);
+        for (int i = 0; i < n; i++) /* bounds of what does not turn, before any is pushed (as the Lua code) */
+            if (B[i].kind >= 0 && !B[i].turns) shape(&B[i]);
+        for (int i = 0; i < n; i++) {
+            const pbody *a = &B[i];
+            if (a->kind < 0 || a->turns) continue;
+            float ax0 = a->x0, ay0 = a->y0, ax1 = a->x1, ay1 = a->y1;
+            for (int j = i + 1; j < n; j++) {
+                const pbody *b = &B[j];
+                if (b->kind < 0 || b->turns || !(a->inv > 0 || b->inv > 0)) continue;
+                if (ax0 < b->x1 && b->x0 < ax1 && ay0 < b->y1 && b->y0 < ay1) resolve(i, j);
+            }
+        }
+        if (any_turns) turning(L, n, iterations, bounce_min, push_back, slop, substeps);
+        for (int k = 0; k < nr; k++) pull(&X->r[k]);
+    }
+    for (int i = 0; i < n; i++) { /* back into Lua: what moves */
+        pbody *b = &B[i];
+        if (b->kind < 0 || b->inv <= 0) continue;
+        lua_rawgeti(L, 7, i + 1);
+        lua_pushnumber(L, b->x), lua_setfield(L, -2, "x");
+        lua_pushnumber(L, b->y), lua_setfield(L, -2, "y");
         lua_pushnumber(L, b->vx), lua_setfield(L, -2, "vx");
         lua_pushnumber(L, b->vy), lua_setfield(L, -2, "vy");
         if (b->turns) {
-            float a = fmodf(b->angle + b->spin / (float)substeps, 360);
-            lua_pushnumber(L, b->x + b->vx / (float)substeps), lua_setfield(L, -2, "x");
-            lua_pushnumber(L, b->y + b->vy / (float)substeps), lua_setfield(L, -2, "y");
             lua_pushnumber(L, b->spin), lua_setfield(L, -2, "spin");
-            lua_pushnumber(L, a < 0 ? a + 360 : a), lua_setfield(L, -2, "angle");
+            lua_pushnumber(L, b->angle), lua_setfield(L, -2, "angle");
         }
         lua_pop(L, 1);
+    }
+    lua_createtable(L, nhits, 0);
+    for (int k = 0; k < nhits; k++) {
+        lua_createtable(L, 3, 0);
+        lua_rawgeti(L, 7, X->h[k].a + 1), lua_rawseti(L, -2, 1);
+        lua_rawgeti(L, 7, X->h[k].b + 1), lua_rawseti(L, -2, 2);
+        lua_pushnumber(L, X->h[k].speed), lua_rawseti(L, -2, 3);
+        lua_rawseti(L, -2, k + 1);
     }
     return 1;
 }
 
-void physics_register(lua_State *L) { lua_register(L, "physics_turning", l_physics_turning); }
+void physics_register(lua_State *L) { lua_register(L, "physics_step", l_physics_step); }

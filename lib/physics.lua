@@ -19,9 +19,9 @@
 --     drift with the current; what floats tips back level
 --
 -- Options of a body: bounce (0..1, 0.3), friction (0..1, 0.4), static, mass (the area by default), turns, angle
--- (degrees), spin (degrees a tick). It is simple on purpose (no stacking of hundreds): enough for toys, puzzles
--- and arcade games of up to about 60 bodies on the console. Where something that turns touches anything is worked
--- out in C (physics_turning, src/lua_physics.c): in Lua it took the console 32 ms a tick for ten boxes.
+-- (degrees), spin (degrees a tick). It is simple on purpose (no stacking of hundreds). Each step is worked out in C
+-- (physics_step, src/lua_physics.c): in Lua the console took 32 ms a tick for ten boxes that turn; a world holds up
+-- to 256 bodies.
 local M = {}
 local World = {}
 World.__index = World
@@ -171,94 +171,6 @@ end
 function World:corners(b) return (corners(b)) end
 
 -- how a overlaps b: the direction to push b away from a (nx, ny) and how deep; nil if they do not touch
-local function contact(a, b)
-  if a.kind == "box" and b.kind == "circle" then
-    local nx, ny, d = contact(b, a)
-    if nx then return -nx, -ny, d end
-    return nil
-  end
-  if a.kind == "circle" and b.kind == "circle" then
-    local dx, dy = b.x - a.x, b.y - a.y
-    local dist, sum = math.sqrt(dx * dx + dy * dy), a.r + b.r
-    if dist >= sum then return nil end
-    if dist < 1e-6 then return 0, -1, sum end
-    return dx / dist, dy / dist, sum - dist
-  end
-  if a.kind == "circle" then -- a circle against a box: from the box's nearest point
-    local px = math.max(b.x, math.min(a.x, b.x + b.w))
-    local py = math.max(b.y, math.min(a.y, b.y + b.h))
-    local dx, dy = px - a.x, py - a.y
-    local d2 = dx * dx + dy * dy
-    if d2 >= a.r * a.r then return nil end
-    if d2 > 1e-9 then
-      local dist = math.sqrt(d2)
-      return dx / dist, dy / dist, a.r - dist
-    end
-    -- the centre is inside the box: out by the nearest side
-    local left, right, top, bottom = a.x - b.x, b.x + b.w - a.x, a.y - b.y, b.y + b.h - a.y
-    local m = math.min(left, right, top, bottom)
-    if m == top then return 0, 1, top + a.r end
-    if m == bottom then return 0, -1, bottom + a.r end
-    if m == left then return 1, 0, left + a.r end
-    return -1, 0, right + a.r
-  end
-  -- two boxes: by the axis they overlap least on
-  local ox = math.min(a.x + a.w, b.x + b.w) - math.max(a.x, b.x)
-  local oy = math.min(a.y + a.h, b.y + b.h) - math.max(a.y, b.y)
-  if ox <= 0 or oy <= 0 then return nil end
-  local ax, ay = centre(a)
-  local bx, by = centre(b)
-  if ox < oy then return bx >= ax and 1 or -1, 0, ox end
-  return 0, by >= ay and 1 or -1, oy
-end
-
-local function resolve(w, a, b)
-  local nx, ny, depth = contact(a, b)
-  if not nx then return end
-  local im = a.inv + b.inv
-  if im == 0 then return end
-  local push = math.max(depth - 0.01, 0) / im * 0.9 -- apart, by how light each is
-  a.x, a.y = a.x - nx * push * a.inv, a.y - ny * push * a.inv
-  b.x, b.y = b.x + nx * push * b.inv, b.y + ny * push * b.inv
-  local rvx, rvy = b.vx - a.vx, b.vy - a.vy
-  local vn = rvx * nx + rvy * ny
-  if vn >= 0 then return end -- already parting
-  local e = math.min(a.bounce, b.bounce)
-  if -vn < 0.4 then e = 0 end -- resting: no endless tiny bounces
-  local j = -(1 + e) * vn / im
-  a.vx, a.vy = a.vx - j * nx * a.inv, a.vy - j * ny * a.inv
-  b.vx, b.vy = b.vx + j * nx * b.inv, b.vy + j * ny * b.inv
-  local tx, ty = rvx - vn * nx, rvy - vn * ny -- friction, along the surface
-  local tl = math.sqrt(tx * tx + ty * ty)
-  if tl > 1e-6 then
-    tx, ty = tx / tl, ty / tl
-    local jt = math.max(-j * math.sqrt(a.friction * b.friction), math.min(j * math.sqrt(a.friction * b.friction),
-                        -(rvx * tx + rvy * ty) / im))
-    a.vx, a.vy = a.vx - jt * tx * a.inv, a.vy - jt * ty * a.inv
-    b.vx, b.vy = b.vx + jt * tx * b.inv, b.vy + jt * ty * b.inv
-  end
-  if -vn > 0.5 then w.hits_now[#w.hits_now + 1] = {a, b, -vn} end
-end
-
-local function pull(r) -- a rope: never further than its length (a stick: always exactly)
-  local a, b = r.a, r.b
-  local ax, ay = centre(a)
-  local bx, by = centre(b)
-  local dx, dy = bx - ax, by - ay
-  local d = math.sqrt(dx * dx + dy * dy)
-  local im = a.inv + b.inv
-  if d < 1e-6 or im == 0 or (not r.stick and d <= r.len) then return end
-  local nx, ny, off = dx / d, dy / d, (d - r.len) * r.stiff / im
-  a.x, a.y = a.x + nx * off * a.inv, a.y + ny * off * a.inv
-  b.x, b.y = b.x - nx * off * b.inv, b.y - ny * off * b.inv
-  local vn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny -- and their speeds along it agree
-  if r.stick or vn > 0 then
-    local j = vn / im
-    a.vx, a.vy = a.vx + j * nx * a.inv, a.vy + j * ny * a.inv
-    b.vx, b.vy = b.vx - j * nx * b.inv, b.vy - j * ny * b.inv
-  end
-end
-
 -- Bodies that turn: where two touch, the push between them, and the points it acts at.
 local function inside(v, nrm, px, py)
   for i = 1, #v - 1, 2 do
@@ -267,67 +179,8 @@ local function inside(v, nrm, px, py)
   return true
 end
 
-local function float(w, b, stamp) -- what water does to a body in it
-  local x0, y0, x1, y1 = bounds(b, stamp)
-  for _, z in ipairs(w.waters) do
-    if x1 > z.x and x0 < z.x + z.w and y1 > z.y and y0 < z.y + z.h then
-      local h = y1 - y0
-      local under = math.min(1, (y1 - math.max(y0, z.y)) / math.max(h, 1e-6))
-      local lift, drag = w.gravity * z.lift * under / SUBSTEPS, z.drag * under / SUBSTEPS
-      b.vy = b.vy - lift
-      b.vx, b.vy = b.vx + (z.flow_x - b.vx) * drag, b.vy + (z.flow_y - b.vy) * drag
-      if b.turns and b.kind ~= "circle" then -- pushed up where it is under: it tips back level
-        local v, sx, n = corners(b, stamp), 0, 0 -- the corners under the surface, the deeper the more
-        for i = 1, #v - 1, 2 do
-          local d = v[i + 1] - z.y
-          if d > 0 then sx, n = sx + v[i] * d, n + d end
-        end
-        if n > 0 then
-          local cx = centre(b)
-          b.spin = b.spin - (sx / n - cx) * lift / b.inv * b.iinv * DEG
-        end
-      end
-      if b.turns then b.spin = b.spin * (1 - drag) end
-    end
-  end
-end
-
-function World:step()
-  self.hits_now = {}
-  local bodies = self.bodies
-  for _ = 1, SUBSTEPS do
-    self.stamp = self.stamp + 1
-    local stamp = self.stamp
-    for _, b in ipairs(bodies) do -- (what turns moves after its contacts are worked out: below)
-      if b.inv > 0 then
-        b.vy = b.vy + self.gravity / SUBSTEPS
-        if not b.turns then b.x, b.y = b.x + b.vx / SUBSTEPS, b.y + b.vy / SUBSTEPS end
-      end
-    end
-    if #self.waters > 0 then
-      for _, b in ipairs(bodies) do if b.inv > 0 then float(self, b, stamp) end end
-    end
-    local box, turns = {}, false
-    for i, b in ipairs(bodies) do
-      if b.turns then turns = true else box[i] = {bounds(b, stamp)} end
-    end
-    for i = 1, #bodies do
-      local a, ba = bodies[i], box[i]
-      for j = ba and i + 1 or #bodies + 1, #bodies do
-        local b, bb = bodies[j], box[j]
-        if bb and (a.inv > 0 or b.inv > 0) and ba[1] < bb[3] and bb[1] < ba[3] and ba[2] < bb[4] and bb[2] < ba[4] then
-          resolve(self, a, b)
-        end
-      end
-    end
-    if turns then -- where something that turns touches anything, and how it moves: in C (src/lua_physics.c)
-      for _, h in ipairs(physics_turning(bodies, ITERATIONS, BOUNCE_MIN, PUSH_BACK, SLOP, SUBSTEPS)) do
-        self.hits_now[#self.hits_now + 1] = h
-      end
-    end
-    for _, r in ipairs(self.ropes) do pull(r) end
-  end
-  self.last_hits = self.hits_now
+function World:step() -- all of it in C (src/lua_physics.c): one call a tick
+  self.last_hits = physics_step(self, SUBSTEPS, ITERATIONS, BOUNCE_MIN, PUSH_BACK, SLOP)
 end
 
 function World:hits() return self.last_hits end

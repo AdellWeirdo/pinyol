@@ -33,6 +33,8 @@ file(GLOB CORE_SRC CONFIGURE_DEPENDS src/*.c)
 include(cmake/embed_lib.cmake)
 np2d_embed_lib(${CMAKE_BINARY_DIR}/np2d_lib.c ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 add_library(bp_core STATIC ${CORE_SRC} ${CMAKE_BINARY_DIR}/np2d_lib.c)
+# physics as the Lua code did it, operation for operation: no fused multiply-adds, the same on every platform
+set_source_files_properties(src/lua_physics.c PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 target_include_directories(bp_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(bp_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/pocketmod)
 target_compile_options(bp_core PRIVATE -Wall -Wextra -Werror ${SAN})

@@ -12,5 +12,7 @@ target_compile_definitions(${COMPONENT_LIB} PUBLIC LUA_32BITS=1) # as on the des
 # gcc 14 flags bounded snprintf truncation, which src/ uses on purpose (clang on the desktop does not)
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wall -Wextra -Werror -Wno-format-truncation)
 set_source_files_properties(${ROOT}/third_party/cjson/cJSON.c ${LUA_SRC} PROPERTIES COMPILE_OPTIONS "-Wno-error")
+# physics as the Lua code did it and as the desktop does it: no fused multiply-adds (linked consoles agree)
+set_source_files_properties(${ROOT}/src/lua_physics.c PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
 # the same string hashes every run, as on the desktop (pairs() in the same order: tests repeat, linked consoles agree)
 set_source_files_properties(${LUA_SRC} PROPERTIES COMPILE_DEFINITIONS "luai_makeseed=0x6e703264u+0*sizeof")
