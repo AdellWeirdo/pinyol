@@ -781,7 +781,7 @@ Rules:
 
 ## 8. Items
 
-`items.json`: `{IT_ID: item}`. Item order in the file is the order in the bag.
+`items.json`: `{IT_ID: item}`. Item order in the file is the order in the bag, six to a page (up to 24 carried).
 
 ```json
 "IT_PHOTO": {"name": "Photo", "icon": "IC_PHOTO", "ill": "ILL_PHOTO",
@@ -823,7 +823,7 @@ pause option).
 
 | Key | Meaning |
 |---|---|
-| `entries` | `{ID: {kind, title, text}}`; shown once `note:ID` is set, in file order (up to 16). `kind` is `obs`, `test`, `heard` or `q`, labelled "Observación", "Testimonio", "Oí", "Pregunta". Validator: `kind`, `title` and `text` required. |
+| `entries` | `{ID: {kind, title, text}}`; shown once `note:ID` is set, in file order (up to 64; the list scrolls). `kind` is `obs`, `test`, `heard` or `q`, labelled "Observación", "Testimonio", "Oí", "Pregunta". Validator: `kind`, `title` and `text` required. |
 | `questions` | `[{if, t}]`: the first one whose `if` holds is shown at the top in bold. |
 | `tasks` | `[{if, t}]`: every one whose `if` holds is listed. |
 | `actions` | `[{if, label, do}]`: up to 4 buttons; picking one closes the notebook and runs `do`. |
