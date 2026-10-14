@@ -7,7 +7,18 @@ A game is **a folder**: copy it to the console's microSD under `games/<id>/` and
 - **Lua games** (`"engine": "pinyol@2"`), any genre. The engine gives them a virtual console modelled on the Game Boy Advance: four background layers (tiles, rotated and scaled, Mode 7), 128 sprites, palettes, transparency, windows, mosaic and per-line effects, with text drawn on top at full resolution. They hold 60 fps on the console. Beyond the screen and the buttons: the microphone (level, pitch, claps, recordings), stories written as plain text, a song's clock for rhythm games, bodies that tip over, roll and float, video clips on canvases, the console's LED and battery, and consoles playing together. The API: [docs/lua.md](docs/lua.md).
 - **Adventures made of data** (`"engine": "pinyol@1"`): JSON for zones, dialogues, items, puzzles and events, no code. The engine's first games were made this way: [docs/game-format.md](docs/game-format.md).
 
-![Four Lua games: a platformer, a shoot-'em-up, a Mode 7 kart race and the starting template](docs/examples.png)
+A game looks like the console it is made for, and the engine moves them all: pick a look and follow its recipe in
+[docs/art.md](docs/art.md#0-choose-a-look). Each picture is a moment of play in that look's example (`docs/looks/shots.sh`
+takes them again).
+
+| | |
+|---|---|
+| ![A Game Boy platformer: four tones of green inside a drawn console](docs/looks/gameboy.png) | ![A ZX Spectrum room: blocks of two colours, a miner and a guardian](docs/looks/spectrum.png) |
+| **Game Boy**: [bolsillo](examples/bolsillo), all its art drawn by code | **ZX Spectrum**: [cinta](examples/cinta), from the tape loading |
+| ![A Game Boy Advance platformer with parallax mountains and water](docs/looks/gba.png) | ![A 16-bit speed platformer: checkered earth, a sea moved line by line](docs/looks/16bits.png) |
+| **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), all its art drawn by code |
+| ![A Neo Geo fighting game: two big fighters on a pier at sunset](docs/looks/neogeo.png) | ![A CPS2 fighting game: fighters in 15 colours on a floor in perspective](docs/looks/cps2.png) |
+| **Neo Geo**: [duelo](examples/duelo) | **CPS2**: [torneo](examples/torneo) (stand-in art for now) |
 
 ## Quick start
 
