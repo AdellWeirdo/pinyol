@@ -14,7 +14,7 @@ from pathlib import Path
 from PIL import Image
 
 HERE = Path(__file__).resolve().parent
-FIT = Path.home() / ".claude/skills/gpt-image-bridge/bin/fit-sprite.py"
+FIT = HERE.parents[2] / "tools/fit_sprite.py"
 W, H, BODY, FEET, BACK = 192, 184, 168, 181, 122  # as duelo's fighters, facing left: the body's centre on BACK
 
 

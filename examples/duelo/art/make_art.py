@@ -5,7 +5,7 @@ the generated images change; ../art.py then makes the game's assets from what th
     uv run --with pillow examples/duelo/art/make_art.py RAW_DIR
 
 RAW_DIR has stage_far.png, stage_near.png, <fighter>_ref.png, <fighter>_walk.png and <fighter>_punch.png (rows of
-five frames) for each fighter. fit-sprite.py (the image skill's) matches each frame's scale and feet to the idle one.
+five frames) for each fighter. tools/fit_sprite.py matches each frame's scale and feet to the idle one.
 """
 import subprocess
 import sys
@@ -15,7 +15,7 @@ from pathlib import Path
 from PIL import Image
 
 HERE = Path(__file__).resolve().parent
-FIT = Path.home() / ".claude/skills/gpt-image-bridge/bin/fit-sprite.py"
+FIT = HERE.parents[2] / "tools/fit_sprite.py"
 W, H, BODY, FEET, BACK = 192, 184, 168, 181, 70  # a frame; the body's height, its feet's row, its centre's column
 COLOURS = 64  # a fighter's palette, shared by all its frames
 

@@ -6,7 +6,7 @@ change; ../art.py then makes the game's assets from what this leaves here.
     uv run --with pillow examples/asalto/art/make_art.py RAW_DIR
 
 RAW_DIR has far.png, nearA.png, explosion.png (a row of five), and <name>_ref.png plus rows of five for hero (run,
-shoot), robot (walk) and walker (walk; its ref is walker.png). fit-sprite.py (the image skill's) matches each frame's
+shoot), robot (walk) and walker (walk; its ref is walker.png). tools/fit_sprite.py matches each frame's
 scale and feet to the still one.
 """
 import subprocess
@@ -17,7 +17,7 @@ from pathlib import Path
 from PIL import Image
 
 HERE = Path(__file__).resolve().parent
-FIT = Path.home() / ".claude/skills/gpt-image-bridge/bin/fit-sprite.py"
+FIT = HERE.parents[2] / "tools/fit_sprite.py"
 # name: (frame w, h, body height, feet row, centre column, colours, [(sheet, anchor)...])
 SPRITES = {
     "hero": (128, 96, 88, 94, 50, 64, [("run", "center"), ("shoot", "left")]),

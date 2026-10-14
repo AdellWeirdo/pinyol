@@ -43,8 +43,9 @@ turns it into a PNG you can open. Look at it: a game that passes but draws nothi
 
 ## Art and sound
 
-- Pictures: draw PNGs and convert them with `tools/png2asset.py` (options in README.md and docs/lua.md), or draw
-  them by code in the game's `art.py` as the template does.
+- Pictures: generated images (backgrounds removed, frames cut, scale and feet fitted) are in
+  [docs/art.md](docs/art.md): read it before making art. Or draw them by code in the game's `art.py`, as the
+  template does.
 - Sounds: `tone()` and the sound factory in docs/lua.md need no files; WAV must be PCM 16-bit mono 22,050 Hz;
   music can be a `.mod`.
 
