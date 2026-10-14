@@ -1,4 +1,4 @@
-// np2d's sounds made from numbers (src/synth.c), in JavaScript: the same recipes from the same seeds, rendered for
+// pinyol's sounds made from numbers (src/synth.c), in JavaScript: the same recipes from the same seeds, rendered for
 // listening while editing. The game makes its own with sound() from the recipe and seed, so what is heard here is
 // what it plays (to a rounding).
 export const HZ = 22050;

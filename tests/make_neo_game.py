@@ -23,6 +23,6 @@ for png, aid, *opts in (("stage_far", "BG_FAR", "--type", "background"), ("stage
     subprocess.run([sys.executable, str(ROOT / "tools" / "png2asset.py"), str(ART / f"{png}.png"), str(out / "assets"),
                     aid, *opts, *extra], check=True, stdout=subprocess.DEVNULL)
 
-(out / "game.json").write_text(json.dumps({"id": "neo", "title": "Neo", "engine": "np2d@2", "main": "main.lua"}))
+(out / "game.json").write_text(json.dumps({"id": "neo", "title": "Neo", "engine": "pinyol@2", "main": "main.lua"}))
 shutil.copy(ROOT / "tests" / "games" / "neo.lua", out / "main.lua")
 print("neo game in", out)

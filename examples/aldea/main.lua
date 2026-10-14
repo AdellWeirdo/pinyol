@@ -74,7 +74,7 @@ local function lines_for(n)
     return {"¿Una llave? Sí, la saqué del río con la caña.", "Toma, a mí no me abre nada."},
            function() has_key = true; tone(2, "E5", {wave = "square", duty = 0.25, vol = 0.3, decay = 0.4}) end
   else
-    return {"¿Sabías que esta aldea está hecha con np2d?",
+    return {"¿Sabías que esta aldea está hecha con pinyol?",
             "El mapa se dibujó en Tiled y el juego entero es un archivo de Lua.", "¡Tú también puedes hacer uno!"}
   end
 end

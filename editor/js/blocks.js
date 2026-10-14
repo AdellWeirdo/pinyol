@@ -1,4 +1,4 @@
-// The blocks of the Logic tab (Blockly) and the Lua they become: calls to kit (np2d/lib/kit.lua). Events are the hat
+// The blocks of the Logic tab (Blockly) and the Lua they become: calls to kit (pinyol/lib/kit.lua). Events are the hat
 // blocks a game is made of; the rest is what happens in them. Dropdowns list what the project has (its objects,
 // tiles and sounds), read when they open.
 /* global Blockly, lua */

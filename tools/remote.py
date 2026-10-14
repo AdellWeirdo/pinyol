@@ -9,7 +9,7 @@
 Steps, in order:
     tap:X,Y          a finger at (X, Y) on the 480x320 screen
     key:NAME[,N]     A, B, C, UP, DOWN, LEFT, RIGHT, START or MENU, held N polls (a few by default)
-    lua:CODE         np2d@2: runs CODE in the game; print() answers in the log (until: can wait for it)
+    lua:CODE         pinyol@2: runs CODE in the game; print() answers in the log (until: can wait for it)
     wait:SECONDS     let it run
     until:TEXT[,S]   wait for a log line containing TEXT (at most S seconds, 60 by default); fails if it never comes
     shot:FILE.png    the frame on the panel

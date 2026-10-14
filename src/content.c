@@ -155,7 +155,8 @@ bool content_load(void) {
     content_free();
     G.game = json_file("game.json");
     const char *engine = jstr(G.game, "engine");
-    G.v2 = engine && !strncmp(engine, "np2d@2", 6);
+    /* "np2d" is the engine's first name: games that still say "np2d@2" run as before */
+    G.v2 = engine && (!strncmp(engine, "pinyol@2", 8) || !strncmp(engine, "np2d@2", 6));
     if (G.v2) { /* a Lua game: none of the v1 content files */
         cJSON **rest[] = {&G.tiles, &G.items, &G.events, &G.notebook, &G.sequences, &G.listens, &G.puzzles, &G.music};
         for (size_t i = 0; i < sizeof rest / sizeof rest[0]; i++) *rest[i] = cJSON_CreateObject();

@@ -5,7 +5,7 @@
 
 #include "hal.h"
 
-/* A game sent over the console's USB cable by np2d's editor (Chrome's Web Serial): cable.c. */
+/* A game sent over the console's USB cable by pinyol's editor (Chrome's Web Serial): cable.c. */
 void cable_init(void);          /* the cable listens from boot */
 void cable_poll(hal_input *in); /* in every input poll: what came over the cable (test builds: remote.c's input too) */
 bool cable_wanted(void);        /* a game is on its way: the game or the list gives way to cable_receive */

@@ -1,5 +1,5 @@
 """The newscast's theme, made here: a 16-second loop at 120 bpm in D minor (two bars each of Dm, Bb, F, C), a clock
-ticking every sixteenth, a timpani hit on each bar, a brass-like pad and a bass. Mono PCM16 at 22050 Hz, as np2d
+ticking every sixteenth, a timpani hit on each bar, a brass-like pad and a bass. Mono PCM16 at 22050 Hz, as pinyol
 plays it with music(); the game's cues fall on its beats (music_time()).
 
     python3 examples/control/art/make_music.py      -> examples/control/audio/MUS_NEWS.wav

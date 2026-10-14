@@ -1,8 +1,8 @@
 {
   "id": "aldea",
   "title": "La aldea",
-  "engine": "np2d@2",
+  "engine": "pinyol@2",
   "main": "main.lua",
-  "author": "np2d examples",
+  "author": "pinyol examples",
   "description": "Una pequeña aventura vista desde arriba: una aldea dibujada en Tiled, gente con la que hablar y un cofre cerrado."
 }

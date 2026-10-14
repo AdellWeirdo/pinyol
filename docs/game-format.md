@@ -1,9 +1,9 @@
-# np2d game format
+# pinyol game format
 
-Reference for the data a game needs to run on the np2d engine. A game is a folder of JSON, runtime
+Reference for the data a game needs to run on the pinyol engine. A game is a folder of JSON, runtime
 assets, WAV files and fonts; no C is involved. Everything below was read from the engine source (`src/`).
 The validator (`content_validate()` in `src/content.c`) is the final word on what is required and allowed.
-Where this document says "validator", it means a check that `bp_headless --validate` makes.
+Where this document says "validator", it means a check that `pinyol_headless --validate` makes.
 
 Units used throughout: **px** = logical world pixel (the world is 240×160 and drawn 2× to the 480×320
 screen); **native px** = screen pixel; **tile** = 16×16 px; **tick** = 1/60 s; **ms** = milliseconds.
@@ -24,7 +24,7 @@ games/mygame/
 ```
 
 `uv run tools/new_game.py games/mygame` writes such a game, with placeholder art, a dialogue, an item and an end.
-Check it with `bp_headless --game games/mygame --validate`. Zero errors means every reference resolves.
+Check it with `pinyol_headless --game games/mygame --validate`. Zero errors means every reference resolves.
 
 ## Contents
 
@@ -1305,7 +1305,7 @@ when the player turns on "Texto grande". All four are required, and the validato
 
 The file size must be exactly `264 + 256 × h × stride`. `tools/font2fnt.py` makes one from a TTF/OTF, a BDF, a PNG
 sheet or a font of `third_party/fonts`: `font2fnt.py in.ttf out.fnt [--px 11] [--scale 2] [--weight 700]
-[--spacing 1]` (`ttf2fnt.py`, the old name, still works). np2d@2 games may also have any fonts of their own,
+[--spacing 1]` (`ttf2fnt.py`, the old name, still works). pinyol@2 games may also have any fonts of their own,
 `fonts/<name>.fnt` in the same format ([lua.md](lua.md#a-games-own-look)).
 
 ---
@@ -1344,10 +1344,10 @@ Dialogue lines have no length limit (they page); choices are cut after 2 lines w
 
 ## 17. Validation and test scripts
 
-`bp_headless` is the engine's command-line runner (CMake target `bp_headless`, no window, no sound device).
+`pinyol_headless` is the engine's command-line runner (CMake target `pinyol_headless`, no window, no sound device).
 
 ```
-bp_headless --game DIR [--saves DIR] [--fresh] (--validate | --script FILE) [--audio FILE.pcm] [--video FILE.mp4]
+pinyol_headless --game DIR [--saves DIR] [--fresh] (--validate | --script FILE) [--audio FILE.pcm] [--video FILE.mp4]
 ```
 
 | Option | Meaning |
@@ -1365,7 +1365,7 @@ JSON or fonts) or an unreadable script. Validator output is one line per problem
 `validate: <where>: <message>`, then `validate: N error(s)`. Scripts print `PASS <file>` or
 `FAIL <file>:<line>: <command> <args> -> <reason>`.
 
-The desktop simulator `bp_sim --game DIR [--saves DIR] [--scale N] [--mute] [--script FILE]` (needs SDL2) plays the
+The desktop simulator `pinyol_sim --game DIR [--saves DIR] [--scale N] [--mute] [--script FILE]` (needs SDL2) plays the
 same folder. Keys: arrows/WASD move, Enter/E/Space = A, Esc/Backspace = B, Tab/C = C, I = MENU, J = notebook,
 P = START; the mouse is touch.
 

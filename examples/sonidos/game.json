@@ -1,8 +1,8 @@
 {
   "id": "sonidos",
   "title": "Sonidos",
-  "engine": "np2d@2",
+  "engine": "pinyol@2",
   "main": "main.lua",
-  "author": "np2d examples",
+  "author": "pinyol examples",
   "description": "Sonidos hechos con números (una fábrica de monedas, láseres y explosiones), un theremin con el dedo, un motor que sube con la velocidad y música en capas que se encienden y se apagan."
 }

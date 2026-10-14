@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>np2d player</title>
+<title>pinyol player</title>
 <style>
   :root {
     --bg: #11161a; --panel: #1b2329; --ink: #e8dcc2; --dim: #9aa39c; --accent: #e0a040; --accent-ink: #1b1408;
@@ -13,7 +13,7 @@
   html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, sans-serif; }
   main { max-width: 1000px; margin: 0 auto; padding: 16px; display: grid; gap: 14px; }
   header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  /* inside np2d's editor (?embed=1): only the screen and the buttons */
+  /* inside pinyol's editor (?embed=1): only the screen and the buttons */
   .embed header, .embed .keys { display: none; }
   h1 { margin: 0; font-size: clamp(1.2rem, 1rem + 1.2vw, 1.8rem); letter-spacing: .01em; }
   .by { color: var(--dim); font-size: .85rem; }
@@ -82,8 +82,8 @@
 <body>
 <main>
   <header>
-    <h1 id="title">np2d</h1>
-    <span class="by">Motor np2d · consola RetroGo</span>
+    <h1 id="title">pinyol</h1>
+    <span class="by">Motor pinyol · consola RetroGo</span>
     <span class="tools" id="tools" hidden>
       <button id="mute" aria-pressed="false">Silenciar</button>
       <button id="full">Pantalla completa</button>
@@ -208,7 +208,7 @@ async function load(buf, url) {
     if (!/^[A-Za-z0-9_-]{1,40}$/.test(id)) throw new Error('El id del juego no es válido: ' + id);
     gameFiles = { files, id, title: String(meta.title || id) };
     $('title').textContent = gameFiles.title;
-    document.title = gameFiles.title + ' · np2d';
+    document.title = gameFiles.title + ' · pinyol';
     $('gate-title').textContent = gameFiles.title;
     $('play').hidden = false;
     $('pick').hidden = true;
@@ -287,20 +287,20 @@ for (const b of document.querySelectorAll('.pad button')) {
   for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => set(false));
 }
 
-/* np2d's editor, in the same site, hands its game over: played at once (?embed=1) */
+/* pinyol's editor, in the same site, hands its game over: played at once (?embed=1) */
 if (new URLSearchParams(location.search).get('embed') === '1') {
   document.body.classList.add('embed');
   addEventListener('keydown', e => { /* Shift+Esc leaves the game for the editor: the keyboard is never trapped in it */
     if (e.key !== 'Escape' || !e.shiftKey) return;
     e.stopImmediatePropagation();
     e.preventDefault();
-    parent.postMessage({ np2d: 'leave' }, location.origin);
+    parent.postMessage({ pinyol: 'leave' }, location.origin);
   }, true);
   addEventListener('message', async e => {
-    if (e.origin !== location.origin || !e.data || e.data.np2d !== 'play' || !(e.data.zip instanceof ArrayBuffer)) return;
+    if (e.origin !== location.origin || !e.data || e.data.pinyol !== 'play' || !(e.data.zip instanceof ArrayBuffer)) return;
     await load(e.data.zip);
     if (gameFiles) start();
-    else parent.postMessage({ np2d: 'error', message: $('status') ? $('status').textContent : 'El juego no se ha podido abrir' }, location.origin);
+    else parent.postMessage({ pinyol: 'error', message: $('status') ? $('status').textContent : 'El juego no se ha podido abrir' }, location.origin);
   });
 }
 

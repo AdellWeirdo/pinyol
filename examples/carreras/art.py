@@ -9,7 +9,7 @@
 
 The circuit's layout is track.lua: change it there and draw again.
 
-Its own look, made every time: Jersey 15 and 20 from np2d's font library, and FR_META, a chequered flag border for frame().
+Its own look, made every time: Jersey 15 and 20 from pinyol's font library, and FR_META, a chequered flag border for frame().
 """
 from __future__ import annotations
 

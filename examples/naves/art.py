@@ -7,7 +7,7 @@
     uv run examples/naves/art.py           # art/*.png -> assets/
     uv run examples/naves/art.py --draw    # first draw art/*.png and audio/*.wav by code, then convert
 
-Its own look, made every time: arcade letters (Press Start 2P, Silkscreen) from np2d's font library, and FR_NEON,
+Its own look, made every time: arcade letters (Press Start 2P, Silkscreen) from pinyol's font library, and FR_NEON,
 a neon frame for frame().
 """
 from __future__ import annotations

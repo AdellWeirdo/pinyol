@@ -1,5 +1,5 @@
 -- Estilos: lo que hace que cada juego se vea suyo. Fuentes propias (fonts/<nombre>.fnt, hechas con
--- tools/font2fnt.py desde la biblioteca de np2d, un TTF, un BDF o una hoja PNG), estilos de texto (contorno, sombra,
+-- tools/font2fnt.py desde la biblioteca de pinyol, un TTF, un BDF o una hoja PNG), estilos de texto (contorno, sombra,
 -- degradado, escala, onda, temblor), marcos sacados de una imagen del juego (frame) y dibujos girados, escalados y
 -- volteados (img). Todo a la resolución de la pantalla, 480x320.
 --   ‹ ›  cambia de página

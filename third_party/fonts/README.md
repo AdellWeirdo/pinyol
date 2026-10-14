@@ -1,4 +1,4 @@
-# Fonts that come with np2d
+# Fonts that come with pinyol
 
 Pixel fonts a game can use as its own: `uv run tools/font2fnt.py <name> games/mygame/fonts/<name>.fnt`
 (`font2fnt.py --list` shows them with their pixel size). Each is under the SIL Open Font License 1.1 (its `OFL.txt`

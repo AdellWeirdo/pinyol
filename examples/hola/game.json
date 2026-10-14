@@ -1,10 +1,10 @@
 {
   "id": "hola",
-  "title": "Hola np2d",
-  "subtitle": "Un juego hecho con np2d",
+  "title": "Hola pinyol",
+  "subtitle": "Un juego hecho con pinyol",
   "tagline": "Habla, coge la llave, abre el cofre.",
-  "end_text": "Fin · Hola np2d",
-  "engine": "np2d@1",
+  "end_text": "Fin · Hola pinyol",
+  "engine": "pinyol@1",
   "content_version": 1,
   "player": {
     "speaker": "PROTA",
@@ -65,5 +65,5 @@
       "text": "Entra en casa y abre el cofre."
     }
   ],
-  "description": "La aventura de ejemplo hecha solo con datos (np2d@1): dos zonas, una amiga con la que hablar, una llave y un cofre."
+  "description": "La aventura de ejemplo hecha solo con datos (pinyol@1): dos zonas, una amiga con la que hablar, una llave y un cofre."
 }

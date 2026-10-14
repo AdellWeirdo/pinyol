@@ -1,5 +1,5 @@
-/* bp_sim: desktop simulator. Same core, same game folder as the console's microSD.
- *   bp_sim [--game DIR] [--saves DIR] [--scale N] [--mute] [--script FILE]
+/* pinyol_sim: desktop simulator. Same core, same game folder as the console's microSD.
+ *   pinyol_sim [--game DIR] [--saves DIR] [--scale N] [--mute] [--script FILE]
  * Keys: arrows/WASD move, Enter/E/Z = A, Esc/Backspace/X = B, Tab/C = C, I = MENU (bag), J = notebook, P = START.
  * Mouse = touch. F5 restarts the game, and so does saving any of its files (hot reload, to make games quickly).
  * Built with Emscripten it is the web player: the game folder is at /game (packed in, or unzipped
@@ -15,8 +15,8 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #define DEFAULT_GAME "/game"
-#elif defined NP2D_GAME /* the build's GAME_DIR */
-#define DEFAULT_GAME NP2D_GAME
+#elif defined PINYOL_GAME /* the build's GAME_DIR */
+#define DEFAULT_GAME PINYOL_GAME
 #else
 #define DEFAULT_GAME "examples/hola"
 #endif
@@ -68,16 +68,16 @@ void hal_audio_unlock(void) { if (audio_dev) SDL_UnlockAudioDevice(audio_dev); }
 #ifdef __EMSCRIPTEN__
 EM_JS(int, web_link_open, (void), {
     if (typeof BroadcastChannel === "undefined") return 0;
-    if (!Module.np2dLink) {
-        Module.np2dLink = new BroadcastChannel("np2d-link");
-        Module.np2dLinkIn = [];
-        Module.np2dLink.onmessage = (e) => { if (Module.np2dLinkIn.length < 256) Module.np2dLinkIn.push(e.data); };
+    if (!Module.pinyolLink) {
+        Module.pinyolLink = new BroadcastChannel("pinyol-link");
+        Module.pinyolLinkIn = [];
+        Module.pinyolLink.onmessage = (e) => { if (Module.pinyolLinkIn.length < 256) Module.pinyolLinkIn.push(e.data); };
     }
     return 1;
 });
-EM_JS(void, web_link_send, (const uint8_t *p, int n), { Module.np2dLink.postMessage(HEAPU8.slice(p, p + n)); });
+EM_JS(void, web_link_send, (const uint8_t *p, int n), { Module.pinyolLink.postMessage(HEAPU8.slice(p, p + n)); });
 EM_JS(int, web_link_recv, (uint8_t *p, int max), {
-    const q = Module.np2dLinkIn;
+    const q = Module.pinyolLinkIn;
     while (q && q.length) {
         const d = q.shift();
         if (!(d instanceof Uint8Array) || d.length > max) continue;
@@ -87,8 +87,8 @@ EM_JS(int, web_link_recv, (uint8_t *p, int max), {
     return 0;
 });
 EM_JS(uint32_t, web_link_id, (void), {
-    if (!Module.np2dLinkId) Module.np2dLinkId = (Math.random() * 0x7FFFFFFF | 0) + 1;
-    return Module.np2dLinkId;
+    if (!Module.pinyolLinkId) Module.pinyolLinkId = (Math.random() * 0x7FFFFFFF | 0) + 1;
+    return Module.pinyolLinkId;
 });
 bool hal_link_open(void) { return web_link_open(); }
 void hal_link_close(void) {}
@@ -125,11 +125,11 @@ static void mic_cb(void *user, Uint8 *stream, int len) {
  * could not be heard. Only the echo of the game's own sound is taken out. */
 EM_JS(void, web_mic_raw, (void), {
     const md = navigator.mediaDevices;
-    if (!md || Module.np2dMicRaw) return;
+    if (!md || Module.pinyolMicRaw) return;
     const ask = md.getUserMedia.bind(md);
     md.getUserMedia = (c) => ask(c && c.audio === true ? Object.assign({}, c, {audio: {echoCancellation: true,
                                     noiseSuppression: false, autoGainControl: false}}) : c);
-    Module.np2dMicRaw = true;
+    Module.pinyolMicRaw = true;
 });
 #endif
 
@@ -177,11 +177,11 @@ EM_JS(void, web_led, (int rgb), {
     e.style.boxShadow = "0 0 10px 3px " + c;
 });
 EM_JS(int, web_battery, (float *level, int *charging), {
-    if (!Module.np2dBattery && navigator.getBattery) {
-        Module.np2dBattery = {};
-        navigator.getBattery().then((b) => { Module.np2dBattery = b; }).catch(() => {});
+    if (!Module.pinyolBattery && navigator.getBattery) {
+        Module.pinyolBattery = {};
+        navigator.getBattery().then((b) => { Module.pinyolBattery = b; }).catch(() => {});
     }
-    const b = Module.np2dBattery;
+    const b = Module.pinyolBattery;
     if (!b || b.level === undefined) return 0;
     HEAPF32[level >> 2] = b.level;
     HEAP32[charging >> 2] = b.charging ? 1 : 0;
@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "SDL: %s\n", SDL_GetError());
         return 1;
     }
-    win = SDL_CreateWindow("np2d", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_W * scale,
+    win = SDL_CreateWindow("pinyol", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_W * scale,
                            SCREEN_H * scale, 0);
     ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_PRESENTVSYNC);
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");

@@ -1,13 +1,13 @@
-# Making a game in Lua (np2d@2)
+# Making a game in Lua (pinyol@2)
 
-An np2d@2 game is a folder with a `game.json`, a `main.lua` and its assets. The engine gives it a virtual console
+An pinyol@2 game is a folder with a `game.json`, a `main.lua` and its assets. The engine gives it a virtual console
 modelled on the Game Boy Advance: a 240×160 picture built from four background layers and 128 sprites, palettes,
 transparency, windows and per-line effects, with text and panels drawn on top at the screen's full 480×320. It runs
 the same on the RetroGo console, the desktop simulator and the browser.
 
 ```
 games/mygame/
-  game.json      {"id": "mygame", "title": "My Game", "engine": "np2d@2", "main": "main.lua"}
+  game.json      {"id": "mygame", "title": "My Game", "engine": "pinyol@2", "main": "main.lua"}
   main.lua       _init(), _update(), _draw()
   *.lua          more code, loaded with require("name")
   assets/        indexed tiles, maps, palettes and sprites (tools/png2asset.py)
@@ -33,7 +33,7 @@ function _draw() end      -- before each frame: scroll, sprites, text
 The picture processor keeps its state between frames: a sprite stays where you put it until you move or remove
 it. Text and shapes (the overlay) are drawn again every frame: call them in `_draw()`.
 
-A Lua error stops the game and shows the message on screen; `bp_headless --validate` reports it too.
+A Lua error stops the game and shows the message on screen; `pinyol_headless --validate` reports it too.
 
 ## Coordinates and colours
 
@@ -207,7 +207,7 @@ Every game starts with the same four fonts and the same panels. What makes one l
 
 - **Its own fonts.** Any number, `fonts/<name>.fnt`, loaded the first time `text` or `textw` asks for them (16 at
   most). `tools/font2fnt.py` makes them from a TTF or OTF (a pixel font is drawn at its own pixel size, found for
-  you), a BDF, a PNG sheet of glyphs (16 a row, as GB Studio's), or one of the fonts that come with np2d
+  you), a BDF, a PNG sheet of glyphs (16 a row, as GB Studio's), or one of the fonts that come with pinyol
   (`font2fnt.py --list`: Press Start 2P, Silkscreen, VT323, Jersey, Micro 5, Jacquard, Bytesized, DotGothic16...,
   all SIL Open Font License, in `third_party/fonts`). Replacing the four `FONT_*.fnt` changes the game's
   everyday text too.
@@ -655,12 +655,12 @@ expect_led ff0000                # the LED is that colour (expect_led off: the c
 
 `#` after a space starts a comment in these scripts, so avoid Lua's `#` length operator there.
 
-Run it with `bp_headless --game DIR --fresh --script FILE --check-strips`, or name it `tests/<game>.script` next
+Run it with `pinyol_headless --game DIR --fresh --script FILE --check-strips`, or name it `tests/<game>.script` next
 to `examples/<game>` and `ctest` runs it.
 
 ## Making it on the console
 
-`bp_sim` restarts a game each time one of its files is saved. To see it on the console the same way, keep it on the
+`pinyol_sim` restarts a game each time one of its files is saved. To see it on the console the same way, keep it on the
 cable while you work:
 
 ```

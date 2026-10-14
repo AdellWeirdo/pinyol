@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Turns a video, an animated GIF or a folder of PNGs into a clip np2d plays on a canvas (video() in docs/lua.md):
+"""Turns a video, an animated GIF or a folder of PNGs into a clip pinyol plays on a canvas (video() in docs/lua.md):
 GAME/video/<id>.npv, and GAME/audio/<id>.wav when the video has sound (mono 22050 Hz, for music() or sfx()).
 
   clip2npv.py SOURCE GAME ID [--width W] [--height H] [--fps N] [--colours N] [--dither] [--key N]

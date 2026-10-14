@@ -1,8 +1,8 @@
 pocketmod: a ProTracker MOD player in one header, by rombankzero (MIT, see LICENSE).
 https://github.com/rombankzero/pocketmod at commit 33ac2ba2f7c57aad0944a359e04bde5b2668470d (2018-06-14),
-pocketmod.h with three changes, each marked "np2d": the number of samples to write is computed without a
+pocketmod.h with three changes, each marked "pinyol": the number of samples to write is computed without a
 float-to-int overflow (UBSan, damaged modules); a note naming sample 16..31 in a 15-sample module is ignored (it
 read through a NULL sample); a pattern in the order must end inside the file, not only start there (it read past
-the file). The last two were found by a code review and confirmed with crafted modules under ASan. np2d builds it in src/modplay.c to play a game's audio/<id>.mod as its music.
+the file). The last two were found by a code review and confirmed with crafted modules under ASan. pinyol builds it in src/modplay.c to play a game's audio/<id>.mod as its music.
 Its interpolation can read up to 2 bytes past a sample's end (found by tests/mod_test.c under ASan with a damaged
 module): modplay.c pads every loaded module with zeros instead of changing pocketmod.h.

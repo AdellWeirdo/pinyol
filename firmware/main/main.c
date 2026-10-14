@@ -183,7 +183,7 @@ static void tick(const hal_input *in) {
 }
 
 #ifdef BP_BENCH_PLAY
-/* -DBP_BENCH=play: the end-to-end tests on the card, /sdcard/np2d_bench/<game id>.script, each played on
+/* -DBP_BENCH=play: the end-to-end tests on the card, /sdcard/pinyol_bench/<game id>.script, each played on
  * /sdcard/games/<game id> for 75 s while perf lines are logged; a restart ends each run and RTC memory says which test
  * is next. Saves go to their own folder, never the game's. */
 #include <sys/stat.h>
@@ -344,7 +344,7 @@ static void bench_play(void) {
     static char name[256], src[300], dir[300];
     uint32_t k = 0;
     *name = 0;
-    DIR *d = opendir("/sdcard/np2d_bench");
+    DIR *d = opendir("/sdcard/pinyol_bench");
     for (struct dirent *e; d && (e = readdir(d));) { /* the play_next-th test, in the folder's order */
         size_t n = strlen(e->d_name);
         if (n > 7 && !strcmp(e->d_name + n - 7, ".script") && k++ == play_next) {
@@ -354,22 +354,22 @@ static void bench_play(void) {
     }
     if (d) closedir(d);
     if (!*name) {
-        hal_log(play_next ? "BENCH play done" : "BENCH play: no /sdcard/np2d_bench/<game id>.script");
+        hal_log(play_next ? "BENCH play done" : "BENCH play: no /sdcard/pinyol_bench/<game id>.script");
         play_magic = 0; /* a reset starts the series again */
         return;
     }
     play_next++;
-    const char *path = "/sdcard/np2d_bench_saves/run.script";
-    snprintf(src, sizeof src, "/sdcard/np2d_bench/%s.script", name);
+    const char *path = "/sdcard/pinyol_bench_saves/run.script";
+    snprintf(src, sizeof src, "/sdcard/pinyol_bench/%s.script", name);
     snprintf(dir, sizeof dir, "/sdcard/games/%s", name);
-    mkdir("/sdcard/np2d_bench_saves", 0755);
+    mkdir("/sdcard/pinyol_bench_saves", 0755);
     FILE *in = fopen(src, "r"), *out = fopen(path, "w");
     for (char line[512]; in && out && fgets(line, sizeof line, in);)
         if (strncmp(line, "shot ", 5)) fputs(line, out); /* without "shot" lines, as the autotest images */
     if (in) fclose(in);
     if (!out) return;
     fclose(out);
-    bp_config cfg = {dir, "/sdcard/np2d_bench_saves"};
+    bp_config cfg = {dir, "/sdcard/pinyol_bench_saves"};
     if (!game_init(&cfg)) return;
     hal_log("BENCH play %s at %d ticks a frame", name, TICKS_PER_FRAME);
     perf = (typeof(perf)){.since = esp_timer_get_time()};
@@ -396,7 +396,7 @@ void app_main(void) {
 #endif
     for (;;) vTaskDelay(portMAX_DELAY); /* the last frame stays on screen */
 #endif
-    cable_init(); /* a game sent from np2d's editor over the USB cable */
+    cable_init(); /* a game sent from pinyol's editor over the USB cable */
 #ifdef BP_REMOTE
     remote_init();
 #endif

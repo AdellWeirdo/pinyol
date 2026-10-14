@@ -2,10 +2,10 @@
 # requires-python = ">=3.10"
 # dependencies = ["pillow>=10"]
 # ///
-"""Create a new np2d game folder: a tiny but complete game you can play, validate and then make your own.
+"""Create a new pinyol game folder: a tiny but complete game you can play, validate and then make your own.
 
-    uv run tools/new_game.py games/mygame --lua --title "My Game"   # a game in Lua (np2d@2): any genre
-    uv run tools/new_game.py games/mygame --title "My Game"         # an adventure made of data (np2d@1)
+    uv run tools/new_game.py games/mygame --lua --title "My Game"   # a game in Lua (pinyol@2): any genre
+    uv run tools/new_game.py games/mygame --title "My Game"         # an adventure made of data (pinyol@1)
 
 --lua copies templates/lua: a room bigger than the screen to walk around, gems to pick up, a camera, sounds and a
 best time saved; its art.py draws the art from code, to replace with your own (docs/lua.md).
@@ -198,8 +198,8 @@ def content(gid: str, title: str) -> dict[str, object]:
               "##...........##", "##...........##", "##...........##", "##...........##", "#######.#######"]
     return {
         "game.json": {
-            "id": gid, "title": title, "subtitle": "Un juego hecho con np2d", "tagline": "Habla, coge la llave, abre el cofre.",
-            "end_text": f"Fin · {title}", "engine": "np2d@1", "content_version": 1,
+            "id": gid, "title": title, "subtitle": "Un juego hecho con pinyol", "tagline": "Habla, coge la llave, abre el cofre.",
+            "end_text": f"Fin · {title}", "engine": "pinyol@1", "content_version": 1,
             "player": {"speaker": "PROTA", "sprite": "PJ"},
             "title_layout": {"logo": [128, 28], "sub": [128, 236], "menu": [256, 70]},
             "speakers": {"PROTA": {"name": "Tú", "portrait": "PT_PROTA", "color": "#AF743A"},
@@ -242,19 +242,19 @@ def content(gid: str, title: str) -> dict[str, object]:
 def lua_game(game: Path, title: str) -> None:
     """templates/lua with this game's id and title, its art drawn and converted, and the fonts."""
     shutil.copytree(ROOT / "templates" / "lua", game, dirs_exist_ok=True)
-    meta = {"id": game.name, "title": title, "engine": "np2d@2", "main": "main.lua", "author": "", "description": ""}
+    meta = {"id": game.name, "title": title, "engine": "pinyol@2", "main": "main.lua", "author": "", "description": ""}
     (game / "game.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     for sub in ("fonts", "saves"):
         (game / sub).mkdir(exist_ok=True)
     fonts(game)
-    subprocess.run([sys.executable, str(game / "art.py"), "--draw"], check=True, env={**os.environ, "NP2D": str(ROOT)})
+    subprocess.run([sys.executable, str(game / "art.py"), "--draw"], check=True, env={**os.environ, "PINYOL": str(ROOT)})
 
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("dir", type=Path, help="new game folder, e.g. games/mygame (its name is the game id)")
-    p.add_argument("--title", default=None, help="the name shown in the game list (default: Hola np2d, or the id)")
-    p.add_argument("--lua", action="store_true", help="a Lua game (np2d@2) from templates/lua")
+    p.add_argument("--title", default=None, help="the name shown in the game list (default: Hola pinyol, or the id)")
+    p.add_argument("--lua", action="store_true", help="a Lua game (pinyol@2) from templates/lua")
     args = p.parse_args()
     game: Path = args.dir
     if game.exists() and any(game.iterdir()):
@@ -263,9 +263,9 @@ def main() -> None:
         sys.exit(f"{game.name}: a game's folder name is its id: 1-40 letters, digits, _ or -")
     if args.lua:
         lua_game(game, args.title or game.name)
-        print(f"{game}: ready. Try it: ./build/bp_sim --game {game}  (then edit {game}/main.lua)")
+        print(f"{game}: ready. Try it: ./build/pinyol_sim --game {game}  (then edit {game}/main.lua)")
         return
-    args.title = args.title or "Hola np2d"
+    args.title = args.title or "Hola pinyol"
     for sub in ("assets", "fonts", "zones", "dialogues", "audio", "saves"):
         (game / sub).mkdir(parents=True, exist_ok=True)
     for rel, data in content(game.name, args.title).items():
@@ -273,7 +273,7 @@ def main() -> None:
     art(game, args.title)
     fonts(game)
     music(game)
-    print(f"{game}: ready. Try it: ./build/bp_sim --game {game}")
+    print(f"{game}: ready. Try it: ./build/pinyol_sim --game {game}")
 
 
 if __name__ == "__main__":

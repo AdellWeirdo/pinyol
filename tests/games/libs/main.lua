@@ -1,4 +1,4 @@
--- The libraries built into np2d (lib/*.lua), each used as a game would (tests/libs.script checks them).
+-- The libraries built into pinyol (lib/*.lua), each used as a game would (tests/libs.script checks them).
 juice = require("juice")
 particles = require("particles")
 physics = require("physics")

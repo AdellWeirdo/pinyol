@@ -1,5 +1,5 @@
 // The project: everything a game made in the editor is, as plain data (saved in the browser, or as a .json file).
-// build.js turns it into a game folder np2d plays.
+// build.js turns it into a game folder pinyol plays.
 import { checkSong } from './song.js';
 
 const VIDEO_B64_MAX = 4.5 * (1 << 20); // a 3 MB clip, as base64

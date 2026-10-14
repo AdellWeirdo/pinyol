@@ -4,9 +4,9 @@
 # ///
 """Build a web gallery of games: each one playable in the browser and downloadable for the console.
 
-    python3 tools/make_gallery.py out/ --player build-web --headless build/bp_headless examples/*
+    python3 tools/make_gallery.py out/ --player build-web --headless build/pinyol_headless examples/*
 
-For each game folder: its zip (tools/pack_game.py), a picture of its title screen taken with bp_headless, and a
+For each game folder: its zip (tools/pack_game.py), a picture of its title screen taken with pinyol_headless, and a
 card in out/index.html, next to the web player (player.html/.js/.wasm from an Emscripten build, see the README).
 Serve out/ over http (python3 -m http.server -d out).
 """
@@ -32,7 +32,7 @@ PAGE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Juegos np2d</title>
+<title>Juegos pinyol</title>
 <style>
   @font-face {{ font-family: "Pixelify Sans"; src: url(fonts/PixelifySans.ttf); font-display: swap; }}
   :root {{
@@ -76,14 +76,14 @@ PAGE = """<!doctype html>
 <body>
 <main>
   <header>
-    <h1>Juegos <span>np2d</span></h1>
+    <h1>Juegos <span>pinyol</span></h1>
     <p class="lede">Para la consola RetroGo y para el navegador. Juega aquí, o descarga el .zip y descomprímelo en la
     carpeta <code>games/</code> de la tarjeta microSD.</p>
   </header>
   <ul class="shelf">
 {cards}
   </ul>
-  <footer>Hecho con np2d. Teclado: flechas o WASD, Z o Enter (A), X o Esc (B), C, P (START); en el móvil, botones en
+  <footer>Hecho con pinyol. Teclado: flechas o WASD, Z o Enter (A), X o Esc (B), C, P (START); en el móvil, botones en
   pantalla.</footer>
 </main>
 </body>
@@ -119,7 +119,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("out", type=Path)
     ap.add_argument("games", type=Path, nargs="+", help="game folders")
-    ap.add_argument("--headless", type=Path, default=Path("build/bp_headless"))
+    ap.add_argument("--headless", type=Path, default=Path("build/pinyol_headless"))
     ap.add_argument("--player", type=Path, help="the folder with player.html, player.js and player.wasm")
     a = ap.parse_args()
     for sub in ("games", "covers", "fonts"):
@@ -140,7 +140,7 @@ def main() -> None:
         z = pack_game.pack(game, a.out / "games", sources=False)
         cover(a.headless, game, a.out / "covers" / f"{gid}.png")
         title = meta.get("title", gid)
-        lua = str(meta.get("engine", "")).startswith("np2d@2")
+        lua = str(meta.get("engine", "")).startswith(("pinyol@2", "np2d@2"))  # np2d: the engine's first name
         cards.append(CARD.format(id=gid, title=html.escape(title), title_attr=html.escape(title, quote=True),
                                  description=html.escape(meta.get("description", "")),
                                  kind="Lua" if lua else "aventura de datos", size=z.stat().st_size // 1024))

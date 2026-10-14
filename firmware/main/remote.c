@@ -2,7 +2,7 @@
  * tools/remote.py. One command per line on the serial port (read by cable.c, which hands over what is not its own):
  *   tap X Y    a finger down at (X, Y) for a few polls, then lifted
  *   key NAME [N]  A, B, C, UP, DOWN, LEFT, RIGHT, START or MENU, held for N polls (a few by default)
- *   lua CODE   np2d@2: runs CODE in the game (print() answers in the log), as a test script's lua line
+ *   lua CODE   pinyol@2: runs CODE in the game (print() answers in the log), as a test script's lua line
  *   shot       the frame last sent to the panel: "SHOT <w> <h>", one base64 line per row (RGB565 LE), "SHOT END" */
 #include "remote.h"
 

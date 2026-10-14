@@ -1,7 +1,7 @@
 """Damaged games must not crash the engine: copies a game, damages 1-3 of its files (bytes changed, or cut short),
 plays it for two seconds, and reports any AddressSanitizer or UBSan finding. Use a Debug build (sanitizers on).
 
-    python3 tests/fuzz_assets.py examples/naves /tmp/fuzzwork build/bp_headless 60
+    python3 tests/fuzz_assets.py examples/naves /tmp/fuzzwork build/pinyol_headless 60
 
 Not part of ctest (a minute per game). Last run 2026-10-12: naves, plataformas, puzle, hola, 60 each, no findings.
 """

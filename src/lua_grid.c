@@ -32,8 +32,8 @@ typedef struct {
 
 static const int DX[8] = {1, -1, 0, 0, 1, 1, -1, -1}, DY[8] = {0, 0, 1, -1, 1, -1, 1, -1};
 
-static grid *check_grid(lua_State *L) { return luaL_checkudata(L, 1, "np2d.grid"); }
-static layer *check_layer(lua_State *L) { return luaL_checkudata(L, 1, "np2d.layer"); }
+static grid *check_grid(lua_State *L) { return luaL_checkudata(L, 1, "pinyol.grid"); }
+static layer *check_layer(lua_State *L) { return luaL_checkudata(L, 1, "pinyol.layer"); }
 
 static bool on(int w, int h, int x, int y) { return x >= 0 && y >= 0 && x < w && y < h; }
 
@@ -57,7 +57,7 @@ static int l_grid(lua_State *L) { /* grid(w, h [, cost]) */
     grid *g = lua_newuserdatauv(L, sizeof(grid) + (size_t)w * h, 0);
     g->w = w, g->h = h;
     memset(g->cost, (int)c, (size_t)w * h);
-    luaL_setmetatable(L, "np2d.grid");
+    luaL_setmetatable(L, "pinyol.grid");
     return 1;
 }
 
@@ -243,7 +243,7 @@ static layer *new_layer(lua_State *L, int gi, float v) { /* a layer over the gri
     layer *l = lua_newuserdatauv(L, sizeof(layer) + 2 * cells * sizeof(float), 1);
     l->w = g->w, l->h = g->h, l->v = (float *)(l + 1), l->tmp = l->v + cells;
     for (size_t i = 0; i < cells; i++) l->v[i] = v;
-    luaL_setmetatable(L, "np2d.layer");
+    luaL_setmetatable(L, "pinyol.layer");
     lua_pushvalue(L, gi), lua_setiuservalue(L, -2, 1); /* it keeps its grid (its walls) */
     return l;
 }
@@ -390,7 +390,7 @@ void grid_register(lua_State *L) {
                                  {"reach", g_reach}, {"distances", g_distances}, {"layer", g_layer}, {NULL, NULL}};
     static const luaL_Reg Y[] = {{"get", l_get}, {"set", l_set}, {"add", l_add}, {"fill", l_fill},
                                  {"spread", l_spread}, {"climb", l_climb}, {"descend", l_descend}, {NULL, NULL}};
-    meta(L, "np2d.grid", G);
-    meta(L, "np2d.layer", Y);
+    meta(L, "pinyol.grid", G);
+    meta(L, "pinyol.layer", Y);
     lua_register(L, "grid", l_grid);
 }

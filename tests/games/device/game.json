@@ -1,1 +1,1 @@
-{"id": "device", "title": "Device", "engine": "np2d@2", "main": "main.lua"}
+{"id": "device", "title": "Device", "engine": "pinyol@2", "main": "main.lua"}

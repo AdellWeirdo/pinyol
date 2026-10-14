@@ -10,7 +10,7 @@
 art/aldea.tmx opens in Tiled (mapeditor.org): change the village there and run this without --draw to import it
 again (tools/tiled2asset.py). --draw would write the map anew from the plan below.
 
-Its own look, made every time: blackletter (Jacquarda Bastarda 9, Jacquard 12) from np2d's font library, a
+Its own look, made every time: blackletter (Jacquarda Bastarda 9, Jacquard 12) from pinyol's font library, a
 parchment (FR_PERGAMI) and a wooden sign (FR_MADERA) for frame().
 """
 from __future__ import annotations

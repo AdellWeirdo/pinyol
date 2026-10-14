@@ -6,7 +6,7 @@
     uv run --with pyserial tools/send_game.py games/mygame --port /dev/cu.usbmodem101
     uv run --with pyserial tools/send_game.py games/mygame --only 'assets/*_HD.*'   # some files, into the game there
 
-The console's side is firmware/main/cable.c (the protocol is described there); np2d's editor does the same from the
+The console's side is firmware/main/cable.c (the protocol is described there); pinyol's editor does the same from the
 browser. Saves, art sources and dot files are not sent.
 """
 from __future__ import annotations
@@ -62,14 +62,15 @@ class Cable:
         self.buf = b""
 
     def answer(self, timeout: float) -> str:
-        """The console's next answer ("@np2d ..."), skipping its log."""
+        """The console's next answer ("@pinyol ..."), skipping its log."""
         end = time.time() + timeout
         while time.time() < end:
             while b"\n" in self.buf:
                 raw, self.buf = self.buf.split(b"\n", 1)
                 text = raw.decode(errors="replace").strip()
-                if text.startswith("@np2d "):
-                    return text[6:]
+                for tag in ("@pinyol ", "@np2d "):  # np2d: firmware from before the engine's rename
+                    if text.startswith(tag):
+                        return text[len(tag):]
             self.buf += self.s.read(self.s.in_waiting or 1)  # what is there, or a byte: never the whole timeout
         raise SystemExit("the console does not answer (is it on, with firmware that has the cable?)")
 

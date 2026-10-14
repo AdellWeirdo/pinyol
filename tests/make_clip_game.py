@@ -60,7 +60,7 @@ for n in range(12):  # noise over the frames' ops
 for name, data in bad.items():
     (out / "video" / f"{name}.npv").write_bytes(data)
 (out / "bad.txt").write_text("\n".join(bad))
-(out / "game.json").write_text(json.dumps({"id": "clip", "title": "Clip", "engine": "np2d@2", "main": "main.lua"}))
+(out / "game.json").write_text(json.dumps({"id": "clip", "title": "Clip", "engine": "pinyol@2", "main": "main.lua"}))
 (out / "main.lua").write_text('''-- Clips (src/lua_clip.c), checked by tests/clip.script
 MARKS = {0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0x00FFFF, 0xFF00FF, 0xFFFFFF, 0x840000}
 function _init() show(0) end

@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = ["pillow>=10"]
 # ///
-"""Import a level drawn in Tiled (mapeditor.org) into an np2d@2 game.
+"""Import a level drawn in Tiled (mapeditor.org) into an pinyol@2 game.
 
     uv run tools/tiled2asset.py level1.tmx games/mygame LEVEL1 [--palette WORLD] [--affine]
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""np2d's editor, ready to be served: editor/ and the web player (built with Emscripten) in one folder.
+"""pinyol's editor, ready to be served: editor/ and the web player (built with Emscripten) in one folder.
 
     python3 tools/make_editor.py OUT --player build-web     # then serve OUT (python3 -m http.server -d OUT)
 

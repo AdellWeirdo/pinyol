@@ -40,7 +40,7 @@ slower: adventure A's bag (about 15 ms of drawing) and an item's close-up over t
 **Board note (night of 2026-10-12):** after many flash/reset cycles the board's USB stopped answering (esptool: "No
 serial data received"); it needs the cable unplugged and plugged back in. Until then the console runs the play bench
 (`-DBP_BENCH=play`), not the game list. To put the normal firmware back:
-`cd firmware && idf.py -DBP_BENCH=OFF build && esptool.py --chip esp32s3 -p /dev/cu.usbmodem101 -b 921600 write_flash 0x20000 build/np2d_console.bin`
+`cd firmware && idf.py -DBP_BENCH=OFF build && esptool.py --chip esp32s3 -p /dev/cu.usbmodem101 -b 921600 write_flash 0x20000 build/pinyol_console.bin`
 (commit 25661b4 or later). Pau reconnected the cable the same night and the console got the normal firmware back
 (25661b4: game list, 60 fps on TE). Board flashing kept to a minimum from here.
 
@@ -50,7 +50,7 @@ serial data received"); it needs the cable unplugged and plugged back in. Until 
   (indexed or direct colour, turned and scaled by 32 matrices), palettes with banks, alpha blending and fades, two
   windows and an object window, mosaic, and per-line tables (scroll, affine, windows, backdrop, blend). The frame is
   240×160, scaled 2× into the panel strips with text and panels drawn on top at 480×320.
-- **np2d@2, games in Lua** (e68b9b2): Lua 5.4 with 32-bit numbers on every platform, in a sandbox (memory quota,
+- **pinyol@2, games in Lua** (e68b9b2): Lua 5.4 with 32-bit numbers on every platform, in a sandbox (memory quota,
   instruction budget per call, no io/os/debug, source-only `load`, `require` inside the game folder). The API is in
   [lua.md](lua.md). v1 games (the data adventures) run as before, unchanged to the pixel.
 - **Three genres as examples** (48f0194, a8cff5a): `plataformas` (platformer: parallax, see-through water with a wavy
@@ -107,7 +107,7 @@ serial data received"); it needs the cable unplugged and plugged back in. Until 
 
 Pau's own game ideas (a buried village that remembers, ritual mechas, a cat's life, raising a child, live 90s TV that
 turns on the player, castells, a festa's dances, rafts on rivers, a metro that should not exist) were the yardstick.
-Six things np2d lacked, added on branch `fases` (local commits, all tests green after each):
+Six things pinyol lacked, added on branch `fases` (local commits, all tests green after each):
 
 - **The microphone:** `mic()` gives level, pitch (McLeod's NSDF, 69-1000 Hz) and a hit on the tick a sudden sound
   starts; `mic_record(id, s)` turns what it hears into a sound. Console: the ES8311's ADC on the same I2S stream as

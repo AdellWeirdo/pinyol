@@ -160,7 +160,7 @@ In the world, the same: `spr()` places a sheet's frame by its top-left, at world
 - `--colours 16` makes a picture 4 bits a pixel, half the memory; up to 256 colours it is 8.
 
 A game's pictures share 4 MB; past it, those not drawn in a frame are let go and come back from the card when
-drawn again. What one frame draws must fit. `bp_headless --pictures KB` plays a test with less memory to check it.
+drawn again. What one frame draws must fit. `pinyol_headless --pictures KB` plays a test with less memory to check it.
 
 **In the world** (tiles):
 
@@ -183,7 +183,7 @@ suit drawn or simplified art. `--palette` shares one palette between assets, as 
 
 ## 8. Check
 
-- `bp_headless --game DIR --validate`, then a test script with `shot` on the screens that matter: look at them.
+- `pinyol_headless --game DIR --validate`, then a test script with `shot` on the screens that matter: look at them.
 - Every frame over magenta, in one contact sheet: holes, halos, feet off the row.
 - On the console, `perf(true)` (or MENU and C) shows the frame time: big pictures are where it goes.
 - Each file in a folder makes opening the others slower on the card: keep `assets/` to what the game uses.

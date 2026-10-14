@@ -1,4 +1,4 @@
-/* The microphone, for games (np2d@2): how loud it is, the pitch of a voice or a whistle, a sudden sound (a clap),
+/* The microphone, for games (pinyol@2): how loud it is, the pitch of a voice or a whistle, a sudden sound (a clap),
  * and recordings that become sounds a game plays. The platform hands over samples (hal_mic_read); all of it is
  * worked out here once a tick, so a game only reads numbers and every platform agrees. Tests feed a tone or noise
  * instead of a real microphone (mic_inject). */

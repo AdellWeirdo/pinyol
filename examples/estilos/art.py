@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = ["pillow>=10.1", "fonttools>=4"]
 # ///
-"""The look of this example, all made here: fonts from np2d's font library, three frames and a star drawn in code.
+"""The look of this example, all made here: fonts from pinyol's font library, three frames and a star drawn in code.
 
     uv run examples/estilos/art.py
 

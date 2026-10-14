@@ -8,7 +8,7 @@ function fakeConsole({ refuse = null } = {}) {
   let out, current = null, inBuf = '';
   const readable = new ReadableStream({ start(c) { out = c; } });
   const say = text => { // the answer cut in two, a line of log before it
-    const bytes = new TextEncoder().encode(`I (123) log: busy\r\n@np2d ${text}\r\n`);
+    const bytes = new TextEncoder().encode(`I (123) log: busy\r\n@pinyol ${text}\r\n`);
     const cut = Math.floor(bytes.length / 2);
     const put = b => { try { out.enqueue(b); } catch { /* the editor has closed the port */ } };
     put(bytes.subarray(0, cut));

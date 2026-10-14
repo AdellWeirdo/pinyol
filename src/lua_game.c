@@ -1,4 +1,4 @@
-/* np2d@2 games: the game is a Lua program (main.lua) that drives the virtual picture processor (ppu.h) and draws text
+/* pinyol@2 games: the game is a Lua program (main.lua) that drives the virtual picture processor (ppu.h) and draws text
  * and shapes at the screen's full resolution over it. The engine calls _init() once, _update() every tick (60 Hz)
  * and _draw() before each frame; docs/lua.md lists the API.
  *
@@ -256,7 +256,7 @@ static int load_chunk(lua_State *L, const char *rel) { /* pushes the compiled ch
 static int l_require(lua_State *L) {
     const char *mod = luaL_checkstring(L, 1);
     if (!safe_name(mod)) return luaL_error(L, "require: bad module name '%s'", mod);
-    lua_getfield(L, LUA_REGISTRYINDEX, "np2d.loaded");
+    lua_getfield(L, LUA_REGISTRYINDEX, "pinyol.loaded");
     lua_getfield(L, -1, mod);
     if (!lua_isnil(L, -1)) return 1;
     lua_pop(L, 1);
@@ -266,13 +266,13 @@ static int l_require(lua_State *L) {
     char path[384];
     snprintf(path, sizeof path, "%s/%s", G.game_dir, rel);
     FILE *own = fopen(path, "rb"); /* the game's own copy first: a library can be copied into a game and changed */
-    const np2d_lib_entry *lib = NULL;
-    for (int i = 0; !own && np2d_lib[i].name; i++)
-        if (!strcmp(np2d_lib[i].name, mod)) lib = &np2d_lib[i];
+    const pinyol_lib_entry *lib = NULL;
+    for (int i = 0; !own && pinyol_lib[i].name; i++)
+        if (!strcmp(pinyol_lib[i].name, mod)) lib = &pinyol_lib[i];
     if (own) fclose(own);
     if (lib) {
         char name[48];
-        snprintf(name, sizeof name, "=np2d/%s.lua", mod);
+        snprintf(name, sizeof name, "=pinyol/%s.lua", mod);
         if (luaL_loadbufferx(L, lib->src, lib->len, name, "t") != LUA_OK) return lua_error(L);
     } else {
         load_chunk(L, rel);
@@ -1105,7 +1105,7 @@ bool v2_load(void) {
     lua_pushnil(Ls), lua_setfield(Ls, -2, "dump");
     lua_pop(Ls, 1);
     lua_newtable(Ls);
-    lua_setfield(Ls, LUA_REGISTRYINDEX, "np2d.loaded");
+    lua_setfield(Ls, LUA_REGISTRYINDEX, "pinyol.loaded");
     api(Ls);
     lua_getglobal(Ls, "math"); /* the same random numbers on every run: tests and replays depend on it */
     lua_getfield(Ls, -1, "randomseed");

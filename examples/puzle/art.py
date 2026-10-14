@@ -10,7 +10,7 @@
 art/picture.png is the picture to put together, 144x144 (generated with an image model at 1254x1254 and reduced).
 Any square picture works: --draw scales it to 144x144 and reduces it to 96 colours.
 
-Its own look, made every time: DotGothic16 from np2d's font library, and FR_SUAVE, a soft rounded frame for frame().
+Its own look, made every time: DotGothic16 from pinyol's font library, and FR_SUAVE, a soft rounded frame for frame().
 """
 from __future__ import annotations
 

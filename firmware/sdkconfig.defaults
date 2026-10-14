@@ -31,7 +31,7 @@ CONFIG_FATFS_MAX_LFN=255
 CONFIG_FREERTOS_HZ=1000
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=16384
 
-# bp_core statics go to PSRAM (components/bp_core/linker.lf)
+# pinyol_core statics go to PSRAM (components/pinyol_core/linker.lf)
 CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY=y
 
 # drawing reads and writes PSRAM all frame long: bigger data cache, longer lines

@@ -108,7 +108,7 @@ void clip_free_all(void) {
 }
 
 static clip *check(lua_State *L) {
-    clip *c = luaL_checkudata(L, 1, "np2d.clip");
+    clip *c = luaL_checkudata(L, 1, "pinyol.clip");
     if (!c->f) luaL_error(L, "the clip is closed");
     return c;
 }
@@ -167,7 +167,7 @@ static int l_clip(lua_State *L) {
     if (slot == MAX_CLIPS) return luaL_error(L, "video \"%s\": %d clips open at most (close one)", id, MAX_CLIPS);
     clip *c = lua_newuserdatauv(L, sizeof(clip), 0);
     memset(c, 0, sizeof *c);
-    luaL_setmetatable(L, "np2d.clip");
+    luaL_setmetatable(L, "pinyol.clip");
     char path[384];
     snprintf(path, sizeof path, "%s/video/%s.npv", G.game_dir, id);
     if (!(c->f = fopen(path, "rb"))) return luaL_error(L, "video \"%s\": no video/%s.npv", id, id);
@@ -202,7 +202,7 @@ static int m_frames(lua_State *L) { lua_pushinteger(L, check(L)->frames); return
 static int m_fps(lua_State *L) { lua_pushnumber(L, check(L)->fps); return 1; }
 static int m_playing(lua_State *L) { lua_pushboolean(L, check(L)->playing); return 1; }
 static int m_close(lua_State *L) {
-    clip *c = luaL_checkudata(L, 1, "np2d.clip");
+    clip *c = luaL_checkudata(L, 1, "pinyol.clip");
     if (c->f) clip_close(c);
     return 0;
 }
@@ -227,7 +227,7 @@ void clip_register(lua_State *L) {
     static const luaL_Reg M[] = {{"play", m_play}, {"pause", m_pause}, {"seek", m_seek}, {"frame", m_frame},
                                  {"frames", m_frames}, {"fps", m_fps}, {"playing", m_playing}, {"close", m_close},
                                  {NULL, NULL}};
-    luaL_newmetatable(L, "np2d.clip");
+    luaL_newmetatable(L, "pinyol.clip");
     luaL_newlib(L, M);
     lua_setfield(L, -2, "methods");
     lua_pushcfunction(L, m_index), lua_setfield(L, -2, "__index");

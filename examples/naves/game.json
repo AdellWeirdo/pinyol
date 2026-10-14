@@ -1,8 +1,8 @@
 {
   "id": "naves",
   "title": "Naves",
-  "engine": "np2d@2",
+  "engine": "pinyol@2",
   "main": "main.lua",
-  "author": "np2d examples",
+  "author": "pinyol examples",
   "description": "Matamarcianos horizontal: estrellas con una velocidad por línea, un planeta que gira y explosiones transparentes."
 }

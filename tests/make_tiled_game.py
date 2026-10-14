@@ -66,7 +66,7 @@ cells = [2, 2, 2, 2, 1, 0, 0, 1]
 t2a = [sys.executable, str(ROOT / "tools" / "tiled2asset.py")]
 subprocess.run(t2a + [str(out / "maps" / "level1.tmx"), str(out), "LEVEL1"], check=True)
 subprocess.run(t2a + [str(out / "maps" / "level2.json"), str(out), "LEVEL2"], check=True)
-(out / "game.json").write_text(json.dumps({"id": "tiled", "title": "Tiled", "engine": "np2d@2", "main": "main.lua"}))
+(out / "game.json").write_text(json.dumps({"id": "tiled", "title": "Tiled", "engine": "pinyol@2", "main": "main.lua"}))
 (out / "main.lua").write_text("""L1, L2 = require("level1"), require("level2")
 function _init()
   bg(1, {map = "LEVEL1_GROUND"})

@@ -266,18 +266,18 @@ static bool text_visible(const char *s) {
 
 static bool run_line(char *cmd, char *arg) {
     if (!strcmp(cmd, "new")) { game_new(); return tick(0); }
-    if (!strcmp(cmd, "lua") || !strcmp(cmd, "expect_lua")) { /* np2d@2: run code / check an expression in the game */
+    if (!strcmp(cmd, "lua") || !strcmp(cmd, "expect_lua")) { /* pinyol@2: run code / check an expression in the game */
         char msg[200];
         if (!v2_run(arg, cmd[0] == 'e', msg, sizeof msg)) FAIL("%s %s -> %s", cmd, arg, msg);
         return true;
     }
-    if (!strcmp(cmd, "expect_lua_error")) { /* np2d@2: this code must fail (a limit of the sandbox) */
+    if (!strcmp(cmd, "expect_lua_error")) { /* pinyol@2: this code must fail (a limit of the sandbox) */
         char msg[200];
         if (v2_run(arg, false, msg, sizeof msg)) FAIL("expect_lua_error %s: it ran without an error", arg);
         hal_log("expected error: %s", msg);
         return true;
     }
-    if (!strcmp(cmd, "link_from")) { /* np2d@2: link_from <hex id> <json>: a message as if that console sent it */
+    if (!strcmp(cmd, "link_from")) { /* pinyol@2: link_from <hex id> <json>: a message as if that console sent it */
         char *json = arg;
         uint32_t from = (uint32_t)strtoul(arg, &json, 16);
         while (*json == ' ') json++;
@@ -286,18 +286,18 @@ static bool run_line(char *cmd, char *arg) {
         link_inject(from, json);
         return true;
     }
-    if (!strcmp(cmd, "expect_link_sent")) { /* np2d@2: one of the last 8 messages this console sent contains it */
+    if (!strcmp(cmd, "expect_link_sent")) { /* pinyol@2: one of the last 8 messages this console sent contains it */
         if (!link_sent_lately(arg)) FAIL("expect_link_sent %s: not in the last messages sent", arg);
         return true;
     }
-    if (!strcmp(cmd, "mic")) { /* np2d@2: mic LEVEL [HZ]: the microphone hears a tone (no HZ: noise); mic none: none */
+    if (!strcmp(cmd, "mic")) { /* pinyol@2: mic LEVEL [HZ]: the microphone hears a tone (no HZ: noise); mic none: none */
         float level = 0, hz = 0;
         if (!strcmp(arg, "none")) mic_inject(false, 0, 0);
         else if (sscanf(arg, "%f %f", &level, &hz) >= 1) mic_inject(true, level, hz);
         else FAIL("mic: LEVEL [HZ] or none");
         return true;
     }
-    if (!strcmp(cmd, "battery")) { /* np2d@2: battery LEVEL [charging]; battery none; battery real */
+    if (!strcmp(cmd, "battery")) { /* pinyol@2: battery LEVEL [charging]; battery none; battery real */
         float level = 0;
         if (!strcmp(arg, "none")) device_fake_battery(true, false, 0, false);
         else if (!strcmp(arg, "real")) device_fake_battery(false, false, 0, false);
@@ -305,7 +305,7 @@ static bool run_line(char *cmd, char *arg) {
         else FAIL("battery: LEVEL [charging], none or real");
         return true;
     }
-    if (!strcmp(cmd, "expect_led")) { /* np2d@2: expect_led RRGGBB, or off: the colour the game left the LED in */
+    if (!strcmp(cmd, "expect_led")) { /* pinyol@2: expect_led RRGGBB, or off: the colour the game left the LED in */
         int want = !strcmp(arg, "off") ? -1 : (int)strtol(arg, NULL, 16);
         if (device_led() != want) FAIL("the LED is %06x, not %s", device_led(), arg);
         return true;
@@ -315,7 +315,7 @@ static bool run_line(char *cmd, char *arg) {
         while (hal_micros() - t0 < ms * 1000) {}
         return true;
     }
-    if (!strcmp(cmd, "expect_ok")) { /* np2d@2: the script has not stopped on an error */
+    if (!strcmp(cmd, "expect_ok")) { /* pinyol@2: the script has not stopped on an error */
         if (v2_error()) FAIL("the game's script failed: %s", v2_error());
         return true;
     }

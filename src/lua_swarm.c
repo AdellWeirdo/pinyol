@@ -21,7 +21,7 @@ typedef struct {
     uint16_t *life;       /* ticks left; 0: no end */
 } swarm;
 
-static swarm *check(lua_State *L) { return luaL_checkudata(L, 1, "np2d.swarm"); }
+static swarm *check(lua_State *L) { return luaL_checkudata(L, 1, "pinyol.swarm"); }
 
 static void drop(swarm *s, int i) { /* the last one takes its place: order is not kept, nothing moves */
     int k = --s->n;
@@ -53,7 +53,7 @@ static int l_swarm(lua_State *L) { /* swarm(cap [, {x0, y0, x1, y1}]) */
         }
         s->x0 = a[0], s->y0 = a[1], s->x1 = a[2], s->y1 = a[3];
     }
-    luaL_setmetatable(L, "np2d.swarm");
+    luaL_setmetatable(L, "pinyol.swarm");
     return 1;
 }
 
@@ -147,7 +147,7 @@ static int l_len(lua_State *L) {
 void swarm_register(lua_State *L) {
     static const luaL_Reg M[] = {{"add", l_add}, {"step", l_step}, {"draw", l_draw}, {"hit", l_hit}, {"get", l_get},
                                  {"set", l_set}, {"remove", l_remove}, {"clear", l_clear}, {NULL, NULL}};
-    luaL_newmetatable(L, "np2d.swarm");
+    luaL_newmetatable(L, "pinyol.swarm");
     lua_newtable(L);
     luaL_setfuncs(L, M, 0);
     lua_setfield(L, -2, "__index");

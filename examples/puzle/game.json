@@ -1,8 +1,8 @@
 {
   "id": "puzle",
   "title": "Puzle",
-  "engine": "np2d@2",
+  "engine": "pinyol@2",
   "main": "main.lua",
-  "author": "np2d examples",
+  "author": "pinyol examples",
   "description": "Puzle deslizante para la pantalla táctil, con pista fantasma, revelado en mosaico y música hecha de notas."
 }

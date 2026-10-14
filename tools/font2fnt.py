@@ -5,7 +5,7 @@
 """Any font to the engine's FNT1 format (docs/game-format.md, 256 cp1252 glyphs, 1 bit): a game's own letters.
 
     uv run tools/font2fnt.py SOURCE out.fnt [--px N] [--scale K] [--spacing S] [--weight W] [--cell WxH] [--first C]
-    uv run tools/font2fnt.py --list                     the fonts that come with np2d (third_party/fonts)
+    uv run tools/font2fnt.py --list                     the fonts that come with pinyol (third_party/fonts)
 
 SOURCE is a .ttf/.otf file, a .bdf file, a .png sheet, or the name of a font in the list.
 - TTF/OTF: drawn at --px pixels. Without --px, the font's own pixel size is found (the smallest at which a pixel

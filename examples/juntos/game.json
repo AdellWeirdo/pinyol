@@ -1,8 +1,8 @@
 {
   "id": "juntos",
   "title": "Juntos",
-  "engine": "np2d@2",
+  "engine": "pinyol@2",
   "main": "main.lua",
-  "author": "np2d examples",
+  "author": "pinyol examples",
   "description": "Juegos entre consolas cercanas, sin router: una pizarra que se dibuja entre todas y una pelota que pasa de una pantalla a otra."
 }

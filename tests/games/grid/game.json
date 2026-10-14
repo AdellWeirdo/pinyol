@@ -1,1 +1,1 @@
-{"id": "grid", "title": "Grid", "engine": "np2d@2", "main": "main.lua"}
+{"id": "grid", "title": "Grid", "engine": "pinyol@2", "main": "main.lua"}

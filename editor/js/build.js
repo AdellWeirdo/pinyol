@@ -1,4 +1,4 @@
-// From a project to a game folder np2d plays: game.json, data.lua (the drawings' sizes, kinds, the map, the objects,
+// From a project to a game folder pinyol plays: game.json, data.lua (the drawings' sizes, kinds, the map, the objects,
 // the sounds), main.lua (kit and the blocks' code), assets/SPR_<name> (each drawing in the engine's own format) and
 // the four fonts. The same files go in the browser's player and in the .zip for the console's card.
 import { TILE, MAX_BYTES } from './project.js';
@@ -152,11 +152,11 @@ function dataLua(p, crops, start) {
                                  tiled: pic ? pic.use === 'backdrop' : null } : null,
                  levels: p.levels.map(l => levelData(p, l, crops)),
                  start: start || null }; // Play from a level, skipping the cover (never in the card's zip)
-  return '-- Made by np2d\'s editor from the project "' + p.title.replace(/"/g, '') + '": change it there.\nreturn ' + lua(data) + '\n';
+  return '-- Made by pinyol\'s editor from the project "' + p.title.replace(/"/g, '') + '": change it there.\nreturn ' + lua(data) + '\n';
 }
 
 export function mainLua(p, blocksCode) {
-  return `-- ${p.title.replace(/\n/g, ' ')}: made with np2d's editor. The blocks' code is below; kit.lua (a copy of np2d's
+  return `-- ${p.title.replace(/\n/g, ' ')}: made with pinyol's editor. The blocks' code is below; kit.lua (a copy of pinyol's
 -- lib/kit.lua) does the rest: the levels, the map, the objects that move by themselves, the events.
 kit = require("kit")
 kit.setup(require("data"))
@@ -186,8 +186,8 @@ export function buildFiles(p, blocksCode, carried, { start, audio = [] } = {}) {
     if (pic.mask) files.set(`assets/SPR_${d.name}.mask`, pic.mask);
     files.set(`assets/SPR_${d.name}.meta.json`, enc.encode(JSON.stringify(pic.meta, null, 2) + '\n'));
   }
-  files.set('game.json', enc.encode(JSON.stringify({ id: p.id, title: p.title, engine: 'np2d@2', main: 'main.lua',
-    author: 'np2d editor', description: 'Hecho con el editor de np2d.' }, null, 2) + '\n'));
+  files.set('game.json', enc.encode(JSON.stringify({ id: p.id, title: p.title, engine: 'pinyol@2', main: 'main.lua',
+    author: 'pinyol editor', description: 'Hecho con el editor de pinyol.' }, null, 2) + '\n'));
   files.set('data.lua', enc.encode(dataLua(p, crops, start)));
   files.set('main.lua', enc.encode(mainLua(p, blocksCode)));
   for (const [path, bytes] of [...carried, ...audio]) files.set(path, bytes); // audio: audio.js's WAVs

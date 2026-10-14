@@ -6,7 +6,7 @@ into the game there, which starts again with it; what the game logs (log, print)
     uv run --with pyserial tools/watch_game.py games/mygame --no-first   # it is on the console already
     uv run --with pyserial tools/watch_game.py games/mygame --all-log    # the console's whole log, not only the game's
 
-Ctrl-C to stop. The simulator does the same on the desktop by itself (bp_sim reloads a game when a file is saved).
+Ctrl-C to stop. The simulator does the same on the desktop by itself (pinyol_sim reloads a game when a file is saved).
 """
 import argparse
 import glob
@@ -31,7 +31,7 @@ def pump(c: Cable, all_log: bool) -> None:
     while b"\n" in c.buf:
         raw, c.buf = c.buf.split(b"\n", 1)
         text = raw.decode(errors="replace").rstrip()
-        if text and not text.startswith("@np2d") and (all_log or text.startswith(GAME_LINES)):
+        if text and not text.startswith(("@pinyol", "@np2d")) and (all_log or text.startswith(GAME_LINES)):
             print(f"  {text}", flush=True)
 
 

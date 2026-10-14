@@ -1,8 +1,8 @@
-/* The cable: a game sent over the console's USB cable by np2d's editor (Chrome's Web Serial), written to the card
- * (or, with no card, the flash) and started at once. A line each way; the console's answers start with "@np2d " (the
+/* The cable: a game sent over the console's USB cable by pinyol's editor (Chrome's Web Serial), written to the card
+ * (or, with no card, the flash) and started at once. A line each way; the console's answers start with "@pinyol " (the
  * log shares the cable) and it answers every line, so the editor never sends faster than it writes:
- *   hello                  @np2d hello 1 <card|flash> <free KB>
- *   begin <id> <bytes>     the game playing (or the list) gives way, a folder is made ready: @np2d ok | @np2d err <why>
+ *   hello                  @pinyol hello 1 <card|flash> <free KB>
+ *   begin <id> <bytes>     the game playing (or the list) gives way, a folder is made ready: @pinyol ok | @pinyol err <why>
  *   file <path> <bytes>    the next file, a path inside the game made of safe names ("assets/SPR_x.rgb565"): ok
  *   data <base64>          its next bytes, at most 768 a line: ok
  *   end                    all of it: checked, the old copy replaced (its saves kept), the game started: ok
@@ -57,7 +57,7 @@ void cable_init(void) {
 static void say(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    printf("@np2d ");
+    printf("@pinyol ");
     vprintf(fmt, ap);
     printf("\n");
     fflush(stdout);

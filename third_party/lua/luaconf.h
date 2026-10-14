@@ -122,7 +122,7 @@
 /*
 @@ LUA_32BITS enables Lua with 32-bit integers and 32-bit floats.
 */
-#if !defined(LUA_32BITS) /* np2d: set by the build (32-bit integers and floats on the console) */
+#if !defined(LUA_32BITS) /* pinyol: set by the build (32-bit integers and floats on the console) */
 #define LUA_32BITS	0
 #endif
 

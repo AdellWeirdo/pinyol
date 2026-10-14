@@ -1,4 +1,4 @@
--- kit: the game model behind np2d's editor (editor/): a map of tiles, objects that move by themselves, events. A game
+-- kit: the game model behind pinyol's editor (editor/): a map of tiles, objects that move by themselves, events. A game
 -- made in the editor is its data (data.lua: pictures, map, objects, sounds, made by the editor) and the code of its
 -- blocks, which calls kit. A hand-written game can use it too.
 --

@@ -10,7 +10,7 @@
 Edit the PNGs in art/ with any paint program and run the first command again: the level layout comes from
 level.lua, so a new level needs no art changes.
 
-Its own look, made every time: Jersey 15 and 20 from np2d's font library, and FR_BLOQUE, a brick block for frame().
+Its own look, made every time: Jersey 15 and 20 from pinyol's font library, and FR_BLOQUE, a brick block for frame().
 """
 from __future__ import annotations
 

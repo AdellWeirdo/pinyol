@@ -487,11 +487,11 @@ void bench_run(void) {
 
 #include "bp.h"
 
-#define V1_SAVES "/sdcard/np2d_bench_saves" /* never the game's own saves/ */
-/* What to measure is on the card, not in the firmware: each /sdcard/np2d_bench/<game id>.v1 measures every zone of
+#define V1_SAVES "/sdcard/pinyol_bench_saves" /* never the game's own saves/ */
+/* What to measure is on the card, not in the firmware: each /sdcard/pinyol_bench/<game id>.v1 measures every zone of
  * /sdcard/games/<game id>, then the screens on each of its lines, "<zone> <screen> <screen>...": play, inv,
  * dlg:<dialogue>, inv+dlg:<dialogue>, ill:<illustration>, inv+ill:<illustration>, puz:<puzzle>. */
-#define BENCH_DIR "/sdcard/np2d_bench"
+#define BENCH_DIR "/sdcard/pinyol_bench"
 
 static float best_ms(void (*fn)(void *), void *arg) {
     uint32_t best = UINT32_MAX;

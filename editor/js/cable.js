@@ -1,5 +1,5 @@
 // A game sent to the console over its USB cable (Web Serial: Chrome and Edge on a computer). The console's side is
-// firmware/main/cable.c: a line each way, every line answered "@np2d ok" or "@np2d err <why>", so this never sends
+// firmware/main/cable.c: a line each way, every line answered "@pinyol ok" or "@pinyol err <why>", so this never sends
 // faster than the console writes; tools/send_game.py does the same from a terminal.
 export const cableWorks = 'serial' in navigator;
 const CHUNK = 768, ESPRESSIF = 0x303a, TIMEOUT = Symbol('timeout');
@@ -33,7 +33,8 @@ export async function send(files, id, progress) {
       for (let i; (i = buf.indexOf('\n')) >= 0;) {
         const line = buf.slice(0, i).trim();
         buf = buf.slice(i + 1);
-        if (line.startsWith('@np2d ')) return line.slice(6);
+        const answer = /^@(?:pinyol|np2d) (.*)$/.exec(line); // np2d: firmware from before the engine's rename
+        if (answer) return answer[1];
       }
       const left = end - Date.now();
       if (left <= 0) throw new Error('la consola no contesta: ¿está encendida y conectada?');

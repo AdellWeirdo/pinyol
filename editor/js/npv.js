@@ -1,4 +1,4 @@
-// Clips for np2d's video() (video/<id>.npv), made in the browser from a video's frames, as tools/clip2npv.py makes
+// Clips for pinyol's video() (video/<id>.npv), made in the browser from a video's frames, as tools/clip2npv.py makes
 // them (the format: its top): one palette of up to 256 colours for the whole clip, from a median cut of its colours;
 // each frame as runs of what changed since the one before, a whole frame every `key` frames. And read back, to show.
 

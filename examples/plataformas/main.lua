@@ -1,4 +1,4 @@
--- Plataformas: a platformer on np2d's virtual hardware (docs/lua.md).
+-- Plataformas: a platformer on pinyol's virtual hardware (docs/lua.md).
 --   BG3 far mountains and BG2 hills scroll slower than the level (parallax);
 --   BG1 is the level; BG0 is water, blended over everything behind it, with a wavy scroll per line;
 --   the sky is a gradient on the backdrop, one colour per line; the HUD is text at full resolution.

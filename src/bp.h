@@ -1,4 +1,4 @@
-/* np2d engine core: shared types, the single game state G, and module APIs. */
+/* pinyol engine core: shared types, the single game state G, and module APIs. */
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
@@ -59,9 +59,9 @@ void audio_mix(int16_t *out, int n); /* AUDIO_HZ mono; caller holds the audio lo
 int script_run(const char *path, void (*frame)(void)); /* 0 = all expectations passed */
 int content_validate(void);                            /* number of errors, each logged */
 
-/* The Lua libraries built into the engine (lib/<name>.lua, made into np2d_lib.c by cmake/embed_lib.cmake) */
-typedef struct { const char *name, *src; size_t len; } np2d_lib_entry;
-extern const np2d_lib_entry np2d_lib[]; /* ends with a NULL name */
+/* The Lua libraries built into the engine (lib/<name>.lua, made into pinyol_lib.c by cmake/embed_lib.cmake) */
+typedef struct { const char *name, *src; size_t len; } pinyol_lib_entry;
+extern const pinyol_lib_entry pinyol_lib[]; /* ends with a NULL name */
 
 /* ------------------------------------------------------------------ link.c: consoles playing together */
 #define LINK_PAYLOAD 220 /* bytes of JSON a message carries */
@@ -80,7 +80,7 @@ uint32_t link_id(void);
 void link_inject(uint32_t from, const char *json); /* tests: a message as if another console had sent it */
 bool link_sent_lately(const char *text);           /* tests: one of the last 8 sent contains the text */
 
-/* ------------------------------------------------------------------ lua_game.c: np2d@2 games (docs/lua.md) */
+/* ------------------------------------------------------------------ lua_game.c: pinyol@2 games (docs/lua.md) */
 bool v2_load(void);                   /* a fresh Lua state running main.lua and _init(); false on an error */
 void v2_free(void);
 void v2_tick(void);                   /* _update() */
@@ -107,7 +107,7 @@ typedef struct surface {
     bool swap;
     uint8_t part, dither;
 } surface;
-void v2_draw(surface *s); /* np2d@2: the world 2x and the script's text and shapes, onto s (lua_game.c) */
+void v2_draw(surface *s); /* pinyol@2: the world 2x and the script's text and shapes, onto s (lua_game.c) */
 void game_draw(surface *s, bool world_pass); /* the frame onto s, a window of it or all (game.c) */
 surface gfx_clip(const surface *s, int x, int y, int w, int h); /* the part of s inside a rectangle (maybe empty) */
 typedef struct { int x, y, w, h; } screen_rect;
@@ -607,7 +607,7 @@ typedef struct {
     uint32_t save_seq;
     bool exit_guard, quit, autosave_enabled;
     unsigned draws; /* frames drawn: render code that looks things up once a frame keys on it (game_draw) */
-    bool v2;        /* game.json "engine": "np2d@2": a Lua game on the PPU (lua_game.c), none of the v1 layers */
+    bool v2;        /* game.json "engine": "pinyol@2": a Lua game on the PPU (lua_game.c), none of the v1 layers */
     unsigned objective_at; /* G.draws when objective was looked up (world.c), reset with G at every game_init */
     const cJSON *objective;
     bool can_continue, can_load_prefinal; /* cached when a menu screen opens: no SD reads per frame */

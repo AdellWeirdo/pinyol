@@ -1,5 +1,5 @@
-/* bp_headless: validate content or run acceptance scripts without a window.
- *   bp_headless --game examples/hola [--saves DIR] [--fresh] (--validate | --script FILE)
+/* pinyol_headless: validate content or run acceptance scripts without a window.
+ *   pinyol_headless --game examples/hola [--saves DIR] [--fresh] (--validate | --script FILE)
  *               [--audio FILE.pcm] [--video FILE.mp4]   (tools/record.sh joins the two)
  *               [--crc FILE]   a CRC-32 of every other frame, to check that a change draws the same pixels
  *               [--check-strips]   every frame also drawn as the console's panel strips, which must match
@@ -14,8 +14,8 @@
 
 #include "bp.h"
 
-#ifndef NP2D_GAME /* the build's GAME_DIR (CMakeLists.txt) */
-#define NP2D_GAME "examples/hola"
+#ifndef PINYOL_GAME /* the build's GAME_DIR (CMakeLists.txt) */
+#define PINYOL_GAME "examples/hola"
 #endif
 
 static void wipe_saves(const char *dir) {
@@ -115,7 +115,7 @@ static FILE *open_video(const char *path) {
 }
 
 int main(int argc, char **argv) {
-    bp_config cfg = {NP2D_GAME, NULL};
+    bp_config cfg = {PINYOL_GAME, NULL};
     const char *script = NULL;
     bool validate = false, fresh = false;
     for (int i = 1; i < argc; i++) {

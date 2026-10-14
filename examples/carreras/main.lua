@@ -1,4 +1,4 @@
--- Carreras: a Mode 7 kart race on np2d's virtual hardware (docs/lua.md).
+-- Carreras: a Mode 7 kart race on pinyol's virtual hardware (docs/lua.md).
 --   BG2 is the circuit on an affine layer, seen in perspective from behind the kart (mode7);
 --   BG3 is a strip of mountains on the horizon that turns with the camera;
 --   the sky is a gradient on the backdrop; the rivals are sprites placed with project() and scaled by a matrix.

@@ -79,11 +79,11 @@ reached 46-60 fps, because one core writing that frame and the other reading it 
 Now there is no 480×320 frame on the console. Each 32-row panel strip (32 frame columns) is drawn straight from the
 game into internal RAM, already turned and byte-swapped (`gfx_turned`), while the previous strip goes out by DMA; the
 zone is drawn into `G.world` once a frame. Every pixel is the same as drawing the whole frame: all 48 test scripts of
-two np2d@1 adventures (A and B, games of their own) give the same CRC as the previous engine on all 72,600 frames, and with `--check-strips` every
+two pinyol@1 adventures (A and B, games of their own) give the same CRC as the previous engine on all 72,600 frames, and with `--check-strips` every
 frame is also drawn as strips (both orientations, both byte orders) and compared.
 
 Real play on the board, end-to-end tests, frames drawn as fast as they come (`-DBP_BENCH=play`; each test is on the card,
-`/sdcard/np2d_bench/<game id>.script`, played on `/sdcard/games/<game id>`):
+`/sdcard/pinyol_bench/<game id>.script`, played on `/sdcard/games/<game id>`):
 
 | | Drawing every tick, v1 | Strips |
 |---|---|---|
@@ -135,7 +135,7 @@ formula on 200 random matrices.
 
 The adventures' bag and notebook are opaque panels over 87% of the screen. Drawing the zone (scaled 2×),
 the layers below and the shade only in the four bands around the panel's middle (`game_draw`, `gfx_clip`), per
-screen with the strips (`-DBP_BENCH=v1`; the screens are listed on the card, `/sdcard/np2d_bench/<game id>.v1`,
+screen with the strips (`-DBP_BENCH=v1`; the screens are listed on the card, `/sdcard/pinyol_bench/<game id>.v1`,
 format in `firmware/main/bench.c`):
 
 | Screen | Before | After |

@@ -215,7 +215,7 @@ async function play() {
     const ready = new Promise(resolve => { frame.onload = resolve; });
     frame.src = 'player/player.html?embed=1&t=' + Date.now(); /* a fresh engine: it starts once per page */
     await ready;
-    frame.contentWindow.postMessage({ np2d: 'play', zip: bytes.buffer }, location.origin, [bytes.buffer]);
+    frame.contentWindow.postMessage({ pinyol: 'play', zip: bytes.buffer }, location.origin, [bytes.buffer]);
     status.textContent = TOUCH ? 'Juega con los botones de debajo de la pantalla.'
       : 'Flechas o WASD: mover · Z: A · X: B · C: C · P: START · Mayús+Esc: salir del juego. Haz clic en el juego para jugar.';
     frame.focus();
@@ -344,7 +344,7 @@ function initBlockly() {
     MATH_CHANGE_TITLE: 'sumar %2 a %1', MATH_RANDOM_INT_TITLE: 'número al azar entre %1 y %2',
   });
   defineBlocks();
-  const theme = Blockly.Theme.defineTheme('np2d', {
+  const theme = Blockly.Theme.defineTheme('pinyol', {
     base: Blockly.Themes.Classic,
     componentStyles: { workspaceBackgroundColour: '#1b1724', toolboxBackgroundColour: '#221d2e',
                        toolboxForegroundColour: '#f1e9da', flyoutBackgroundColour: '#2b2539',
@@ -392,30 +392,30 @@ async function init() {
     if (!f) return;
     let p;
     try { p = check(JSON.parse(await f.text())); }
-    catch { return oops('Ese archivo no es un juego del editor. Abre un archivo .np2d.json hecho con «Guardar archivo».'); }
+    catch { return oops('Ese archivo no es un juego del editor. Abre un archivo .pinyol.json hecho con «Guardar archivo».'); }
     replace(p, null, `Abierto ${p.title}.`);
   });
   $('save').addEventListener('click', () => {
     if (!blocksBroken) project.blocks = Blockly.serialization.workspaces.save(ws);
-    download(new TextEncoder().encode(JSON.stringify(pack(project))), project.id + '.np2d.json', 'application/json');
-    toast(`Guardado en el archivo ${project.id}.np2d.json (en tus descargas).`);
+    download(new TextEncoder().encode(JSON.stringify(pack(project))), project.id + '.pinyol.json', 'application/json');
+    toast(`Guardado en el archivo ${project.id}.pinyol.json (en tus descargas).`);
   });
   $('play').addEventListener('click', play);
   $('restart').addEventListener('click', play);
   $('toast-close').addEventListener('click', () => $('toast').classList.remove('shown'));
   addEventListener('message', e => { /* the player: what went wrong, or the way out of the game (Mayús+Esc) */
     if (e.origin !== location.origin || !e.data) return;
-    if (e.data.np2d === 'error') {
+    if (e.data.pinyol === 'error') {
       $('game-status').textContent = e.data.message;
       $('game-status').classList.add('error');
-    } else if (e.data.np2d === 'leave') $('restart').focus();
+    } else if (e.data.pinyol === 'leave') $('restart').focus();
   });
   // a file dropped where nothing takes it must not open in the tab, leaving the editor
   addEventListener('dragover', e => e.preventDefault());
   addEventListener('drop', e => e.preventDefault());
   renderStart();
   initGuide(app, showTab);
-  window.np2dEditor = { get project() { return project; }, buildZip, luaCode, load: p => load(check(p)) }; // for tests
+  window.pinyolEditor = { get project() { return project; }, buildZip, luaCode, load: p => load(check(p)) }; // for tests
 }
 
 init();

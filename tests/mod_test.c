@@ -18,7 +18,7 @@ static float buf[AUDIO_HZ];
 
 static int make_mod(uint8_t *m) { /* one pattern, C-2 on channel 0 with sample 1: a looped 32-byte square wave */
     memset(m, 0, 1084 + 1024 + 32);
-    memcpy(m, "np2d test", 9);
+    memcpy(m, "pinyol test", 9);
     uint8_t *s = m + 20;
     s[23] = 16, s[25] = 64, s[29] = 16;    /* length 16 words, volume 64, loop from 0, 16 words long */
     m[950] = 1, m[951] = 127;              /* one position in the order, playing pattern 0 */

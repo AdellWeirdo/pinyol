@@ -1,4 +1,4 @@
--- Naves: a horizontal shoot-'em-up on np2d's virtual hardware (docs/lua.md).
+-- Naves: a horizontal shoot-'em-up on pinyol's virtual hardware (docs/lua.md).
 --   BG3 is a field of stars on one layer: every line scrolls at its own speed (parallax by line);
 --   BG2 is a ringed planet on an affine layer, turning slowly;
 --   sprites for the ship, shots, enemies, their bullets, power-ups, and explosions blended over everything;

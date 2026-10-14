@@ -13,16 +13,16 @@ After it, [lua.md](lua.md) has the whole API and the five examples in `examples/
 macOS: `brew install cmake sdl2 uv`. Linux: the same three from your package manager (`libsdl2-dev`).
 
 ```sh
-git clone <np2d's repository> np2d && cd np2d
+git clone <pinyol's repository> pinyol && cd pinyol
 cmake -B build && cmake --build build
-./build/bp_sim --game examples/aldea      # a game, to check it works: arrows and Z
+./build/pinyol_sim --game examples/aldea  # a game, to check it works: arrows and Z
 ```
 
 ## 2. Start your game
 
 ```sh
 uv run tools/new_game.py games/micueva --lua --title "Mi cueva"
-./build/bp_sim --game games/micueva
+./build/pinyol_sim --game games/micueva
 ```
 
 `games/micueva/` now holds a small game: walk with the arrows (or WASD), pick up the five gems. It is all yours:
@@ -35,7 +35,7 @@ assets/     what the engine reads: tiles, maps, palettes, sprite sheets
 audio/      sounds (WAV)
 ```
 
-Open `main.lua` in any editor and leave `bp_sim` running: each time you save a file of the game, it starts again
+Open `main.lua` in any editor and leave `pinyol_sim` running: each time you save a file of the game, it starts again
 with your change (F5 does it by hand). Each step below is a small change to `main.lua`.
 
 ## 3. Walk faster
@@ -155,7 +155,7 @@ expect_ok
 ```
 
 ```sh
-./build/bp_headless --game games/micueva --fresh --script games/micueva/tests/micueva.script --check-strips
+./build/pinyol_headless --game games/micueva --fresh --script games/micueva/tests/micueva.script --check-strips
 ```
 
 `PASS` means the game does what the test says. Run it after every change: it takes a fraction of a second, and it

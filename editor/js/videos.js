@@ -1,5 +1,5 @@
 // The videos of a game (in the Sounds tab): brought in from a video file or an animated GIF, made into a clip for
-// np2d's video() here in the browser (npv.js), shown looping, renamed, taken away. The blocks of Vídeo play them.
+// pinyol's video() here in the browser (npv.js), shown looping, renamed, taken away. The blocks of Vídeo play them.
 import { safeName, uniqueName } from './project.js';
 import { toBase64 } from './audio.js';
 import { encode, decode } from './npv.js';

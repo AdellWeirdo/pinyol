@@ -1,5 +1,5 @@
 -- A fighting-game scene at the screen's full resolution, with examples/duelo's pictures (tests/make_neo_game.py
--- converts them): the measure of how much np2d draws in a frame, the way a Neo Geo game does. `mode` (set by
+-- converts them): the measure of how much pinyol draws in a frame, the way a Neo Geo game does. `mode` (set by
 -- tests/neo.script or the benchmark): 1 the stage without fighters, 2 with two, 3 two at 1.25 (a zoomed camera),
 -- 4 six of them, 5 at odd scales (small, stretched, upside down, three times as big off the screen's edges), 6 one
 -- picture a frame, each in turn (with a small picture budget, each comes back from the card every time).

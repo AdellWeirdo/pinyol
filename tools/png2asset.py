@@ -2,15 +2,15 @@
 # requires-python = ">=3.10"
 # dependencies = ["pillow>=10"]
 # ///
-"""Convert a PNG into an np2d runtime asset.
+"""Convert a PNG into an pinyol runtime asset.
 
-Direct colour (np2d@1 games, and sprites or bitmap layers of np2d@2 ones): <ID>.rgb565 (little endian) + <ID>.mask
+Direct colour (pinyol@1 games, and sprites or bitmap layers of pinyol@2 ones): <ID>.rgb565 (little endian) + <ID>.mask
 (1 bit, MSB first) + <ID>.meta.json.
 
     uv run tools/png2asset.py hero_walk.png games/mygame/assets PJ_WALK --frames 16 --ms 125 --anchor 12,29
     uv run tools/png2asset.py room.png games/mygame/assets BG_Z01 --type background
 
-Indexed, for the PPU of np2d@2 games (docs/lua.md): one byte per pixel into a palette of up to 255 colours plus
+Indexed, for the PPU of pinyol@2 games (docs/lua.md): one byte per pixel into a palette of up to 255 colours plus
 transparent index 0. --palette PAL shares (and grows) assets/PAL.pal across several images.
 
     uv run tools/png2asset.py level.png games/mygame/assets LEVEL --tiles --palette WORLD    # .tiles .map .pal

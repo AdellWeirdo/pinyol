@@ -1,4 +1,4 @@
-/* Consoles playing the same game near each other, sending each other small messages (np2d@2's link.*).
+/* Consoles playing the same game near each other, sending each other small messages (pinyol@2's link.*).
  * The platform carries packets (hal_link_*); this file gives them a shape, keeps the list of consoles heard, a queue
  * of what came in for the game, and each console's fair share of the air.
  *

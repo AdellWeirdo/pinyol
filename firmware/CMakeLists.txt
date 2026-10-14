@@ -1,8 +1,8 @@
-# ConsolaS3 firmware (Freenove FNK0104N, ESP32-S3R8): a game list and the np2d engine (../src, built unchanged as
-# the bp_core component) playing any game folder on the card; main/ is this console's platform (pins: docs/hardware.md).
+# ConsolaS3 firmware (Freenove FNK0104N, ESP32-S3R8): a game list and the pinyol engine (../src, built unchanged as
+# the pinyol_core component) playing any game folder on the card; main/ is this console's platform (pins: docs/hardware.md).
 cmake_minimum_required(VERSION 3.16)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(np2d_console)
+project(pinyol_console)
 
 # Games in the flash (FLASH_GAME, a ;-list of folders), so the console has something to play without a microSD.
 # A game's music and ambience beds stay on the card when its audio is big; saves and art sources never go.
@@ -38,7 +38,7 @@ endforeach()
 # -DBP_AUTOTEST=ON: the console plays the listed end-to-end scripts on boot (/autotest/<game>/, without their
 # shots), then shows its list; -DBP_SOAK=ON: the same again and again while all pass (/autotest/loop), heap logged.
 #   -DBP_TESTS="mygame=/abs/mygame/tests/e2e.script;other=..." (the game folders must be on the card or in the flash);
-#   without BP_TESTS, every game in the flash with a tests/<id>.script in np2d runs it
+#   without BP_TESTS, every game in the flash with a tests/<id>.script in pinyol runs it
 set(BP_TESTS "" CACHE STRING "game=script pairs for autotest builds")
 if(BP_AUTOTEST OR BP_SOAK)
   set(TESTS ${BP_TESTS})

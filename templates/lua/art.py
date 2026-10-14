@@ -7,8 +7,8 @@
     python3 art.py           # art/*.png -> assets/
     python3 art.py --draw    # first draw art/*.png and audio/*.wav by code (overwrites them), then convert
 
-The room's picture comes from room.lua: change the room there and draw again. The conversion uses np2d's
-tools/png2asset.py: for a game outside the np2d folder, say where np2d is: NP2D=/path/to/np2d python3 art.py
+The room's picture comes from room.lua: change the room there and draw again. The conversion uses pinyol's
+tools/png2asset.py: for a game outside the pinyol folder, say where pinyol is: PINYOL=/path/to/pinyol python3 art.py
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw
 
 HERE = Path(__file__).resolve().parent
 ART, ASSETS, AUDIO = HERE / "art", HERE / "assets", HERE / "audio"
-NP2D = Path(os.environ.get("NP2D", HERE.parents[1]))  # the engine's folder, for tools/png2asset.py
+PINYOL = Path(os.environ.get("PINYOL", HERE.parents[1]))  # the engine's folder, for tools/png2asset.py
 
 FLOOR, FLOOR_D, GRASS, GRASS_D = (150, 140, 126), (132, 122, 110), (84, 150, 72), (70, 132, 62)
 WALL, WALL_D, WALL_L = (120, 72, 56), (90, 52, 42), (150, 96, 74)
@@ -127,7 +127,7 @@ def blip(f0: float, f1: float, dur: float, vol: float = 0.25) -> list[float]:
 
 
 def convert() -> None:
-    p2a = [sys.executable, str(NP2D / "tools" / "png2asset.py")]
+    p2a = [sys.executable, str(PINYOL / "tools" / "png2asset.py")]
     for f in ASSETS.glob("*.pal"):  # palettes grow as images are added: start them again
         f.unlink()
     subprocess.run(p2a + [str(ART / "room.png"), str(ASSETS), "ROOM", "--tiles", "--palette", "WORLD"], check=True)

@@ -1,1 +1,1 @@
-{"id": "apifuzz", "title": "API fuzz", "engine": "np2d@2", "main": "main.lua"}
+{"id": "apifuzz", "title": "API fuzz", "engine": "pinyol@2", "main": "main.lua"}
