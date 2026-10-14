@@ -1,5 +1,5 @@
 -- The level, one character per 8x8 tile, 18 rows: a Game Boy screen is 18 tiles tall. art.py draws it, main.lua
--- plays it. Row 0 is under the status bar.
+-- plays it, under the status bar.
 -- #  ground    B  brick    =  platform (held from above)    ?  block    ^  spikes    T  bush    c  cloud
 -- o  coin      e  hedgehog    P  start    F  the flag (on top of its pole |)    .  air
 return {

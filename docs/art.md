@@ -30,8 +30,9 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
 
 ### Game Boy: `examples/bolsillo`
 
-- The world, with the Game Boy's 160×144 screen inside it at 40,8; the console's case around it is a picture at full
-  resolution (with the screen see-through), drawn last.
+- The whole world, 240×160, as a modern Game Boy would show it: a status bar across the top and the level under it.
+  No console case drawn around a 160×144 screen (it wastes a third of the screen) unless the user asks for one: then
+  the level sits in the world's middle and the case is a picture at full resolution, drawn last.
 - **Four tones**, lightest to darkest. `art.py` writes `WORLD.pal` and `OBJ.pal` with them *before* converting, so each
   tone keeps its index (1-4) and `pal()` changes the whole game's colours at once (as a Game Boy Color did).
 - 8×8 tiles in one background layer, 16×16 sprites, a status bar, two square voices and a noise.

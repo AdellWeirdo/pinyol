@@ -12,8 +12,8 @@ SITE = "https://ipaud.github.io/pinyol/"  # where it will be published (GitHub P
 # The twelve looks: their example, the console it follows, its frame rate on the console as (slowest, fastest
 # second), and the first measure when the board made it faster (docs/measurements.md, "The looks on the console").
 LOOKS = [
-    dict(id="gameboy", name="Game Boy", example="bolsillo", era="1989 · 160×144 · cuatro verdes", art=False, fps=(61, 61), hue="#8bac0f",
-         what="Un plataformas dentro de una Game Boy dibujada.", alt="Un plataformas en cuatro tonos de verde dentro de una consola dibujada"),
+    dict(id="gameboy", name="Game Boy", example="bolsillo", era="1989 · cuatro verdes, pantalla entera", art=False, fps=(61, 61), hue="#8bac0f",
+         what="Un plataformas con la paleta de la Game Boy, a pantalla completa.", alt="Un plataformas en cuatro tonos de verde a pantalla completa"),
     dict(id="spectrum", name="ZX Spectrum", example="cinta", era="1982 · dos colores por bloque", art=False, fps=(49, 61), hue="#ff3b3b",
          what="Con su carga de cinta, franjas de colores incluidas.", alt="Una sala de ZX Spectrum: bloques de dos colores, un minero y un guardián"),
     dict(id="pico8", name="PICO-8", example="ladrillos", era="2015 · 128×128 · dieciséis colores", art=False, fps=(56, 60), was=(46, 55), hue="#ff77a8",

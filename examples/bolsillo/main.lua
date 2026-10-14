@@ -1,11 +1,11 @@
--- Bolsillo: a platformer the way a Game Boy game looks (art.py): a 160x144 screen in four tones, one background layer
--- of 8x8 tiles, 16x16 sprites, a status bar on top, two square voices and a noise for sound. The screen sits in the
--- middle of the world (the rest is covered by the console's case, a picture at full resolution). C changes the four
--- tones, as a Game Boy Color let you pick the colours of an old game; the choice is kept.
+-- Bolsillo: a platformer the way a Game Boy game looks (art.py), on the whole screen as a modern Game Boy would show
+-- it: four tones, one background layer of 8x8 tiles, 16x16 sprites, a status bar across the top, two square voices
+-- and a noise for sound. C changes the four tones, as a Game Boy Color let you pick the colours of an old game; the
+-- choice is kept.
 -- Bolet the mushroom: arrows walk, A jumps (a short press, a short jump); stomp the hedgehogs, mind the spikes.
 local LEVEL = require("level")
 local TW, TH = #LEVEL[1], #LEVEL
-local VX, VY, VW, VH = 40, 8, 160, 144 -- the Game Boy's screen inside the world
+local VX, VY, VW, VH = 0, 16, 240, 144 -- the level, under the status bar (16 tall)
 local GRAVITY, JUMP, RUN, ACCEL, FRICTION, MAX_FALL = 0.22, -4.2, 1.5, 0.2, 0.75, 4
 PALETTES = { -- (global: tests/bolsillo.script) lightest to darkest
   {name = "DMG", 0x9BBC0F, 0x8BAC0F, 0x306230, 0x0F380F},
@@ -147,7 +147,7 @@ local function update_play()
       end
     end
   end
-  cam = math.floor(math.max(cam, math.min(TW * 8 - VW, P.x - 64))) -- it only goes forward, as it did
+  cam = math.floor(math.max(cam, math.min(TW * 8 - VW, P.x - VW * 2 // 5))) -- it only goes forward, as it did
   if P.x + 8 >= flag_x then state, timer = "won", 0 music() sfx("SFX_WIN") end
 end
 
@@ -203,7 +203,7 @@ local function draw_sprites()
   spr(n, flag_sh, (timer // 20) % 2, VX + flag_x - cam, VY + flag_y, prio(1))
 end
 
-local function say(s, y, big) -- text in the darkest tone, centred on the Game Boy's screen (screen pixels)
+local function say(s, y, big) -- text in the darkest tone, centred on the screen (screen pixels)
   text(s, 240, y, {font = "arcade", align = "center", color = PALETTES[tones][4], scale = big and 2 or 1})
 end
 
@@ -211,9 +211,10 @@ function _draw()
   scroll(1, cam - VX, -VY)
   draw_sprites()
   local p = PALETTES[tones]
-  rect(80, 16, 320, 16, p[1]) -- the status bar, over the screen's top row of tiles
-  text(string.format("x%d  o%02d  %03d", lives, coins, math.max(0, clock // 60)), 88, 16,
-       {font = "arcade", color = p[4]})
+  rect(0, 0, 480, 30, p[1]) -- the status bar, across the top
+  rect(0, 30, 480, 2, p[4])
+  text(string.format("x%d  o%02d", lives, coins), 14, 8, {font = "arcade", color = p[4]})
+  text(string.format("%03d", math.max(0, clock // 60)), 466, 8, {font = "arcade", color = p[4], align = "right"})
   if state == "title" then
     rect(96, 64, 288, 144, p[1])
     box(96, 64, 288, 144, p[4])
@@ -227,5 +228,4 @@ function _draw()
     say("GAME OVER", 136, true)
   end
   if shown_pal > 0 then say(p.name, 272) end
-  img("BORDER", 0, 0) -- the console's case around the screen
 end

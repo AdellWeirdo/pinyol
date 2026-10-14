@@ -9,7 +9,7 @@
 Every picture is drawn with tone 0 (the lightest) to tone 3 (the darkest). WORLD.pal and OBJ.pal are written first
 with the four tones in that order, so png2asset keeps each tone at the same index (1 to 4): the game changes the
 four colours (pal) and the whole picture changes palette, as a Game Boy Color did with an old game. The level comes
-from level.lua; the console around the screen (BORDER) is a picture at the screen's full resolution.
+from level.lua.
 """
 from __future__ import annotations
 
@@ -142,24 +142,6 @@ def strip(frames: list[Image.Image]) -> Image.Image:
     return s
 
 
-def border() -> Image.Image:
-    """The console around the 160x144 screen (320x288 here, at 80,16): its case, the D-pad and the buttons."""
-    img = Image.new("RGBA", (480, 320), (196, 192, 186, 255))
-    d = ImageDraw.Draw(img)
-    for y in range(0, 320, 4):  # a faint ribbing on the plastic
-        d.line((0, y, 479, y), fill=(188, 184, 178, 255))
-    d.rounded_rectangle((60, 6, 420, 314), 18, fill=(84, 82, 96, 255))  # the dark glass around the screen
-    d.rectangle((80, 16, 399, 303), fill=(0, 0, 0, 0))                  # the screen: see-through
-    d.ellipse((66, 150, 74, 158), fill=(200, 40, 40, 255))             # the power light
-    cx, cy = 30, 160                                                    # the D-pad
-    d.rectangle((cx - 7, cy - 22, cx + 7, cy + 22), fill=(40, 40, 46, 255))
-    d.rectangle((cx - 22, cy - 7, cx + 22, cy + 7), fill=(40, 40, 46, 255))
-    for x, y in ((448, 146), (434, 174)):                               # B and A
-        d.ellipse((x - 12, y - 12, x + 12, y + 12), fill=(150, 30, 80, 255), outline=(90, 16, 50, 255))
-    for i in range(6):                                                  # the speaker
-        d.line((432 + i * 7, 296, 448 + i * 7, 280), fill=(150, 146, 140, 255), width=3)
-    return img
-
 
 def convert(png: str, aid: str, *opts: str) -> None:
     subprocess.run([sys.executable, str(ROOT / "tools" / "png2asset.py"), str(ART / png), str(ASSETS), aid, *opts],
@@ -174,7 +156,6 @@ def main() -> None:
     strip(sprites(HEDGEHOG)).save(ART / "hedgehog.png")
     strip(sprites(COIN)).save(ART / "coin.png")
     strip(sprites(FLAG)).save(ART / "flag.png")
-    border().save(ART / "border.png")
     tones = [0] + [(r >> 3) << 11 | (g >> 2) << 5 | b >> 3 for r, g, b in TONES]  # index 0 see-through, then 1-4
     for pal in ("WORLD", "OBJ"):
         (ASSETS / f"{pal}.pal").write_bytes(b"".join(c.to_bytes(2, "little") for c in tones))
@@ -183,7 +164,6 @@ def main() -> None:
     convert("hedgehog.png", "HEDGEHOG", "--indexed", "--frames", "3", "--palette", "OBJ")
     convert("coin.png", "COIN", "--indexed", "--frames", "4", "--palette", "OBJ")
     convert("flag.png", "FLAG", "--indexed", "--frames", "2", "--palette", "OBJ")
-    convert("border.png", "BORDER", "--packed", "--type", "background")
     sys.path.insert(0, str(ROOT / "tools"))
     import font2fnt
     font2fnt.build("pressstart2p", str(HERE / "fonts" / "arcade.fnt"), None, 2)
