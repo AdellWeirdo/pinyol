@@ -71,7 +71,7 @@ def images(np2d: Path) -> None:
     for png in (np2d / "docs/looks").glob("*.png"):
         shutil.copy(png, looks / png.name)
     logo = Image.open(np2d / "docs/logo.png").convert("RGBA")
-    logo.resize((128, round(128 * logo.height / logo.width)), Image.LANCZOS).save(DIST / "img/logo.png", optimize=True)
+    logo.resize((192, round(192 * logo.height / logo.width)), Image.LANCZOS).save(DIST / "img/logo.png", optimize=True)
     icon = Image.new("RGBA", (64, 64))
     small = logo.resize((64, round(64 * logo.height / logo.width)), Image.LANCZOS)
     icon.alpha_composite(small, (0, (64 - small.height) // 2))

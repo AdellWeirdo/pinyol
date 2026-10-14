@@ -13,7 +13,6 @@
  "(se abre en una pestaña nueva)": "(s'obre en una pestanya nova)",
  "Motor de juegos libre · ESP32-S3": "Motor de jocs lliure · ESP32-S3",
  "Un motor, doce épocas": "Un motor, dotze èpoques",
- "pinyol hace juegos con la cara de las consolas de los 80 y 90 y los mueve a 60 fps en una consola de bolsillo con un ESP32‑S3. Dile a tu agente de código qué aspecto quieres y lo construye. Aquí puedes jugarlos todos.": "pinyol fa jocs amb la cara de les consoles dels 80 i 90 i els mou a 60 fps en una consola de butxaca amb un ESP32‑S3. Digues al teu agent de codi quin aspecte vols i el construeix. Aquí els pots jugar tots.",
  "Jugar ahora": "Juga ara",
  "Ver el código": "Mira el codi",
  "La consola, una placa Freenove FNK0104N, con su pantalla mostrando uno tras otro los doce aspectos": "La consola, una placa Freenove FNK0104N, amb la pantalla mostrant un rere l'altre els dotze aspectes",
@@ -257,5 +256,6 @@
  "2 · Ratón de biblioteca": "2 · Ratón de biblioteca",
  "3 · Oxígeno 48K": "3 · Oxígeno 48K",
  "4 · Museo de medianoche": "4 · Museo de medianoche",
- "5 · Ardilla Relámpago": "5 · Ardilla Relámpago"
+ "5 · Ardilla Relámpago": "5 · Ardilla Relámpago",
+ "hace juegos con la cara de las consolas de los 80 y 90 y los mueve a 60 fps en una consola de bolsillo con un ESP32‑S3. Dile a tu agente de código qué aspecto quieres y lo construye. Aquí puedes jugarlos todos.": "fa jocs amb la cara de les consoles dels 80 i 90 i els mou a 60 fps en una consola de butxaca amb un ESP32‑S3. Digues al teu agent de codi quin aspecte vols i el construeix. Aquí els pots jugar tots."
 }

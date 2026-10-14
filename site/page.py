@@ -98,7 +98,7 @@ def play_url(gid: str) -> str:
 def header() -> str:
     return f"""<a class="skip" href="#main">Saltar al contenido</a>
 <header class="top"><div class="wrap">
-<a class="logo" href="#top" aria-label="pinyol, inicio"><img src="img/logo.png" alt="" width="64" height="42"></a>
+<a class="logo" href="#top" aria-label="pinyol, inicio"><img src="img/logo.png" alt="" width="80" height="52"></a>
 <nav aria-label="Secciones"><ul>
 <li class="keep"><a href="#aspectos">Juegos</a></li><li><a href="#rendimiento">Rendimiento</a></li>
 <li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz uno</a></li><li><a href="#consola">La consola</a></li><li><a href="#making">Cómo se hizo</a></li>
@@ -115,7 +115,7 @@ def hero() -> str:
 <div>
 <p class="kicker pixel">Motor de juegos libre · ESP32-S3</p>
 <h1 id="hero-title">Un motor, doce épocas</h1>
-<p class="lede">pinyol hace juegos con la cara de las consolas de los 80 y 90 y los mueve a 60 fps en una consola de bolsillo con un ESP32‑S3. Dile a tu agente de código qué aspecto quieres y lo construye. Aquí puedes jugarlos todos.</p>
+<p class="lede"><img class="wordmark" src="img/wordmark.png" alt="pinyol" width="65" height="26"> hace juegos con la cara de las consolas de los 80 y 90 y los mueve a 60 fps en una consola de bolsillo con un ESP32‑S3. Dile a tu agente de código qué aspecto quieres y lo construye. Aquí puedes jugarlos todos.</p>
 <div class="actions"><a class="btn btn-primary" href="#aspectos">Jugar ahora</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
 <p class="meta">Código MIT · arte y sonido CC0 · {len(LOOKS) + len(OTHERS) + len(CODEX)} juegos de ejemplo</p>
 </div>
