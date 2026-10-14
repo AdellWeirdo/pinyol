@@ -4,3 +4,5 @@ build-web/
 __pycache__/
 examples/*/saves/
 firmware/build-*/
+site/dist/
+site/.cache/
