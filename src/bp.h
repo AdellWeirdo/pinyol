@@ -159,6 +159,7 @@ uint16_t *gfx_pixels(asset *a); /* its pixels (and mask) as RGB565: a packed pic
 /* At 1x, maybe mirrored; pal: another packed picture's colours for this one's (a variant), or NULL; tint >= 0: every
  * pixel that colour (RGB565: a flash, a shadow), else -1. */
 void gfx_blit_flip(surface *s, const asset *a, int frame, int x, int y, bool flip_x, const asset *pal, int tint);
+void gfx_blit_mixed(surface *s, const asset *a, int frame, int x, int y, bool flip, int tint, unsigned alpha, bool add);
 /* Frame 0, then halved `shade` times (gfx_shade) and tinted to dusk (gfx_tint_dusk): for a packed picture, in its
  * palette, the same pixels without going over them again */
 void gfx_blit_lit(surface *s, const asset *a, int x, int y, int shade, bool dusk);

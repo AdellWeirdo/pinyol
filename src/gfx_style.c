@@ -167,6 +167,17 @@ void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, 
         if (k0 >= k1) continue;
         int32_t u = u_line + k0 * du, v = v_line + k0 * dv;
         uint16_t *d = by_column ? at(s, bx0 + l, by0 + k0) : at(s, bx0 + k0, by0 + l);
+        if (dv == 0 || du == 0) { /* a right-angle turn: along the line one of u, v stays, so its row (or column) and its
+                                   * check are worked out once a line, not once a pixel (a turned screen, every frame) */
+            if (dv == 0 ? v < 0 || v >= hf : u < 0 || u >= wf) continue;
+            const int iv0 = v >> 16, iu0 = u >> 16;
+            for (int k = k0; k < k1; k++, u += du, v += dv, d += step) {
+                int iu = dv == 0 ? u >> 16 : iu0, iv = dv == 0 ? iv0 : v >> 16;
+                if (dv == 0 ? (uint32_t)u >= (uint32_t)wf : (uint32_t)v >= (uint32_t)hf) continue;
+                if (!mask || mask[iv * stride + (iu >> 3)] & (0x80 >> (iu & 7))) *d = stored(s, src[iv * a->w + iu]);
+            }
+            continue;
+        }
         for (int k = k0; k < k1; k++, u += du, v += dv, d += step) {
             if (u < 0 || v < 0 || u >= wf || v >= hf) continue; /* the span is worked out generously: still checked */
             int iu = u >> 16, iv = v >> 16;

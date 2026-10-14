@@ -91,8 +91,10 @@ static surface img_area(const surface *s, const ov_cmd *c) {
     return gfx_clip(s, x, y, w, h);
 }
 
-static uint16_t *kept_px;
-static size_t kept_cap;
+/* one each per thread: the console draws its strips on both cores at once, and a shared one was freed under the
+ * other's feet (a heap assertion on the board) */
+static _Thread_local uint16_t *kept_px;
+static _Thread_local size_t kept_cap;
 
 static const uint16_t *keep(const surface *r) { /* r's pixels, copied; NULL: none, or no memory (drawn opaque) */
     size_t n = (size_t)(r->w > 0 ? r->w : 0) * (size_t)(r->h > 0 ? r->h : 0);
@@ -155,6 +157,12 @@ static void draw_one(surface *s, const ov_cmd *c) {
         break;
     case OV_IMG: {
         const bool see = c->font && (ov_look[c->font - 1].alpha < 255 || ov_look[c->font - 1].add);
+        if (see && c->a->pk && !c->ext && c->scale == 1 && !ov_look[c->font - 1].pal) { /* the quick way: mixed as drawn */
+            unsigned al = ov_look[c->font - 1].alpha;
+            gfx_blit_mixed(s, c->a, c->frame, c->x, c->y, c->flip, ov_look[c->font - 1].tint, al + (al >> 7),
+                           ov_look[c->font - 1].add);
+            break;
+        }
         surface under = see ? img_area(s, c) : *s;
         const uint16_t *kept = see ? keep(&under) : NULL;
         if (c->ext)
@@ -752,7 +760,9 @@ static int l_cls(lua_State *L) { /* cls([colour]): the canvas see-through (or th
     uint16_t col = CANVAS_KEY;
     if (!lua_isnoneornil(L, 1)) colour_at(L, 1, 0, &col);
     size_t npx = (size_t)target->w * target->h;
-    for (size_t i = 0; i < npx; i++) target->pixels[i] = col;
+    uint32_t two = (uint32_t)col << 16 | col, *p = (uint32_t *)target->pixels; /* two pixels a write: on the console */
+    for (size_t i = 0; i < npx / 2; i++) p[i] = two;                       /* the canvas is in PSRAM, writes are dear */
+    if (npx & 1) target->pixels[npx - 1] = col;
     target->gen++;
     memset(target->mask, col == CANVAS_KEY ? 0 : 0xFF, (size_t)((target->w + 7) / 8) * target->h);
     return 0;

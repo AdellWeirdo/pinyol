@@ -22,6 +22,8 @@
 #define MAX_SPRITES 64
 #define RAY_STEPS 128
 #define MAX_W 480
+#define MAX_H 320 /* a view taller is drawn to this height */
+#define BAND 16
 #define DEG 0.017453292f /* radians a degree */
 
 typedef struct {
@@ -30,14 +32,20 @@ typedef struct {
 } wall_look;
 
 typedef struct {
+    int h, y0, k, u;
+    const wall_look *look;
+} column;
+
+typedef struct {
     float x, y, d, scale;
     asset *pic;
     int frame;
 } sprite;
 
-static inline uint16_t shaded(uint16_t c, int k) { /* c times k/256 */
-    unsigned r = (c >> 11) * k >> 8, g = (c >> 5 & 63) * k >> 8, b = (c & 31) * k >> 8;
-    uint16_t v = (uint16_t)(r << 11 | g << 5 | b);
+static inline uint16_t shaded(uint16_t c, int k) { /* c times k/256, in 32 steps: the channels spread over 32 bits,
+                                                     * one multiply */
+    uint32_t x = ((c | (uint32_t)c << 16) & 0x07E0F81Fu) * (uint32_t)((k + 4) >> 3) >> 5 & 0x07E0F81Fu;
+    uint16_t v = (uint16_t)(x | x >> 16);
     return v == CANVAS_KEY ? v ^ 1 : v; /* the key colour is see-through on a canvas */
 }
 
@@ -126,7 +134,7 @@ static int l_raycast(lua_State *L) {
     asset *cv = safe_name(id) ? gfx_asset_opt(id) : NULL;
     if (!cv || !cv->canvas) return luaL_error(L, "raycast \"%s\": not a canvas (make one with canvas())", id);
     luaL_checktype(L, 2, LUA_TTABLE);
-    const int W = cv->w > MAX_W ? MAX_W : cv->w, H = cv->h;
+    const int W = cv->w > MAX_W ? MAX_W : cv->w, H = cv->h > MAX_H ? MAX_H : cv->h;
     static const char *rows[MAX_ROWS];
     static int lens[MAX_ROWS];
     static wall_look looks[128];
@@ -141,22 +149,17 @@ static int l_raycast(lua_State *L) {
     float fov = opt_float(L, 2, "fov", 66, 20, 150) * DEG;
     float fog = opt_float(L, 2, "fog", 0, 0, 1000);
     lua_Integer ceil_rgb = opt_int(L, 2, "ceiling", 0x303040), floor_rgb = opt_int(L, 2, "floor", 0x505050);
-    uint16_t ceil_c = to565(ceil_rgb), floor_c = to565(floor_rgb);
+    uint16_t ceil_c = to565(ceil_rgb), floor_c0 = to565(floor_rgb);
     int nsp = read_sprites(L, 2, sp, px, py);
 
+    uint16_t *out = cv->pixels;
     float dx = cosf(ang), dy = sinf(ang), k = tanf(fov / 2);
     float plx = -dy * k, ply = dx * k; /* the camera plane, across the view */
-    uint16_t *out = cv->pixels;
-    for (int y = 0; y < H / 2; y++) /* the ceiling, one colour */
-        for (int x = 0; x < W; x++) out[y * cv->w + x] = shaded(ceil_c, 256);
-    for (int y = H / 2; y < H; y++) { /* the floor, darker towards the horizon */
-        float d = (float)H / (2.0f * (float)y - (float)H + 1.0f);
-        uint16_t c = shaded(floor_c, fog_k(d, fog));
-        for (int x = 0; x < W; x++) out[y * cv->w + x] = c;
-    }
+    static column cols[MAX_W];
+    static uint16_t floor_c[MAX_H];
     float centre_d = 0;
     char centre_c = 0;
-    for (int x = 0; x < W; x++) {
+    for (int x = 0; x < W; x++) { /* each column's wall: how far, which face, which square of which texture */
         float cam = 2.0f * (float)x / (float)W - 1.0f;
         float rx = dx + plx * cam, ry = dy + ply * cam;
         int mx = (int)floorf(px), my = (int)floorf(py);
@@ -177,50 +180,75 @@ static int l_raycast(lua_State *L) {
         if (d < 0.01f) d = 0.01f;
         zbuf[x] = d;
         if (x == W / 2) centre_d = d, centre_c = (char)c;
-        int h = (int)((float)H / d), y0 = H / 2 - h / 2, y1 = y0 + h;
-        int fk = fog_k(d, fog) * (side ? 3 : 4) / 4;
-        const wall_look *lk = c < 128 && is_wall[c] ? &looks[c] : NULL;
-        int a = y0 < 0 ? 0 : y0, b = y1 > H ? H : y1;
-        if (lk && lk->pic) {
-            const asset *t = lk->pic;
+        column *q = &cols[x];
+        q->h = (int)((float)H / d), q->y0 = H / 2 - q->h / 2;
+        q->k = fog_k(d, fog) * (side ? 3 : 4) / 4;
+        q->look = c < 128 && is_wall[c] ? &looks[c] : NULL;
+        q->u = 0;
+        if (q->look && q->look->pic) {
+            const asset *t = q->look->pic;
             float wx = side == 0 ? py + d * ry : px + d * rx;
             wx -= floorf(wx);
             int u = (int)(wx * (float)t->w);
             if ((side == 0 && rx > 0) || (side == 1 && ry < 0)) u = t->w - 1 - u; /* not mirrored, from either side */
-            u = u < 0 ? 0 : u >= t->w ? t->w - 1 : u;
-            const uint16_t *col = t->pixels + u;
-            for (int y = a; y < b; y++) {
-                int v = (int)((int64_t)(y - y0) * t->h / (h ? h : 1));
-                v = v < 0 ? 0 : v >= t->h ? t->h - 1 : v;
-                out[y * cv->w + x] = shaded(col[v * t->w], fk);
-            }
-        } else {
-            uint16_t s = shaded(lk ? lk->colour : 0x8410, fk);
-            for (int y = a; y < b; y++) out[y * cv->w + x] = s;
+            q->u = u < 0 ? 0 : u >= t->w ? t->w - 1 : u;
         }
     }
+    uint16_t ceil_s = shaded(ceil_c, 256);
+    for (int y = H / 2; y < H; y++) floor_c[y] = shaded(floor_c0, fog_k((float)H / (2.0f * (float)y - (float)H + 1.0f), fog));
     float inv = 1.0f / (plx * dy - dx * ply);
-    for (int i = 0; i < nsp; i++) { /* the sprites, farthest first, each column hidden where a wall is nearer */
+    static struct { int xl, w, ytop, h, k; const asset *t; const uint16_t *px; int frame; float depth; } sv[MAX_SPRITES];
+    int nsv = 0;
+    for (int i = 0; i < nsp; i++) { /* the sprites on the view: where and how big (farthest first, as sorted) */
         const sprite *q = &sp[i];
         const asset *t = q->pic;
         float rx = q->x - px, ry = q->y - py;
         float ax = inv * (dy * rx - dx * ry), depth = inv * (-ply * rx + plx * ry);
         if (depth <= 0.05f) continue;
-        int cx = (int)((float)W / 2 * (1.0f + ax / depth));
         int h = (int)((float)H / depth * q->scale), w = h * t->w / (t->h ? t->h : 1);
         if (h <= 0 || w <= 0 || h > 8 * H) continue;
-        int ytop = H / 2 + (int)((float)H / depth / 2) - h, xl = cx - w / 2;
-        int fk = fog_k(depth, fog);
-        const uint16_t *px0 = t->pixels + (size_t)q->frame * t->w * t->h;
-        for (int x = xl < 0 ? 0 : xl; x < xl + w && x < W; x++) {
-            if (depth >= zbuf[x]) continue;
-            int u = (x - xl) * t->w / w;
-            for (int y = ytop < 0 ? 0 : ytop; y < ytop + h && y < H; y++) {
-                int v = (y - ytop) * t->h / h;
-                if (!gfx_opaque(t, q->frame, u, v)) continue;
-                out[y * cv->w + x] = shaded(px0[v * t->w + u], fk);
+        int cx = (int)((float)W / 2 * (1.0f + ax / depth));
+        sv[nsv].xl = cx - w / 2, sv[nsv].w = w, sv[nsv].h = h, sv[nsv].ytop = H / 2 + (int)((float)H / depth / 2) - h;
+        sv[nsv].k = fog_k(depth, fog), sv[nsv].t = t, sv[nsv].frame = q->frame, sv[nsv].depth = depth;
+        sv[nsv].px = t->pixels + (size_t)q->frame * t->w * t->h;
+        nsv++;
+    }
+    /* Drawn a band of BAND columns at a time into internal memory, then copied a row at a time: the canvas (in PSRAM
+     * on the console) written in runs instead of a pixel per row, which made a whole view cost twice as much. */
+    static uint16_t band[MAX_H * BAND];
+    for (int bx = 0; bx < W; bx += BAND) {
+        int bw = W - bx < BAND ? W - bx : BAND;
+        for (int i = 0; i < bw; i++) {
+            const column *q = &cols[bx + i];
+            int a = q->y0 < 0 ? 0 : q->y0, b = q->y0 + q->h > H ? H : q->y0 + q->h;
+            for (int y = 0; y < a; y++) band[y * BAND + i] = y < H / 2 ? ceil_s : floor_c[y];
+            for (int y = b; y < H; y++) band[y * BAND + i] = y < H / 2 ? ceil_s : floor_c[y];
+            if (q->look && q->look->pic) {
+                const asset *t = q->look->pic;
+                const uint16_t *col = t->pixels + q->u;
+                int32_t step = (int32_t)((int64_t)t->h * 65536 / (q->h ? q->h : 1)), v = (a - q->y0) * step;
+                for (int y = a; y < b; y++, v += step) {
+                    int vv = v >> 16;
+                    band[y * BAND + i] = shaded(col[(vv < t->h ? vv : t->h - 1) * t->w], q->k);
+                }
+            } else {
+                uint16_t c = shaded(q->look ? q->look->colour : 0x8410, q->k);
+                for (int y = a; y < b; y++) band[y * BAND + i] = c;
             }
         }
+        for (int i = 0; i < nsv; i++) { /* the sprites' columns in this band, hidden where a wall is nearer */
+            const asset *t = sv[i].t;
+            int x0 = sv[i].xl > bx ? sv[i].xl : bx, x1 = sv[i].xl + sv[i].w < bx + bw ? sv[i].xl + sv[i].w : bx + bw;
+            for (int x = x0; x < x1; x++) {
+                if (sv[i].depth >= zbuf[x]) continue;
+                int u = (x - sv[i].xl) * t->w / sv[i].w;
+                for (int y = sv[i].ytop < 0 ? 0 : sv[i].ytop; y < sv[i].ytop + sv[i].h && y < H; y++) {
+                    int v = (y - sv[i].ytop) * t->h / sv[i].h;
+                    if (gfx_opaque(t, sv[i].frame, u, v)) band[y * BAND + x - bx] = shaded(sv[i].px[v * t->w + u], sv[i].k);
+                }
+            }
+        }
+        for (int y = 0; y < H; y++) memcpy(out + y * cv->w + bx, band + y * BAND, (size_t)bw * sizeof *band);
     }
     memset(cv->mask, 0xFF, (size_t)((cv->w + 7) / 8) * cv->h); /* the view covers its canvas */
     cv->gen++;

@@ -447,6 +447,46 @@ static void blit_packed(surface *s, const asset *a, int frame, int x, int y, int
     }
 }
 
+/* A packed picture seen through or adding its light (img's alpha, add), mixed with what is under it as each pixel is
+ * drawn: one pass, the way the plain one draws (a 32-bit console's half-transparency). alpha 0..256; tint >= 0: one
+ * colour (an afterimage). */
+static inline uint16_t mix565(uint16_t d, uint16_t c, unsigned a, bool add) {
+    unsigned dr = d >> 11, dg = d >> 5 & 63, db = d & 31, cr = c >> 11, cg = c >> 5 & 63, cb = c & 31, r, g, b;
+    if (add) {
+        r = dr + (cr * a >> 8), g = dg + (cg * a >> 8), b = db + (cb * a >> 8);
+        r = r > 31 ? 31 : r, g = g > 63 ? 63 : g, b = b > 31 ? 31 : b;
+        uint16_t v = (uint16_t)(r << 11 | g << 5 | b);
+        return v == CANVAS_KEY ? v ^ 1 : v; /* (a canvas's see-through colour: one step from it) */
+    }
+    /* mixed: the three channels spread over 32 bits (green apart from red and blue) and mixed with one multiply each
+     * way, in 32 steps of alpha */
+    uint32_t k = (a + 4) >> 3, dd = (d | (uint32_t)d << 16) & 0x07E0F81Fu, cc = (c | (uint32_t)c << 16) & 0x07E0F81Fu;
+    uint32_t m = ((cc * k + dd * (32 - k)) >> 5) & 0x07E0F81Fu;
+    uint16_t v = (uint16_t)(m | m >> 16);
+    (void)r, (void)g, (void)b;
+    return v == CANVAS_KEY ? v ^ 1 : v;
+}
+
+void gfx_blit_mixed(surface *s, const asset *a, int frame, int x, int y, bool flip, int tint, unsigned alpha, bool add) {
+    int u0, v0, n = CLIP_X(s, x, a->w, &u0), m = CLIP_Y(s, y, a->h, &v0);
+    if (n <= 0 || m <= 0) return;
+    const int ys = step_y(s), lo = v0, hi = v0 + m, bpp = a->bpp, ncol = (int)rd16(a->pk + 6);
+    uint16_t pal[256];
+    for (int i = 0; i < ncol; i++) pal[i] = tint >= 0 ? (uint16_t)tint : a->pal[i];
+    for (int k = 0; k < n; k++) {
+        int u = u0 + k;
+        EACH_RUN(a, frame, flip ? a->w - 1 - u : u, ry, rn, ids, {
+            int j = ry < lo ? lo - ry : 0, j1 = ry + rn > hi ? hi - ry : rn;
+            uint16_t *d = j < j1 ? at(s, x + u, y + ry + j) : NULL;
+            for (; j < j1; j++, d += ys) {
+                unsigned id = bpp == 8 ? ids[j] : (j & 1 ? ids[j >> 1] & 15 : ids[j >> 1] >> 4);
+                uint16_t under = s->swap ? bswap16(*d) : *d;
+                *d = under == CANVAS_KEY ? stored(s, pal[id]) : stored(s, mix565(under, pal[id], alpha, add));
+            }
+        });
+    }
+}
+
 /* a / b rounded down, b > 0; in 32 bits when it fits (always, but for absurd positions): the console divides those in
  * hardware and 64-bit ones in software, which was most of a scaled picture's cost */
 static inline int64_t floor_div(int64_t a, int64_t b) {
