@@ -64,6 +64,7 @@ static bool decode(clip *c, int k) {
         }
     }
     memset(c->canvas->mask, 0xFF, (size_t)((c->w + 7) / 8) * c->h); /* a clip covers its canvas */
+    c->canvas->gen++;
     return true;
 }
 

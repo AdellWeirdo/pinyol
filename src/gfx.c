@@ -304,6 +304,7 @@ const char *gfx_canvas(const char *id, int w, int h, const asset *from, asset **
         }
     memset(a->mask, 0, (size_t)stride * h);
     if (from) gfx_canvas_mask(a, 0, 0, w, h);
+    a->gen++;
     *out = a;
     return NULL;
 }

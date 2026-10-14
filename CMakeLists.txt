@@ -175,6 +175,10 @@ foreach(s ${SCRIPTS})
   add_test(NAME script_${n} COMMAND pinyol_headless --game ${game}
            --saves ${CMAKE_BINARY_DIR}/saves_${n} --fresh --script ${s} --check-strips)
 endforeach()
+# a canvas shown turned, changed every frame, must look different from one frame to the next (not a kept copy)
+add_test(NAME turned_canvas COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/turned \
+  --saves ${CMAKE_BINARY_DIR}/saves_turned_crc --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/turned.script \
+  --crc ${CMAKE_BINARY_DIR}/turned.crc >/dev/null && test $(tail -n 4 ${CMAKE_BINARY_DIR}/turned.crc | sort -u | wc -l) -ge 2")
 if(NOT NO_PIL)
   set_tests_properties(script_template_lua PROPERTIES FIXTURES_REQUIRED lua_template)
   set_tests_properties(script_tiled PROPERTIES FIXTURES_REQUIRED tiled_game)

@@ -1,0 +1,4 @@
+# A canvas changed every frame and shown turned is shown as it is now (CMakeLists.txt's turned_canvas compares frames)
+tick 12
+expect_lua n >= 12
+expect_ok

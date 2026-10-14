@@ -132,6 +132,7 @@ void draw_flush(void) { /* the masks of the canvases drawn on, where they were *
 }
 
 static void touched(asset *a, int x0, int y0, int x1, int y1) { /* a box on canvas a was drawn on (ends excluded) */
+    a->gen++;
     int i = 0;
     while (i < ndirty && dirty[i].a != a) i++;
     if (i == MAX_DIRTY) draw_flush(), i = 0;
@@ -259,6 +260,7 @@ static void as_picture(ov_cmd *c) {
     } else if (c->op == OV_IMG && c->ext && !straight(c)) {
         float t[3] = {ov_xf[c->ext - 1].sx, ov_xf[c->ext - 1].sy, ov_xf[c->ext - 1].deg};
         key_add(key, &n, &c->a, sizeof c->a), key_add(key, &n, &c->frame, sizeof c->frame), key_add(key, &n, t, sizeof t);
+        key_add(key, &n, &c->a->gen, sizeof c->a->gen); /* a canvas drawn on since: another picture */
         gfx_blit_ex_bounds(c->a, t[0], t[1], t[2], &ox, &oy, &w, &h);
         if (!(a = picture(key, n, w, h, &fresh))) return;
         if (fresh) {
@@ -679,6 +681,7 @@ static int l_cls(lua_State *L) { /* cls([colour]): the canvas see-through (or th
     if (!lua_isnoneornil(L, 1)) colour_at(L, 1, 0, &col);
     size_t npx = (size_t)target->w * target->h;
     for (size_t i = 0; i < npx; i++) target->pixels[i] = col;
+    target->gen++;
     memset(target->mask, col == CANVAS_KEY ? 0 : 0xFF, (size_t)((target->w + 7) / 8) * target->h);
     return 0;
 }
