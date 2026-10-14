@@ -1,5 +1,7 @@
 # pinyol
 
+[![tests](https://github.com/ipaud/pinyol/actions/workflows/ci.yml/badge.svg)](https://github.com/ipaud/pinyol/actions/workflows/ci.yml)
+
 <p align="center"><img src="docs/logo.png" alt="pinyol" width="480"></p>
 
 A small C engine for 2D games on the **RetroGo** console, an open-source handheld built on an ESP32-S3 (480×320 touch screen, buttons, speaker, microSD).
