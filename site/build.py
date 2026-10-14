@@ -47,7 +47,7 @@ def games(np2d: Path) -> None:
     import pack_game
     out = DIST / "games"
     out.mkdir(parents=True)
-    ids = [k["example"] for k in page.LOOKS] + [g for g, _ in page.OTHERS]
+    ids = [k["example"] for k in page.LOOKS] + [g for g, _ in page.OTHERS] + [j["id"] for j in page.CODEX]
     for gid in ids:
         pack_game.pack(np2d / "examples" / gid, out, False)
     missing = [g for g in ids if not (out / f"{g}.zip").exists()]
@@ -84,6 +84,30 @@ def images(np2d: Path) -> None:
     og.save(DIST / "img/og.png", optimize=True)
 
 
+FIRMWARE_PARTS = (("bootloader.bin", 0x0), ("partition-table.bin", 0x8000), ("ota_data_initial.bin", 0xF000),
+                  ("pinyol_console.bin", 0x20000), ("game.bin", 0x420000))  # firmware/partitions.csv
+
+
+def firmware(src: Path) -> dict | None:
+    """The console's firmware for the install button: the five pieces idf.py flashes (copied into src with a
+    firmware.json saying its version, release tag and number of flash games), and ESP Web Tools' manifest for them."""
+    if not (src / "firmware.json").exists():
+        print(f"no firmware in {src}: the page goes without its install button")
+        return None
+    meta = json.loads((src / "firmware.json").read_text())
+    out = DIST / "firmware"
+    out.mkdir()
+    for name, _ in FIRMWARE_PARTS:
+        shutil.copy(src / name, out / name)
+    manifest = {"name": "pinyol", "version": meta["version"], "new_install_prompt_erase": True,
+                "new_install_improv_wait_time": 0,  # the console speaks no Improv (Wi-Fi set-up): don't wait for it
+                "builds": [{"chipFamily": "ESP32-S3", "parts": [{"path": n, "offset": o} for n, o in FIRMWARE_PARTS]}]}
+    (out / "manifest.json").write_text(json.dumps(manifest, indent=1))
+    shutil.copytree(HERE / "vendor/esp-web-tools", DIST / "vendor/esp-web-tools")
+    mb = sum((out / n).stat().st_size for n, _ in FIRMWARE_PARTS) / 1e6
+    return {**meta, "mb": f"{mb:.1f}".replace(".", ",")}
+
+
 def editor(np2d: Path, build_web: Path) -> None:
     subprocess.run([sys.executable, str(np2d / "tools/make_editor.py"), str(DIST / "editor"), "--player", str(build_web)],
                    check=True, stdout=subprocess.DEVNULL)
@@ -106,7 +130,10 @@ def stats(np2d: Path) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--np2d", type=Path, default=HERE.parent, help="the engine's repository (this one)")
-    np2d = ap.parse_args().np2d.expanduser().resolve()
+    ap.add_argument("--firmware", type=Path, default=CACHE / "firmware",
+                    help="the console's firmware pieces and firmware.json (without them, no install button)")
+    args = ap.parse_args()
+    np2d = args.np2d.expanduser().resolve()
     if not (np2d / "tools/pack_game.py").exists():
         raise SystemExit(f"{np2d} is not pinyol's repository")
     if DIST.exists():
@@ -121,9 +148,11 @@ def main() -> None:
     games(np2d)
     fonts(np2d)
     images(np2d)
+    shutil.copytree(HERE / "src/img", DIST / "img", dirs_exist_ok=True)
+    fw = firmware(args.firmware)
     editor(np2d, build_web)
     board = json.loads((HERE / "src/data/board.json").read_text(encoding="utf-8"))
-    (DIST / "index.html").write_text(page.render(board, stats(np2d)), encoding="utf-8")
+    (DIST / "index.html").write_text(page.render(board, stats(np2d), fw), encoding="utf-8")
     (DIST / ".nojekyll").write_text("")  # GitHub Pages: serve the folders as they are
     size = sum(p.stat().st_size for p in DIST.rglob("*") if p.is_file())
     print(f"dist/: {sum(1 for _ in DIST.rglob('*'))} files, {size / 1e6:.1f} MB")

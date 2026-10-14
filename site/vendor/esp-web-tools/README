@@ -1,0 +1,2 @@
+ESP Web Tools 10.4.0 (https://github.com/esphome/esp-web-tools, Apache-2.0): dist/web from the npm package,
+unchanged. The site serves it itself (its CSP allows scripts from its own origin only).

@@ -131,6 +131,9 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [gotico](examples/gotico) | a castle hall at night as the 32-bit consoles drew it: candle light added, a ghost and a dash's afterimages half seen through, a skull boss that turns and swells |
 | [sonidos](examples/sonidos) | sounds made from numbers (a factory of coins, lasers, explosions), a theremin, an engine that follows the speed, music in layers |
 | [control](examples/control) | directing a 1994 newscast from the control room: cuts, tape and captions on the beat of the theme, the producer's lines written as a story in Catalan and Spanish, the console's LED as the tally light, a video clip on a monitor; then a camera that does not exist looks at you, hears you and knows your battery |
+| [raton_de_biblioteca](examples/raton_de_biblioteca) | made by Codex from one sentence on a fresh clone: a Game Boy-look mouse in a library, cheese and cats (then put on the whole screen by hand) |
+| [oxigeno](examples/oxigeno) | made by Codex from one sentence: a ZX Spectrum-look astronaut after oxygen bottles, with its tape loading screen |
+| [museo_nocturno](examples/museo_nocturno) | made by Codex from one sentence: a first-person museum at night, five stolen paintings and guards |
 
 ### As an adventure made of data
 

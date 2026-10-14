@@ -1,0 +1,45 @@
+# Título, movimiento, salto, queso, daño y victoria.
+tick 2
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "play" and lives == 3 and cheese == 0
+hold RIGHT 12
+expect_lua P.x > 16
+hold A 20
+expect_lua P.y < 80
+shot salto
+tick 35
+expect_lua P.y <= 96
+lua P.x, P.y = cheese_list[1].x, cheese_list[1].y
+tick 2
+expect_lua cheese >= 1
+lua P.x, P.y, P.vy, P.invuln = cats[1].x, cats[1].y, 0, 0
+tick 2
+expect_lua lives == 2 and P.invuln > 0
+lua P.x, P.y, P.vx, P.vy, P.invuln = cheese_list[2].x, cheese_list[2].y, 0, 0, 120
+tick 2
+lua P.x, P.y, P.vx, P.vy, P.invuln = cheese_list[3].x, cheese_list[3].y, 0, 0, 120
+tick 2
+lua P.x, P.y, P.vx, P.vy, P.invuln = cheese_list[4].x, cheese_list[4].y, 0, 0, 120
+tick 2
+lua P.x, P.y, P.vx, P.vy, P.invuln = cheese_list[5].x, cheese_list[5].y, 0, 0, 120
+tick 2
+lua P.x, P.y, P.vx, P.vy, P.invuln = cheese_list[6].x, cheese_list[6].y, 0, 0, 120
+tick 2
+lua P.x, P.y, P.vx, P.vy, P.invuln = cheese_list[7].x, cheese_list[7].y, 0, 0, 120
+tick 2
+lua P.x, P.y, P.vx, P.vy, P.invuln = cheese_list[8].x, cheese_list[8].y, 0, 0, 120
+tick 2
+lua P.x, P.y, P.vx, P.vy, P.invuln = cheese_list[9].x, cheese_list[9].y, 0, 0, 120
+tick 2
+lua P.x, P.y, P.vx, P.vy, P.invuln = cheese_list[10].x, cheese_list[10].y, 0, 0, 120
+tick 2
+lua P.x, P.y, P.vx, P.vy, P.invuln = cheese_list[11].x, cheese_list[11].y, 0, 0, 120
+tick 2
+expect_lua cheese == cheese_total
+lua P.x, P.y, P.vx, P.vy = exit_x - 5, 112, 0, 0
+tick 2
+expect_lua state == "won"
+shot victoria
+expect_ok

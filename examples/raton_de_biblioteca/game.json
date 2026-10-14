@@ -1,0 +1,8 @@
+{
+  "id": "raton_de_biblioteca",
+  "title": "Ratón de biblioteca",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "Codex (OpenAI), de un solo encargo",
+  "description": "Un ratón salta entre estanterías, recoge queso y esquiva gatos en una biblioteca de cuatro tonos Game Boy."
+}

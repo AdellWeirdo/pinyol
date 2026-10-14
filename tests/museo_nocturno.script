@@ -1,0 +1,55 @@
+# Museo nocturno: entrada, movimiento, cuadros, guardias y salida.
+tick 2
+expect_lua state == "title"
+shot portada
+press A
+expect_lua state == "play" and found == 0 and strikes == 0
+hold UP 20
+expect_lua P.x > 2.0
+expect_lua guards[1].x > 10.5 and guards[2].y > 12.5 and guards[3].x > 11.5
+lua P.x, P.y, P.a = 1.5, 1.5, 180
+hold UP 40
+expect_lua P.x >= 1.19
+lua P.x, P.y, P.a = 14.4, 14.5, 0
+press A
+expect_lua state == "play"
+lua P.x, P.y, P.a = 4.6, 1.5, 0
+shot cuadro_antes
+lua P.x = 6.1
+press A
+expect_lua found == 1 and paintings[1].taken
+shot cuadro
+lua P.x, P.y = guards[1].x, guards[1].y
+tick 2
+expect_lua strikes == 1 and P.x == 1.5
+lua guards = {} P.x, P.y, P.a = 10.9, 3.5, 0
+press A
+expect_lua found == 2 and paintings[2].taken
+lua P.x, P.y, P.a = 6.9, 7.5, 0
+press A
+expect_lua found == 3 and paintings[3].taken
+lua P.x, P.y, P.a = 1.5, 12.9, 90
+press A
+expect_lua found == 4 and paintings[4].taken
+lua P.x, P.y, P.a = 13.9, 12.5, 0
+press A
+expect_lua found == 5 and paintings[5].taken
+lua P.x, P.y, P.a = 14.4, 14.5, 0
+press A
+expect_lua state == "won"
+shot victoria
+press A
+expect_lua state == "play" and strikes == 0
+lua P.x, P.y = 11.5, 5.5 guards[1].x, guards[1].y, guards[1].chase = 10.5, 5.5, 0
+tick 2
+expect_lua guards[1].chase > 0
+lua P.x, P.y = guards[1].x, guards[1].y
+tick 1
+expect_lua strikes == 1
+lua P.x, P.y = guards[1].x, guards[1].y
+tick 1
+expect_lua strikes == 2
+lua P.x, P.y = guards[1].x, guards[1].y
+tick 1
+expect_lua state == "over" and strikes == 3
+expect_ok

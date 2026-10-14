@@ -51,6 +51,27 @@ OTHERS = [
     ("juntos", "Juntos"), ("hola", "Hola pinyol"),
 ]
 
+# Games Codex made, one request each, on a fresh clone with nothing but AGENTS.md (2026-10-14): times, commands and
+# tokens from its logs. "after" says what was retouched by hand later, so the page claims no more than Codex did.
+CODEX_RUN = "Codex 0.155 con gpt-6-sol, razonamiento medio"
+CODEX = [
+    dict(id="raton_de_biblioteca", title="Ratón de biblioteca", look="Game Boy", time="4 min 49 s", commands=29, tokens="78 mil",
+         prompt="Hazme un juego con aspecto de Game Boy: un ratón que recorre una biblioteca saltando entre estanterías y "
+                "recogiendo trozos de queso, con gatos que patrullan. Que funcione y se vea bien. No me preguntes nada, decide tú.",
+         after="Retocado después: a pantalla completa, sin el marco de consola.",
+         alt="Un ratón saltando entre estanterías de una biblioteca, en cuatro tonos de verde"),
+    dict(id="oxigeno", title="Oxígeno 48K", look="ZX Spectrum", time="5 min 2 s", commands=40, tokens="104 mil",
+         prompt="Quiero un juego con aspecto de ZX Spectrum, con su pantalla de carga de cinta: un astronauta en una estación "
+                "espacial que recoge botellas de oxígeno antes de que se le acabe el aire, esquivando robots. No me preguntes nada, decide tú.",
+         after="Retocado después: el título de la portada y los textos, dentro de sus cuadros.",
+         alt="La pantalla de carga: un astronauta con una botella de oxígeno ante una estación espacial"),
+    dict(id="museo_nocturno", title="Museo de medianoche", look="Primera persona", time="6 min 8 s", commands=33, tokens="84 mil",
+         prompt="Hazme un juego en primera persona tipo Wolfenstein: un museo de noche, buscas cinco cuadros robados mientras "
+                "esquivas a los vigilantes. No me preguntes nada, decide tú.",
+         after="Retocado después: el texto de la pantalla final.",
+         alt="Un pasillo de museo en primera persona con un cuadro al fondo"),
+]
+
 
 def play_url(gid: str) -> str:
     return f"play/player.html?game=../games/{gid}.zip"
@@ -77,7 +98,7 @@ def hero() -> str:
 <h1 id="hero-title">Un motor, doce épocas</h1>
 <p class="lede">pinyol hace juegos con la cara de las consolas de los 80 y 90 y los mueve a 60 fps en una consola de bolsillo con un ESP32‑S3. Dile a tu agente de código qué aspecto quieres y lo construye. Aquí puedes jugarlos todos.</p>
 <div class="actions"><a class="btn btn-primary" href="#aspectos">Jugar ahora</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
-<p class="meta">Código MIT · arte y sonido CC0 · {len(LOOKS) + len(OTHERS)} juegos de ejemplo</p>
+<p class="meta">Código MIT · arte y sonido CC0 · {len(LOOKS) + len(OTHERS) + len(CODEX)} juegos de ejemplo</p>
 </div>
 <div><div class="device" data-live role="img" aria-label="La consola mostrando, uno tras otro, los doce aspectos"><div class="screen">{imgs}</div></div>
 <p class="screen-label pixel">480×320 · 60 fps · en la placa</p></div>
@@ -143,7 +164,38 @@ def make_one() -> str:
 </div></section>"""
 
 
-def console() -> str:
+def codex() -> str:
+    jobs = "".join(f"""<li class="cart job">
+<div class="shot"><img src="img/codex/{j['id']}.png" alt="{escape(j['alt'])}" width="480" height="320" loading="lazy" decoding="async"></div>
+<div class="label"><p class="era pixel">{escape(j['look'])}</p><h3>{escape(j['title'])}</h3>
+<blockquote><p>{escape(j['prompt'])}</p></blockquote>
+<ul class="chips"><li class="chip fps">{j['time']}</li><li class="chip">{j['commands']} comandos</li><li class="chip">{j['tokens']} tokens</li><li class="chip">su test: PASS</li></ul>
+<p class="after">{escape(j['after'])}</p>
+<div class="row"><a class="play" href="{play_url(j['id'])}" aria-label="Jugar a {escape(j['title'])}">Jugar</a>
+<a class="zip" href="games/{j['id']}.zip" download aria-label="Descargar {escape(j['title'])} para la consola">Descargar .zip</a></div></div></li>""" for j in CODEX)
+    return f"""<section id="codex" aria-labelledby="codex-t"><div class="wrap">
+<h2 id="codex-t">Tres encargos, tres juegos</h2>
+<p class="intro">Un clon limpio del repositorio, una frase cada uno y ninguna pregunta contestada. Codex leyó AGENTS.md, compiló el motor, siguió la receta del aspecto y escribió un guion que juega su juego hasta que pasó. Las tres sesiones a la vez, con {escape(CODEX_RUN)}.</p>
+<ul class="jobs">{jobs}</ul>
+</div></section>"""
+
+
+def install(fw: dict | None) -> str:
+    """The console's firmware installed from the browser (ESP Web Tools, Web Serial), when the site was built with it."""
+    if not fw:
+        return ""
+    return f"""<div class="install" id="instalar"><h3>Instálala desde el navegador</h3>
+<ol><li>Conecta la placa al ordenador por USB.</li><li>Pulsa el botón y elige el puerto de la placa.</li>
+<li>Espera unos minutos: arranca con {fw['games']} juegos en la memoria.</li></ol>
+<esp-web-install-button manifest="firmware/manifest.json">
+<button slot="activate" class="btn btn-primary" type="button">Instalar en la consola</button>
+<span slot="unsupported" class="note">Este navegador no puede hablar con la placa por USB: ábrela en Chrome o Edge, en un ordenador.</span>
+<span slot="not-allowed" class="note">Instalar necesita la página en https.</span>
+</esp-web-install-button>
+<p class="note">Firmware {escape(fw['version'])} · {fw['mb']} MB · <a href="{REPO}/releases/tag/{fw['tag']}">los archivos, para esptool</a></p></div>"""
+
+
+def console(fw: dict | None) -> str:
     spec = [("Placa", "Freenove FNK0104N"), ("Chip", "ESP32-S3R8, dos núcleos a 240 MHz"), ("Memoria", "512 KB de RAM interna, 8 MB de PSRAM, 16 MB de flash"),
             ("Pantalla", "3,5″, 480×320, ST77922 por QSPI, táctil"), ("Sonido", "ES8311 con altavoz"), ("Lo demás", "microSD, batería, USB")]
     dl = "".join(f"<dt>{escape(a)}</dt><dd>{escape(b)}</dd>" for a, b in spec)
@@ -151,8 +203,8 @@ def console() -> str:
 <h2 id="consola-t">La consola</h2>
 <p class="intro">Una placa de desarrollo con pantalla que se compra hecha. El motor la exprime: dibuja directamente en franjas, reparte el trabajo entre los dos núcleos y guarda en la tarjeta lo que no cabe.</p>
 <div class="hw"><dl class="spec">{dl}</dl>
-<div class="pending"><h3>La carcasa, en preparación</h3><p>Carcasa imprimible, botones y lista de materiales para montarla tú. Mientras tanto, la placa sola ya juega.</p>
-<p><a href="{REPO}/blob/main/docs/hardware.md">Cómo conectarla</a> · <a href="https://github.com/Freenove/Freenove_ESP32_S3_Display">La placa de Freenove</a></p></div></div>
+<div class="side">{install(fw)}<div class="pending"><h3>La carcasa, en preparación</h3><p>Carcasa imprimible, botones y lista de materiales para montarla tú. Mientras tanto, la placa sola ya juega.</p>
+<p><a href="{REPO}/blob/main/docs/hardware.md">Cómo conectarla</a> · <a href="https://github.com/Freenove/Freenove_ESP32_S3_Display">La placa de Freenove</a></p></div></div></div>
 </div></section>"""
 
 
@@ -183,7 +235,7 @@ def footer() -> str:
 <span>Código MIT · arte y sonido CC0</span><a href="{REPO}">GitHub</a><a href="{REPO}/blob/main/docs/measurements.md">Mediciones</a></div></footer>"""
 
 
-def render(board: dict, stats: dict) -> str:
+def render(board: dict, stats: dict, fw: dict | None) -> str:
     desc = "pinyol: un motor de juegos libre con doce aspectos retro (Game Boy, Neo Geo, CPS2, PlayStation…) que corre a 60 fps en una consola ESP32-S3 y en el navegador."
     csp = ("default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; "
            "connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'")
@@ -203,7 +255,7 @@ def render(board: dict, stats: dict) -> str:
 <link rel="icon" href="img/icon.png">
 <link rel="preload" href="fonts/jersey15.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
-<script src="site.js" defer></script>
+<script src="site.js" defer></script>{'<script type="module" src="vendor/esp-web-tools/install-button.js"></script>' if fw else ""}
 </head>
 <body>
 {header()}
@@ -212,7 +264,8 @@ def render(board: dict, stats: dict) -> str:
 {looks()}
 {performance(board, stats['tests'])}
 {make_one()}
-{console()}
+{codex()}
+{console(fw)}
 {making(stats)}
 </main>
 {footer()}

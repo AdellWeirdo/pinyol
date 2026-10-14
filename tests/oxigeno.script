@@ -1,0 +1,52 @@
+# Carga, exploración, oxígeno, robots, derrota y misión cumplida.
+tick 60
+expect_lua state == "load"
+shot piloto
+tick 200
+shot datos
+tick 200
+shot portada
+press A
+expect_lua state == "play" and bottles == 5 and air > 0.9
+lua old_x = astronaut.x
+hold RIGHT 12
+expect_lua astronaut.x > old_x
+shot estacion
+lua air = 0.4
+lua astronaut.x, astronaut.y = 5 * 8, 3 * 8
+tick 2
+expect_lua bottles == 4 and air > 0.7 and score == 100
+lua astronaut.x, astronaut.y = 25 * 8, 13 * 8
+tick 2
+expect_lua state == "play" and bottles == 4
+lua astronaut.x, astronaut.y, astronaut.invuln = robots[1].x, robots[1].y, 0
+lua old_air = air
+tick 1
+expect_lua air < old_air and astronaut.invuln > 0
+lua old_air = air
+tick 3
+expect_lua air > old_air - 0.01
+lua air = 0.0001
+tick 2
+expect_lua state == "over"
+shot sin_aire
+press A
+expect_lua state == "play" and bottles == 5
+lua astronaut.x, astronaut.y = 5 * 8, 3 * 8
+tick 2
+lua astronaut.x, astronaut.y = 22 * 8, 3 * 8
+tick 2
+lua astronaut.x, astronaut.y = 13 * 8, 7 * 8
+tick 2
+lua astronaut.x, astronaut.y = 5 * 8, 12 * 8
+tick 2
+lua astronaut.x, astronaut.y = 22 * 8, 12 * 8
+tick 2
+expect_lua bottles == 0
+lua astronaut.x, astronaut.y = 25 * 8, 13 * 8
+tick 2
+expect_lua state == "done"
+shot victoria
+press A
+expect_lua state == "play" and bottles == 5 and score == 0 and air > 0.99
+expect_ok

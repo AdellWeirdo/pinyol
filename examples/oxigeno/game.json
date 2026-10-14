@@ -1,0 +1,8 @@
+{
+  "id": "oxigeno",
+  "title": "Oxígeno 48K",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "Codex (OpenAI), de un solo encargo",
+  "description": "Recoge cinco botellas de oxígeno en una estación orbital, evita robots y alcanza la esclusa. Estética ZX Spectrum y carga de cinta."
+}
