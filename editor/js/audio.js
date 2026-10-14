@@ -61,7 +61,8 @@ export const fileOf = s => (s.use === 'music' ? 'MUS_' : 'SFX_') + s.name;
 export async function audioFiles(p) { // [[path, bytes]] of the sounds from files, and of the songs composed
   const out = [];
   for (const s of p.sounds.filter(x => x.song)) out.push([`audio/${fileOf(s)}.wav`, wav(renderSong(s.song))]);
-  for (const s of p.sounds.filter(x => x.file)) {
+  for (const s of p.sounds.filter(x => x.mod)) out.push([`audio/${fileOf(s)}.mod`, fromBase64(s.file)]); // music() plays it
+  for (const s of p.sounds.filter(x => x.file && !x.mod)) {
     try { out.push([`audio/${fileOf(s)}.wav`, wav(cut(s, await samples(s)))]); }
     catch { throw new Error(`no se ha podido leer el sonido «${s.name}»`); }
   }

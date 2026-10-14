@@ -21,7 +21,7 @@ const WAVE_NAMES = { square: 'cuadrada', triangle: 'triangular', saw: 'sierra', 
 
 const sound = () => app.project.sounds[cur];
 export function paramsOf(s) { return s.params ? { ...s.params } : recipe(s.recipe, s.seed); }
-const hear = s => (s.song ? playClip(s).then(composerPlays)
+const hear = s => (s.mod ? undefined : s.song ? playClip(s).then(composerPlays) // a .mod sounds only in the game
   : s.file ? playClip(s).catch(() => app.oops(`No se ha podido leer el sonido «${s.name}».`)) : play(paramsOf(s)));
 
 function drawWave(data, from = 0, to = data.length, note = '') { // the samples; outside from..to dimmed (cut away)
@@ -48,7 +48,7 @@ function renderList() {
   ul.replaceChildren();
   app.project.sounds.forEach((s, i) => {
     const li = document.createElement('li'), b = document.createElement('button');
-    const kind = s.song ? 'compuesta' : s.file ? (s.use === 'music' ? 'música' : 'archivo') : s.params ? 'a mano' : RECIPES[s.recipe] || '';
+    const kind = s.song ? 'compuesta' : s.mod ? 'música .mod' : s.file ? (s.use === 'music' ? 'música' : 'archivo') : s.params ? 'a mano' : RECIPES[s.recipe] || '';
     b.className = 'item';
     b.append(Object.assign(document.createElement('span'), { className: 'name', textContent: s.name }),
       Object.assign(document.createElement('span'), { className: 'kind', textContent: kind }));
@@ -122,8 +122,11 @@ function render() {
   $('s-name').value = s.name;
   $('recipes').hidden = $('recipes-title').hidden = $('s-again').hidden = !!(s.file || s.song);
   $('s-stop').hidden = !(s.file || s.song);
-  $('wave').hidden = $('wave-note').hidden = !!s.song; // a song shows its notes instead
+  $('wave').hidden = $('wave-note').hidden = !!(s.song || s.mod); // a song shows its notes instead
+  $('s-play').disabled = !!s.mod;
+  $('s-stop').hidden = !(s.file || s.song) || !!s.mod;
   if (s.song) renderComposer($('composer'), s, app);
+  else if (s.mod) renderMod();
   else if (s.file) renderClip(s);
   else renderMade(s);
 }
@@ -136,8 +139,28 @@ function tweak(key, value, quiet) { // the numbers by hand: the sound keeps them
   if (!quiet) { play(s.params); renderList(); }
 }
 
+function renderMod() { // the editor cannot play a tracker's module; the engine does
+  $('sliders').append(Object.assign(document.createElement('p'), { className: 'hint',
+    textContent: 'Música de tracker (.mod): se repite y ocupa muy poco. Aquí no suena: pulsa Jugar para oírla en el juego.' }));
+}
+
+// A tracker's module (a ProTracker .mod, from MilkyTracker, OpenMPT...): music kept as it is, for the engine to play
+async function bringInMod(file) {
+  if (file.size > 4 << 20) return app.oops('Ese .mod es demasiado grande: hasta 4 MB.');
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (bytes.length < 1084) return app.oops(`«${file.name}» no parece un .mod de ProTracker.`); // its header alone is 1084 bytes
+  const names = new Set(app.project.sounds.map(x => x.name));
+  app.project.sounds.push({ name: uniqueName(safeName(file.name.replace(/\.[^.]*$/, ''), 'musica'), names),
+                            file: toBase64(bytes), use: 'music', mod: true });
+  cur = app.project.sounds.length - 1;
+  app.changed();
+  render();
+  app.toast('Añadida como música: elígela para un nivel en la pestaña Mapa.');
+}
+
 async function bringIn(file) {
   if (!file) return;
+  if (/\.mod$/i.test(file.name)) return bringInMod(file);
   if (!(/^audio\//.test(file.type) || /\.(wav|mp3|ogg|oga|m4a|aac|flac|opus|webm)$/i.test(file.name)))
     return app.oops(`«${file.name}» no es un sonido. Usa un archivo WAV, MP3, OGG o M4A.`);
   if (file.size > 16 << 20) return app.oops('Ese sonido es demasiado grande: hasta 16 MB.');

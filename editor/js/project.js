@@ -9,7 +9,7 @@ export const MAP_MAX = 64; // tiles a side: the map is drawn once into a canvas 
 export const LEVELS_MAX = 32;
 const FILE_MAX = 24 << 20; // a sound file kept in the project, as base64: songs of a few minutes
 export const MAX_SIDE = 512; // a drawing's width or height (a background two screens wide)
-export const MAX_BYTES = 1536 * 1024; // all drawings together, as built (build.js sizeOf): 1.5 MB of the console's memory
+export const MAX_BYTES = 4 << 20; // all drawings together, as built (build.js sizeOf): the console's picture memory (PIC_BUDGET)
 const SEE_THROUGH = 0xF81F; // a saved frame's see-through pixel; a real colour that is this one becomes 0xF81E
 
 // 16 of PICO-8's colours and 8 more: colours at hand that go together (any other can be picked)
@@ -115,6 +115,8 @@ export function newLevel(id, name) {
 export function check(p) {
   if (!p || typeof p !== 'object') throw new Error('No es un proyecto');
   const out = { format: FORMAT, id: safeName(p.id, 'juego'), title: String(p.title || 'Juego').slice(0, 40), drawings: [],
+                author: String(p.author || '').slice(0, 40), about: String(p.about || '').slice(0, 140), // game.json's
+                tagline: String(p.tagline || '').slice(0, 40), // the line under the name in the console's menu
                 levels: [], sounds: [], videos: [], blocks: p.blocks && typeof p.blocks === 'object' ? p.blocks : null };
   const names = new Set();
   const old = !(p.format >= 2), palette = PALETTE.map(hex565); // format 1: indices into the palette
@@ -165,6 +167,8 @@ export function check(p) {
     snames.add(name);
     if (s.song && typeof s.song === 'object') // composed in the editor (song.js): always music
       out.sounds.push({ name, song: checkSong(s.song), use: 'music' });
+    else if (typeof s.file === 'string' && s.file && s.file.length < FILE_MAX && s.mod === true) // a tracker's .mod: music as it is
+      out.sounds.push({ name, file: s.file, use: 'music', mod: true });
     else if (typeof s.file === 'string' && s.file && s.file.length < FILE_MAX) // brought in from a file (base64)
       out.sounds.push({ name, file: s.file, use: s.use === 'music' ? 'music' : 'effect', start: clampNum(s.start, 0, 3600, 0),
                         end: clampNum(s.end, 0, 3600, 0), volume: clampNum(s.volume, 0, 2, 1) });

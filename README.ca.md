@@ -82,8 +82,9 @@ portada, retallada i més alta o més baixa), o compon una cançó en una quadr�
 escala on tota nota encaixa); escriu les regles amb blocs ("quan el protagonista toca una moneda: treu l'altre, sona
 moneda, suma 1 a punts"; "quan el protagonista toca la bandera: passa al nivell següent"), i amb els blocs de Diálogos
 (personatges que parlen i pregunten, i el joc espera la resposta), Micrófono (quan piques de mans, quan bufes, quant
-soroll) i Vídeo (un vídeo portat d'un fitxer o un GIF, a pantalla completa o en una finestra). **Jugar** el juga allà
-mateix; **Pasar a la consola** l'envia pel cable USB (Chrome i Edge, amb Web Serial) o dona el zip per a la targeta.
+soroll) i Vídeo (un vídeo portat d'un fitxer o un GIF, a pantalla completa o en una finestra) i Guardar (un rècord o el progrés, que es queda a la consola); la música pot
+ser també un `.mod` de tracker. La portada és a més la imatge del joc al menú de la consola, amb una línia, qui l'ha
+fet i de què va. **Jugar** el juga allà mateix; **Pasar a la consola** l'envia pel cable USB (Chrome i Edge, amb Web Serial) o dona el zip per a la targeta.
 Una guia curta acompanya qui l'obre per primer cop (un altre cop amb **?**); tot funciona també amb el teclat, i en un
 mòbil o una tauleta. **Nuevo** comença des d'un de quatre jocs petits per canviar, cadascun amb els seus dibuixos,
 nivells i regles: un joc de plataformes, una aventura vista des de dalt (claus i portes), un matamarcians i un

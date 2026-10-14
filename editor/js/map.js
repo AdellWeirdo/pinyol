@@ -224,8 +224,8 @@ function resize(w, h) {
 
 // ------------------------------------------------------------------ the cover
 
-function renderCover() {
-  const p = app.project, c = p.cover, cv = $('cover-preview'), g = cv.getContext('2d');
+function paintCover(g) { // as kit.lua draws it, at the screen's 480×320
+  const p = app.project, c = p.cover;
   g.imageSmoothingEnabled = false;
   g.fillStyle = c.background;
   g.fillRect(0, 0, 480, 320);
@@ -253,11 +253,34 @@ function renderCover() {
   };
   say(p.title, 118, 44, '#ffffff');
   say(c.subtitle, 254, 17, '#ffe070');
+}
+
+// The cover as the console's menu shows a game: 240×160 RGB565, little endian (the game's cover.rgb565)
+export async function coverBytes() {
+  await document.fonts.load('700 44px "Pixelify Sans"'); // not drawn in a fallback font when the tab was never opened
+  const big = Object.assign(document.createElement('canvas'), { width: 480, height: 320 });
+  paintCover(big.getContext('2d'));
+  const small = Object.assign(document.createElement('canvas'), { width: 240, height: 160 }), g = small.getContext('2d');
+  g.drawImage(big, 0, 0, 240, 160); // halved, smoothly: the title's letters stay readable
+  const px = g.getImageData(0, 0, 240, 160).data, out = new Uint8Array(240 * 160 * 2);
+  for (let i = 0, j = 0; i < px.length; i += 4, j += 2) {
+    const v = (px[i] >> 3) << 11 | (px[i + 1] >> 2) << 5 | px[i + 2] >> 3;
+    out[j] = v & 255, out[j + 1] = v >> 8;
+  }
+  return out;
+}
+
+function renderCover() {
+  const p = app.project, c = p.cover, cv = $('cover-preview');
+  paintCover(cv.getContext('2d'));
   cv.classList.toggle('off', !c.on);
   $('cover-on').checked = c.on;
   $('cover-subtitle').value = c.subtitle;
   $('cover-bg').value = c.background;
   $('ending').value = p.ending;
+  $('game-tagline').value = p.tagline || ''; // (templates and projects from before have none)
+  $('game-author').value = p.author || '';
+  $('game-about').value = p.about || '';
   const pic = $('cover-picture');
   pic.replaceChildren(new Option('(ninguna)', ''));
   for (const x of p.drawings) pic.append(new Option(x.name, x.name));
@@ -378,5 +401,7 @@ export function initMap(ctx) {
   cover('cover-picture', 'picture', 'change');
   cover('cover-music', 'music', 'change');
   $('ending').addEventListener('input', e => { app.project.ending = e.target.value.slice(0, 60); app.changed(); });
+  for (const [id, key, max] of [['game-tagline', 'tagline', 40], ['game-author', 'author', 40], ['game-about', 'about', 140]])
+    $(id).addEventListener('input', e => { app.project[key] = e.target.value.slice(0, max); app.changed(); });
   return { render, reset: () => { sel = 0; piece = null; undo.length = redo.length = 0; render(); } };
 }

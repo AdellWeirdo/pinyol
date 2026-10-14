@@ -156,6 +156,13 @@
         <label>Color de fondo <input type="color" id="cover-bg"></label>
         <label>Música <select id="cover-music"></select></label>
         <label>Mensaje al ganar (tras el último nivel) <input id="ending" maxlength="60"></label>
+        <fieldset class="game-info">
+          <legend>En el menú de la consola</legend>
+          <p class="hint">La portada es también la imagen del juego en el menú de la consola Cirera.</p>
+          <label>Debajo del nombre <input id="game-tagline" maxlength="40" placeholder="Hecho con el editor de pinyol"></label>
+          <label>Hecho por <input id="game-author" maxlength="40" autocomplete="name"></label>
+          <label>De qué va <input id="game-about" maxlength="140" placeholder="Una frase: qué hay que hacer"></label>
+        </fieldset>
       </div>
     </div>
   </section>
@@ -167,8 +174,8 @@
       <ul id="sounds"></ul>
       <button id="sound-add" class="add">+ Nuevo sonido</button>
       <button id="song-add" class="add">+ Componer una música</button>
-      <label class="button add">Añadir un sonido…<input type="file" id="sound-file" class="vh" accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac"></label>
-      <p class="hint">O arrástralo aquí. WAV, MP3, OGG, M4A… Un efecto dura hasta 5 s; una música, hasta 4 min, y se elige para cada nivel en Mapa.</p>
+      <label class="button add">Añadir un sonido…<input type="file" id="sound-file" class="vh" accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac,.mod"></label>
+      <p class="hint">O arrástralo aquí. WAV, MP3, OGG, M4A… o música de tracker (.mod). Un efecto dura hasta 5 s; una música, hasta 4 min, y se elige para cada nivel en Mapa.</p>
       <h2>Vídeos</h2>
       <ul id="videos"></ul>
       <label class="button add">Añadir un vídeo…<input type="file" id="video-file" class="vh" accept="video/*,image/gif"></label>

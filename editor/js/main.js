@@ -9,7 +9,7 @@ import { zip } from './zip.js';
 import { cableWorks, send } from './cable.js';
 import { defineBlocks, setProject, workspaceLua, TOOLBOX, templateBlocks } from './blocks.js';
 import { initDrawings } from './sprites.js';
-import { initMap } from './map.js';
+import { initMap, coverBytes } from './map.js';
 import { initSounds } from './sounds.js';
 import { initVideos } from './videos.js';
 import { initGuide } from './guide.js';
@@ -190,7 +190,7 @@ export function luaCode() { return ws ? workspaceLua(ws) : ''; }
 async function gameFilesOf(opts) { // the game's files (Map path -> bytes); opts.start: a level to begin with
   if (!blocksBroken) project.blocks = Blockly.serialization.workspaces.save(ws);
   const audio = await audioFiles(project);
-  return buildFiles(project, luaCode(), await getGameFiles(), { ...opts, audio });
+  return buildFiles(project, luaCode(), await getGameFiles(), { ...opts, audio, cover: await coverBytes() });
 }
 async function buildZip(opts) { return zip(await gameFilesOf(opts), project.id); }
 

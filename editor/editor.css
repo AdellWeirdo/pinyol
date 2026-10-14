@@ -206,6 +206,8 @@ dialog p { text-align: center; margin: 6px 0; }
 .cover-work { align-items: stretch; max-width: 560px; }
 #cover-preview { width: 100%; max-width: 480px; align-self: center; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 4px; }
 #cover-preview.off { opacity: .35; }
+fieldset.game-info { border: 1px solid var(--line); border-radius: var(--radius); padding: 2px 12px 8px; margin: 10px 0 0; }
+fieldset.game-info legend { color: var(--ink); font-weight: 600; padding: 0 4px; }
 label.inline { display: flex; align-items: center; gap: 8px; margin: 0; }
 
 /* sounds */

@@ -81,7 +81,9 @@ song on a grid (melody, bass and drums, in a scale where every note fits); write
 with blocks ("when the hero touches a coin: remove the other, play coin, add 1 to points"; "when the hero touches
 the flag: go on to the next level"), and with the blocks of Diálogos (characters who speak and ask, the game waiting
 for the answer), Micrófono (when you clap, when you blow, how loud) and Vídeo (a video brought in from a file or a GIF,
-over the whole screen or in a window). **Jugar** plays it right there; **Pasar a la consola** sends it over the USB
+over the whole screen or in a window), and Guardar (a record or progress kept in the console); music can also come as a
+tracker's `.mod`. The cover is also the game's picture in the console's menu, with a line, an author and what it is about.
+**Jugar** plays it right there; **Pasar a la consola** sends it over the USB
 cable (Chrome and Edge, with Web Serial) or gives the zip for the card. A short guide walks a first-time user through
 it (again with **?**); everything works from the keyboard too, and on a phone or a tablet. **Nuevo** starts from one of four small games to change, each with
 its own drawings, levels and rules: a platformer, an adventure seen from above (keys and doors), a space shooter

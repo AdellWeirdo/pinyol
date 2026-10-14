@@ -18,7 +18,7 @@ globalThis.lua = require('../vendor/blockly/lua_compressed.js');
 const { TEMPLATES } = await import('../js/templates.js');
 const { defineBlocks, setProject, workspaceLua, templateBlocks } = await import('../js/blocks.js');
 const { buildFiles } = await import('../js/build.js');
-const { HZ, cut, wav } = await import('../js/audio.js');
+const { HZ, cut, wav, audioFiles } = await import('../js/audio.js');
 const { newSong, renderSong } = await import('../js/song.js');
 
 defineBlocks();
@@ -49,15 +49,25 @@ for (const t of TEMPLATES) {
   const music = { name: 'tema', file: 'made here', use: 'music', start: 0, end: 0, volume: 1 };
   const effect = { name: 'boing', file: 'made here', use: 'effect', start: 0, end: 0, volume: 1 };
   const song = { name: 'cancion', song: newSong(), use: 'music' };
-  project.sounds.push(music, effect, song);
+  const mod = { name: 'modulo', file: readFileSync(join(editor, '..', 'tests/games/clock/audio/TUNE.mod')).toString('base64'),
+                use: 'music', mod: true }; // a tracker's module, kept as it is
+  project.sounds.push(music, effect, song, mod);
   project.levels[0].music = project.cover.music = 'tema';
   project.levels[1].music = 'cancion';
   setProject(project);
   const ws = new Blockly.Workspace();
   Blockly.serialization.workspaces.load(templateBlocks('plataformas'), ws);
-  const code = workspaceLua(ws) + 'kit.on("press", "b", function() kit.sound("boing") end)\n';
+  // and the blocks of Guardar: C keeps 7 as the record unless more is kept, and the record is shown
+  const saves = new Blockly.Workspace(), n = v => ({ block: { type: 'math_number', fields: { NUM: v } } });
+  Blockly.serialization.workspaces.load({ blocks: { languageVersion: 0, blocks: [{ type: 'kit_press', fields: { BUTTON: 'c' },
+    inputs: { DO: { block: { type: 'kit_store_max', fields: { KEY: 'récord' }, inputs: { V: n(7) }, next: { block: {
+      type: 'kit_label', fields: { WHERE: 'top_right' }, inputs: { TEXT: { block: { type: 'kit_stored', fields: { KEY: 'récord' } } } } } } } } } }] } }, saves);
+  const saving = workspaceLua(saves);
+  if (!saving.includes('store("récord", v)') || !saving.includes('stored("récord", 0)')) throw new Error('sonido: the save blocks did not become their Lua');
+  saves.dispose();
+  const code = workspaceLua(ws) + saving + 'kit.on("press", "b", function() kit.sound("boing") end)\n';
   const audio = [['audio/MUS_tema.wav', wav(cut(music, tune))], ['audio/SFX_boing.wav', wav(cut(effect, boing))],
-                 ['audio/MUS_cancion.wav', wav(renderSong(song.song))]];
+                 ['audio/MUS_cancion.wav', wav(renderSong(song.song))], ...await audioFiles({ sounds: [mod] })];
   for (const [path, bytes] of buildFiles(project, code, carried, { audio })) {
     mkdirSync(dirname(join(out, 'sonido', path)), { recursive: true });
     writeFileSync(join(out, 'sonido', path), bytes);

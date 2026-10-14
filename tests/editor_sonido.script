@@ -1,5 +1,6 @@
 # sounds brought into the editor from files: the cover's and the first level's music (the same one goes on), an
-# effect; a song composed in the editor for the second level; music changed and stopped by a block
+# effect; a song composed in the editor for the second level; music changed and stopped by a block; a tracker's .mod;
+# and the blocks of Guardar (a record kept in the saves)
 tick 30
 expect_lua kit.state() == "cover" and kit.playing() == "MUS_tema"
 press A
@@ -15,4 +16,17 @@ tick 2
 expect_lua kit.playing() == "MUS_tema"
 lua kit.music(nil)
 expect_lua kit.playing() == nil
+# a tracker's .mod brought in plays as music
+lua kit.music("modulo")
+tick 30
+expect_lua kit.playing() == "MUS_modulo" and music_time() ~= nil and music_time() > 0
+# the blocks of Guardar: 7 kept as the record, more kept stays, the record read back
+expect_lua stored("récord", 0) == 0
+press C
+tick 2
+expect_lua stored("récord", 0) == 7
+lua store("récord", 9)
+press C
+tick 2
+expect_lua stored("récord", 0) == 9
 expect_ok

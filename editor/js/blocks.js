@@ -25,7 +25,7 @@ const PLACES = [['arriba a la izquierda', 'top_left'], ['arriba', 'top'], ['arri
 const COLOURS = [['amarillas', '0xFFE070'], ['blancas', '0xFFFFFF'], ['rojas', '0xFF4040'], ['verdes', '0x60E060'],
   ['azules', '0x50A0FF'], ['moradas', '0xC070FF']];
 
-const EVENT = 40, OBJECT = 200, ACTION = 290, INPUT = 160, MIC = 330, TALK = 20, VIDEO = 260;
+const EVENT = 40, OBJECT = 200, ACTION = 290, INPUT = 160, MIC = 330, TALK = 20, VIDEO = 260, SAVE = 120;
 export const EVENTS = new Set(['kit_start', 'kit_level', 'kit_tick', 'kit_press', 'kit_hold', 'kit_touch', 'kit_tile', 'kit_out',
   'kit_every', 'kit_tap', 'kit_clap', 'kit_blow', 'kit_answer', 'kit_video_end']);
 
@@ -38,6 +38,7 @@ function define(type, colour, parts, kind, tooltip) {
         if (typeof p === 'string') row.appendField(p);
         else if (p.dropdown) row.appendField(new Blockly.FieldDropdown(p.dropdown), p.name);
         else if (p.number !== undefined) row.appendField(new Blockly.FieldNumber(p.number, p.min, p.max, p.step), p.name);
+        else if (p.text !== undefined) row.appendField(new Blockly.FieldTextInput(p.text), p.name);
         else if (p.value) { row = this.appendValueInput(p.name).setCheck(p.check || null); if (p.label) row.appendField(p.label); }
       }
       this.setInputsInline(true);
@@ -111,6 +112,13 @@ export function defineBlocks() {
   define('kit_goto_level', ACTION, ['ir a', { dropdown: someLevel, name: 'LEVEL' }], 'statement');
   define('kit_set_tile', ACTION, ['poner', { dropdown: () => [['nada', '_'], ...tiles().filter(t => t[1] !== '_')], name: 'TILE' },
     { value: true, name: 'X', check: 'Number', label: 'en x' }, { value: true, name: 'Y', check: 'Number', label: 'y' }], 'statement');
+  // saved in the console: still there when it is turned off and on (store, stored)
+  const KEEP = 'Se queda en la consola aunque la apagues. Úsalo al acabar un nivel o la partida, no en «a cada momento»';
+  define('kit_store', SAVE, ['guardar como', { text: 'récord', name: 'KEY' }, { value: true, name: 'V', label: 'el valor' }],
+         'statement', KEEP);
+  define('kit_store_max', SAVE, ['guardar como', { text: 'récord', name: 'KEY' },
+    { value: true, name: 'V', check: 'Number', label: 'si es más que lo guardado' }], 'statement', KEEP + '. Para récords');
+  define('kit_stored', SAVE, ['lo guardado como', { text: 'récord', name: 'KEY' }], 'any', 'Lo que se guardó; 0 si aún nada');
   // input
   define('kit_button', INPUT, [{ dropdown: BUTTONS, name: 'BUTTON' }, 'está pulsado'], 'Boolean');
   define('kit_tap_x', INPUT, ['x tocada'], 'Number');
@@ -202,6 +210,10 @@ function defineLua() {
   F.kit_video_window = b => `kit.video(${q(b.getFieldValue('VIDEO'))}, ${q(b.getFieldValue('WHERE'))})\n`;
   F.kit_video_stop = () => 'kit.video()\n';
   F.kit_video_end = b => on('"video_end"', b);
+  const key = b => q(b.getFieldValue('KEY').trim() || 'récord');
+  F.kit_store = b => `store(${key(b)}, ${val(b, 'V')})\n`;
+  F.kit_store_max = b => `do local v = ${val(b, 'V')} if v > (tonumber(stored(${key(b)}, 0)) or 0) then store(${key(b)}, v) end end\n`;
+  F.kit_stored = b => [`stored(${key(b)}, 0)`, O.HIGH];
 }
 
 // The Lua of the events on the workspace; blocks left loose outside an event do nothing (and are not written).
@@ -249,6 +261,9 @@ export const TOOLBOX = {
       { kind: 'block', type: 'kit_answer' }] },
     { kind: 'category', name: 'Vídeo', colour: VIDEO, contents: ['kit_video_full', 'kit_video_window', 'kit_video_stop',
       'kit_video_end'].map(type => ({ kind: 'block', type })) },
+    { kind: 'category', name: 'Guardar', colour: SAVE, contents: [
+      { kind: 'block', type: 'kit_store_max', inputs: { V: num(0) } },
+      { kind: 'block', type: 'kit_store', inputs: { V: num(1) } }, { kind: 'block', type: 'kit_stored' }] },
     { kind: 'sep' },
     { kind: 'category', name: 'Condiciones', categorystyle: 'logic_category', contents: ['controls_if', 'logic_compare', 'logic_operation',
       'logic_negate', 'logic_boolean'].map(type => ({ kind: 'block', type })) },

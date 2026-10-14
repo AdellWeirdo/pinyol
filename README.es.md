@@ -81,8 +81,9 @@ recortada y más alta o más baja), o compón una canción en una cuadrícula (m
 toda nota encaja); escribe las reglas con bloques ("cuando el protagonista toca una moneda: quita la otra, suena
 moneda, suma 1 a puntos"; "cuando el protagonista toca la bandera: pasa al siguiente nivel"), y con los bloques de
 Diálogos (personajes que hablan y preguntan, y el juego espera la respuesta), Micrófono (cuando aplaudes, cuando
-soplas, cuánto ruido) y Vídeo (un vídeo traído de un archivo o un GIF, a pantalla completa o en una ventana).
-**Jugar** lo juega ahí mismo; **Pasar a la consola** lo manda por el cable USB (Chrome y Edge, con Web Serial) o da el
+soplas, cuánto ruido) y Vídeo (un vídeo traído de un archivo o un GIF, a pantalla completa o en una ventana) y Guardar (un récord o el progreso, que se queda en la consola); la música
+puede ser también un `.mod` de tracker. La portada es además la imagen del juego en el menú de la consola, con una
+línea, quién lo ha hecho y de qué va. **Jugar** lo juega ahí mismo; **Pasar a la consola** lo manda por el cable USB (Chrome y Edge, con Web Serial) o da el
 zip para la tarjeta. Una guía corta acompaña a quien lo abre por primera vez (otra vez con **?**); todo funciona también
 con el teclado, y en un móvil o una tableta. **Nuevo** empieza desde uno de cuatro juegos pequeños para cambiar, cada
 uno con sus dibujos, niveles y reglas: un plataformas, una aventura vista desde arriba (llaves y puertas), un
