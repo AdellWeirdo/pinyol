@@ -1,0 +1,8 @@
+{
+  "asset": "FAR",
+  "type": "tilemap",
+  "tiles": 835,
+  "map_w": 48,
+  "map_h": 20,
+  "palette": "WORLD"
+}

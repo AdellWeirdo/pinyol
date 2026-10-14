@@ -1,0 +1,49 @@
+# Inicio, movimiento, rebotes, puntos y final de partida.
+new
+expect_lua state == "title" and score[1] == 0 and score[2] == 0
+tick 60
+shot titulo
+press A
+expect_lua state == "serve"
+hold UP 8
+expect_lua player_y < 160
+hold DOWN 8
+expect_lua player_y > 120
+tick 60
+expect_lua state == "play" and ball.vx ~= 0
+# Rebote en techo.
+lua ball.x, ball.y, ball.vx, ball.vy = 240, 47, 2, -5
+tick 2
+expect_lua ball.vy > 0 and state == "play"
+# Rebote en pala humana: salida hacia derecha.
+lua player_y = 160 ball.x, ball.y, ball.vx, ball.vy = 45, 160, -5, 0
+tick 3
+expect_lua ball.vx > 0 and score[1] == 0 and score[2] == 0
+shot juego
+# Fallo de consola: un punto para jugador.
+lua ball.x, ball.y, ball.vx, ball.vy = 470, 90, 5, 0
+tick 4
+expect_lua score[1] == 1 and state == "serve"
+tick 3
+shot punto
+# Fallo humano: un punto para consola.
+lua ball.x, ball.y, ball.vx, ball.vy = -2, 90, -5, 0 state = "play"
+tick 2
+expect_lua score[2] == 1 and state == "serve"
+# Punto 7 detiene juego y anuncia ganador.
+lua score[1] = 6 state = "play" ball.x, ball.y, ball.vx, ball.vy = 470, 90, 5, 0
+tick 4
+expect_lua score[1] == 7 and state == "over"
+tick 60
+shot victoria
+tick 90
+expect_lua score[1] == 7 and state == "over"
+press A
+expect_lua score[1] == 0 and score[2] == 0 and state == "serve"
+# También termina cuando llega consola a 7.
+lua score[2] = 6 state = "play" ball.x, ball.y, ball.vx, ball.vy = -2, 90, -5, 0
+tick 2
+expect_lua score[2] == 7 and state == "over"
+tick 60
+shot derrota
+expect_ok

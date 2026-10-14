@@ -1,0 +1,9 @@
+{
+  "id": "costa_relampago",
+  "title": "Ardilla Relámpago: Costa Esmeralda",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "Codex (OpenAI), en tres encargos",
+  "description": "Plataformas de velocidad costero con rampas, bucle, frutas y parallax al estilo Mega Drive.",
+  "subtitle": "Mega Drive · hecho por Codex"
+}

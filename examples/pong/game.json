@@ -1,0 +1,9 @@
+{
+  "id": "pong",
+  "title": "Pong",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "Codex (OpenAI), de un solo encargo",
+  "description": "Pong contra la consola. Primero en llegar a 7 puntos.",
+  "subtitle": "Vectorial · hecho por Codex"
+}

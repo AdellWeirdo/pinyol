@@ -1,0 +1,60 @@
+# Título y salida de costa.
+new
+tick 5
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "play"
+hold RIGHT 48
+expect_lua P.vx > 6 and P.x > 130
+shot carrera
+press A
+tick 6
+expect_lua not P.ground and P.vy < 0
+shot salto
+# Rampa física: altura coincide con terreno.
+lua P.x, P.y, P.vx, P.vy, P.ground = 300, 85.2, 5, 0, true
+hold RIGHT 8
+expect_lua P.y < 88
+shot rampa
+# Fruta recogida al tocarla.
+lua f = fruits[1] P.x, P.y, P.vx, P.vy = f.x - 16, f.y - 16, 0, 0
+tick 2
+expect_lua f.taken and collected > 0
+# Bucle completo mantiene velocidad y sale hacia la derecha.
+lua P.x, P.y, P.vx, P.vy, P.ground = 930, 96, 5.5, 0, true
+hold RIGHT 10
+expect_lua P.loop_t > 0
+shot bucle
+tick 45
+expect_lua P.loop_t == 0 and P.x > 975
+# Enemigo aplastado en bola.
+lua e = enemies[1] P.x, P.y, P.vx, P.vy, P.ball, P.ground = e.x - 11, e.base - 36, 0, 2, true, false
+tick 2
+expect_lua not e.alive
+# Muelle impulsa hacia arriba.
+lua s = springs[1] P.x, P.y, P.vx, P.vy, P.ground = s.x - 16, 83, 0, 2, false
+tick 5
+expect_lua P.vy < -6
+# Meta, victoria y reinicio.
+lua P.x, P.y, P.vx, P.vy, P.ground = 1860, 96, 6, 0, true
+hold RIGHT 4
+expect_lua state == "won"
+shot meta
+tick 40
+press A
+expect_lua state == "play" and collected == 0
+# Agotar vidas muestra pantalla final.
+lua lives = 1 P.invuln = 0 e = enemies[2] P.x, P.y, P.vx, P.vy, P.ball, P.ground = e.x - 10, e.base - 32, 0, 0, false, true
+tick 3
+expect_lua P.dead > 0
+tick 90
+expect_lua state == "over"
+shot fin
+expect_ok
+# Recorrido completo sin teletransportes: mantener carrera basta para alcanzar meta.
+tick 40
+press A
+hold RIGHT 540
+expect_lua state == "won" and P.x > 1800 and collected > 0
+expect_ok
