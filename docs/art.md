@@ -71,6 +71,15 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
 - Generated art. Style line: *mid-1990s Neo Geo sprite art, 3 to 4 tones per material, hard pixel edges, no
   anti-aliasing*.
 
+### PlayStation and Saturn 2D: `examples/gotico`
+
+- Pictures at 480×320. Characters about 90 pixels tall in **up to 256 colours** (8 bits packed), many frames.
+- **Light and transparency**: candle glows and fire added to what is under them (`img(..., {add = true})`), ghosts,
+  moonbeams and the afterimages of a dash half seen through (`{alpha = 0.5}`); glows and beams drawn by code.
+- Sprites that **turn and swell** (`angle`, `scale`): a boss that sways and breathes.
+- Generated art. Style line: *late-1990s 32-bit console 2D sprite art, gothic action game: richly detailed
+  hand-pixelled sprite with up to 256 colours, smooth careful shading, crisp pixel edges*.
+
 ### CPS2: `torneo`, `mazmorra`
 
 - Pictures at 480×320. Characters 125 to 140 pixels tall in **15 colours and see-through** (`--colours 16`, four bits

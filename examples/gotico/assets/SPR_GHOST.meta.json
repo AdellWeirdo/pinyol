@@ -1,0 +1,25 @@
+{
+  "asset": "SPR_GHOST",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 91,
+  "w": 120,
+  "h": 150,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    60,
+    149
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 11843,
+    "as_rgb565": 36000
+  }
+}

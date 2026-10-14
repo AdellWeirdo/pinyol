@@ -1,0 +1,8 @@
+{
+  "id": "gotico",
+  "title": "Gótico",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un castillo de noche a la manera de los 32 bits (PlayStation, Saturn): luz que se suma, fantasmas y estelas medio transparentes, y una calavera gigante que gira y crece."
+}

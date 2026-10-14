@@ -1,0 +1,31 @@
+# Gótico: the title, walking the hall, the whip breaking a bat, a dash back with its afterimages, the ghost (half
+# seen) taking life, and the skull that turns and swells, struck down
+tick 30
+expect_lua state == "title"
+shot titulo
+press A
+expect_lua state == "play"
+hold RIGHT 60
+expect_lua L.x > 180
+lua bats[1].x, bats[1].y, bats[1].base = L.x + 90, 300 - 70, 300 - 70 L.dir = 1
+press A
+tick 14
+expect_lua bats[1].hp == 0
+shot latigo
+press B
+tick 4
+expect_lua L.act == "dash"
+shot estela
+tick 30
+lua ghost.x, L.hurt = L.x, 0 hp0 = L.hp
+tick 3
+expect_lua L.hp < hp0
+shot fantasma
+lua L.x, L.hurt, L.hp = 2000, 0, 100 cam = 1680
+tick 30
+expect_lua cam >= 1676 and boss.t > 0
+shot calavera
+lua boss.hp = 0
+tick 3
+expect_lua state == "won"
+expect_ok

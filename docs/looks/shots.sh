@@ -21,4 +21,6 @@ printf 'tick 20\npress A\nhold RIGHT 8\nhold UP 12\npress A\ntick 4\nshot vector
 printf 'tick 20\npress A\nhold A 150\nshot vertical\n' | shot vertical tormenta
 printf 'tick 10\npress A\nlua P.x, P.y, P.a = 3.2, 13.5, 0 ghosts[1].x, ghosts[1].y = 10.5, 13.5\ntick 2\nshot firstperson\n' | shot firstperson laberinto
 printf 'tick 500\nshot loading\n' | shot loading cinta
+printf 'tick 10\npress A\nhold RIGHT 40\nlua ghost.x = L.x + 150\nhold B 1\ntick 3\nshot 32bits\n' | shot 32bits gotico
+printf 'tick 10\npress A\nlua L.x, L.hurt, cam = 1790, 0, 1680\ntick 78\nshot 32bits_boss\n' | shot 32bits_boss gotico
 rm -rf "$tmp"

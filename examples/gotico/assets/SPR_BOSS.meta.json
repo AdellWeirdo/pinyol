@@ -1,0 +1,25 @@
+{
+  "asset": "SPR_BOSS",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 117,
+  "w": 200,
+  "h": 200,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    100,
+    199
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 22830,
+    "as_rgb565": 80000
+  }
+}

@@ -27,6 +27,8 @@ takes them again).
 | **Vector arcade**: [rocas](examples/rocas), no pictures | **Vertical screen**: [tormenta](examples/tormenta), the console on its side |
 | ![A first-person maze: stone corridors and a ghost, Wolfenstein-style](docs/looks/firstperson.png) | ![A ZX Spectrum loading screen: a miner in a crystal cave, two colours a block](docs/looks/loading.png) |
 | **First person**: [laberinto](examples/laberinto), `raycast()` | **ZX Spectrum**: [cinta](examples/cinta)'s tape loading |
+| ![A gothic castle hall: candle glows, a half-seen ghost and a huntress with a whip](docs/looks/32bits.png) | ![The skull boss turning and swelling, its fireballs glowing](docs/looks/32bits_boss.png) |
+| **PlayStation / Saturn 2D**: [gotico](examples/gotico) | **PlayStation / Saturn 2D**: its boss |
 
 ## Quick start
 
@@ -122,6 +124,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [rocas](examples/rocas) | a vector arcade game: bright lines with a glow, even the letters; no pictures |
 | [tormenta](examples/tormenta) | a vertical shoot-'em-up played with the console on its side: a standing canvas shown turned, hundreds of bullets |
 | [laberinto](examples/laberinto) | first person as Wolfenstein 3D drew it: raycast() draws the maze from inside, textured and fogged, ghosts and gems standing in it |
+| [gotico](examples/gotico) | a castle hall at night as the 32-bit consoles drew it: candle light added, a ghost and a dash's afterimages half seen through, a skull boss that turns and swells |
 | [sonidos](examples/sonidos) | sounds made from numbers (a factory of coins, lasers, explosions), a theremin, an engine that follows the speed, music in layers |
 | [control](examples/control) | directing a 1994 newscast from the control room: cuts, tape and captions on the beat of the theme, the producer's lines written as a story in Catalan and Spanish, the console's LED as the tally light, a video clip on a monitor; then a camera that does not exist looks at you, hears you and knows your battery |
 
