@@ -30,15 +30,16 @@ DIST = HERE / "dist"
 CACHE = HERE / ".cache"
 
 sys.path.insert(0, str(HERE))
+import i18n  # noqa: E402
 import page  # noqa: E402
 
 
 def player(np2d: Path) -> Path:
     out = CACHE / "build-web"
-    if not (out / "player.wasm").exists():
-        env = {**os.environ, "EMSDK_PYTHON": os.environ.get("EMSDK_PYTHON", "/opt/homebrew/bin/python3.12")}
+    env = {**os.environ, "EMSDK_PYTHON": os.environ.get("EMSDK_PYTHON", "/opt/homebrew/bin/python3.12")}
+    if not (out / "CMakeCache.txt").exists():
         subprocess.run(["emcmake", "cmake", "-S", str(np2d), "-B", str(out), "-DCMAKE_BUILD_TYPE=Release"], check=True, env=env)
-        subprocess.run(["cmake", "--build", str(out), "--target", "pinyol_player", "-j8"], check=True, env=env)
+    subprocess.run(["cmake", "--build", str(out), "--target", "pinyol_player", "-j8"], check=True, env=env)  # only what changed
     return out
 
 
@@ -152,7 +153,12 @@ def main() -> None:
     fw = firmware(args.firmware)
     editor(np2d, build_web)
     board = json.loads((HERE / "src/data/board.json").read_text(encoding="utf-8"))
-    (DIST / "index.html").write_text(page.render(board, stats(np2d), fw), encoding="utf-8")
+    html = page.render(board, stats(np2d), fw)
+    (DIST / "index.html").write_text(html, encoding="utf-8")
+    for lang in i18n.LANGS:
+        if lang != "es":
+            (DIST / lang).mkdir()
+            (DIST / lang / "index.html").write_text(i18n.translate(html, lang), encoding="utf-8")
     (DIST / ".nojekyll").write_text("")  # GitHub Pages: serve the folders as they are
     (DIST / ".gitattributes").write_text("".join(f"*.{e} binary\n" for e in ("bin", "wasm", "zip", "png", "woff2")))
     size = sum(p.stat().st_size for p in DIST.rglob("*") if p.is_file())

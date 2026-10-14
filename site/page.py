@@ -6,6 +6,7 @@ import re
 from html import escape
 
 import charts
+import i18n
 
 REPO = "https://github.com/ipaud/pinyol"
 RAW = "https://raw.githubusercontent.com/ipaud/pinyol/main"  # the Library's games, read when the page opens
@@ -53,25 +54,40 @@ OTHERS = [
     ("juntos", "Juntos"), ("hola", "Hola pinyol"),
 ]
 
-# Games Codex made, one request each, on a fresh clone with nothing but AGENTS.md (2026-10-14): times, commands and
-# tokens from its logs. "after" says what was retouched by hand later, so the page claims no more than Codex did.
+# The ladder: games Codex made, one request each, on a fresh clone with nothing but AGENTS.md (2026-10-14), from the
+# simplest to the hardest. Times, commands and tokens from its logs; fps on the console, each game playing its own test
+# (an autotest build). "after" says what was retouched by hand later, so the page claims no more than Codex did.
 CODEX_RUN = "Codex 0.155 con gpt-6-sol, razonamiento medio"
 CODEX = [
-    dict(id="raton_de_biblioteca", title="Ratón de biblioteca", look="Game Boy", time="4 min 49 s", commands=29, tokens="78 mil",
+    dict(id="pong", level=1, title="Pong", look="Vectorial", minutes=3.5, time="3 min 30 s", commands=29, tokens="73 mil",
+         fps="61", prompt="Hazme un Pong contra la consola: dos palas, una pelota y un marcador hasta 7 puntos. No me preguntes nada, decide tú.",
+         after="Sin retoques.", alt="Un Pong vectorial: dos palas, la pelota y el marcador"),
+    dict(id="raton_de_biblioteca", level=2, title="Ratón de biblioteca", look="Game Boy", minutes=4.8, time="4 min 49 s",
+         commands=29, tokens="78 mil", fps="59",
          prompt="Hazme un juego con aspecto de Game Boy: un ratón que recorre una biblioteca saltando entre estanterías y "
                 "recogiendo trozos de queso, con gatos que patrullan. Que funcione y se vea bien. No me preguntes nada, decide tú.",
          after="Retocado después: a pantalla completa, sin el marco de consola.",
          alt="Un ratón saltando entre estanterías de una biblioteca, en cuatro tonos de verde"),
-    dict(id="oxigeno", title="Oxígeno 48K", look="ZX Spectrum", time="5 min 2 s", commands=40, tokens="104 mil",
+    dict(id="oxigeno", level=3, title="Oxígeno 48K", look="ZX Spectrum", minutes=5.0, time="5 min 2 s", commands=40,
+         tokens="104 mil", fps="30–60",
          prompt="Quiero un juego con aspecto de ZX Spectrum, con su pantalla de carga de cinta: un astronauta en una estación "
                 "espacial que recoge botellas de oxígeno antes de que se le acabe el aire, esquivando robots. No me preguntes nada, decide tú.",
          after="Retocado después: el título de la portada y los textos, dentro de sus cuadros.",
          alt="La pantalla de carga: un astronauta con una botella de oxígeno ante una estación espacial"),
-    dict(id="museo_nocturno", title="Museo de medianoche", look="Primera persona", time="6 min 8 s", commands=33, tokens="84 mil",
+    dict(id="museo_nocturno", level=4, title="Museo de medianoche", look="Primera persona", minutes=6.1, time="6 min 8 s",
+         commands=33, tokens="84 mil", fps="42",
          prompt="Hazme un juego en primera persona tipo Wolfenstein: un museo de noche, buscas cinco cuadros robados mientras "
                 "esquivas a los vigilantes. No me preguntes nada, decide tú.",
          after="Retocado después: el texto de la pantalla final.",
          alt="Un pasillo de museo en primera persona con un cuadro al fondo"),
+    dict(id="costa_relampago", level=5, title="Ardilla Relámpago", look="Mega Drive", minutes=18.6, time="18 min 34 s",
+         commands=102, tokens="252 mil", fps="59",
+         prompt="Hazme un plataformas de velocidad con aspecto de Mega Drive: una ardilla que corre por una costa con rampas y "
+                "bucles, varias capas de fondo moviéndose a distintas velocidades, el mar del fondo ondulando línea a línea, "
+                "enemigos y frutas que recoger. Que vaya rápido y se vea bien. No me preguntes nada, decide tú.",
+         after="Tres encargos: el juego (4 min 41 s), su arte generado con imágenes (10 min 8 s, iba a 30 fps) y hacerlo ir a "
+               "60 en la consola con un suelo propio (3 min 45 s). Sin retoques a mano.",
+         alt="Una ardilla corriendo por una costa con palmeras, colinas y el mar"),
 ]
 
 
@@ -87,6 +103,7 @@ def header() -> str:
 <li class="keep"><a href="#aspectos">Juegos</a></li><li><a href="#rendimiento">Rendimiento</a></li>
 <li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz uno</a></li><li><a href="#consola">La consola</a></li><li><a href="#making">Cómo se hizo</a></li>
 <li class="keep"><a href="{REPO}">GitHub</a></li></ul></nav>
+{i18n.switcher("es")}
 </div></header>"""
 
 
@@ -175,7 +192,7 @@ def library() -> str:
 <h2 id="biblioteca-t">La Biblioteca</h2>
 <p class="intro">Juegos hechos por la gente con pinyol: se juegan aquí y se descargan para la consola. ¿Has hecho uno? Súbelo con un formulario: un robot lo abre, lo juega diez segundos y, cuando lo revisamos, aparece aquí.</p>
 <div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="#hazlo">Cómo se hace un juego</a></div>
-<div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}">
+<div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="play/player.html">
 <p class="lib-state">La Biblioteca necesita JavaScript para cargarse. Sus juegos también están en <a href="{REPO}/tree/main/library">GitHub</a>.</p></div>
 </div></section>"""
 
@@ -183,15 +200,16 @@ def library() -> str:
 def codex() -> str:
     jobs = "".join(f"""<li class="cart job">
 <div class="shot"><img src="img/codex/{j['id']}.png" alt="{escape(j['alt'])}" width="480" height="320" loading="lazy" decoding="async"></div>
-<div class="label"><p class="era pixel">{escape(j['look'])}</p><h3>{escape(j['title'])}</h3>
+<div class="label"><p class="era pixel">Nivel {j['level']} · {escape(j['look'])}</p><h3>{escape(j['title'])}</h3>
 <blockquote><p>{escape(j['prompt'])}</p></blockquote>
-<ul class="chips"><li class="chip fps">{j['time']}</li><li class="chip">{j['commands']} comandos</li><li class="chip">{j['tokens']} tokens</li><li class="chip">su test: PASS</li></ul>
+<ul class="chips"><li class="chip fps">{j['time']}</li><li class="chip">{j['commands']} comandos</li><li class="chip">{j['tokens']} tokens</li><li class="chip fps{' low' if j['fps'] not in ('59', '60', '61') else ''}">{j['fps']} fps en la consola</li></ul>
 <p class="after">{escape(j['after'])}</p>
 <div class="row"><a class="play" href="{play_url(j['id'])}" aria-label="Jugar a {escape(j['title'])}">Jugar</a>
 <a class="zip" href="games/{j['id']}.zip" download aria-label="Descargar {escape(j['title'])} para la consola">Descargar .zip</a></div></div></li>""" for j in CODEX)
     return f"""<section id="codex" aria-labelledby="codex-t"><div class="wrap">
-<h2 id="codex-t">Tres encargos, tres juegos</h2>
-<p class="intro">Un clon limpio del repositorio, una frase cada uno y ninguna pregunta contestada. Codex leyó AGENTS.md, compiló el motor, siguió la receta del aspecto y escribió un guion que juega su juego hasta que pasó. Las tres sesiones a la vez, con {escape(CODEX_RUN)}.</p>
+<h2 id="codex-t">La escalera: cinco encargos</h2>
+<p class="intro">De lo más sencillo a lo más difícil. Un clon limpio del repositorio, una frase cada vez y ninguna pregunta contestada: Codex leyó AGENTS.md, compiló el motor, siguió la receta del aspecto y escribió un guion que juega su juego hasta que pasó. Luego cada juego se midió en la consola, jugando ese guion. Con {escape(CODEX_RUN)}.</p>
+{charts.bars([(f"{j['level']} · {j['title']}", j['minutes'], f"{j['time']} · {j['fps']} fps") for j in CODEX], 20, None, "")}
 <ul class="jobs">{jobs}</ul>
 </div></section>"""
 
@@ -287,6 +305,8 @@ def render(board: dict, stats: dict, fw: dict | None) -> str:
 <meta property="og:type" content="website">
 <meta property="og:image" content="{SITE}img/og.png">
 <meta name="theme-color" content="#0b0e1f">
+<link rel="canonical" href="{SITE}">
+{i18n.alternates(SITE)}
 <link rel="icon" href="img/icon.png">
 <link rel="preload" href="fonts/jersey15.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">

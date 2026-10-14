@@ -7,7 +7,7 @@
 <style>
   :root {
     /* pinyol's colours (its site and brand manual): ink, paper, cherry */
-    --bg: #0b0e1f; --panel: #131837; --ink: #eef0ff; --dim: #8f97cc; --accent: #c41d38; --accent-ink: #ffffff;
+    --bg: #0b0e1f; --panel: #131837; --ink: #eef0ff; --dim: #8f97cc; --ok:#6fd08c;--accent: #c41d38; --accent-ink: #ffffff;
     --line: #2b3368; --radius: 10px;
   }
   * { box-sizing: border-box; }
@@ -79,6 +79,36 @@
     .abc { grid-template-columns: repeat(2, 52px); grid-template-rows: repeat(2, 52px); }
     .mid { grid-column: 1 / -1; order: 3; }
   }
+/* Before playing: the gamepad step. It waits for one (rings going out), says so (green, a tick) and closes. */
+#pad-ask{border:0;border-radius:16px;background:var(--panel);color:var(--ink);padding:24px 24px 20px;width:min(92vw,360px);text-align:center;box-shadow:0 0 0 1px var(--line),0 30px 60px -20px #000}
+#pad-ask::backdrop{background:rgba(11,14,31,.72);backdrop-filter:blur(3px)}
+#pad-ask[open]{animation:pad-in .28s cubic-bezier(.16,1,.3,1)}
+#pad-ask h2{margin:0 0 6px;font-size:1.25rem}
+#pad-ask p{margin:0;color:var(--dim)}
+#pad-ask #pad-found{min-height:1.4em;margin-top:10px;font-weight:600;color:var(--ink)}
+#pad-ask.found #pad-found{color:var(--ok)}
+#pad-skip{margin-top:16px;background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+#pad-skip:hover{box-shadow:inset 0 0 0 1px var(--dim)}
+#pad-ask.found #pad-skip{visibility:hidden}
+.pad-art{position:relative;width:120px;height:80px;margin:8px auto 16px}
+.pad-art svg{position:relative;width:100%;height:100%;overflow:visible;animation:pad-bob 2.4s ease-in-out infinite}
+.pad-art .body{fill:#1c2350;stroke:var(--dim);stroke-width:2;transition:stroke .3s}
+.pad-art .dpad,.pad-art .btn{fill:var(--dim);transition:fill .3s}
+.pad-art .wave{position:absolute;left:50%;top:50%;width:110px;height:110px;margin:-55px;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:pad-wave 2s ease-out infinite}
+.pad-art .wave+.wave{animation-delay:1s}
+.pad-art .ok{opacity:0;transform:scale(.3);transform-box:fill-box;transform-origin:center;transition:opacity .2s,transform .4s cubic-bezier(.34,1.56,.64,1)}
+.pad-art .ok circle{fill:var(--ok)}
+.pad-art .ok path{fill:none;stroke:var(--bg);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+#pad-ask.found .wave{animation:none}
+#pad-ask.found svg{animation:pad-hop .5s cubic-bezier(.34,1.56,.64,1)}
+#pad-ask.found .body{stroke:var(--ok)}
+#pad-ask.found .dpad,#pad-ask.found .btn{fill:var(--ok)}
+#pad-ask.found .ok{opacity:1;transform:none}
+@keyframes pad-wave{from{transform:scale(.5);opacity:.8}to{transform:scale(1.45);opacity:0}}
+@keyframes pad-bob{50%{transform:translateY(-3px) rotate(-2deg)}}
+@keyframes pad-hop{40%{transform:translateY(-8px) scale(1.06)}}
+@keyframes pad-in{from{opacity:0;transform:translateY(8px) scale(.97)}}
+@media (prefers-reduced-motion:reduce){#pad-ask,#pad-ask *{animation:none!important;transition:none!important}.pad-art .wave{opacity:.3}}
 </style>
 </head>
 <body>
@@ -102,6 +132,21 @@
       <p class="hint" id="hint">o arrástralo aquí</p>
     </div>
   </div>
+  <dialog id="pad-ask" aria-labelledby="pad-title" aria-describedby="pad-text">
+    <div class="pad-art" aria-hidden="true">
+      <span class="wave"></span><span class="wave"></span>
+      <svg viewBox="0 0 120 80">
+        <path class="body" d="M30 18h60c14 0 22 10 25 26l3 14c2 10-4 16-11 16-6 0-9-4-13-10l-4-6H30l-4 6c-4 6-7 10-13 10-7 0-13-6-11-16l3-14C8 28 16 18 30 18z"/>
+        <path class="dpad" d="M30 34h6v-6h6v6h6v6h-6v6h-6v-6h-6z"/>
+        <circle class="btn" cx="84" cy="34" r="4.5"/><circle class="btn" cx="94" cy="44" r="4.5"/>
+        <g class="ok"><circle cx="104" cy="14" r="12"/><path d="M98 14l4 4 8-9"/></g>
+      </svg>
+    </div>
+    <h2 id="pad-title">¿Juegas con mando?</h2>
+    <p id="pad-text">Conéctalo por USB o Bluetooth y pulsa cualquier botón.</p>
+    <p id="pad-found" role="status">Esperando un mando…</p>
+    <button id="pad-skip">Jugar sin mando</button>
+  </dialog>
   <nav class="pad" aria-label="Botones de la consola">
     <div class="dpad">
       <button class="u" data-b="0" aria-label="Arriba">▲</button><button class="l" data-b="2" aria-label="Izquierda">◀</button>
@@ -114,12 +159,62 @@
   </nav>
   <p id="status" role="status"></p>
   <p class="keys"><kbd>Flechas</kbd>/<kbd>WASD</kbd> mover · <kbd>Z</kbd>/<kbd>Enter</kbd> A · <kbd>X</kbd>/<kbd>Esc</kbd> B ·
-    <kbd>C</kbd>/<kbd>Tab</kbd> C · <kbd>P</kbd> START · <kbd>I</kbd> MENU · ratón = pantalla táctil</p>
+    <kbd>C</kbd>/<kbd>Tab</kbd> C · <kbd>P</kbd> START · <kbd>I</kbd> MENU · <span>ratón = pantalla táctil</span> ·
+    <span>mando USB o Bluetooth</span></p>
   <p class="keys"><a id="download" hidden>Descargar este juego para la consola</a></p>
 </main>
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
+
+/* The player's words in Spanish, Catalan or English (?lang=ca|en, from the site's page in that language) */
+const LANG = new URLSearchParams(location.search).get('lang');
+const WORDS = {
+  ca: {
+    'Motor pinyol · consola Cirera': 'Motor pinyol · consola Cirera', 'Silenciar': 'Silencia', 'Pantalla completa': 'Pantalla completa',
+    'Pantalla del juego': 'Pantalla del joc', 'Elige un juego': 'Tria un joc', 'Jugar': 'Juga', 'Abrir un juego (.zip)': 'Obre un joc (.zip)',
+    'o arrástralo aquí': "o arrossega'l aquí", 'Botones de la consola': 'Botons de la consola', 'Arriba': 'Amunt', 'Izquierda': 'Esquerra',
+    'Derecha': 'Dreta', 'Abajo': 'Avall', 'Flechas': 'Fletxes', 'mover ·': 'moure ·', 'ratón = pantalla táctil': 'ratolí = pantalla tàctil',
+    'mando USB o Bluetooth': 'comandament USB o Bluetooth', 'Descargar este juego para la consola': 'Descarrega aquest joc per a la consola',
+    'El .zip está dañado': 'El .zip està malmès', 'No es un archivo .zip': 'No és un fitxer .zip',
+    'Demasiados archivos en el .zip': 'Massa fitxers al .zip', 'El juego es demasiado grande': 'El joc és massa gran',
+    'Compresión no soportada en': 'Compressió no admesa a', 'Ruta no válida en el .zip': 'Ruta no vàlida al .zip',
+    'No hay game.json en el .zip': 'No hi ha cap game.json al .zip', 'Abriendo el juego…': 'Obrint el joc…',
+    'El id del juego no es válido': "L'id del joc no és vàlid", 'Teclado, mando, ratón o botones en pantalla': 'Teclat, comandament, ratolí o botons a la pantalla',
+    'Cargando el motor…': 'Carregant el motor…', 'El juego no se puede abrir: sus archivos no encajan': 'El joc no es pot obrir: els fitxers no encaixen',
+    'El juego se ha parado': "El joc s'ha aturat", 'El juego no se ha podido abrir': "No s'ha pogut obrir el joc",
+    'Descargando el juego…': 'Descarregant el joc…', 'No se pudo descargar el juego': "No s'ha pogut descarregar el joc",
+    'Dirección de juego no válida': 'Adreça de joc no vàlida', 'Mando conectado': 'Comandament connectat',
+    '¿Juegas con mando?': 'Jugues amb comandament?', 'Conéctalo por USB o Bluetooth y pulsa cualquier botón.': "Connecta'l per USB o Bluetooth i prem qualsevol botó.",
+    'Esperando un mando…': 'Esperant un comandament…', 'Mando listo': 'Comandament a punt', '¡Listo para jugar!': 'A punt per jugar!', 'Jugar sin mando': 'Juga sense comandament',
+  },
+  en: {
+    'Motor pinyol · consola Cirera': 'pinyol engine · Cirera console', 'Silenciar': 'Mute', 'Pantalla completa': 'Full screen',
+    'Pantalla del juego': 'Game screen', 'Elige un juego': 'Choose a game', 'Jugar': 'Play', 'Abrir un juego (.zip)': 'Open a game (.zip)',
+    'o arrástralo aquí': 'or drag it here', 'Botones de la consola': 'Console buttons', 'Arriba': 'Up', 'Izquierda': 'Left',
+    'Derecha': 'Right', 'Abajo': 'Down', 'Flechas': 'Arrows', 'mover ·': 'move ·', 'ratón = pantalla táctil': 'mouse = touch screen',
+    'mando USB o Bluetooth': 'USB or Bluetooth gamepad', 'Descargar este juego para la consola': 'Download this game for the console',
+    'El .zip está dañado': 'The .zip is damaged', 'No es un archivo .zip': 'Not a .zip file',
+    'Demasiados archivos en el .zip': 'Too many files in the .zip', 'El juego es demasiado grande': 'The game is too big',
+    'Compresión no soportada en': 'Unsupported compression in', 'Ruta no válida en el .zip': 'Invalid path in the .zip',
+    'No hay game.json en el .zip': 'No game.json in the .zip', 'Abriendo el juego…': 'Opening the game…',
+    'El id del juego no es válido': "The game's id is not valid", 'Teclado, mando, ratón o botones en pantalla': 'Keyboard, gamepad, mouse or on-screen buttons',
+    'Cargando el motor…': 'Loading the engine…', 'El juego no se puede abrir: sus archivos no encajan': "The game can't open: its files don't fit together",
+    'El juego se ha parado': 'The game stopped', 'El juego no se ha podido abrir': "The game couldn't be opened",
+    'Descargando el juego…': 'Downloading the game…', 'No se pudo descargar el juego': "Couldn't download the game",
+    'Dirección de juego no válida': 'Invalid game address', 'Mando conectado': 'Gamepad connected',
+    '¿Juegas con mando?': 'Playing with a gamepad?', 'Conéctalo por USB o Bluetooth y pulsa cualquier botón.': 'Connect it by USB or Bluetooth and press any button.',
+    'Esperando un mando…': 'Waiting for a gamepad…', 'Mando listo': 'Gamepad ready', '¡Listo para jugar!': 'Ready to play!', 'Jugar sin mando': 'Play without a gamepad',
+  },
+}[LANG];
+const t = text => (WORDS && WORDS[text]) || text;
+if (WORDS) {
+  document.documentElement.lang = LANG;
+  const walk = document.createTreeWalker(document.querySelector('main'), NodeFilter.SHOW_TEXT);
+  for (let n; (n = walk.nextNode());) { const k = n.data.trim(); if (WORDS[k]) n.data = n.data.replace(k, WORDS[k]); }
+  for (const el of document.querySelectorAll('main [aria-label]')) el.setAttribute('aria-label', t(el.getAttribute('aria-label')));
+  document.querySelector('.brand').href += LANG + '/';
+}
 let pageMessage = false; /* the page's own message (an error, a step): the engine's loading notes must not erase it */
 const status = (text, error) => {
   pageMessage = !!text;
@@ -143,7 +238,7 @@ async function inflate(data, size, name) {
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
-    if (n + value.length > size) { reader.cancel(); throw new Error('El .zip está dañado (' + name + ')'); }
+    if (n + value.length > size) { reader.cancel(); throw new Error(t('El .zip está dañado') + ' (' + name + ')'); }
     out.set(value, n);
     n += value.length;
   }
@@ -157,28 +252,28 @@ async function unzip(buf) {
   let eocd = -1;
   for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--)
     if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
-  if (eocd < 0) throw new Error('No es un archivo .zip');
+  if (eocd < 0) throw new Error(t('No es un archivo .zip'));
   const count = dv.getUint16(eocd + 10, true);
-  if (count > LIMITS.files) throw new Error('Demasiados archivos en el .zip');
+  if (count > LIMITS.files) throw new Error(t('Demasiados archivos en el .zip'));
   let p = dv.getUint32(eocd + 16, true), total = 0;
   const out = new Map();
   for (let k = 0; k < count; k++) {
-    if (p + 46 > u8.length || dv.getUint32(p, true) !== 0x02014b50) throw new Error('El .zip está dañado');
+    if (p + 46 > u8.length || dv.getUint32(p, true) !== 0x02014b50) throw new Error(t('El .zip está dañado'));
     const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), size = dv.getUint32(p + 24, true);
     const nlen = dv.getUint16(p + 28, true), xlen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
     const off = dv.getUint32(p + 42, true), name = dec.decode(u8.subarray(p + 46, p + 46 + nlen));
     p += 46 + nlen + xlen + clen;
     if (name.endsWith('/')) continue;
     total += size;
-    if (total > LIMITS.bytes) throw new Error('El juego es demasiado grande');
-    if (off + 30 > u8.length || dv.getUint32(off, true) !== 0x04034b50) throw new Error('El .zip está dañado');
+    if (total > LIMITS.bytes) throw new Error(t('El juego es demasiado grande'));
+    if (off + 30 > u8.length || dv.getUint32(off, true) !== 0x04034b50) throw new Error(t('El .zip está dañado'));
     const start = off + 30 + dv.getUint16(off + 26, true) + dv.getUint16(off + 28, true);
     const data = u8.subarray(start, start + csize);
     let bytes;
     if (method === 0) bytes = data.slice();
     else if (method === 8) bytes = await inflate(data, size, name);
-    else throw new Error('Compresión no soportada en ' + name);
-    if (bytes.length !== size) throw new Error('El .zip está dañado (' + name + ')');
+    else throw new Error(t('Compresión no soportada en') + ' ' + name);
+    if (bytes.length !== size) throw new Error(t('El .zip está dañado') + ' (' + name + ')');
     out.set(name, bytes);
   }
   return out;
@@ -189,14 +284,14 @@ function gameFolder(entries) {
   const files = new Map();
   for (const [name, bytes] of entries) {
     const parts = name.replace(/\\/g, '/').split('/');
-    if (parts.some(s => s === '' || s === '.' || s === '..')) throw new Error('Ruta no válida en el .zip: ' + name);
+    if (parts.some(s => s === '' || s === '.' || s === '..')) throw new Error(t('Ruta no válida en el .zip') + ': ' + name);
     if (parts[0] === '__MACOSX' || parts[parts.length - 1] === '.DS_Store') continue;
     files.set(parts.join('/'), bytes);
   }
   if (!files.has('game.json')) {
     const tops = new Set([...files.keys()].map(n => n.split('/')[0]));
     const top = tops.size === 1 ? [...tops][0] : null;
-    if (!top || !files.has(top + '/game.json')) throw new Error('No hay game.json en el .zip');
+    if (!top || !files.has(top + '/game.json')) throw new Error(t('No hay game.json en el .zip'));
     return new Map([...files].map(([n, b]) => [n.slice(top.length + 1), b]));
   }
   return files;
@@ -204,18 +299,18 @@ function gameFolder(entries) {
 
 async function load(buf, url) {
   try {
-    status('Abriendo el juego…');
+    status(t('Abriendo el juego…'));
     const files = gameFolder(await unzip(buf));
     const meta = JSON.parse(new TextDecoder().decode(files.get('game.json')));
     const id = String(meta.id || 'game');
-    if (!/^[A-Za-z0-9_-]{1,40}$/.test(id)) throw new Error('El id del juego no es válido: ' + id);
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(id)) throw new Error(t('El id del juego no es válido') + ': ' + id);
     gameFiles = { files, id, title: String(meta.title || id) };
     $('title').textContent = gameFiles.title;
     document.title = gameFiles.title + ' · pinyol';
     $('gate-title').textContent = gameFiles.title;
     $('play').hidden = false;
     $('pick').hidden = true;
-    $('hint').textContent = 'Teclado, ratón o botones en pantalla';
+    $('hint').textContent = t('Teclado, mando, ratón o botones en pantalla');
     if (url) { $('download').href = url; $('download').hidden = false; }
     status('');
     $('play').focus();
@@ -230,7 +325,7 @@ async function start() {
   if (!gameFiles || started) return;
   started = true;
   $('play').disabled = true;
-  status('Cargando el motor…');
+  status(t('Cargando el motor…'));
   await ready;
   const FS = Module.FS;
   try {
@@ -240,7 +335,7 @@ async function start() {
       FS.writeFile(path, bytes);
     }
   } catch (e) { /* a file and a folder with the same name, say */
-    status('El juego no se puede abrir: sus archivos no encajan', true);
+    status(t('El juego no se puede abrir: sus archivos no encajan'), true);
     return;
   }
   FS.mkdirTree('/persist'); /* the game's saves (store, stored) live in the browser's IndexedDB */
@@ -256,10 +351,51 @@ async function start() {
   status('');
   $('canvas').focus();
   try { Module.callMain(['--game', '/game', '--saves', '/persist/' + gameFiles.id]); }
-  catch (e) { if (e !== 'unwind' && !(e && e.name === 'ExitStatus')) status('El juego se ha parado: ' + e, true); }
+  catch (e) { if (e !== 'unwind' && !(e && e.name === 'ExitStatus')) status(t('El juego se ha parado') + ': ' + e, true); }
 }
 
-$('play').addEventListener('click', start);
+/* The sound's AudioContext is made in the click on Jugar: Safari only lets one start inside a click, and the game
+   starts later, after the gamepad step. SDL makes a single context: it gets this one. */
+function unlockAudio() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  const ctx = new AC();
+  ctx.resume().catch(() => {});
+  window.AudioContext = window.webkitAudioContext = function () { return ctx; }; /* ponytail: `new` returns it */
+}
+
+/* A gamepad's name without what the browser adds: "Xbox Wireless Controller (STANDARD GAMEPAD Vendor…)", "45e-b13-…" */
+const padName = g => String(g.id).replace(/\s*\(.*$/, '').replace(/^[0-9a-f]{1,4}-[0-9a-f]{1,4}-/i, '').trim();
+
+/* Before playing: connect a gamepad (seen at its first button pressed, so it says when it is in) or play without */
+function askPad() {
+  const d = $('pad-ask');
+  if (started || !gameFiles) return;
+  unlockAudio();
+  if (!navigator.getGamepads || !d.showModal) return start();
+  let done = false;
+  const go = () => {
+    if (done) return;
+    done = true;
+    removeEventListener('gamepadconnected', found);
+    d.close();
+    start();
+  };
+  const found = e => {
+    if (d.classList.contains('found')) return;
+    d.classList.add('found');
+    $('pad-title').textContent = t('¡Listo para jugar!');
+    $('pad-found').textContent = t('Mando listo') + ': ' + padName(e.gamepad);
+    setTimeout(go, 1300);
+  };
+  addEventListener('gamepadconnected', found);
+  d.addEventListener('cancel', e => { e.preventDefault(); go(); }); /* Esc: play without */
+  $('pad-skip').addEventListener('click', go);
+  d.showModal();
+  const pad = [...navigator.getGamepads()].find(Boolean);
+  if (pad) found({ gamepad: pad });
+}
+$('play').addEventListener('click', askPad);
 $('mute').addEventListener('click', () => {
   const on = $('mute').getAttribute('aria-pressed') !== 'true';
   $('mute').setAttribute('aria-pressed', String(on));
@@ -290,6 +426,34 @@ for (const b of document.querySelectorAll('.pad button')) {
   for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => set(false));
 }
 
+/* A gamepad, by USB or Bluetooth: read every frame once the browser shows it (it does at the first button pressed).
+   Standard layout: d-pad or left stick, bottom face button A, right one B, left or top C, Start, Select = MENU. */
+const PAD = [[12, 0], [13, 1], [14, 2], [15, 3], [0, 4], [1, 5], [2, 6], [3, 6], [9, 7], [8, 8]]; /* [gamepad, pinyol] */
+let padHeld = 0, padPolling = false;
+function pollPads() {
+  let held = 0;
+  for (const g of navigator.getGamepads()) {
+    if (!g) continue;
+    for (const [from, to] of PAD) if (g.buttons[from] && g.buttons[from].pressed) held |= 1 << to;
+    const x = g.axes[0] || 0, y = g.axes[1] || 0;
+    if (y < -0.5) held |= 1 << 0;
+    if (y > 0.5) held |= 1 << 1;
+    if (x < -0.5) held |= 1 << 2;
+    if (x > 0.5) held |= 1 << 3;
+  }
+  if (started && Module._web_button)
+    for (let b = 0; b < 9; b++) if ((held ^ padHeld) >> b & 1) Module._web_button(b, held >> b & 1);
+  padHeld = held;
+  requestAnimationFrame(pollPads);
+}
+addEventListener('gamepadconnected', e => {
+  if (started) { /* before, the gamepad step says it */
+    status(t('Mando conectado') + ': ' + padName(e.gamepad));
+    setTimeout(() => { if ($('status').textContent.startsWith(t('Mando conectado'))) status(''); }, 3000);
+  }
+  if (!padPolling) { padPolling = true; requestAnimationFrame(pollPads); }
+});
+
 /* pinyol's editor, in the same site, hands its game over: played at once (?embed=1) */
 if (new URLSearchParams(location.search).get('embed') === '1') {
   document.body.classList.add('embed');
@@ -303,7 +467,7 @@ if (new URLSearchParams(location.search).get('embed') === '1') {
     if (e.origin !== location.origin || !e.data || e.data.pinyol !== 'play' || !(e.data.zip instanceof ArrayBuffer)) return;
     await load(e.data.zip);
     if (gameFiles) start();
-    else parent.postMessage({ pinyol: 'error', message: $('status') ? $('status').textContent : 'El juego no se ha podido abrir' }, location.origin);
+    else parent.postMessage({ pinyol: 'error', message: $('status') ? $('status').textContent : t('El juego no se ha podido abrir') }, location.origin);
   });
 }
 
@@ -311,10 +475,10 @@ const param = new URLSearchParams(location.search).get('game');
 if (param) {
   const url = new URL(param, location.href);
   if (url.protocol === 'http:' || url.protocol === 'https:') {
-    status('Descargando el juego…');
-    fetch(url).then(r => { if (!r.ok) throw new Error('No se pudo descargar el juego (' + r.status + ')'); return r.arrayBuffer(); })
+    status(t('Descargando el juego…'));
+    fetch(url).then(r => { if (!r.ok) throw new Error(t('No se pudo descargar el juego') + ' (' + r.status + ')'); return r.arrayBuffer(); })
       .then(buf => load(buf, url.href)).catch(e => status(e.message, true));
-  } else status('Dirección de juego no válida', true);
+  } else status(t('Dirección de juego no válida'), true);
 }
 </script>
 {{{ SCRIPT }}}

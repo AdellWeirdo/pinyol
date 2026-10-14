@@ -2,6 +2,8 @@
 
 [![tests](https://github.com/ipaud/pinyol/actions/workflows/ci.yml/badge.svg)](https://github.com/ipaud/pinyol/actions/workflows/ci.yml)
 
+English · [Español](README.es.md) · [Català](README.ca.md)
+
 **[Play every example in your browser](https://ipaud.github.io/pinyol/)**, with the engine's measures on the console.
 
 <p align="center"><img src="docs/logo.png" alt="pinyol" width="480"></p>
@@ -64,6 +66,8 @@ Codex: `brew install codex`, then `codex login` with a ChatGPT account. Clone th
 folder (`codex`) and ask for the game you want, in any language. It reads [AGENTS.md](AGENTS.md), installs what is
 missing (approve it when it asks: installing runs outside its sandbox), builds the engine, makes the game in
 `games/<id>/` and plays it with a test to check it. `./build/pinyol_sim --game games/<id>` plays it on your screen.
+The site's [ladder](https://ipaud.github.io/pinyol/#codex) shows five games Codex made this way, from a Pong to a
+Mega Drive speed platformer, each with its request, its time and tokens, and its frame rate on the console.
 
 ### Without code: the editor
 
@@ -89,7 +93,7 @@ python3 tools/make_editor.py dist/editor --player build-web
 python3 -m http.server -d dist/editor    # open http://localhost:8000
 ```
 
-The editor keeps the project in the browser (IndexedDB) as it changes; **Guardar** saves it to a file (`.pinyol.json`) and
+The editor keeps the project in the browser (IndexedDB) as it changes; **Guardar archivo** saves it to a file (`.pinyol.json`) and
 **Abrir** opens it again. The game it makes is ordinary Lua on the `kit` library ([lib/kit.lua](lib/kit.lua)), so it
 can be carried on by hand; it carries its own copy of kit, so it plays the same on a console with older firmware.
 
@@ -134,6 +138,8 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [raton_de_biblioteca](examples/raton_de_biblioteca) | made by Codex from one sentence on a fresh clone: a Game Boy-look mouse in a library, cheese and cats (then put on the whole screen by hand) |
 | [oxigeno](examples/oxigeno) | made by Codex from one sentence: a ZX Spectrum-look astronaut after oxygen bottles, with its tape loading screen |
 | [museo_nocturno](examples/museo_nocturno) | made by Codex from one sentence: a first-person museum at night, five stolen paintings and guards |
+| [pong](examples/pong) | made by Codex from one sentence: a vector Pong against the console, to 7 points |
+| [costa_relampago](examples/costa_relampago) | made by Codex in three requests (the game, its generated art, 60 fps on the console): a Mega Drive-look squirrel on a coast, layers at their own speeds and a sea moved line by line |
 
 ### As an adventure made of data
 
@@ -178,7 +184,7 @@ The data adventures pinyol started with are built this way.
 python3 tools/pack_game.py games/mygame -o dist/      # -> dist/mygame.zip, a folder mygame/ inside
 ```
 
-Unzipped into the card's `games/` folder, the game is installed. The same zip plays in a browser: the simulator builds with [Emscripten](https://emscripten.org) into `player.html`, which plays any game's zip, given as `player.html?game=URL` or dropped on the page, with on-screen buttons on phones and saves kept in the browser.
+Unzipped into the card's `games/` folder, the game is installed. The same zip plays in a browser: the simulator builds with [Emscripten](https://emscripten.org) into `player.html`, which plays any game's zip, given as `player.html?game=URL` or dropped on the page, with on-screen buttons on phones, a gamepad over USB or Bluetooth (standard layout: the bottom button is A), and saves kept in the browser. `?lang=ca` or `?lang=en` puts its words in Catalan or English.
 
 ```sh
 emcmake cmake -B build-web -DCMAKE_BUILD_TYPE=Release
@@ -198,7 +204,10 @@ python3 -m http.server -d gallery       # open http://localhost:8000
 
 ## Run it on the console
 
-The firmware in [firmware/](firmware/) is the console's platform: screen, touch, buttons, audio, microSD, a game list, battery and updates over the card. It needs [ESP-IDF 5.4](https://docs.espressif.com/projects/esp-idf/en/v5.4.2/esp32s3/get-started/).
+The quickest way: the site [installs the latest release](https://ipaud.github.io/pinyol/#consola) on a board over
+USB, from Chrome or Edge, with fifteen games in its flash.
+
+The firmware in [firmware/](firmware/) is the console's platform: screen, touch, buttons, audio, microSD, battery and updates over the card. It needs [ESP-IDF 5.4](https://docs.espressif.com/projects/esp-idf/en/v5.4.2/esp32s3/get-started/).
 
 ```sh
 . $IDF_PATH/export.sh
@@ -216,6 +225,11 @@ uv run --with pyserial tools/send_game.py games/mygame     # a game folder, or a
 
 The firmware also bakes games into the flash, so the console works without a card: `examples/hola` by default, or a list, `idf.py -DFLASH_GAME="/abs/a;/abs/b" build` (then flash `build/game.bin` too, at 0x420000). Every other game goes on the microSD (FAT32) as `games/<id>/`. Holding MENU for two seconds leaves a Lua game for the list. To update the firmware later, copy `build/pinyol_console.bin` to the card as `firmware.bin`.
 
+The console starts in **Cirera**'s menu, which is itself a pinyol game ([firmware/cirera](firmware/cirera)) baked
+into the flash with the firmware: an animated intro, then every game as a card with its cover, to pick with the
+d-pad and A (B asks before turning the console off). A game's cover is its `cover.rgb565`, a 240×160 picture that
+`tools/cover.py` takes from a moment of play; without one, its title screen (`assets/BG_TITLE`) or a card with its name.
+
 Pins and peripherals, each with its source: [docs/hardware.md](docs/hardware.md).
 
 ## How it is built
@@ -227,8 +241,9 @@ src/             the engine, portable C11: no SDL or ESP-IDF headers (hal.h is t
 platform/sdl/    desktop simulator, and the web players when built with Emscripten
 platform/null/   pinyol_headless: validator and test runner without a window
 platform/web/    the web pages around the players
-firmware/        the console: ESP-IDF project, builds src/ unchanged
-examples/        games as they go on the microSD: sixteen in Lua, hola as data
+site/            the site (https://ipaud.github.io/pinyol/), built by site/build.py in Spanish, Catalan and English
+firmware/        the console: ESP-IDF project, builds src/ unchanged; cirera/ is its menu, a pinyol game
+examples/        games as they go on the microSD: thirty-two in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
 tests/           test scripts for the examples, and the PPU's own tests
 tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, font2fnt.py, clip2npv.py, ...
