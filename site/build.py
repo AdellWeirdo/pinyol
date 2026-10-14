@@ -15,6 +15,7 @@ gh-pages branch: site/dist/ as it is.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -154,6 +155,8 @@ def main() -> None:
     editor(np2d, build_web)
     board = json.loads((HERE / "src/data/board.json").read_text(encoding="utf-8"))
     html = page.render(board, stats(np2d), fw)
+    for f in ("styles.css", "site.js"):  # a new version is fetched at once, not after the 10 minutes Pages caches a file
+        html = html.replace(f'"{f}"', f'"{f}?v={hashlib.sha256((DIST / f).read_bytes()).hexdigest()[:8]}"')
     (DIST / "index.html").write_text(html, encoding="utf-8")
     for lang in i18n.LANGS:
         if lang != "es":
