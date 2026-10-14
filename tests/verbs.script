@@ -120,6 +120,8 @@ tick 10
 expect_lua z == z0 and z0 > 0
 # text with marks: colours, waves, a pause and another speed while typing, a sound, [[ for a bracket
 expect_lua rich.plain("Hola [c=FF8040]fuego[/c] y [[x]") == "Hola fuego y [x]"
+lua two = rich.new("[c=FF0000]x[/c]x y\nzz", {})
+expect_lua two.total == 6 and two.runs[1].s == "x" and two.runs[2].s == "x y" and two.runs[3].s == "zz" and two.runs[3].y > 0
 lua sound("DING", "coin", 1) shown_text = rich.new("Uno[wait=10] dos [speed=0.5][sfx=DING][wave]tres[/wave] [c=#40FF80]cuatro[/c]", {width = 200})
 expect_lua shown_text.total == 19 or error(shown_text.total)
 tick 3

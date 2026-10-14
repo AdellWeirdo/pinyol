@@ -22,35 +22,34 @@ local function colour(v)
   return tonumber(v, 16)
 end
 
--- The text into pieces: {s = word or space, style}, {nl = true}, {wait = n}, {speed = n}, {sfx = id}, {img = id}
+-- The text into pieces: {text = what is between marks, style}, {wait = n}, {speed = n}, {sfx = id}, {img = id}.
+-- (Cut where the marks are, not letter by letter: a line of a story made a garbage collection on the console.)
 local function parse(str, base)
-  local out, style, i = {}, {color = base.color, wave = 0, shake = 0}, 1
-  local stack = {}
-  local function push_text(t)
-    for chunk, sp in t:gmatch("([^ \n]*)([ \n]?)") do
-      if chunk ~= "" then out[#out + 1] = {s = chunk, style = style} end
-      if sp == " " then out[#out + 1] = {s = " ", style = style, space = true}
-      elseif sp == "\n" then out[#out + 1] = {nl = true} end
-    end
+  local out, style, stack = {}, {color = base.color, wave = 0, shake = 0}, {}
+  local function emit(t)
+    if t == "" then return end
+    local last = out[#out]
+    if last and last.text and last.style == style then last.text = last.text .. t -- (around a [[)
+    else out[#out + 1] = {text = t, style = style} end
   end
-  local buf = {}
+  local function restyle(k, v)
+    stack[#stack + 1] = style
+    local s = {}
+    for kk, vv in pairs(style) do s[kk] = vv end
+    s[k] = v
+    style = s
+  end
+  local i = 1
   while i <= #str do
-    local c = str:sub(i, i)
-    if c == "[" and str:sub(i + 1, i + 1) == "[" then buf[#buf + 1] = "[" i = i + 2
-    elseif c == "[" then
-      local j = str:find("]", i, true)
-      local tag = j and str:sub(i + 1, j - 1)
-      local name, val = (tag or ""):match("^(/?%a+)=?(.*)$")
-      if not name then buf[#buf + 1] = c i = i + 1
+    local j = str:find("[", i, true)
+    if not j then emit(str:sub(i)) break end
+    emit(str:sub(i, j - 1))
+    if str:sub(j + 1, j + 1) == "[" then emit("[") i = j + 2
+    else
+      local k = str:find("]", j, true)
+      local name, val = (k and str:sub(j + 1, k - 1) or ""):match("^(/?%a+)=?(.*)$")
+      if not name then emit("[") i = j + 1
       else
-        push_text(table.concat(buf)) buf = {}
-        local function restyle(k, v)
-          stack[#stack + 1] = style
-          local s = {}
-          for kk, vv in pairs(style) do s[kk] = vv end
-          s[k] = v
-          style = s
-        end
         if name == "color" or name == "c" then restyle("color", colour(val) or base.color)
         elseif name == "wave" then restyle("wave", tonumber(val) or 2)
         elseif name == "shake" then restyle("shake", tonumber(val) or 1)
@@ -59,12 +58,11 @@ local function parse(str, base)
         elseif name == "speed" then out[#out + 1] = {speed = math.max(0.05, tonumber(val) or 1)}
         elseif name == "sfx" then out[#out + 1] = {sfx = val}
         elseif name == "img" then out[#out + 1] = {img = val, style = style}
-        else buf[#buf + 1] = str:sub(i, j) end -- not a mark: as it is
-        i = j + 1
+        else emit(str:sub(j, k)) end -- not a mark: as it is
+        i = k + 1
       end
-    else buf[#buf + 1] = c i = i + 1 end
+    end
   end
-  push_text(table.concat(buf))
   return out
 end
 
@@ -73,38 +71,52 @@ local function opts_of(o, style)
           shake = style.shake ~= 0 and style.shake or nil, outline = o.outline, shadow = o.shadow}
 end
 
--- Where each piece goes: runs of words in the same style on the same line become one text() each.
+-- Where each piece goes: the words of a piece on the same line become one run, one text() each; a run's text is
+-- cut from its piece once, at the end.
 local function layout(pieces, o)
   local width, lh = o.width or 10000, o.line or select(2, textw("Ag", o.font))
+  local space = textw(" ", o.font)
+  local looks = {} -- style -> its text() options, shared by its runs (draw sets chars just before each text())
   local runs, x, y, n = {}, 0, 0, 0 -- n: letters so far (for typing)
   local cur
+  local function close()
+    if cur then cur.s, cur.seg, cur.p = cur.seg:sub(cur.a, cur.b), nil, nil end
+    cur = nil
+  end
   for _, p in ipairs(pieces) do
-    if p.nl then x, y, cur = 0, y + lh, nil
-    elseif p.s then
-      local w = textw(p.s, o.font)
-      if not p.space and x > 0 and x + w > width then x, y, cur = 0, y + lh, nil end -- wrap before the word
-      if p.space and x == 0 then -- (no space at the start of a line)
-      else
-        local len = utf8.len(p.s) or #p.s
-        if cur and cur.style == p.style and cur.y == y then
-          cur.s, cur.n1 = cur.s .. p.s, cur.n1 + len
-        else
-          cur = {s = p.s, x = x, y = y, style = p.style, n0 = n, n1 = n + len, t = opts_of(o, p.style)}
-          runs[#runs + 1] = cur
+    if p.text then
+      local seg = p.text
+      for a, word, b, sep in seg:gmatch("()([^ \n]*)()([ \n]?)") do
+        if word ~= "" then
+          local w = textw(word, o.font)
+          if x > 0 and x + w > width then close() x, y = 0, y + lh end -- wrap before the word
+          local len = utf8.len(word) or #word
+          if cur and cur.p == p then cur.b, cur.n1 = b - 1, n + len
+          else
+            close()
+            cur = {p = p, seg = seg, a = a, b = b - 1, x = x, y = y, style = p.style, n0 = n, n1 = n + len,
+                   t = looks[p.style] or opts_of(o, p.style)}
+            looks[p.style] = cur.t
+            runs[#runs + 1] = cur
+          end
+          n, x = n + len, x + w
         end
-        n, x = n + len, x + w
+        if sep == "\n" then close() x, y = 0, y + lh
+        elseif sep == " " and x > 0 then n, x = n + 1, x + space end -- (no space at the start of a line)
       end
     elseif p.img then
+      close()
       local w, h = imgsize(p.img)
       w, h = w or 0, h or 0
       if x > 0 and x + w > width then x, y = 0, y + lh end
       runs[#runs + 1] = {img = p.img, x = x, y = y + math.max(0, lh - h) // 2, n0 = n, n1 = n + 1}
-      n, x, cur = n + 1, x + w + 2, nil
+      n, x = n + 1, x + w + 2
     else
       p.at = n -- wait, speed and sfx happen when typing reaches this letter
       runs[#runs + 1] = p
     end
   end
+  close()
   return runs, n
 end
 
@@ -132,10 +144,17 @@ function M.draw(str, x, y, o) -- (the same str with the same options table each 
   draw_runs(c.runs, x, y, o, c.n)
 end
 
+local function plain_runs(str, o) -- no marks: the engine wraps and types it, and nothing is made but this
+  local n = utf8.len(str) or #str
+  return {{s = str, x = 0, y = 0, n0 = 0, n1 = n, t = {font = o.font, color = o.color, width = o.width or 2 * SCREEN_W,
+                                                          outline = o.outline, shadow = o.shadow}}}, n
+end
+
 function M.new(str, o)
   o = o or {}
   o.color = o.color or 0xFFFFFF
-  local runs, n = layout(parse(str, o), o)
+  local runs, n
+  if str:find("[", 1, true) then runs, n = layout(parse(str, o), o) else runs, n = plain_runs(str, o) end
   local marks = {}
   for _, r in ipairs(runs) do if r.at then marks[#marks + 1] = r end end
   return setmetatable({runs = runs, marks = marks, o = o, total = n, shown = 0, speed = o.speed or 1, hold = 0, k = 1,
@@ -172,7 +191,7 @@ function R:draw(x, y) draw_runs(self.runs, x, y, self.o, self.shown) end
 function M.plain(str) -- the text without its marks (to measure or to log it)
   local t = {}
   for _, p in ipairs(parse(str, {color = 0})) do
-    if p.s then t[#t + 1] = p.s elseif p.nl then t[#t + 1] = "\n" end
+    if p.text then t[#t + 1] = p.text end
   end
   return table.concat(t)
 end
