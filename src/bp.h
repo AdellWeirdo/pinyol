@@ -84,6 +84,7 @@ bool link_sent_lately(const char *text);           /* tests: one of the last 8 s
 bool v2_load(void);                   /* a fresh Lua state running main.lua and _init(); false on an error */
 void v2_free(void);
 void v2_tick(void);                   /* _update() */
+void v2_meter_toggle(void);           /* the frame meter on the screen, or off (F3 on a desktop) */
 void v2_draw_world(void);             /* _draw(), then the PPU into G.world */
 const char *v2_error(void);           /* the script's error, or NULL */
 bool v2_run(const char *code, bool expr, char *msg, int n); /* test scripts: run code or check an expression */

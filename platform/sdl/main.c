@@ -281,6 +281,7 @@ static hal_input poll_input(void) {
 #ifndef __EMSCRIPTEN__
         if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F5) reload_req = true;
 #endif
+        if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F3) v2_meter_toggle();
     }
     const Uint8 *k = SDL_GetKeyboardState(NULL);
     hal_input in = {0};

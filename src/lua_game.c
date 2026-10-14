@@ -757,7 +757,55 @@ static int l_noise(lua_State *L) {
     return 1;
 }
 
-static int l_perf(lua_State *L) { /* perf() -> ms of the last _update, _draw, picture, and KB of script memory */
+/* The meter (perf(true); MENU and C together on the console, F3 on a desktop): the frames a second, the last 60
+ * frames' times as bars, where a frame goes and what the game holds, drawn over everything. */
+static struct {
+    bool on;
+    uint32_t last_us;
+    uint16_t ms10[60]; /* each frame's time, in tenths of a millisecond */
+    int k;
+} meter;
+
+void v2_meter_toggle(void) { meter.on = !meter.on; }
+
+static void meter_frame(void) { /* once a frame */
+    uint32_t now = hal_micros(), d = now - meter.last_us;
+    meter.last_us = now;
+    meter.ms10[meter.k] = (uint16_t)(d / 100 > 9999 ? 9999 : d / 100);
+    meter.k = (meter.k + 1) % 60;
+}
+
+static void meter_draw(surface *s) {
+    uint32_t sum = 0;
+    for (int i = 0; i < 60; i++) sum += meter.ms10[i];
+    float ms = sum / 600.0f;
+    char line[3][64];
+    snprintf(line[0], sizeof line[0], "%.0f fps   %.1f ms a frame", ms > 0 ? 1000 / ms : 0, ms);
+    snprintf(line[1], sizeof line[1], "update %.1f  draw %.1f  layers %.1f", us_update / 1000.0f, us_draw / 1000.0f,
+             us_ppu / 1000.0f);
+    snprintf(line[2], sizeof line[2], "Lua %u KB   pictures %u KB", (unsigned)(mem_used / 1024),
+             (unsigned)(gfx_picture_bytes() / 1024));
+    int lh = G.font.h - 6, h = 3 * lh + 8, tw = 0;
+    for (int i = 0; i < 3; i++) {
+        int w = font_width(&G.font, line[i], (int)strlen(line[i]));
+        tw = w > tw ? w : tw;
+    }
+    int bx = 10 + tw + 10, by = 4 + h - 5; /* the bars, right of the words: up to 33 ms, the 16.7 ms of 60 fps marked */
+    gfx_shade(s, 4, 4, bx + 66, h), gfx_shade(s, 4, 4, bx + 66, h);
+    for (int i = 0; i < 3; i++) font_draw(s, &G.font, 10, 6 + i * lh, line[i], (int)strlen(line[i]), -1, C_PAPER);
+    for (int i = 0; i < 60; i++) {
+        int v = meter.ms10[(meter.k + i) % 60], bh = v / 10 > 33 ? 33 : v / 10;
+        gfx_fill(s, bx + i, by - bh, 1, bh, v <= 175 ? RGB(96, 224, 128) : RGB(255, 96, 80));
+    }
+    gfx_fill(s, bx, by - 17, 60, 1, RGB(255, 224, 112));
+}
+
+static int l_perf(lua_State *L) { /* perf() -> ms of the last _update, _draw, picture, and KB of script memory;
+                                   * perf(true) / perf(false): the meter on the screen */
+    if (lua_isboolean(L, 1)) {
+        meter.on = lua_toboolean(L, 1);
+        return 0;
+    }
     lua_pushnumber(L, us_update / 1000.0f), lua_pushnumber(L, us_draw / 1000.0f), lua_pushnumber(L, us_ppu / 1000.0f);
     lua_pushnumber(L, mem_used / 1024.0f);
     return 4;
@@ -1038,6 +1086,7 @@ void v2_tick(void) {
     static int menu_held;
     if (G.in.held & ACT_QUIT) G.quit = true;
     menu_held = (G.in.held & ACT_INV) ? menu_held + 1 : 0;
+    if ((G.in.held & ACT_INV) && (G.in.pressed & ACT_NEXT)) meter.on = !meter.on; /* MENU and C: the meter */
     if (menu_held == 2 * TICK_HZ && hal_can_switch_game()) hal_switch_game(); /* MENU held 2 s: back to the list */
     link_tick((uint32_t)G.ticks); /* what other consoles sent, before the game looks */
     mic_tick();                   /* and what the microphone heard */
@@ -1049,6 +1098,7 @@ void v2_tick(void) {
 }
 
 void v2_draw_world(void) {
+    meter_frame();
     draw_frame_begin();
     uint32_t t = hal_micros();
     call("_draw", 0);
@@ -1072,6 +1122,7 @@ void v2_draw(surface *s) {
     else if (blank) gfx_fill(s, 0, 0, SCREEN_W, SCREEN_H, backdrop); /* (the same pixels as the world doubled) */
     else gfx_upscale2x(&world, s);
     draw_overlay(s);
+    if (meter.on) meter_draw(s);
     if (failed) { /* the error, readable, over whatever was drawn */
         gfx_fill(s, 0, 0, SCREEN_W, 64, C_INK);
         uint16_t ls[4], ll[4];

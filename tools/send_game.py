@@ -100,17 +100,23 @@ def main() -> None:
     c = Cable(port)
     print(f"{port}: {c.ask('hello')}")
     t0 = time.time()
-    c.ask(f"{'patch' if a.only else 'begin'} {gid} {total}", timeout=15)  # the game playing stops first
+    send(c, gid, files, patch=bool(a.only))
+    print(f"\r{gid}: {len(files)} files, {total // 1024} KB in {time.time() - t0:.1f} s; it is starting on the console")
+
+
+def send(c: Cable, gid: str, files: dict[str, bytes], patch: bool, quiet: bool = False) -> None:
+    """The files over the cable: all of the game (begin), or some into the game already there (patch)."""
+    total = sum(len(b) for b in files.values())
+    c.ask(f"{'patch' if patch else 'begin'} {gid} {total}", timeout=15)  # the game playing stops first
     sent = 0
     for rel, data in files.items():
         c.ask(f"file {rel} {len(data)}")
         for i in range(0, len(data), CHUNK):
             c.ask("data " + base64.b64encode(data[i:i + CHUNK]).decode())
             sent += len(data[i:i + CHUNK])
-            if i % (CHUNK * 32) == 0:
+            if i % (CHUNK * 32) == 0 and not quiet:
                 print(f"\r{gid}: {sent * 100 // total} %", end="", file=sys.stderr)
     c.ask("end", timeout=30)
-    print(f"\r{gid}: {len(files)} files, {total // 1024} KB in {time.time() - t0:.1f} s; it is starting on the console")
 
 
 if __name__ == "__main__":

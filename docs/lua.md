@@ -600,7 +600,9 @@ writes the file at once: call it at moments like a level's end, not every frame.
 
 `log(...)` (and `print`) writes to the log. `quit()` goes back to the console's game list (holding MENU for two
 seconds does too). `perf()` returns the milliseconds the last `_update`, `_draw` and picture took, and the script's
-memory in KB, to see where a frame goes. `require("name")`
+memory in KB, to see where a frame goes. `perf(true)` shows a meter over the game: the frames a second, the last 60
+frames as bars (red past the 16.7 ms of 60 fps), those times and the memory of the script and the pictures;
+`perf(false)` hides it. MENU and C together show or hide it on the console, F3 in the simulator. `require("name")`
 loads `name.lua` from the game folder (`"ui.menu"` is `ui/menu.lua`). `file("story/es.txt")` returns the text of any
 file of the game (1 MB at most), or nil: stories, levels written by hand, a metro's stations as CSV.
 
@@ -639,6 +641,18 @@ expect_led ff0000                # the LED is that colour (expect_led off: the c
 
 Run it with `bp_headless --game DIR --fresh --script FILE --check-strips`, or name it `tests/<game>.script` next
 to `examples/<game>` and `ctest` runs it.
+
+## Making it on the console
+
+`bp_sim` restarts a game each time one of its files is saved. To see it on the console the same way, keep it on the
+cable while you work:
+
+```
+uv run --with pyserial tools/watch_game.py games/mygame
+```
+
+It sends the game whole once; then each file you save goes into the game on the console, which starts again with it
+a moment later, and what the game logs (`log`, `print`) and its errors show in the terminal.
 
 ## Sharing a game
 
