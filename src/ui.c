@@ -235,17 +235,20 @@ void pause_render(surface *s) {
 }
 
 /* ------------------------------------------------------------------ inventory */
+/* The bag shows PAGE items at a time (3 x 2); more than that and LEFT / RIGHT past an edge turn the page. */
+#define BAG_MAX 24
+#define PAGE 6
 static int inv_items(const char **out) {
     int n = 0;
     const cJSON *it;
-    cJSON_ArrayForEach(it, G.items) if (n < 6 && flagf_get("item:%s%s", it->string, "")) out[n++] = it->string;
+    cJSON_ArrayForEach(it, G.items) if (n < BAG_MAX && flagf_get("item:%s%s", it->string, "")) out[n++] = it->string;
     return n;
 }
 
 static const char *inv_sub_labels[4] = {"Inspeccionar", "Usar", "Mostrar", "Volver"};
 
 void inv_tick(void) {
-    const char *items[6];
+    const char *items[BAG_MAX];
     int n = inv_items(items);
     uint16_t p = G.in.pressed;
     if (G.inv_sel >= n) G.inv_sel = n ? n - 1 : 0;
@@ -275,10 +278,10 @@ void inv_tick(void) {
         layer_remove(L_INV);
         return;
     }
-    if (G.in.tap) {
-        int col = (G.in.px - 24) / 88, row = (G.in.py - 52) / 88;
-        if (G.in.px >= 24 && col < 3 && G.in.py >= 52 && row < 2 && row * 3 + col < n) {
-            G.inv_sel = row * 3 + col;
+    if (G.in.tap) { /* the icons are 66 px plates every 72 px (inv_render) */
+        int col = (G.in.px - 24) / 72, row = (G.in.py - 50) / 72, i = G.inv_sel / PAGE * PAGE + row * 3 + col;
+        if (G.in.px >= 24 && col < 3 && G.in.py >= 50 && row < 2 && i < n) {
+            G.inv_sel = i;
             G.inv_menu = true;
             G.inv_sub = 0;
         }
@@ -287,8 +290,8 @@ void inv_tick(void) {
     if (!n) return;
     if (p & ACT_RIGHT) G.inv_sel = (G.inv_sel + 1) % n;
     if (p & ACT_LEFT) G.inv_sel = (G.inv_sel + n - 1) % n;
-    if ((p & ACT_DOWN) && G.inv_sel + 3 < n) G.inv_sel += 3;
-    if ((p & ACT_UP) && G.inv_sel >= 3) G.inv_sel -= 3;
+    if ((p & ACT_DOWN) && G.inv_sel % PAGE < 3 && G.inv_sel + 3 < n) G.inv_sel += 3;
+    if ((p & ACT_UP) && G.inv_sel % PAGE >= 3) G.inv_sel -= 3;
     if (p & ACT_OK) { G.inv_menu = true; G.inv_sub = 0; }
 }
 
@@ -296,18 +299,23 @@ void inv_tick(void) {
 
 void inv_render(surface *s, bool shade) { /* shade: darken what is under it (game_draw may have done it) */
     const font *f = ui_font(), *b = ui_bold();
-    const char *items[6];
-    int n = inv_items(items);
+    const char *items[BAG_MAX];
+    int n = inv_items(items), page = G.inv_sel / PAGE;
     if (shade) gfx_shade(s, 0, 0, SCREEN_W, SCREEN_H);
     gfx_panel(s, 8, 24, SCREEN_W - 16, SCREEN_H - 32);
     title_plate(s, 20, 10, content_bag_label(), C_TERRA);
     if (!n) font_draw(s, f, 28, 80, "Todavía no llevo nada.", -1, -1, C_DIM);
-    for (int i = 0; i < n; i++) { /* icons only: the selected one's name heads its description below */
-        int x = 24 + (i % 3) * 72, y = 50 + (i / 3) * 72;
+    for (int i = page * PAGE; i < n && i < (page + 1) * PAGE; i++) { /* icons only: the selected one's name heads its description below */
+        int x = 24 + (i % 3) * 72, y = 50 + (i % PAGE / 3) * 72;
         bool sel = i == G.inv_sel;
         gfx_plate(s, x, y, 66, 66, sel ? C_PAPER_SEL : C_PAPER);
         asset *ic = gfx_asset(jstr(jget(G.items, items[i]), "icon"));
         gfx_blit2x(s, ic, 0, x + 33 - ic->w, y + 33 - ic->h);
+    }
+    if (n > PAGE) { /* which page, and that there are others */
+        char pg[16];
+        snprintf(pg, sizeof pg, "%d / %d", page + 1, (n + PAGE - 1) / PAGE);
+        font_draw(s, b, 240, 110, pg, -1, -1, C_DIM);
     }
     if (n) {
         const cJSON *def = jget(G.items, items[G.inv_sel]);
@@ -334,6 +342,7 @@ static int note_actions(const cJSON **out, int max) {
     return n;
 }
 
+#define NOTES_MAX 64 /* the list scrolls with the selection (notes_render) */
 static int note_entries(const cJSON **out, int max) {
     int n = 0;
     const cJSON *e;
@@ -346,8 +355,8 @@ static int action_y = 92; /* where the first action button was drawn, for touch 
 
 void notes_tick(void) {
     uint16_t p = G.in.pressed;
-    const cJSON *e[16], *act[4];
-    int na = note_actions(act, 4), n = note_entries(e, 16), rows = n + na;
+    const cJSON *e[NOTES_MAX], *act[4];
+    int na = note_actions(act, 4), n = note_entries(e, NOTES_MAX), rows = n + na;
     if (p & (ACT_BACK | ACT_NOTES) || (G.in.tap && G.in.py >= 262 && G.in.px >= 340)) { layer_remove(L_NOTES); return; }
     if (p & (ACT_NEXT | ACT_INV)) { layer_remove(L_NOTES); G.inv_menu = false; layer_push(L_INV); return; }
     if (rows == 0) return;
@@ -391,8 +400,8 @@ void notes_render(surface *s, bool shade) {
         if (G.notes_sel == i) gfx_tri(s, 30, y + 12, 6, true, C_TERRA);
         font_draw(s, b, 44, y + (36 - b->h) / 2, jstr(act[i], "label"), -1, -1, C_INK);
     }
-    const cJSON *e[16];
-    int n = note_entries(e, 16), first = G.notes_sel - row - 1;
+    const cJSON *e[NOTES_MAX];
+    int n = note_entries(e, NOTES_MAX), first = G.notes_sel - row - 1;
     if (first < 0) first = 0;
     if (!n) font_draw(s, f, 24, y, "Sin anotaciones todavía.", -1, -1, C_DIM);
     for (int i = first; i < n; i++) {
