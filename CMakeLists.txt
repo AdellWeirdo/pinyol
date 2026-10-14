@@ -11,6 +11,9 @@ if(EMSCRIPTEN)
 else()
   set(SAN $<$<CONFIG:Debug>:-fsanitize=address,undefined;-fno-omit-frame-pointer>)
 endif()
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU") # GCC warns at every snprintf that may cut; the engine's cut on purpose
+  add_compile_options(-Wno-format-truncation)
+endif()
 # A game's repo can build the engine as a subproject: set GAME_DIR, then add_subdirectory(<pinyol> pinyol).
 set(GAME_DIR ${CMAKE_CURRENT_SOURCE_DIR}/examples/hola CACHE PATH "Game folder the simulator opens and the web player packs")
 

@@ -139,8 +139,9 @@ static void content_theme(void) {
     const cJSON *pl = jget(G.game, "player");
     p->bag_option = !pl || cJSON_IsTrue(jget(pl, "bag_option"));
     char tag[8];
-    snprintf(tag, sizeof tag, "%s", jstr(pl, "sprite") ? jstr(pl, "sprite") : "KL");
-    snprintf(p->speaker, sizeof p->speaker, "%s", jstr(pl, "speaker") ? jstr(pl, "speaker") : "KLAUS");
+    const char *sprite = jstr(pl, "sprite"), *speaker = jstr(pl, "speaker");
+    snprintf(tag, sizeof tag, "%s", sprite ? sprite : "KL");
+    snprintf(p->speaker, sizeof p->speaker, "%s", speaker ? speaker : "KLAUS");
     const char *pt = jstr(jget(jget(G.game, "speakers"), p->speaker), "portrait");
     snprintf(p->portrait, sizeof p->portrait, "%s", pt ? pt : "PT_KLAUS");
     snprintf(p->prefix, sizeof p->prefix, "%s_", tag);

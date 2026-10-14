@@ -362,7 +362,8 @@ static void obj_window_line(lines *L, const ppu_obj *o, int y) { /* an OBJ_WINDO
     for (int x = xa; x < xb;) {
         int x0 = x - x % mw, x1 = x0 + mw < xb ? x0 + mw : xb;
         uint16_t c;
-        if (obj_pixel(o, x0, sy, &c)) memset(L->objwin + x, 1, (size_t)(x1 - x));
+        if (obj_pixel(o, x0, sy, &c))
+            for (; x < x1; x++) L->objwin[x] = 1;
         x = x1;
     }
 }
