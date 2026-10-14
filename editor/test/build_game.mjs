@@ -64,4 +64,44 @@ for (const t of TEMPLATES) {
   }
   ws.dispose();
 }
-console.log('built', TEMPLATES.map(t => t.key).join(', '), 'and sonido in', out);
+// and the platformer with a conversation, the microphone and a video (tests/editor_conversa.script): the blocks of
+// Diálogos, Micrófono and Vídeo, and a clip made by npv.js from frames drawn here (as the browser makes one from a file)
+{
+  const { encode } = await import('../js/npv.js');
+  const project = TEMPLATES[0].make(), w = 64, h = 48, frames = [];
+  for (let k = 0; k < 20; k++) { // a red square crossing a blue field, a frame number in the top left corner's green
+    const f = new Uint8ClampedArray(w * h * 4);
+    for (let i = 0; i < w * h; i++) {
+      const x = i % w, y = Math.floor(i / w), sq = x >= k * 2 && x < k * 2 + 10 && y >= 18 && y < 28;
+      f.set(sq ? [255, 0, 0, 255] : x < 4 && y < 4 ? [0, k * 12, 0, 255] : [0, 0, 128, 255], 4 * i);
+    }
+    frames.push(f);
+  }
+  project.videos = [{ name: 'intro', npv: Buffer.from(encode(frames, w, h, 10)).toString('base64'), w, h, frames: 20, fps: 10 }];
+  setProject(project);
+  const V = (name, id) => ({ name, id }), vars = [V('respuesta', 'v1'), V('palmadas', 'v2'), V('soplidos', 'v3'), V('visto', 'v4')];
+  const set = (id, n, next) => ({ type: 'variables_set', fields: { VAR: { id } },
+    inputs: { VALUE: { block: { type: 'math_number', fields: { NUM: n } } } }, ...(next ? { next: { block: next } } : {}) });
+  const add1 = id => ({ type: 'math_change', fields: { VAR: { id } }, inputs: { DELTA: { block: { type: 'math_number', fields: { NUM: 1 } } } } });
+  const txt = t => ({ block: { type: 'text', fields: { TEXT: t } } });
+  const ev = (type, fields, body, x) => ({ type, fields, x, y: 0, inputs: { DO: { block: body } } });
+  const blocks = { variables: vars, blocks: { languageVersion: 0, blocks: [
+    ev('kit_start', {}, { type: 'kit_say', inputs: { WHO: txt('Ana'), TEXT: txt('¡Hola! ¿Me ayudas?') },
+      next: { block: { type: 'kit_ask', inputs: { TEXT: txt('¿Vienes?'), A: txt('Sí'), B: txt('No'), C: txt('') } } } }, 0),
+    ev('kit_answer', { N: '1' }, set('v1', 1), 300),
+    ev('kit_answer', { N: '2' }, set('v1', 2, { type: 'kit_video_full', fields: { VIDEO: 'intro' } }), 600),
+    ev('kit_video_end', {}, set('v4', 1, { type: 'kit_video_window', fields: { VIDEO: 'intro', WHERE: 'top_right' } }), 900),
+    ev('kit_clap', {}, add1('v2'), 1200),
+    ev('kit_blow', {}, add1('v3'), 1500),
+  ] } };
+  const ws = new Blockly.Workspace();
+  Blockly.serialization.workspaces.load(blocks, ws);
+  const code = workspaceLua(ws);
+  if (!code.includes('kit.ask(') || !code.includes('kit.video("intro", "full")')) throw new Error('conversa: the blocks did not become their Lua');
+  for (const [path, bytes] of buildFiles(project, code, carried)) {
+    mkdirSync(dirname(join(out, 'conversa', path)), { recursive: true });
+    writeFileSync(join(out, 'conversa', path), bytes);
+  }
+  ws.dispose();
+}
+console.log('built', TEMPLATES.map(t => t.key).join(', '), ', sonido and conversa in', out);

@@ -3,6 +3,7 @@
 // the four fonts. The same files go in the browser's player and in the .zip for the console's card.
 import { TILE, MAX_BYTES } from './project.js';
 import { fileOf } from './audio.js';
+import { bytesOf as videoBytes } from './videos.js';
 
 // ------------------------------------------------------------------ pictures in the engine's format
 
@@ -190,5 +191,6 @@ export function buildFiles(p, blocksCode, carried, { start, audio = [] } = {}) {
   files.set('data.lua', enc.encode(dataLua(p, crops, start)));
   files.set('main.lua', enc.encode(mainLua(p, blocksCode)));
   for (const [path, bytes] of [...carried, ...audio]) files.set(path, bytes); // audio: audio.js's WAVs
+  for (const v of p.videos || []) files.set(`video/${v.name}.npv`, videoBytes(v)); // made by videos.js
   return files;
 }

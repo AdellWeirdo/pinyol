@@ -38,7 +38,7 @@ export function thumbnail(d, size = 32) {
   return c;
 }
 
-const drawing = () => app.project.drawings[cur];
+const drawing = () => app.project && app.project.drawings[cur]; // (the preview's animation starts before a project)
 const fits = (next, prev) => bytesOf(app.project.drawings) - (prev ? sizeOf(prev) : 0) + sizeOf(next) <= MAX_BYTES; // with next in prev's place
 const TOO_BIG = 'No cabe: la memoria de la consola está casi llena. Quita fotogramas o dibujos que no uses, o hazlos más pequeños.';
 let kb = { x: 0, y: 0 }; // the keyboard's cursor on the canvas

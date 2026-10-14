@@ -26,7 +26,14 @@
 --
 -- Events: "start" (a game begins), "level" (a level begins: any, or the one named), "tick", "press" and "hold" (a
 -- button), "touch" (two kinds meet), "tile" (a kind on a tile, or against a solid one), "out" (a kind leaves the
--- world), "every" (seconds), "tap" (a finger, where in the world).
+-- world), "every" (seconds), "tap" (a finger, where in the world), "clap" and "blow" (the microphone hears a sudden
+-- sound, or a breath), "answer" (a question answered: which), "video_end" (a video on the whole screen is over).
+--
+-- Conversations: kit.say(who, text) and kit.ask(question, option, option, option) show a box at the foot of the
+-- screen, a line after another, letters typed out; the game waits meanwhile; A (or a tap) goes on, up and down pick
+-- an answer. Videos (video/<id>.npv): kit.video(id, "full") over the game, which waits until it ends (A skips it);
+-- kit.video(id, corner) in a window, looping, while the game goes on; kit.video() takes it away. The microphone:
+-- kit.mic_level() 0..100, kit.mic_note() Hz. On firmware without a microphone or video these do nothing.
 local juice = require("juice")
 local particles = require("particles")
 
@@ -52,9 +59,13 @@ local clock = 0
 
 local BUTTONS = {a = true, b = true, c = true, up = true, down = true, left = true, right = true, start = true}
 
+local talk                            -- what is being said: {lines = {{who, text}...}, i, shown, ask, sel}
+local vid                             -- the video showing: {clip, canvas, where}
+local listening, blow_t, blowing = false, 0, false -- the microphone, once a block uses it
+
 local function reset_handlers()
   handlers = {start = {}, level = {}, tick = {}, press = {}, hold = {}, touch = {}, tile = {}, out = {}, every = {},
-              tap = {}}
+              tap = {}, clap = {}, blow = {}, answer = {}, video_end = {}}
 end
 reset_handlers()
 
@@ -85,7 +96,139 @@ function M.on(what, a, b, c)
   elseif what == "touch" or what == "tile" then list[#list + 1] = {a = a, b = b, fn = c}
   elseif what == "out" then list[#list + 1] = {a = a, fn = b}
   elseif what == "every" then list[#list + 1] = {ticks = math.max(1, math.floor((tonumber(a) or 1) * 60 + 0.5)), fn = b}
-  elseif what == "tap" then list[#list + 1] = a end
+  elseif what == "tap" or what == "clap" or what == "blow" or what == "video_end" then list[#list + 1] = a
+  elseif what == "answer" then list[#list + 1] = type(a) == "function" and {fn = a} or {n = a, fn = b} end
+end
+
+-- ------------------------------------------------------------------ talk, video, the microphone
+
+local function talk_line()
+  local l = talk and talk.lines[talk.i]
+  if l then talk.shown, talk.total = 0, utf8.len(l.text) or #l.text end
+end
+
+function M.say(who, words)
+  talk = talk or {lines = {}, i = 1}
+  talk.lines[#talk.lines + 1] = {who = who ~= "" and who or nil, text = tostring(words)}
+  if #talk.lines == 1 then talk_line() end
+end
+
+function M.ask(question, ...)
+  local options = {}
+  for _, o in ipairs({...}) do if tostring(o) ~= "" then options[#options + 1] = tostring(o) end end
+  if #options == 0 then return end
+  M.say(nil, question)
+  talk.lines[#talk.lines].options = options
+end
+
+local function talk_update() -- the conversation, while there is one: true (the game waits)
+  if not talk then return false end
+  local l = talk.lines[talk.i]
+  local _, ty, _, tapped = touch()
+  local go = btnp("a") or (tapped and not l.options)
+  if talk.shown < talk.total then
+    talk.shown = (go or tapped) and talk.total or math.min(talk.total, talk.shown + 1)
+    return true
+  end
+  local picked
+  if l.options then
+    talk.sel = talk.sel or 1
+    if btnp("up") then talk.sel = (talk.sel - 2) % #l.options + 1 end
+    if btnp("down") then talk.sel = talk.sel % #l.options + 1 end
+    if btnp("a") then picked = talk.sel end
+    if tapped then -- a tap on an answer
+      local row = math.floor((ty * 2 - 262) / 18) + 1
+      if row >= 1 and row <= #l.options then picked = row end
+    end
+    if not picked then return true end
+  elseif not go then
+    return true
+  end
+  talk.i, talk.sel = talk.i + 1, nil
+  if talk.i > #talk.lines then talk = nil else talk_line() end
+  if picked then for _, h in ipairs(handlers.answer) do if not h.n or h.n == picked then h.fn(picked) end end end
+  return true
+end
+
+local function talk_draw()
+  if not talk then return end
+  local l = talk.lines[talk.i]
+  rect(16, 214, 448, 98, 0x101820)
+  box(18, 216, 444, 94, 0xE8D8B0)
+  local y = 222
+  if l.who then
+    text(l.who, 30, y, {font = "bold", color = 0xFFE070})
+    y = y + 18
+  end
+  text(l.text, 30, y, {color = 0xFFFFFF, width = 420, chars = math.floor(talk.shown)})
+  if l.options and talk.shown >= talk.total then
+    for i, o in ipairs(l.options) do
+      local on = i == (talk.sel or 1)
+      text((on and "> " or "  ") .. o, 40, 244 + i * 18, {color = on and 0xFFE070 or 0xB8C8D8})
+    end
+  elseif talk.shown >= talk.total and clock % 40 < 26 then
+    tri(446, 296, 456, 296, 451, 302, 0xE8D8B0)
+  end
+end
+
+function M.video(id, where)
+  if vid then vid.clip:close() vid = nil end
+  if not id or not video then return end
+  local canvas = "VID_" .. id
+  local ok, c = pcall(video, id, {canvas = canvas, loop = where ~= "full"})
+  if ok then vid = {clip = c, canvas = canvas, where = where or "full"} else log(c) end
+end
+
+local function video_update() -- a video over the whole screen: true while the game waits for it
+  if not vid or vid.where ~= "full" then return false end
+  if vid.clip:playing() and not btnp("a") and not select(4, touch()) then return true end
+  M.video()
+  for _, f in ipairs(handlers.video_end) do f() end
+  return true
+end
+
+local WINDOWS = {top_left = {8, 8}, top_right = {328, 8}, bottom_left = {8, 208}, bottom_right = {328, 208}}
+
+local function video_draw()
+  if not vid then return end
+  local w, h = imgsize(vid.canvas)
+  if not w then return end
+  if vid.where == "full" then
+    local s = math.min(SCREEN_W / w, SCREEN_H / h)
+    rect(0, 0, SCREEN_W, SCREEN_H, 0x000000)
+    img(vid.canvas, (SCREEN_W - w * s) // 2, (SCREEN_H - h * s) // 2, {scale = s})
+  else
+    local at = WINDOWS[vid.where] or WINDOWS.top_right
+    local s = math.min(144 / w, 104 / h)
+    rect(at[1] - 2, at[2] - 2, w * s + 4, h * s + 4, 0x101010)
+    img(vid.canvas, at[1], at[2], {scale = s})
+  end
+end
+
+function M.mic_level()
+  listening = true
+  local l = mic and mic()
+  return l and math.floor(l * 100 + 0.5) or 0
+end
+
+function M.mic_note()
+  listening = true
+  local l, p = nil, nil
+  if mic then l, p = mic() end
+  return l and math.floor(p + 0.5) or 0
+end
+
+local function hear() -- "clap" and "blow", for the games that listen
+  if not mic or not (listening or #handlers.clap > 0 or #handlers.blow > 0) then return end
+  local level, pitch, hit = mic()
+  if not level then return end
+  if hit then for _, f in ipairs(handlers.clap) do f() end end
+  if level > 0.45 and pitch == 0 then blow_t = blow_t + 1 else blow_t = 0 end
+  if level < 0.25 then blowing = false end
+  if blow_t >= 8 and not blowing then
+    blowing = true
+    for _, f in ipairs(handlers.blow) do f() end
+  end
 end
 
 -- ------------------------------------------------------------------ the map
@@ -397,7 +540,7 @@ end
 
 local function start_level(first) -- the level LV from its start; first: a game begins with it
   objs, contacts, on_tile, message, ended, timer, going = {}, {}, {}, nil, nil, 0, nil
-  cells = {}
+  cells, talk = {}, nil
   backdrop(LV.background or 0x6CB4E0)
   local layers = 0
   if LV.map then
@@ -436,6 +579,7 @@ end
 
 local function begin_game(which) -- labels last the whole game; "start" fires once the first level is there
   labels = {}
+  M.video()
   local i = 1
   for k, l in ipairs(D.levels) do if k == which or l.id == which then i = k end end
   play_level(i, true)
@@ -486,8 +630,10 @@ function M.update()
     end
     return
   end
+  if video_update() or talk_update() then return end -- a video or a conversation: the game waits
   if juice.update() then return end
   timer = timer + 1
+  hear()
   for _, h in ipairs(handlers.press) do if btnp(h.button) then h.fn() end end
   for _, h in ipairs(handlers.hold) do if btn(h.button) then h.fn() end end
   local tx, ty, _, tapped = touch()
@@ -606,6 +752,8 @@ function M.draw()
     text(message, SCREEN_W // 2, 140, {font = "large_bold", color = 0xFFFFFF, outline = 0x202020, align = "center",
                                        width = 440})
   end
+  video_draw()
+  talk_draw()
   if ended then
     shade(0, 0, SCREEN_W, SCREEN_H)
     text(ended.text, SCREEN_W // 2, 120, {font = "large_bold", color = ended.won and 0xFFE070 or 0xFF7060,

@@ -2,6 +2,7 @@
 // build.js turns it into a game folder np2d plays.
 import { checkSong } from './song.js';
 
+const VIDEO_B64_MAX = 4.5 * (1 << 20); // a 3 MB clip, as base64
 export const FORMAT = 3; // 3: levels and a cover; 2: pixels in the console's colours (RGB565); 1: palette indices
 export const TILE = 16; // the map's grid, in the world's pixels
 export const MAP_MAX = 64; // tiles a side: the map is drawn once into a canvas of at most 1024 px
@@ -114,7 +115,7 @@ export function newLevel(id, name) {
 export function check(p) {
   if (!p || typeof p !== 'object') throw new Error('No es un proyecto');
   const out = { format: FORMAT, id: safeName(p.id, 'juego'), title: String(p.title || 'Juego').slice(0, 40), drawings: [],
-                levels: [], sounds: [], blocks: p.blocks && typeof p.blocks === 'object' ? p.blocks : null };
+                levels: [], sounds: [], videos: [], blocks: p.blocks && typeof p.blocks === 'object' ? p.blocks : null };
   const names = new Set();
   const old = !(p.format >= 2), palette = PALETTE.map(hex565); // format 1: indices into the palette
   const pixel = v => (!Number.isInteger(v) || v < 0 ? -1 : old ? (v < palette.length ? palette[v] : -1) : v <= 0xFFFF ? v : -1);
@@ -170,6 +171,14 @@ export function check(p) {
     else
       out.sounds.push({ name, recipe: typeof s.recipe === 'string' ? s.recipe : 'blip', seed: clampInt(s.seed, 1, 999999, 1),
                         params: s.params && typeof s.params === 'object' ? s.params : null });
+  }
+  const vnames = new Set(); // videos made in the editor (videos.js): a clip's bytes as base64, and its numbers
+  for (const v of Array.isArray(p.videos) ? p.videos.slice(0, 8) : []) {
+    if (typeof v.npv !== 'string' || !v.npv || v.npv.length > VIDEO_B64_MAX) continue;
+    const name = uniqueName(safeName(v.name, 'video'), vnames);
+    vnames.add(name);
+    out.videos.push({ name, npv: v.npv, w: clampInt(v.w, 1, 1024, 160), h: clampInt(v.h, 1, 1024, 120),
+                      frames: clampInt(v.frames, 1, 100000, 1), fps: clampNum(v.fps, 1, 60, 10) });
   }
   const tunes = new Set(out.sounds.filter(x => x.use === 'music').map(x => x.name)); // music only from the sounds there are
   const tune = v => (tunes.has(safeName(v, '')) ? safeName(v) : '');

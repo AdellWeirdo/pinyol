@@ -169,6 +169,16 @@
       <button id="song-add" class="add">+ Componer una música</button>
       <label class="button add">Añadir un sonido…<input type="file" id="sound-file" class="vh" accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac"></label>
       <p class="hint">O arrástralo aquí. WAV, MP3, OGG, M4A… Un efecto dura hasta 5 s; una música, hasta 4 min, y se elige para cada nivel en Mapa.</p>
+      <h2>Vídeos</h2>
+      <ul id="videos"></ul>
+      <label class="button add">Añadir un vídeo…<input type="file" id="video-file" class="vh" accept="video/*,image/gif"></label>
+      <p class="hint">MP4, WEBM o un GIF animado, hasta 20 s. Se ponen con los bloques de Vídeo.</p>
+      <p id="video-note" class="hint" role="status"></p>
+      <div id="video-edit" hidden>
+        <canvas id="video-preview" width="192" height="128" role="img" aria-label="El vídeo, en bucle"></canvas>
+        <label>Nombre <input id="v-name" maxlength="24" spellcheck="false"></label>
+        <button id="video-del" class="danger">Quitar el vídeo</button>
+      </div>
     </aside>
     <div class="work sound-work">
       <h2 id="recipes-title">Cambiar este sonido por</h2>

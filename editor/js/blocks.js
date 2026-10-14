@@ -14,6 +14,9 @@ const anyLevel = () => [['cualquier nivel', '_'], ...levels()];
 const someLevel = () => { const l = levels(); return l.length ? l : none; };
 const named = keep => () => { const s = project ? project.sounds.filter(keep).map(x => [x.name, x.name]) : []; return s.length ? s : none; };
 const sounds = named(x => x.use !== 'music'), tunes = named(x => x.use === 'music');
+const videos = () => { const v = project && project.videos ? project.videos.map(x => [x.name, x.name]) : []; return v.length ? v : none; };
+const WINDOWS = [['arriba a la derecha', 'top_right'], ['arriba a la izquierda', 'top_left'], ['abajo a la derecha', 'bottom_right'],
+  ['abajo a la izquierda', 'bottom_left']];
 const BUTTONS = [['A', 'a'], ['B', 'b'], ['C', 'c'], ['arriba', 'up'], ['abajo', 'down'], ['izquierda', 'left'],
   ['derecha', 'right'], ['START', 'start']];
 const PROPS = [['x', 'x'], ['y', 'y'], ['velocidad x', 'vx'], ['velocidad y', 'vy']];
@@ -22,9 +25,9 @@ const PLACES = [['arriba a la izquierda', 'top_left'], ['arriba', 'top'], ['arri
 const COLOURS = [['amarillas', '0xFFE070'], ['blancas', '0xFFFFFF'], ['rojas', '0xFF4040'], ['verdes', '0x60E060'],
   ['azules', '0x50A0FF'], ['moradas', '0xC070FF']];
 
-const EVENT = 40, OBJECT = 200, ACTION = 290, INPUT = 160;
+const EVENT = 40, OBJECT = 200, ACTION = 290, INPUT = 160, MIC = 330, TALK = 20, VIDEO = 260;
 export const EVENTS = new Set(['kit_start', 'kit_level', 'kit_tick', 'kit_press', 'kit_hold', 'kit_touch', 'kit_tile', 'kit_out',
-  'kit_every', 'kit_tap']);
+  'kit_every', 'kit_tap', 'kit_clap', 'kit_blow', 'kit_answer', 'kit_video_end']);
 
 // define(type, colour, parts, kind): parts are text and fields/inputs in order; kind: 'event', 'statement', a value type
 function define(type, colour, parts, kind, tooltip) {
@@ -114,6 +117,24 @@ export function defineBlocks() {
   define('kit_tap_y', INPUT, ['y tocada'], 'Number');
   define('kit_tile_x', INPUT, ['x de la baldosa'], 'Number', 'Dentro de «cuando … pisa …»');
   define('kit_tile_y', INPUT, ['y de la baldosa'], 'Number', 'Dentro de «cuando … pisa …»');
+  // the microphone
+  define('kit_clap', MIC, ['al dar una palmada'], 'event', 'El micrófono oye un ruido de repente: una palmada, un golpe en la mesa, un grito');
+  define('kit_blow', MIC, ['al soplar'], 'event', 'El micrófono oye un soplido: fuerte y sin nota, un momento');
+  define('kit_mic_level', MIC, ['volumen del micrófono'], 'Number', 'De 0 (silencio) a 100 (un grito cerca). 0 si no hay micrófono');
+  define('kit_mic_note', MIC, ['nota que se oye (Hz)'], 'Number', 'La nota de una voz o un silbido; 0 si no hay una clara. Un La es 440');
+  // conversations
+  define('kit_say', TALK, [{ value: true, name: 'WHO' }, { value: true, name: 'TEXT', label: 'dice' }], 'statement',
+         'Un cuadro abajo, letra a letra; el juego espera; A sigue. Varios seguidos salen uno tras otro');
+  define('kit_ask', TALK, [{ value: true, name: 'TEXT', label: 'preguntar' }, { value: true, name: 'A', label: 'opciones' },
+    { value: true, name: 'B' }, { value: true, name: 'C' }], 'statement', 'Las opciones vacías no salen. Se elige con arriba, abajo y A');
+  define('kit_answer', TALK, ['al elegir la respuesta', { dropdown: [['1', '1'], ['2', '2'], ['3', '3']], name: 'N' }], 'event');
+  // video
+  define('kit_video_full', VIDEO, ['poner el vídeo', { dropdown: videos, name: 'VIDEO' }, 'en toda la pantalla'], 'statement',
+         'El juego espera a que acabe (A lo salta). Los vídeos se traen en la pestaña Sonidos');
+  define('kit_video_window', VIDEO, ['poner el vídeo', { dropdown: videos, name: 'VIDEO' }, 'en una ventana',
+    { dropdown: WINDOWS, name: 'WHERE' }], 'statement', 'En bucle, mientras se juega');
+  define('kit_video_stop', VIDEO, ['quitar el vídeo'], 'statement');
+  define('kit_video_end', VIDEO, ['al acabar el vídeo'], 'event', 'Uno en toda la pantalla, cuando acaba o se salta');
   defineLua();
 }
 
@@ -170,13 +191,26 @@ function defineLua() {
   F.kit_tap_y = () => ['(tap_y or 0)', O.ATOMIC];
   F.kit_tile_x = () => ['(tile_x or 0)', O.ATOMIC];
   F.kit_tile_y = () => ['(tile_y or 0)', O.ATOMIC];
+  F.kit_clap = b => on('"clap"', b);
+  F.kit_blow = b => on('"blow"', b);
+  F.kit_mic_level = () => ['kit.mic_level()', O.HIGH];
+  F.kit_mic_note = () => ['kit.mic_note()', O.HIGH];
+  F.kit_say = b => `kit.say(${val(b, 'WHO', '""')}, ${text(b)})\n`;
+  F.kit_ask = b => `kit.ask(${text(b)}, ${val(b, 'A', '""')}, ${val(b, 'B', '""')}, ${val(b, 'C', '""')})\n`;
+  F.kit_answer = b => on(`"answer", ${Number(b.getFieldValue('N')) || 1}`, b);
+  F.kit_video_full = b => `kit.video(${q(b.getFieldValue('VIDEO'))}, "full")\n`;
+  F.kit_video_window = b => `kit.video(${q(b.getFieldValue('VIDEO'))}, ${q(b.getFieldValue('WHERE'))})\n`;
+  F.kit_video_stop = () => 'kit.video()\n';
+  F.kit_video_end = b => on('"video_end"', b);
 }
 
 // The Lua of the events on the workspace; blocks left loose outside an event do nothing (and are not written).
 export function workspaceLua(ws) {
   const g = lua.luaGenerator;
   g.init(ws);
-  let code = '';
+  // every variable starts at 0: "add 1 to points" works without setting it first (nil + 1 would stop the game)
+  let code = ws.getVariableMap().getAllVariables().map(v => `${g.getVariableName(v.getId())} = 0\n`).join('');
+  if (code) code += '\n';
   for (const b of ws.getTopBlocks(true)) if (EVENTS.has(b.type) && b.isEnabled()) code += g.blockToCode(b) + '\n';
   return g.finish(code);
 }
@@ -207,6 +241,14 @@ export const TOOLBOX = {
       { kind: 'block', type: 'kit_set_tile', inputs: { X: num(0), Y: num(0) } }] },
     { kind: 'category', name: 'Mandos', colour: INPUT, contents: ['kit_button', 'kit_tap_x', 'kit_tap_y', 'kit_tile_x', 'kit_tile_y']
       .map(type => ({ kind: 'block', type })) },
+    { kind: 'category', name: 'Micrófono', colour: MIC, contents: ['kit_clap', 'kit_blow', 'kit_mic_level', 'kit_mic_note']
+      .map(type => ({ kind: 'block', type })) },
+    { kind: 'category', name: 'Diálogos', colour: TALK, contents: [
+      { kind: 'block', type: 'kit_say', inputs: { WHO: str('Ana'), TEXT: str('¡Hola! ¿Me ayudas?') } },
+      { kind: 'block', type: 'kit_ask', inputs: { TEXT: str('¿Vienes?'), A: str('Sí'), B: str('No'), C: str('') } },
+      { kind: 'block', type: 'kit_answer' }] },
+    { kind: 'category', name: 'Vídeo', colour: VIDEO, contents: ['kit_video_full', 'kit_video_window', 'kit_video_stop',
+      'kit_video_end'].map(type => ({ kind: 'block', type })) },
     { kind: 'sep' },
     { kind: 'category', name: 'Condiciones', categorystyle: 'logic_category', contents: ['controls_if', 'logic_compare', 'logic_operation',
       'logic_negate', 'logic_boolean'].map(type => ({ kind: 'block', type })) },

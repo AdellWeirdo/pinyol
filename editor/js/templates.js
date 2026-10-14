@@ -121,7 +121,7 @@ export function templateEmpty() {
     drawings: [{ ...DRAWING, name: 'jugador', w: 16, h: 16, frames: [blankFrame(16, 16)], use: 'object', behaviour: 'topdown',
                  speed: 1.5 }],
     levels: [level], cover: { on: true, subtitle: 'Pulsa A para empezar', picture: '', background: '#1D2B53' },
-    ending: '¡Has ganado!', sounds: [], blocks: null,
+    ending: '¡Has ganado!', sounds: [], videos: [], blocks: null,
   };
 }
 

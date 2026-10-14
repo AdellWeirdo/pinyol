@@ -1,0 +1,39 @@
+# The editor's blocks of Diálogos, Vídeo and Micrófono, as a game made with them plays: on start Ana speaks and asks
+# (the game waits: holding right moves no one), the second answer plays the video over everything (the game waits
+# again), its end puts it in a window and the game goes on; a clap and a breath into the microphone are heard
+tick 10
+press A
+tick 2
+lua x0 = kit.player().x
+hold RIGHT 30
+expect_lua kit.player().x == x0 and respuesta == 0
+shot conversa_dice
+press A
+press A
+tick 60
+shot conversa_pregunta
+press DOWN
+press A
+tick 2
+expect_lua respuesta == 2 and visto == 0
+tick 30
+shot conversa_video
+hold RIGHT 30
+expect_lua kit.player().x == x0
+tick 120
+expect_lua visto == 1
+lua found = false for x = 0, 63 do if pget(x, 22, "VID_intro") == 0xFF0000 then found = true end end
+expect_lua found
+hold RIGHT 30
+expect_lua kit.player().x > x0
+shot conversa_ventana
+mic 0
+tick 30
+mic 0.8
+tick 2
+expect_lua palmadas == 1
+tick 20
+expect_lua soplidos == 1 and palmadas == 1
+expect_lua kit.mic_level() > 70 and kit.mic_note() == 0
+mic none
+expect_ok

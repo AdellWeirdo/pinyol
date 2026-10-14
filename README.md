@@ -42,7 +42,9 @@ and a cover before the first; make the sounds from recipes (coin, laser, explosi
 files (WAV, MP3, OGG...: effects, and music for each level and the cover, cut and made louder or softer), or compose a
 song on a grid (melody, bass and drums, in a scale where every note fits); write the rules
 with blocks ("when the hero touches a coin: remove the other, play coin, add 1 to points"; "when the hero touches
-the flag: go on to the next level"). **Jugar** plays it right there; **Pasar a la consola** sends it over the USB
+the flag: go on to the next level"), and with the blocks of Diálogos (characters who speak and ask, the game waiting
+for the answer), Micrófono (when you clap, when you blow, how loud) and Vídeo (a video brought in from a file or a GIF,
+over the whole screen or in a window). **Jugar** plays it right there; **Pasar a la consola** sends it over the USB
 cable (Chrome and Edge, with Web Serial) or gives the zip for the card. A short guide walks a first-time user through
 it (again with **?**); everything works from the keyboard too, and on a phone or a tablet. **Nuevo** starts from one of four small games to change, each with
 its own drawings, levels and rules: a platformer, an adventure seen from above (keys and doors), a space shooter

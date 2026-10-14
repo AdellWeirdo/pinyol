@@ -11,6 +11,7 @@ import { defineBlocks, setProject, workspaceLua, TOOLBOX, templateBlocks } from 
 import { initDrawings } from './sprites.js';
 import { initMap } from './map.js';
 import { initSounds } from './sounds.js';
+import { initVideos } from './videos.js';
 import { initGuide } from './guide.js';
 
 const $ = id => document.getElementById(id);
@@ -108,6 +109,9 @@ const app = {
       }
     tabs.map.render();
   },
+  renameVideo(old, name) { // in the blocks that play it
+    eachField(f => f.name === 'VIDEO' && f.getValue() === old, f => f.setValue(name));
+  },
   renameSound(old, name) { // in the blocks, and as a level's or the cover's music
     const s = project.sounds.find(x => x.name === old);
     if (s) s.name = name;
@@ -131,6 +135,7 @@ function dropTile(level, name) {
 
 function load(p, blocks) {
   project = p;
+  project.videos = project.videos || []; // (templates and projects from before videos)
   setProject(project);
   $('title').value = project.title;
   blocksBroken = false;
@@ -149,6 +154,7 @@ function load(p, blocks) {
   tabs.draw.reset();
   tabs.map.reset();
   tabs.sound.reset();
+  tabs.video.reset();
   changed();
 }
 
@@ -365,6 +371,7 @@ async function init() {
   tabs.draw = initDrawings(app);
   tabs.map = initMap(app);
   tabs.sound = initSounds(app);
+  tabs.video = initVideos(app);
   initBlockly();
   const saved = await loadLocal();
   if (saved) load(saved);
