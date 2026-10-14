@@ -154,6 +154,7 @@ def main() -> None:
     board = json.loads((HERE / "src/data/board.json").read_text(encoding="utf-8"))
     (DIST / "index.html").write_text(page.render(board, stats(np2d), fw), encoding="utf-8")
     (DIST / ".nojekyll").write_text("")  # GitHub Pages: serve the folders as they are
+    (DIST / ".gitattributes").write_text("".join(f"*.{e} binary\n" for e in ("bin", "wasm", "zip", "png", "woff2")))
     size = sum(p.stat().st_size for p in DIST.rglob("*") if p.is_file())
     print(f"dist/: {sum(1 for _ in DIST.rglob('*'))} files, {size / 1e6:.1f} MB")
 
