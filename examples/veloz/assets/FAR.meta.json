@@ -1,0 +1,28 @@
+{
+  "asset": "FAR",
+  "type": "background",
+  "w": 256,
+  "h": 160,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    128,
+    159
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "mask1"
+  },
+  "memory_bytes": {
+    "pixels": 81920,
+    "mask": 5120,
+    "total": 87040
+  }
+}

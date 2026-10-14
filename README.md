@@ -95,6 +95,9 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [duelo](examples/duelo) | a fighting game as a Neo Geo's: every pixel at 480x320, a stage in two layers, fighters in 192x184 frames as packed pictures, hit flashes and sparks, a rival played by the console |
 | [torneo](examples/torneo) | a fighting game as a CPS2's: fighters in 15 colours and thirty frames, never zoomed, a floor in perspective drawn in bands of rows, pillars in front, the same fighter twice in other colours |
 | [mazmorra](examples/mazmorra) | a beat-em-up in a dungeon as a CPS2's: goblins and skeletons in groups, torches that flicker, pillars that pass in front of everyone |
+| [bolsillo](examples/bolsillo) | a platformer as a Game Boy's: a 160x144 screen in four tones inside a drawn console, C changes the tones; all its art drawn by code |
+| [cinta](examples/cinta) | a game as a ZX Spectrum's, from the tape loading (striped border, the screen in its own order): blocks of two colours, sprites that clash, a flashing key, air running out |
+| [veloz](examples/veloz) | a speed platformer as the 16-bit consoles': a sea moved line by line, a sky in a gradient, pools seen through, a Mode 7 title; a pangolin that rolls into a ball |
 | [sonidos](examples/sonidos) | sounds made from numbers (a factory of coins, lasers, explosions), a theremin, an engine that follows the speed, music in layers |
 | [control](examples/control) | directing a 1994 newscast from the control room: cuts, tape and captions on the beat of the theme, the producer's lines written as a story in Catalan and Spanish, the console's LED as the tally light, a video clip on a monitor; then a camera that does not exist looks at you, hears you and knows your battery |
 

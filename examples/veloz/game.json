@@ -1,0 +1,8 @@
+{
+  "id": "veloz",
+  "title": "Pangolín veloz",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un plataformas de velocidad a la manera de los 16 bits: el mar del fondo moviéndose línea a línea como en Mega Drive, el cielo en degradado y el agua translúcida como en SNES, y un título en Mode 7."
+}

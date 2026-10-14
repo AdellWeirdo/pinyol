@@ -1,0 +1,43 @@
+# Cinta: the tape loading (pilot tone, the bitmap in the Spectrum's order, the colours), A to play, walking and a
+# jump, a key, a poisonous plant that costs a life, the five keys and the gate
+tick 60
+expect_lua state == "load"
+shot piloto
+tick 200
+shot carga
+tick 200
+shot pantalla
+press A
+expect_lua state == "play" and keys == 5 and lives == 3
+hold RIGHT 30
+expect_lua M.x > 20
+press A
+tick 4
+expect_lua not M.ground
+tick 40
+expect_lua M.ground
+shot sala
+lua k0 = keys M.x, M.y = 2 * 8 - 4, 4 * 8
+tick 3
+expect_lua keys == k0 - 1
+lua M.x, M.y, M.ground = 14 * 8 - 4, 13 * 8, true
+tick 3
+expect_lua M.dead > 0
+tick 70
+expect_lua lives == 2 and keys == 5
+lua M.x, M.y, M.ground = 15 * 8 - 4, 2 * 8 - 4, true
+tick 2
+lua M.x, M.y, M.ground = 25 * 8 - 4, 8 * 8 - 4, true
+tick 2
+lua M.x, M.y, M.ground = 6 * 8 - 4, 11 * 8 - 4, true
+tick 2
+lua M.x, M.y, M.ground = 22 * 8 - 4, 2 * 8 - 4, true
+tick 2
+lua M.x, M.y, M.ground = 2 * 8 - 4, 5 * 8 - 4, true
+tick 2
+expect_lua keys == 0
+lua M.x, M.y, M.ground = 24 * 8 - 2, 13 * 8, true
+tick 3
+expect_lua state == "done"
+shot salida
+expect_ok

@@ -1,0 +1,25 @@
+{
+  "asset": "BORDER",
+  "type": "background",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 8,
+  "w": 480,
+  "h": 320,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    240,
+    319
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 36832,
+    "as_rgb565": 307200
+  }
+}

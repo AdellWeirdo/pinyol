@@ -1,0 +1,8 @@
+{
+  "id": "cinta",
+  "title": "Cinta",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un juego a la manera del ZX Spectrum, desde la carga de la cinta: franjas en el borde, la pantalla apareciendo en su orden y bloques de 8x8 de dos colores, con el choque de color de sus sprites."
+}

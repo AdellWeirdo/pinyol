@@ -1,0 +1,8 @@
+{
+  "asset": "ROLL",
+  "type": "tilemap",
+  "tiles": 3,
+  "map_w": 32,
+  "map_h": 32,
+  "palette": "WORLD"
+}

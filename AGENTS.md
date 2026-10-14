@@ -47,9 +47,10 @@ turns it into a PNG you can open. Look at it: a game that passes but draws nothi
 
 ## Art and sound
 
-- The look: a game is made to look like a console (Game Boy Advance, Neo Geo or CPS2). If the user has not said
-  which, ask before making any art; then follow that look's numbers in [docs/art.md](docs/art.md) ("Choose a
-  look") and start from its examples.
+- The look: a game is made to look like a console (Game Boy, ZX Spectrum, Game Boy Advance, SNES / Mega Drive,
+  Neo Geo or CPS2). If the user has not said which, ask before making any art; then follow that look's rules in
+  [docs/art.md](docs/art.md) ("Choose a look") and start from its example. The small looks are drawn by code
+  (`art.py`): they need no image generation.
 - Pictures: generated images (backgrounds removed, frames cut, scale and feet fitted) are in
   [docs/art.md](docs/art.md): read it before making art. Or draw them by code in the game's `art.py`, as the
   template does.

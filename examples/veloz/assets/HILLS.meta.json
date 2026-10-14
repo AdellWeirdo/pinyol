@@ -1,0 +1,28 @@
+{
+  "asset": "HILLS",
+  "type": "background",
+  "w": 512,
+  "h": 160,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    256,
+    159
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "mask1"
+  },
+  "memory_bytes": {
+    "pixels": 163840,
+    "mask": 10240,
+    "total": 174080
+  }
+}

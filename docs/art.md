@@ -20,17 +20,64 @@ assets/  what the engine reads (.pk / .tiles / .map / .pal + .meta.json)
 ## 0. Choose a look
 
 A game looks like the console it is made for. Pick one with whoever the game is for (ask, if they have not said),
-then make every picture by that look's numbers and start from its examples. The engine moves all of them.
+then make every picture by that look's rules and start from its example. The engine moves all of them.
 
-| | Game Boy Advance | Neo Geo | CPS2 |
-|---|---|---|---|
-| Examples to start from | `plataformas`, `naves`, `carreras`, `puzle`, `aldea` | `duelo`, `calle`, `asalto`, `nubes`, `futbol`, `moto` | `torneo`, `mazmorra` |
-| Where it is drawn | the world, 240×160 shown twice as big (`bg`, `spr`) | pictures at 480×320 (`img`, `--packed`) | pictures at 480×320 (`img`, `--packed`) |
-| A character | 16 to 32 pixels tall, 8 to 16 colours | 150 to 180 pixels tall, 64 colours or more | 125 to 140 pixels tall, **15 colours and see-through** (`--colours 16`) |
-| Backgrounds | 8×8 tiles (`--tiles`), shared palettes (`--palette`), Mode 7 floors | wide layers at full resolution, many colours | wide layers; a floor in perspective drawn in bands of rows (`torneo`) |
-| Zoom and turning | sprites turn and scale (`spr_mat`); Mode 7 | yes: `img(..., {scale})`, a camera that zooms | **none**: everyone keeps the size they were drawn at; the camera only pans |
-| Also | per-line effects, blending, mosaic, windows | big frames, many of them; flashes (`tint`) | other colours for the same character (`pal`), pillars in front of everyone, many frames per move |
-| The prompts' style line | *16-bit handheld pixel art, 4 to 8 colours per sprite, hard pixel edges, no anti-aliasing* | *mid-1990s Neo Geo sprite art, 3 to 4 tones per material, hard pixel edges, no anti-aliasing* | *mid-1990s 2D arcade fighting game sprite, hand-pixelled, bold dark outline, cel shading with 3 or 4 tones per material, about 15 colours in total, anime-influenced proportions* |
+Not every look needs an image model. The small ones (Game Boy, Spectrum, 16-bit) are best **drawn by code** in the
+game's `art.py`, from pictures written as text and simple shapes, as their examples do: no quota, and pixels exactly
+where they should be. A game can even draw everything while it runs, with no pictures at all (`examples/inventos`).
+Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and CPS2.
+
+### Game Boy: `examples/bolsillo`
+
+- The world, with the Game Boy's 160×144 screen inside it at 40,8; the console's case around it is a picture at full
+  resolution (with the screen see-through), drawn last.
+- **Four tones**, lightest to darkest. `art.py` writes `WORLD.pal` and `OBJ.pal` with them *before* converting, so each
+  tone keeps its index (1-4) and `pal()` changes the whole game's colours at once (as a Game Boy Color did).
+- 8×8 tiles in one background layer, 16×16 sprites, a status bar, two square voices and a noise.
+- Art by code. Style line, if generating: *Game Boy pixel art, four shades of green, 8x8 tiles, no anti-aliasing*.
+
+### ZX Spectrum (and Amstrad CPC): `examples/cinta`
+
+- The world, a 224×144 screen inside a border of one colour.
+- **Two colours per 8×8 block**, an ink and a paper, from fifteen (eight, and seven bright). Blocks are drawn in two
+  key colours (`WORLD.pal` 1 and 2) and coloured by a palette bank per block (`mset(n, x, y, tile | bank << 12)`),
+  as the attributes did. Sprites are ink only and take the bank of the block they are in: the colour clash. A
+  flashing block is a bank whose two colours swap.
+- The loading screen: any picture through `art/make_art.py` (the best two colours per block, a dither between them),
+  shown as the tape loaded it: striped border, the bitmap in the Spectrum's order, then the colours.
+- One square voice (the beeper). Amstrad CPC: the same, with pixels twice as wide (mode 0) and 16 colours of 27.
+- Art by code; the loading screen from any illustration.
+
+### Game Boy Advance: `plataformas`, `naves`, `carreras`, `puzle`, `aldea`
+
+- The world, 240×160. Characters 16 to 32 pixels tall, 8 to 16 colours; 8×8 tiles (`--tiles`), shared palettes
+  (`--palette`); sprites that turn and scale (`spr_mat`), Mode 7, per-line effects, blending, mosaic, windows.
+- Style line: *16-bit handheld pixel art, 4 to 8 colours per sprite, hard pixel edges, no anti-aliasing*.
+
+### SNES and Mega Drive: `examples/veloz`
+
+- The world, 240×160. Sprites up to 32×32 (bigger in a few), 15 colours each or fewer.
+- Mega Drive: far layers moved at a different speed on each line (`line_scroll`: a sea, clouds), strong saturated
+  colours, a checkered earth. SNES: a sky that changes colour line by line (`line_backdrop`), water and glass seen
+  through (`blend`), a mosaic between scenes, Mode 7 floors.
+- Art by code or generated at the sprite's size. Style line: *16-bit console pixel art, 15 colours per sprite,
+  bold outlines, saturated colours, no anti-aliasing*.
+
+### Neo Geo: `duelo`, `calle`, `asalto`, `nubes`, `futbol`, `moto`
+
+- Pictures at 480×320 (`img`, `--packed`). Characters 150 to 180 pixels tall, 64 colours or more; wide layers;
+  zoom (`img(..., {scale})`, a camera that zooms in); big frames, flashes (`tint`).
+- Generated art. Style line: *mid-1990s Neo Geo sprite art, 3 to 4 tones per material, hard pixel edges, no
+  anti-aliasing*.
+
+### CPS2: `torneo`, `mazmorra`
+
+- Pictures at 480×320. Characters 125 to 140 pixels tall in **15 colours and see-through** (`--colours 16`, four bits
+  a pixel). **No zoom**: everyone keeps the size they were drawn at; the camera only pans. A floor in perspective drawn
+  in bands of rows (`torneo`), pillars in front of everyone, the same character in other colours (`pal`), many frames
+  per move.
+- Generated art. Style line: *mid-1990s 2D arcade fighting game sprite, hand-pixelled, bold dark outline, cel
+  shading with 3 or 4 tones per material, about 15 colours in total, anime-influenced proportions*.
 
 Name the look, never a company's game or characters: the art must be the game's own.
 

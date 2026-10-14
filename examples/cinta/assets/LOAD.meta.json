@@ -1,0 +1,28 @@
+{
+  "asset": "LOAD",
+  "type": "background",
+  "w": 448,
+  "h": 288,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    224,
+    287
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "none"
+  },
+  "memory_bytes": {
+    "pixels": 258048,
+    "mask": 0,
+    "total": 258048
+  }
+}

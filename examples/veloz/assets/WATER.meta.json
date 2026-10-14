@@ -1,0 +1,8 @@
+{
+  "asset": "WATER",
+  "type": "tilemap",
+  "tiles": 3,
+  "map_w": 200,
+  "map_h": 20,
+  "palette": "WORLD"
+}

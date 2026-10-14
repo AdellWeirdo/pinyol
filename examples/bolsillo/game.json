@@ -1,0 +1,8 @@
+{
+  "id": "bolsillo",
+  "title": "Bolsillo",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un plataformas a la manera de la Game Boy: una pantalla de 160x144 en cuatro tonos dentro de la consola dibujada, tiles de 8x8 y sprites de 16x16. C cambia los colores."
+}

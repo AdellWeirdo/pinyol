@@ -1,0 +1,33 @@
+# Bolsillo: the title, changing the four tones (kept), walking and jumping, a coin, stomping a hedgehog, spikes that
+# cost a life, the flag at the end
+tick 20
+expect_lua state == "title" and tones == 1
+shot titulo
+press C
+expect_lua tones == 2
+press A
+expect_lua state == "play" and lives == 3
+hold RIGHT 40
+expect_lua P.x > 60 and cam >= 0
+press A
+tick 6
+expect_lua P.vy < 0
+shot salto
+tick 40
+lua P.x, P.y = coin_list[1].x - 4, coin_list[1].y - 6
+tick 2
+expect_lua coins >= 1
+lua h = hogs[1] cam = h.x - 60 P.x, P.y, P.vy = h.x, h.y - 14, 2
+tick 2
+expect_lua h.dead > 0
+shot pisoton
+lua P.x, P.y, P.vy = 25 * 8 - 4, 13 * 8 - 2, 1
+tick 4
+expect_lua P.dead > 0 and lives == 2
+tick 100
+expect_lua P.dead == 0
+lua P.x, P.y, cam = 105 * 8, 13 * 8, 100 * 8 - 160
+tick 30
+expect_lua state == "won"
+shot meta
+expect_ok

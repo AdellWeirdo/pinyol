@@ -1,0 +1,13 @@
+{
+  "asset": "FLAG",
+  "type": "sprite",
+  "format": "idx8",
+  "w": 16,
+  "h": 9,
+  "frames": 2,
+  "frame_ms": [
+    0,
+    0
+  ],
+  "palette": "OBJ"
+}
