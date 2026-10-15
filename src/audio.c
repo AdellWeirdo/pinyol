@@ -395,8 +395,9 @@ int audio_sfx_play(const char *id, float gain, float pitch, bool loop) {
     int v = -1;
     for (int i = 0; i < SFX_VOICES && v < 0; i++) /* a free voice */
         if (!sfx[i].pcm) v = i;
-    for (int i = 0; i < SFX_VOICES && v < 0; i++) /* else steal one: the one-shot closest to its end, else voice 0 */
-        if (!sfx[i].loop && (v < 0 || sfx[i].n - sfx[i].pos < sfx[v].n - sfx[v].pos)) v = i;
+    if (v < 0) /* else steal one: the one-shot closest to its end, else voice 0 */
+        for (int i = 0; i < SFX_VOICES; i++)
+            if (!sfx[i].loop && (v < 0 || sfx[i].n - sfx[i].pos < sfx[v].n - sfx[v].pos)) v = i;
     if (v < 0) v = 0;
     uint16_t gen = (uint16_t)(sfx[v].gen + 1);
     sfx[v] = (sfx_voice){c->pcm[k], c->n[k], 0, 0, gain < 0 ? 0 : gain > 1 ? 1 : gain, pitch, loop, gen};

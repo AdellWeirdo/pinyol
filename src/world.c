@@ -18,6 +18,14 @@ static float cam_x, cam_y;
  * colour where the background would be; each strip draws the HD background first, shaded and tinted as the world
  * was, and the world doubled over it, its key left out (world_render_hd). Set once a frame by world_render. */
 static struct { asset *bg; int shade; bool dusk; } hd;
+/* HD sprites (a game with "hd_sprites": true in game.json): in an HD zone, a sprite, prop or neighbour whose <id>_HD
+ * picture exists (drawn at the screen's resolution, its anchor in screen pixels, its frames laid out as the world
+ * sprite's) is not drawn into the world but into this list, in the world's drawing order, together with the parts of
+ * the HD background that must cover it again (an occluder Klaus is behind, a foreground); each strip plays the list
+ * over its HD background, lit as the world was (shaded only if it came before the zone's shade). */
+#define HD_CMDS 64
+typedef struct { const asset *a; const cJSON *poly; int frame, x, y, w, h; bool shaded; } hd_cmd; /* a or poly or rect */
+static struct { hd_cmd c[HD_CMDS]; int n, sprites; bool on, after_shade; } hl;
 /* Where the HD world is not the key: per world column, its runs of drawn pixels (start, length), found once a frame
  * (hd_spans) so that each strip copies only them; SPAN_FULL: too many, the strip goes down the whole column. */
 #define SPANS 6
@@ -512,7 +520,32 @@ static void draw_tiles(surface *s, const uint8_t *layer) {
 
 typedef struct { float y; const cJSON *o; int kind; } drawable; /* kind: 0 prop, 1 npc, 2 klaus */
 
+static asset *hd_of(const char *id) { /* a sprite's <id>_HD picture, or NULL */
+    if (!hl.on || !id) return NULL;
+    char buf[48];
+    snprintf(buf, sizeof buf, "%s_HD", id);
+    asset *a = gfx_asset_opt(buf);
+    return a->missing ? NULL : a;
+}
+
+static void hd_push(hd_cmd c) {
+    if (hl.n == HD_CMDS) return;
+    c.shaded = !hl.after_shade;
+    hl.c[hl.n++] = c;
+}
+
+/* Into the HD list if the sprite has an HD picture: x, y its feet in world pixels; sink: rows hidden below a step. */
+static bool draw_hd(const char *id, int frame, float x, float y, int sink) {
+    asset *h = hd_of(id);
+    if (!h) return false;
+    hd_push((hd_cmd){.a = h, .frame = frame, .x = (int)(2 * (x - cam_x)) - h->ax,
+                     .y = (int)(2 * (y - cam_y)) - h->ay + 2 * sink, .h = sink > 0 ? h->ay + 1 - 2 * sink : h->h});
+    hl.sprites++;
+    return true;
+}
+
 static void draw_sprite(surface *s, const char *id, int frame, float x, float y) {
+    if (draw_hd(id, frame, x, y, 0)) return;
     asset *a = gfx_asset(id);
     gfx_blit(s, a, frame, (int)x - a->ax - (int)cam_x, (int)y - a->ay - (int)cam_y, 0, false);
 }
@@ -550,11 +583,16 @@ static void draw_klaus(surface *s) {
     const player_ids *p = &G.pl;
     const char *anim = k->anim ? k->anim : layer_has(L_LISTEN) ? p->listen : k->act_ms > 0 ? p->interact
                                          : k->moving ? p->walk : p->idle;
-    asset *a = gfx_asset(klaus_variant(anim));
+    asset *a = gfx_asset(klaus_variant(anim)), *h = hd_of(anim);
+    const asset *fa = h ? h : a; /* frames and their timing: the picture drawn's (an HD walk may have more) */
     int frame;
     if (!strcmp(anim, p->listen)) frame = k->facing * 2 + (G.lis.t > 300); /* hold the pose, no flicker */
     else if (!strcmp(anim, p->interact)) frame = k->facing * 2 + (k->act_ms < 175);
-    else frame = anim_frame(a, strcmp(anim, p->descend) ? 4 : 1, k->facing, G.anim_ms, a->frame_ms > 0 ? a->frame_ms : 600);
+    else frame = anim_frame(fa, strcmp(anim, p->descend) ? 4 : 1, k->facing, G.anim_ms, fa->frame_ms > 0 ? fa->frame_ms : 600);
+    if (h) {
+        draw_hd(anim, frame, k->x, k->y, k->sink > 0 ? (int)k->sink : 0);
+        return;
+    }
     if (k->sink > 0) { /* going down: the feet disappear below the step edge */
         int rows = a->ay + 1 - (int)k->sink;
         gfx_blit_rows(s, a, frame, (int)k->x - a->ax - (int)cam_x, (int)k->y - a->ay - (int)cam_y + (int)k->sink, rows);
@@ -620,6 +658,9 @@ void world_render(surface *s) {
     hd.bg = bg && !bg->missing ? gfx_asset_opt(hd_id) : NULL;
     if (hd.bg && hd.bg->missing) hd.bg = NULL;
     hd.shade = 0, hd.dusk = false;
+    hl.on = hd.bg && cJSON_IsTrue(jget(G.game, "hd_sprites"));
+    hl.n = hl.sprites = 0;
+    hl.after_shade = false;
     gfx_fill(s, 0, 0, s->w, s->h, hd.bg ? WORLD_KEY : C_INK);
     if (hd.bg) {
     } else if (bg && !bg->missing) { /* painted background (approved art); tiles stay as the fallback */
@@ -663,6 +704,7 @@ void world_render(surface *s) {
         cJSON_ArrayForEach(o, jget(Z->def, "occluders")) {
             int ox = jai(o, 0, 0), oy = jai(o, 1, 0), ow = jai(o, 2, 0), oh = jai(o, 3, 0);
             if (G.klaus.y >= oy + oh || G.klaus.x + 12 < ox || G.klaus.x - 12 > ox + ow || G.klaus.y - 32 > oy + oh) continue;
+            if (hl.sprites) hd_push((hd_cmd){.x = 2 * (ox - (int)cam_x), .y = 2 * (oy - (int)cam_y), .w = 2 * ow, .h = 2 * oh});
             for (int v = oy < 0 ? 0 : oy; v < oy + oh && v < bg->h; v++)
                 for (int u = ox < 0 ? 0 : ox; u < ox + ow && u < bg->w; u++) {
                     int dx = u - (int)cam_x, dy = v - (int)cam_y;
@@ -671,7 +713,9 @@ void world_render(surface *s) {
         }
     }
     draw_props(s, "top"); /* small things lying on painted furniture */
-    if (jget(Z->def, "foreground")) { /* roofs, canopies, front walls: always in front of characters */
+    if (hl.on) { /* HD sprites: the foreground is the HD background again, inside its polygons */
+        if (hl.sprites) cJSON_ArrayForEach(o, jget(Z->def, "foreground")) hd_push((hd_cmd){.poly = o});
+    } else if (jget(Z->def, "foreground")) { /* roofs, canopies, front walls: always in front of characters */
         char fg_id[16];
         snprintf(fg_id, sizeof fg_id, "FG_%s", Z->id);
         asset *fg = gfx_asset(fg_id);
@@ -686,6 +730,7 @@ void world_render(surface *s) {
         }
         break;
     }
+    hl.after_shade = true; /* what is drawn from here on stands out of the shade */
     cJSON_ArrayForEach(o, jget(Z->def, "fx")) { /* ambient loops, phase-shifted per entry */
         if (!visible(o)) continue;
         asset *a = gfx_asset(jstr(o, "sprite"));
@@ -702,6 +747,53 @@ void world_render(surface *s) {
 
 typedef struct { surface *s; const surface *world; } hd_job;
 
+/* The HD background again inside a foreground polygon (world pixels), row by row over the strip (even-odd). */
+static void hd_poly(surface *s, const cJSON *poly, int bx, int by) {
+    enum { MAXP = 16 };
+    float px[MAXP], py[MAXP];
+    int n = 0, y0 = 1 << 30, y1 = -(1 << 30);
+    const cJSON *p;
+    cJSON_ArrayForEach(p, poly) {
+        if (n == MAXP) break;
+        px[n] = 2 * (jai(p, 0, 0) - cam_x), py[n] = 2 * (jai(p, 1, 0) - cam_y);
+        if ((int)py[n] < y0) y0 = (int)py[n];
+        if ((int)ceilf(py[n]) > y1) y1 = (int)ceilf(py[n]);
+        n++;
+    }
+    if (n < 3) return;
+    if (y0 < s->y0) y0 = s->y0;
+    if (y1 > s->y0 + s->h) y1 = s->y0 + s->h;
+    for (int y = y0; y < y1; y++) {
+        float yc = y + 0.5f, xs[MAXP];
+        int m = 0;
+        for (int i = 0, j = n - 1; i < n; j = i++)
+            if ((py[i] > yc) != (py[j] > yc)) xs[m++] = px[j] + (yc - py[j]) * (px[i] - px[j]) / (py[i] - py[j]);
+        for (int i = 1; i < m; i++)
+            for (int k = i; k > 0 && xs[k] < xs[k - 1]; k--) {
+                float t = xs[k];
+                xs[k] = xs[k - 1], xs[k - 1] = t;
+            }
+        for (int k = 0; k + 1 < m; k += 2) {
+            int xa = (int)ceilf(xs[k] - 0.5f), xb = (int)ceilf(xs[k + 1] - 0.5f);
+            surface r = gfx_clip(s, xa, y, xb - xa, 1);
+            if (r.w > 0 && r.h > 0) gfx_blit_lit(&r, hd.bg, bx, by, hd.shade, hd.dusk);
+        }
+    }
+}
+
+/* The HD list over the strip: sprites lit as the world was, occluders and foregrounds as the HD background again. */
+static void hd_list(surface *s, int bx, int by) {
+    for (int i = 0; i < hl.n; i++) {
+        const hd_cmd *c = &hl.c[i];
+        if (c->a) gfx_blit_lit_rows(s, c->a, c->frame, c->x, c->y, c->h, c->shaded ? hd.shade : 0, hd.dusk);
+        else if (c->poly) hd_poly(s, c->poly, bx, by);
+        else {
+            surface r = gfx_clip(s, c->x, c->y, c->w, c->h);
+            if (r.w > 0 && r.h > 0) gfx_blit_lit(&r, hd.bg, bx, by, hd.shade, hd.dusk);
+        }
+    }
+}
+
 static void hd_half(int part, void *ctx) { /* half of the window's columns, on one core each: they only read */
     const hd_job *j = ctx;
     int w0 = j->s->w / 2, x = -2 * (int)cam_x, y = -2 * (int)cam_y;
@@ -713,6 +805,7 @@ static void hd_half(int part, void *ctx) { /* half of the window's columns, on o
         if (hd.dusk) gfx_tint_dusk(&s);
     }
     gfx_blit_lit(&s, hd.bg, x, y, hd.shade, hd.dusk);
+    hd_list(&s, x, y);
     world_over(&s, j->world);
 }
 

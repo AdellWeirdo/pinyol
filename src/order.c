@@ -129,6 +129,10 @@ static void mark_icon(surface *s, int x, int y, int k) { /* 01 a closed rectangl
 
 void order_render(surface *s) {
     const font *f = ui_font(), *b = ui_bold();
+    /* four cards: tighter rows, so the buttons and the B hint sit below the last one (three or fewer: as always) */
+    const bool four = O.n > 3;
+    const int card_y = four ? 40 : CARD_Y, step = four ? 40 : CARD_STEP, card_h = four ? 34 : CARD_H,
+              btn_y = four ? 200 : BTN_Y, hint_y = four ? 234 : 228;
     gfx_fill(s, 0, 0, SCREEN_W, SCREEN_H, C_INK);
     const char *title = jstr(O.def, "title");
     if (title) {
@@ -138,15 +142,15 @@ void order_render(surface *s) {
     }
     for (int i = 0; i < O.n; i++) { /* one row per slot: mark, its icon, the fragment */
         const cJSON *c = card(O.slot[i]);
-        int x = CARD_X + (O.held == i ? 10 : 0), y = CARD_Y + i * CARD_STEP;
+        int x = CARD_X + (O.held == i ? 10 : 0), y = card_y + i * step;
         bool sel = O.focus == i && !O.solved, bad = O.wrong & (1u << i);
-        if (bad) gfx_fill(s, x - 3, y - 3, CARD_W + 6, CARD_H + 6, C_TERRA); /* out of order: framed, by shape too */
-        gfx_plate(s, x, y, CARD_W, CARD_H, O.solved ? C_OCHRE : sel ? C_PAPER_SEL : C_PAPER);
-        if (sel) gfx_tri(s, x - 14, y + CARD_H / 2 - 6, 6, true, C_PAPER);
-        font_draw(s, b, x + 12, y + (CARD_H - b->h) / 2, jstr(c, "mark") ? jstr(c, "mark") : "", -1, -1, C_INK);
-        mark_icon(s, x + 46, y + (CARD_H - 14) / 2, O.slot[i]);
-        font_draw(s, f, x + TEXT_X, y + (CARD_H - f->h) / 2, jstr(c, "text") ? jstr(c, "text") : "", -1, -1, C_INK);
-        if (bad) font_draw(s, b, x + CARD_W - 20, y + (CARD_H - b->h) / 2, "!", -1, -1, C_TERRA);
+        if (bad) gfx_fill(s, x - 3, y - 3, CARD_W + 6, card_h + 6, C_TERRA); /* out of order: framed, by shape too */
+        gfx_plate(s, x, y, CARD_W, card_h, O.solved ? C_OCHRE : sel ? C_PAPER_SEL : C_PAPER);
+        if (sel) gfx_tri(s, x - 14, y + card_h / 2 - 6, 6, true, C_PAPER);
+        font_draw(s, b, x + 12, y + (card_h - b->h) / 2, jstr(c, "mark") ? jstr(c, "mark") : "", -1, -1, C_INK);
+        mark_icon(s, x + 46, y + (card_h - 14) / 2, O.slot[i]);
+        font_draw(s, f, x + TEXT_X, y + (card_h - f->h) / 2, jstr(c, "text") ? jstr(c, "text") : "", -1, -1, C_INK);
+        if (bad) font_draw(s, b, x + CARD_W - 20, y + (card_h - b->h) / 2, "!", -1, -1, C_TERRA);
     }
     const char *labels[2] = {jas(jget(O.def, "buttons"), 0) ? jas(jget(O.def, "buttons"), 0) : "Confirmar",
                              jas(jget(O.def, "buttons"), 1) ? jas(jget(O.def, "buttons"), 1) : "Ordenar por las marcas"};
@@ -154,11 +158,11 @@ void order_render(surface *s) {
     for (int i = 0; i < nb; i++) {
         bool sel = O.focus == O.n + i && !O.solved;
         int x = x0 + i * (bw + 12);
-        gfx_plate(s, x, BTN_Y, bw, BTN_H, sel ? C_PAPER_SEL : C_PAPER);
-        if (sel) gfx_tri(s, x + 10, BTN_Y + BTN_H / 2 - 6, 6, true, C_INK);
-        text_center(s, b, x + bw / 2, BTN_Y + (BTN_H - b->h) / 2, labels[i], C_INK);
+        gfx_plate(s, x, btn_y, bw, BTN_H, sel ? C_PAPER_SEL : C_PAPER);
+        if (sel) gfx_tri(s, x + 10, btn_y + BTN_H / 2 - 6, 6, true, C_INK);
+        text_center(s, b, x + bw / 2, btn_y + (BTN_H - b->h) / 2, labels[i], C_INK);
     }
-    button_hint(s, 40, 228, "B", O.held >= 0 ? "Soltar" : "Volver", C_PAPER);
+    button_hint(s, 40, hint_y, "B", O.held >= 0 ? "Soltar" : "Volver", C_PAPER);
     gfx_panel(s, 16, 256, SCREEN_W - 32, 58);
     if (G.pz.msg) {
         uint16_t ls[3], ll[3];
