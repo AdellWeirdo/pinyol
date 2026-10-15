@@ -44,10 +44,11 @@ RetroArch's info folder (*Settings, Directory, Core Info*) for it to show the co
 RetroPie-Setup builds and installs it with the module in `platform/libretro/lr-pinyol.sh`. On the Raspberry Pi:
 
 ```sh
-mkdir -p ~/RetroPie-Setup/ext/pinyol/scriptmodules/libretrocores
-curl -fsSL https://raw.githubusercontent.com/ipaud/pinyol/main/platform/libretro/lr-pinyol.sh \
-  -o ~/RetroPie-Setup/ext/pinyol/scriptmodules/libretrocores/lr-pinyol.sh
-sudo ~/RetroPie-Setup/retropie_packages.sh lr-pinyol
+cd ~/RetroPie-Setup
+curl -fsSL --create-dirs \
+  -o ext/pinyol/scriptmodules/libretrocores/lr-pinyol.sh \
+  https://raw.githubusercontent.com/ipaud/pinyol/main/platform/libretro/lr-pinyol.sh
+sudo ./retropie_packages.sh lr-pinyol
 ```
 
 Once the module is in place it is also in RetroPie-Setup's menu (*Manage packages, Manage experimental packages,

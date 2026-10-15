@@ -101,7 +101,7 @@ def header() -> str:
 <a class="logo" href="#top" aria-label="pinyol, inicio"><span class="logo-anim"><img class="l-leaves" src="img/logo/leaves.png" alt="" width="83" height="52"><img class="l-seed" src="img/logo/seed.png" alt="" width="83" height="52"><img class="l-word" src="img/logo/word.png" alt="" width="83" height="52"></span></a>
 <nav aria-label="Secciones"><ul>
 <li class="keep"><a href="#aspectos">Juegos</a></li><li><a href="#rendimiento">Rendimiento</a></li>
-<li><a href="#crear">Editor</a></li><li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz uno</a></li><li><a href="#consola">La consola</a></li><li><a href="#making">Cómo se hizo</a></li>
+<li><a href="#crear">Editor</a></li><li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz uno</a></li><li><a href="#consola">La consola</a></li><li><a href="#retroarch">RetroPie</a></li><li><a href="#making">Cómo se hizo</a></li>
 <li class="keep"><a href="{REPO}">GitHub</a></li></ul></nav>
 {i18n.switcher("es")}
 </div></header>"""
@@ -164,9 +164,11 @@ def performance(board: dict, tests: int) -> str:
 </div></section>"""
 
 
-def code(text: str) -> str:
+def code(text: str, wide: bool = False) -> str:
+    """A command to copy. wide: lines that must not wrap (a shell command split with \\) scroll sideways instead."""
     first = text.splitlines()[0]
-    return (f'<div class="code"><pre><code>{escape(text)}</code></pre>'
+    pre = '<div class="code wide"><pre tabindex="0">' if wide else '<div class="code"><pre>'
+    return (f'{pre}<code>{escape(text)}</code></pre>'
             f'<button class="copy" type="button" aria-label="Copiar: {escape(first)}">Copiar</button></div>')
 
 
@@ -263,6 +265,22 @@ def console(fw: dict | None) -> str:
 <div class="hw"><dl class="spec">{dl}</dl>
 <div class="side">{install(fw)}<div class="pending"><h3>La carcasa, en preparación</h3><p>Carcasa imprimible, botones y lista de materiales para montarla tú. Mientras tanto, la placa sola ya juega.</p>
 <p><a href="{REPO}/blob/main/docs/hardware.md">Cómo conectarla</a> · <a href="https://github.com/Freenove/Freenove_ESP32_S3_Display">La placa de Freenove</a></p></div></div></div>
+</div></section>"""
+
+
+def retroarch() -> str:
+    """The engine as a libretro core (docs/libretro.md): RetroArch, and RetroPie on a Raspberry Pi."""
+    setup = ("cd ~/RetroPie-Setup\ncurl -fsSL --create-dirs \\\n  -o ext/pinyol/scriptmodules/libretrocores/lr-pinyol.sh \\\n"
+             f"  {RAW}/platform/libretro/lr-pinyol.sh\nsudo ./retropie_packages.sh lr-pinyol")
+    return f"""<section id="retroarch" aria-labelledby="retroarch-t"><div class="wrap">
+<h2 id="retroarch-t">En RetroArch y RetroPie</h2>
+<p class="intro">¿Sin la consola? El motor también es un núcleo de libretro: los juegos de pinyol se juegan en RetroArch y en todo lo que se basa en él, como RetroPie o Lakka en una Raspberry Pi, Batocera, Recalbox, las portátiles que lo llevan o un ordenador. Es el mismo motor, así que el juego es el mismo.</p>
+<ol class="steps">
+<li><h3>Instálalo en RetroPie</h3><p>En la Raspberry Pi: compila el núcleo, en unos minutos, y añade Pinyol a EmulationStation.</p>{code(setup, wide=True)}</li>
+<li><h3>Copia los juegos</h3><p>El .zip de cualquier juego, como los que se descargan aquí, va a su carpeta.</p>{code("~/RetroPie/roms/pinyol/")}</li>
+<li><h3>Juega</h3><p>Reinicia EmulationStation y aparece Pinyol con sus juegos. En el mando, X o Y hacen de C, y SELECT de MENU.</p></li>
+</ol>
+<div class="aside-note"><b>¿Otro RetroArch?</b> En un ordenador, Batocera o Lakka el núcleo se añade a mano: <a href="{REPO}/blob/main/docs/libretro.md">cómo compilarlo y dónde va</a>. Probado en RetroArch y con el sistema de RetroPie emulado, aún no en una Raspberry Pi de verdad: si lo pruebas, <a href="{REPO}/issues">cuéntanos cómo va</a>.</div>
 </div></section>"""
 
 
@@ -392,6 +410,7 @@ def render(board: dict, stats: dict, fw: dict | None) -> str:
 {codex()}
 {library()}
 {console(fw)}
+{retroarch()}
 {making(stats)}
 </main>
 {footer()}
