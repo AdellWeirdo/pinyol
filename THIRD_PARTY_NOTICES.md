@@ -1970,6 +1970,10 @@ obstacle to adoption, that text has been removed.
 
 Apache License 2.0. Copyright Google LLC. `editor/vendor/blockly`
 
+### GoatCounter's count.js
+
+ISC licence (https://opensource.org/licenses/ISC), as the file says. `site/vendor/goatcounter`, the site's visit counter.
+
 ### ESP Web Tools (with esptool-js)
 
 Apache License 2.0. ESPHome and Espressif. `site/vendor/esp-web-tools`, as published; the libraries in its bundle keep their own licences.
