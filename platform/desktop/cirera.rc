@@ -1,0 +1,3 @@
+/* The Cirera app's resources (Windows): the pixel cherry as its icon, and its manifest (cirera.manifest) */
+1 ICON "cirera.ico"
+1 24 "cirera.manifest"

@@ -210,6 +210,7 @@ footer img { height: 1.6rem; width: auto; }
 /* ------------------------------------------------------------------ small pieces */
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .meta { margin: var(--s5) 0 0; color: var(--text-3); font-size: var(--t-small); }
+.meta + .steps { margin-top: var(--s6); }
 /* the making-of: one enemy from the request to the game (the real pictures), then the repository's days */
 .pipeline { margin: var(--s8) 0 0; }
 .pipeline figcaption p { margin: 0 0 var(--s5); color: var(--text-2); max-width: 60ch; }

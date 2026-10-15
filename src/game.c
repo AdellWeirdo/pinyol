@@ -2,9 +2,9 @@
  * opened or closed something can never also pick an option in the layer that appears next. */
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 
 #include "bp.h"
+#include "compat.h"
 
 game G;
 

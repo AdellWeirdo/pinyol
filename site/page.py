@@ -376,6 +376,24 @@ def console(fw: dict | None) -> str:
 </div></section>"""
 
 
+def desktop() -> str:
+    """The console as a Mac and Windows app (tools/make_app.py), from the release the desktop workflow keeps."""
+    dl = f"{REPO}/releases/download/cirera"
+    return f"""<section id="escritorio" aria-labelledby="escritorio-t"><div class="wrap">
+<h2 id="escritorio-t">Cirera en tu ordenador</h2>
+<p class="intro">La consola, hecha aplicación para Mac y Windows: su menú, los juegos de ejemplo dentro y cualquier juego de la Biblioteca. Es el mismo motor, así que el juego es el mismo, con teclado o con mando.</p>
+<div class="actions"><a class="btn btn-primary" href="{dl}/Cirera-mac.zip" data-goatcounter-click="cirera-mac">Descargar para Mac</a><a class="btn btn-primary" href="{dl}/Cirera-windows.zip" data-goatcounter-click="cirera-windows">Descargar para Windows</a></div>
+<p class="meta">Mac: macOS 11 o posterior, con Apple Silicon o Intel · Windows 10 o posterior, de 64 bits · unos 9 MB</p>
+<ol class="steps">
+<li><h3>Ábrela la primera vez</h3><p>Aún no está firmada por Apple ni por Microsoft, así que el sistema te avisa la primera vez.</p>
+<p>En el Mac, descomprime el .zip, arrastra Cirera a Aplicaciones y ábrela. Cuando avise, ve a Ajustes del Sistema → Privacidad y seguridad y pulsa «Abrir igualmente».</p>
+<p>En Windows, descomprime el .zip y abre Cirera.exe. Si sale «Windows protegió su PC», pulsa «Más información» y «Ejecutar de todas formas».</p></li>
+<li><h3>Añade juegos</h3><p>Descarga el .zip de cualquier juego de esta página o de la Biblioteca y suéltalo sobre la ventana de Cirera: se instala y sale en el menú.</p></li>
+<li><h3>Juega</h3><p>Flechas para moverte; Z o Intro es A, X o Esc es B, C es C y P es START. Mantén la I (MENU) dos segundos para volver al menú, y F11 para la pantalla completa. En el mando, X o Y hacen de C, y SELECT de MENU. Las partidas se guardan en tu ordenador.</p></li>
+</ol>
+</div></section>"""
+
+
 def retroarch() -> str:
     """The engine as a libretro core (docs/libretro.md): RetroArch, and RetroPie on a Raspberry Pi."""
     setup = ("cd ~/RetroPie-Setup\ncurl -fsSL --create-dirs \\\n  -o ext/pinyol/scriptmodules/libretrocores/lr-pinyol.sh \\\n"
