@@ -2,6 +2,7 @@
 // into what the console plays: a WAV, 16-bit, mono, 22 050 Hz. Effects are kept in the console's memory as they play,
 // so they are short; music is read from the card as it plays, so it can be long.
 import { renderSong } from './song.js';
+import { t } from './i18n.js';
 
 export const HZ = 22050;
 export const MAX_S = { effect: 5, music: 240 };
@@ -64,7 +65,7 @@ export async function audioFiles(p) { // [[path, bytes]] of the sounds from file
   for (const s of p.sounds.filter(x => x.mod)) out.push([`audio/${fileOf(s)}.mod`, fromBase64(s.file)]); // music() plays it
   for (const s of p.sounds.filter(x => x.file && !x.mod)) {
     try { out.push([`audio/${fileOf(s)}.wav`, wav(cut(s, await samples(s)))]); }
-    catch { throw new Error(`no se ha podido leer el sonido «${s.name}»`); }
+    catch { throw new Error(t('no se ha podido leer el sonido «{name}»', { name: s.name })); }
   }
   return out;
 }

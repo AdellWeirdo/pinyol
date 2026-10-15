@@ -92,7 +92,7 @@ objetos pueden tener animaciones con nombre (quieto, andar, golpe), y los bloque
 una cuenta atrás en la pantalla. **Nuevo** empieza desde uno de cinco juegos para cambiar, cada uno con sus dibujos,
 niveles y reglas: un plataformas, una aventura vista desde arriba (llaves y puertas), un matamarcianos, un puzle de
 empujar cajas y **Abella**, un juego de Game Boy entero en tres niveles (hecho en directo en el editor, y el primero de
-la Biblioteca de la web). La interfaz está en castellano, catalán e inglés. Necesita al lado el reproductor web (mira
+la Biblioteca de la web). La interfaz está en castellano, catalán o inglés (se elige arriba, en **Idioma**). Necesita al lado el reproductor web (mira
 [más abajo](#comparte-un-juego-juégalo-en-el-navegador) cómo compilarlo):
 
 ```sh

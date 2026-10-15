@@ -4,6 +4,7 @@
 import { MAX_BYTES, lookOf } from './project.js';
 import { fileOf } from './audio.js';
 import { bytesOf as videoBytes } from './videos.js';
+import { t } from './i18n.js';
 
 // ------------------------------------------------------------------ pictures in the engine's format
 
@@ -185,8 +186,8 @@ function _draw() kit.draw() end
 export function buildFiles(p, blocksCode, carried, { start, audio = [], cover } = {}) { // cover: map.js's coverBytes
   const used = bytesOf(p.drawings);
   if (used > MAX_BYTES)
-    throw new Error(`los dibujos no caben en la consola (${used >> 10} de ${MAX_BYTES >> 10} KB): ` +
-                    'quita fotogramas o haz más pequeños los dibujos grandes');
+    throw new Error(t('los dibujos no caben en la consola ({used} de {max} KB): quita fotogramas o haz más pequeños los dibujos grandes',
+                      { used: used >> 10, max: MAX_BYTES >> 10 }));
   const enc = new TextEncoder(), files = new Map(), crops = {};
   for (const d of p.drawings) {
     const pic = picture(d);
@@ -197,8 +198,8 @@ export function buildFiles(p, blocksCode, carried, { start, audio = [], cover } 
     files.set(`assets/SPR_${d.name}.meta.json`, enc.encode(JSON.stringify(pic.meta, null, 2) + '\n'));
   }
   files.set('game.json', enc.encode(JSON.stringify({ id: p.id, title: p.title, engine: 'pinyol@2', main: 'main.lua',
-    author: p.author || 'pinyol editor', description: p.about || 'Hecho con el editor de pinyol.',
-    subtitle: p.tagline || 'Hecho con el editor de pinyol' }, null, 2) + '\n'));
+    author: p.author || 'pinyol editor', description: p.about || t('Hecho con el editor de pinyol.'),
+    subtitle: p.tagline || t('Hecho con el editor de pinyol') }, null, 2) + '\n'));
   if (cover) files.set('cover.rgb565', cover); // the console's menu shows it
   files.set('data.lua', enc.encode(dataLua(p, crops, start)));
   files.set('main.lua', enc.encode(mainLua(p, blocksCode)));

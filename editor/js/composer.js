@@ -3,6 +3,7 @@
 // (arrows, Space, Shift+Right to lengthen). While it plays, a line shows where it is, and changes are heard at once.
 import { rows, noteName, SCALE_NAMES, WAVES, DRUMS, stepSeconds } from './song.js';
 import { play, stop, position } from './audio.js';
+import { t } from './i18n.js';
 
 const $ = id => document.getElementById(id);
 const CW = 18, RH = 16, LABEL = 52, GAP = 12; // a step's width, a row's height, the names' column, between the parts
@@ -148,39 +149,42 @@ function select(options, value, set) {
 export function renderComposer(box, sound, ctx) {
   app = ctx, s = sound;
   const tempo = Object.assign(document.createElement('input'), { type: 'range', min: 50, max: 220, step: 1, value: s.song.bpm });
-  const out = Object.assign(document.createElement('output'), { textContent: s.song.bpm + ' por minuto' });
-  tempo.addEventListener('input', () => { s.song.bpm = Number(tempo.value); out.textContent = s.song.bpm + ' por minuto'; edited(); });
-  const tempoLabel = control('Velocidad', tempo);
+  const perMinute = () => t('{n} por minuto', { n: s.song.bpm });
+  const out = Object.assign(document.createElement('output'), { textContent: perMinute() });
+  tempo.addEventListener('input', () => { s.song.bpm = Number(tempo.value); out.textContent = perMinute(); edited(); });
+  const tempoLabel = control(t('Velocidad'), tempo);
   tempoLabel.insertBefore(out, tempo);
-  const lengths = { 16: '1 compás (16 pasos)', 32: '2 compases', 48: '3 compases', 64: '4 compases' };
+  const lengths = { 16: t('1 compás (16 pasos)'), 32: t('{n} compases', { n: 2 }), 48: t('{n} compases', { n: 3 }),
+                    64: t('{n} compases', { n: 4 }) };
   const controls = document.createElement('div');
   controls.className = 'sliders';
   controls.append(tempoLabel,
-    control('Largo', select(lengths, String(s.song.steps), v => {
+    control(t('Largo'), select(lengths, String(s.song.steps), v => {
       s.song.steps = Number(v);
       for (const t of ['lead', 'bass']) s.song[t].notes = s.song[t].notes.filter(([st]) => st < s.song.steps);
       for (const [d] of DRUMS) s.song.drums[d] = s.song.drums[d].filter(st => st < s.song.steps);
     })),
-    control('Escala', select(SCALE_NAMES, s.song.scale, v => {
+    control(t('Escala'), select(SCALE_NAMES, s.song.scale, v => {
       s.song.scale = v;
       for (const t of ['lead', 'bass']) { const max = rows(s.song, t).length - 1; for (const n of s.song[t].notes) n[1] = Math.min(n[1], max); }
     })),
-    control('Melodía', select(WAVES, s.song.lead.wave, v => { s.song.lead.wave = v; })),
-    control('Bajo', select(WAVES, s.song.bass.wave, v => { s.song.bass.wave = v; })));
+    control(t('Melodía'), select(WAVES, s.song.lead.wave, v => { s.song.lead.wave = v; })),
+    control(t('Bajo'), select(WAVES, s.song.bass.wave, v => { s.song.bass.wave = v; })));
   const scroll = document.createElement('div');
   scroll.className = 'song-scroll';
   const grid = Object.assign(document.createElement('canvas'), { id: 'song-grid', tabIndex: 0 });
   grid.setAttribute('role', 'application');
-  grid.setAttribute('aria-roledescription', 'partitura');
-  grid.setAttribute('aria-label', 'La música: melodía arriba, bajo en medio, batería abajo');
+  grid.setAttribute('aria-roledescription', t('partitura'));
+  grid.setAttribute('aria-label', t('La música: melodía arriba, bajo en medio, batería abajo'));
   grid.setAttribute('aria-describedby', 'song-help');
   scroll.append(grid);
   const help = Object.assign(document.createElement('p'), { id: 'song-help', className: 'hint',
-    textContent: 'Clic para poner o quitar una nota; arrástrala a la derecha para que dure más. Con el teclado: flechas, ' +
-                 'Espacio pone o quita, Mayús+→ alarga, Intro escucha o para. Amarillo: melodía. Azul: bajo. Rosa: batería.' });
-  const longer = Object.assign(document.createElement('button'), { type: 'button', textContent: '↔ Alargar notas' });
+    textContent: t('Clic para poner o quitar una nota; arrástrala a la derecha para que dure más.') + ' ' +
+                 t('Con el teclado: flechas, Espacio pone o quita, Mayús+→ alarga, Intro escucha o para.') + ' ' +
+                 t('Amarillo: melodía. Azul: bajo. Rosa: batería.') });
+  const longer = Object.assign(document.createElement('button'), { type: 'button', textContent: '↔ ' + t('Alargar notas') });
   longer.setAttribute('aria-pressed', String(stretch));
-  longer.title = 'Mientras está pulsado, tocar una casilla alarga hasta ella la nota de su izquierda';
+  longer.title = t('Mientras está pulsado, tocar una casilla alarga hasta ella la nota de su izquierda');
   longer.addEventListener('click', () => { stretch = !stretch; longer.setAttribute('aria-pressed', String(stretch)); });
   controls.append(longer);
   box.append(controls, scroll, help);

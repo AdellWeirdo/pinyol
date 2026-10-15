@@ -1,10 +1,12 @@
 // pinyol's sounds made from numbers (src/synth.c), in JavaScript: the same recipes from the same seeds, rendered for
 // listening while editing. The game makes its own with sound() from the recipe and seed, so what is heard here is
 // what it plays (to a rounding).
+import { t } from './i18n.js';
+
 export const HZ = 22050;
 export const WAVES = ['square', 'triangle', 'saw', 'sine', 'noise'];
-export const RECIPES = { coin: 'moneda', laser: 'láser', explosion: 'explosión', powerup: 'mejora', hit: 'golpe',
-                         jump: 'salto', blip: 'bip', random: 'sorpresa' };
+export const RECIPES = { coin: t('moneda'), laser: t('láser'), explosion: t('explosión'), powerup: t('mejora'), hit: t('golpe'),
+                         jump: t('salto'), blip: t('bip'), random: t('sorpresa') }; // as the buttons say them
 
 export function defaults() {
   return { wave: 'square', freq: 440, freq_min: 0, slide: 0, slide_accel: 0, vibrato: 0, vibrato_speed: 6, arp: 1,

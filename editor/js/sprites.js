@@ -3,6 +3,7 @@
 // object that moves in some way, or a picture behind the map).
 import { PALETTE, COLOUR_NAMES, BEHAVIOURS, SHOT_DIRS, DRIFTS, DRAWING, SIZES, MAX_SIDE, MAX_BYTES, MAX_FRAMES, ANIMS, blankFrame, safeName, uniqueName, rgb565, hex565, rgbOf, hexOf, lookOf, lookColour, checkAnims, } from './project.js';
 import { sizeOf, bytesOf } from './build.js';
+import { t } from './i18n.js';
 
 const $ = id => document.getElementById(id);
 let app, cur = 0, frame = 0, tool = 'pen', colour = hex565(PALETTE[19]);
@@ -40,7 +41,7 @@ export function thumbnail(d, size = 32) {
 
 const drawing = () => app.project && app.project.drawings[cur]; // (the preview's animation starts before a project)
 const fits = (next, prev) => bytesOf(app.project.drawings) - (prev ? sizeOf(prev) : 0) + sizeOf(next) <= MAX_BYTES; // with next in prev's place
-const TOO_BIG = 'No cabe: la memoria de la consola está casi llena. Quita fotogramas o dibujos que no uses, o hazlos más pequeños.';
+const TOO_BIG = t('No cabe: la memoria de la consola está casi llena. Quita fotogramas o dibujos que no uses, o hazlos más pequeños.');
 let kb = { x: 0, y: 0 }; // the keyboard's cursor on the canvas
 
 function snapshot() { // before a change: for undo
@@ -136,12 +137,12 @@ function renderCanvas() {
   renderFrames();
   drawPreview();
   const li = $('drawings').children[cur];
-  if (li) { const t = li.querySelector('canvas'); if (t) drawPixels(t, d, 0); }
+  if (li) { const c = li.querySelector('canvas'); if (c) drawPixels(c, d, 0); }
 }
 
 // ------------------------------------------------------------------ the rest of the tab
 
-const USES = { tile: 'baldosa', object: 'objeto', backdrop: 'fondo' };
+const USES = { tile: t('baldosa'), object: t('objeto'), backdrop: t('fondo') };
 
 function renderList() {
   const ul = $('drawings'), focused = ul.contains(document.activeElement);
@@ -150,7 +151,7 @@ function renderList() {
     const li = document.createElement('li'), b = document.createElement('button');
     b.className = 'item';
     b.append(thumbnail(d), Object.assign(document.createElement('span'), { className: 'name', textContent: d.name }),
-      Object.assign(document.createElement('span'), { className: 'kind', textContent: d.use === 'tile' && d.solid ? 'sólida' : USES[d.use] }));
+      Object.assign(document.createElement('span'), { className: 'kind', textContent: d.use === 'tile' && d.solid ? t('sólida') : USES[d.use] }));
     b.setAttribute('aria-current', String(i === cur));
     b.addEventListener('click', () => select(i));
     li.append(b);
@@ -158,7 +159,7 @@ function renderList() {
   });
   if (focused) ul.querySelector('[aria-current="true"]')?.focus(); // still where it was
   const used = bytesOf(app.project.drawings), m = $('d-memory');
-  m.textContent = `Memoria de la consola: ${used >> 10} de ${MAX_BYTES >> 10} KB`;
+  m.textContent = t('Memoria de la consola: {used} de {max} KB', { used: used >> 10, max: MAX_BYTES >> 10 });
   m.classList.toggle('warn', used > MAX_BYTES * 0.9);
 }
 
@@ -171,8 +172,8 @@ function renderFrames() {
     drawPixels(c, d, f);
     b.append(c);
     b.setAttribute('aria-pressed', String(f === frame));
-    b.setAttribute('aria-label', 'Fotograma ' + (f + 1));
-    b.title = 'Fotograma ' + (f + 1);
+    b.title = t('Fotograma {n}', { n: f + 1 });
+    b.setAttribute('aria-label', b.title);
     b.addEventListener('click', () => { frame = f; renderCanvas(); });
     box.append(b);
   });
@@ -212,17 +213,18 @@ function renderAnims(d) {
   rows.replaceChildren(...Object.entries(ANIMS).map(([k, label]) => {
     const r = (d.anims && d.anims[k]) || [0, 0], row = document.createElement('div');
     row.className = 'anim-row';
-    const num = (v, which) => {
+    const num = (v, end, which) => { // end: 0 the first frame, 1 the last
       const i = Object.assign(document.createElement('input'), { type: 'number', min: 1, max: n, value: v + 1 });
       i.setAttribute('aria-label', `${label}: ${which}`);
       i.addEventListener('change', () => {
-        const cur = (d.anims && d.anims[k]) || [0, 0], next = which === 'desde' ? [i.value - 1, cur[1]] : [cur[0], i.value - 1];
+        const cur = (d.anims && d.anims[k]) || [0, 0], next = end ? [cur[0], i.value - 1] : [i.value - 1, cur[1]];
         d.anims = checkAnims({ ...d.anims, [k]: next }, n);
         changed();
       });
       return i;
     };
-    row.append(Object.assign(document.createElement('span'), { textContent: label }), 'del', num(r[0], 'desde'), 'al', num(r[1], 'hasta'));
+    row.append(Object.assign(document.createElement('span'), { textContent: label }), t('del'), num(r[0], 0, t('desde')), t('al'),
+               num(r[1], 1, t('hasta')));
     return row;
   }));
 }
@@ -326,8 +328,8 @@ function importPreview() {
   c.width = Math.max(1, Math.round(pic.w * s)), c.height = Math.max(1, Math.round(pic.h * s));
   drawPixels(c, pic, 0, s);
   incoming.total = pic.w * pic.frames.length; // the row's width: kept when the number of frames changes
-  $('import-size').textContent = `${pic.w} × ${pic.h} px` + (pic.frames.length > 1 ? ` cada uno, ${pic.frames.length} fotogramas` : '') +
-    (ok ? '' : ' · no cabe en la memoria de la consola: hazla más pequeña');
+  $('import-size').textContent = `${pic.w} × ${pic.h} px` + (pic.frames.length > 1 ? ' ' + t('cada uno, {n} fotogramas', { n: pic.frames.length }) : '') +
+    (ok ? '' : ' · ' + t('no cabe en la memoria de la consola: hazla más pequeña'));
   $('import-size').classList.toggle('warn', !ok);
   $('import-ok').disabled = !ok;
 }
@@ -345,9 +347,9 @@ function fewColours(bmp) { // pixel art (a few colours) stays sharp when made sm
 
 async function openImport(file) {
   if (!file) return;
-  if (!/^image\//.test(file.type)) return app.oops(`«${file.name}» no es una imagen. Usa un archivo PNG, JPG, GIF o WebP.`);
+  if (!/^image\//.test(file.type)) return app.oops(t('«{file}» no es una imagen. Usa un archivo PNG, JPG, GIF o WebP.', { file: file.name }));
   try { incoming = { bmp: await createImageBitmap(file), name: (file.name || 'imagen').replace(/\.[^.]*$/, '') }; }
-  catch { return app.oops('No se ha podido leer esa imagen. Prueba a guardarla como PNG.'); }
+  catch { return app.oops(t('No se ha podido leer esa imagen. Prueba a guardarla como PNG.')); }
   const { width: w, height: h } = incoming.bmp;
   const strip = w > h && w % h === 0 && w / h <= 8 ? w / h : 1; // a row of square frames
   const tw = Math.min(w, strip > 1 ? MAX_SIDE : 240); // the screen is 240 wide
@@ -372,7 +374,7 @@ function finishImport() {
   select(app.project.drawings.length - 1);
   app.uses();
   app.changed();
-  app.toast(use === 'backdrop' ? 'Imagen añadida como fondo: se ve detrás del mapa.' : 'Imagen añadida.');
+  app.toast(use === 'backdrop' ? t('Imagen añadida como fondo: se ve detrás del mapa.') : t('Imagen añadida.'));
 }
 
 function initImport() {
@@ -463,7 +465,8 @@ export function initDrawings(ctx) {
   $('drawing-del').addEventListener('click', () => {
     const d = drawing();
     if (app.project.drawings.length < 2 ||
-        !confirm(`¿Quitar «${d.name}»? Sale también de todos los niveles y de la portada, y los bloques que lo usan dejarán de funcionar.`)) return;
+        !confirm(t('¿Quitar «{name}»? Sale también de todos los niveles y de la portada, y los bloques que lo usan dejarán de funcionar.',
+                   { name: d.name }))) return;
     app.remove(d.name);
     cur = Math.max(0, cur - 1);
     changed();
@@ -472,7 +475,7 @@ export function initDrawings(ctx) {
     const d = drawing(), names = new Set(app.project.drawings.filter(x => x !== d).map(x => x.name));
     const name = uniqueName(safeName(e.target.value, d.name), names);
     if (name !== d.name) { undo.delete(d.name); app.rename(d.name, name); }
-    if (name !== e.target.value) app.toast(`Se llama «${name}»: sin acentos ni espacios, así sale en los bloques.`);
+    if (name !== e.target.value) app.toast(t('Se llama «{name}»: sin acentos ni espacios, así sale en los bloques.', { name }));
     changed();
   });
   $('d-size').addEventListener('change', e => {
@@ -488,7 +491,8 @@ export function initDrawings(ctx) {
   for (const r of document.querySelectorAll('input[name=use]'))
     r.addEventListener('change', () => { // what it is placed as goes away from the maps: said first
       const d = drawing(), n = app.placed(d.name);
-      if (n && !confirm(`«${d.name}» está puesto ${n} ${n === 1 ? 'vez' : 'veces'} en el mapa. Si cambia, se quita de los niveles. ¿Seguir?`)) {
+      if (n && !confirm(n === 1 ? t('«{name}» está puesto 1 vez en el mapa. Si cambia, se quita de los niveles. ¿Seguir?', { name: d.name })
+        : t('«{name}» está puesto {n} veces en el mapa. Si cambia, se quita de los niveles. ¿Seguir?', { name: d.name, n }))) {
         renderProps();
         return;
       }
