@@ -1,7 +1,9 @@
 /* ST77922 over QSPI. The panel is 320x480 portrait and cannot swap rows and columns (MADCTL has no MV), so
  * the 480x320 frame is turned in software: 32 frame columns at a time become 32 panel rows in internal RAM,
  * with the byte swap the bus wants, and each strip goes out by DMA while the next one is built.
- * Init sequence and protocol from Freenove's FNK0104N driver (TFT_eSPI 2.5.43, ST77922.cpp). */
+ * INIT is the panel's register settings as the module's maker publishes them (LCDwiki's ST77922 example,
+ * github.com/ydedox/st77922, the same table Freenove's driver carries): the values this glass needs to light up.
+ * The QSPI command format is the ST77922 interface protocol's. */
 #include "display.h"
 
 #include <string.h>

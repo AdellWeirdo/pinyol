@@ -99,6 +99,10 @@ def main() -> None:
                                                   "SOFTWARE OR THE USE OR OTHER DEALINGS")),
         block("newlib (the C library, from the toolchain)", "BSD-style licences of several authors, as listed here.",
               read(newlib)),
+        block("The display's and the codec's settings", "Not code from others: the ST77922 panel's init table "
+              "(firmware/main/display.c) is the register settings its maker publishes for this module (LCDwiki, "
+              "https://github.com/ydedox/st77922), values the hardware needs; the ES8311 codec's registers are set as "
+              "Espressif's esp_codec_dev driver (Apache License 2.0) and the codec's datasheet set them."),
         block("GCC runtime (libgcc, libstdc++)", "GPL-3.0 with the GCC Runtime Library Exception, which puts no "
               "conditions on the firmware built with them."),
         "## In the web player (Emscripten)\n",

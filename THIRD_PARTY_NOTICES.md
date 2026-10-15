@@ -1571,6 +1571,10 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 ```
 
+### The display's and the codec's settings
+
+Not code from others: the ST77922 panel's init table (firmware/main/display.c) is the register settings its maker publishes for this module (LCDwiki, https://github.com/ydedox/st77922), values the hardware needs; the ES8311 codec's registers are set as Espressif's esp_codec_dev driver (Apache License 2.0) and the codec's datasheet set them.
+
 ### GCC runtime (libgcc, libstdc++)
 
 GPL-3.0 with the GCC Runtime Library Exception, which puts no conditions on the firmware built with them.

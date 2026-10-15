@@ -1,6 +1,6 @@
 /* Sound out and in (docs/hardware.md). The engine's mixer (audio_mix, mono at AUDIO_HZ) feeds an I2S stream, 16-bit
- * stereo at 22050 Hz, into the ES8311 codec on the shared I2C bus (0x18), which clocks itself from BCLK: the
- * register sequence is the one proven on the sister 2.8" board (from Freenove's es8311.cpp). The
+ * stereo at 22050 Hz, into the ES8311 codec on the shared I2C bus (0x18), which clocks itself from BCLK: its
+ * registers are set as Espressif's esp_codec_dev es8311 driver (Apache 2.0) and the ES8311 datasheet set them. The
  * 8002 amplifier is switched on once (IO1 low) and left on until power-off, as it swallows its first ~100 ms.
  * The same stream runs both ways: the codec's ADC (the microphone, registers as Espressif's esp_codec_dev sets them)
  * comes back on DIN, block for block with what goes out; the mixer's task keeps it in a ring for hal_mic_read while
