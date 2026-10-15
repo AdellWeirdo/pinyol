@@ -158,6 +158,7 @@ function dataLua(p, crops, start) {
   const st = lookOf(p).style; // the texts' and hearts' colours in the look's palette
   const style = st ? Object.fromEntries(Object.entries(st).map(([k, v]) => [k, hex(v)])) : undefined;
   const data = { title: p.title, tile: p.tile || 16, style, words: WORDS[p.lang], sprites, kinds, solid, sounds, ending: p.ending,
+                 transition: p.transition || undefined,
                  cover: c.on ? { text: p.title, subtitle: c.subtitle, background: hex(c.background), picture: pic ? pic.name : null,
                                  music: tune(c.music),
                                  tiled: pic ? pic.use === 'backdrop' : null } : null,

@@ -45,8 +45,12 @@ export const DRAWING = { use: 'tile', solid: false, behaviour: 'still', speed: 1
                          dir: 'forward', parallax: 0.5, drift: '', drift_speed: 0.5 };
 
 export const SIZES = [8, 16, 24, 32, 48, 64];
-export const MAX_FRAMES = 16; // a drawing's frames: room for named animations (still, walking, hit)
-export const ANIMS = { idle: t('Quieto'), walk: t('Andar'), hit: t('Golpe') }; // kit.lua's named animations
+export const MAX_FRAMES = 64; // a drawing's frames: room for named animations (still, walking, hit), views and actions
+export const MAX_DRAWINGS = 512; // a game's drawings: tiles a map is made of count one each
+export const ANIMS = { idle: t('Quieto'), walk: t('Andar'), hit: t('Golpe'), // kit.lua's named animations: the front,
+  idle_side: t('Quieto de lado'), walk_side: t('Andar de lado'), idle_up: t('Quieto de espaldas'), // its side and back
+  walk_up: t('Andar de espaldas'), act1: t('Acción 1'), act2: t('Acción 2'), act3: t('Acción 3'), act4: t('Acción 4'), // views, actions
+  act5: t('Acción 5'), act6: t('Acción 6') };
 export const LANGS = { es: 'Castellano', ca: 'Català', en: 'English' }; // a game's (and the editor's): each in its own words
 
 // The letters a game can have: the engine's own, or one of these (fonts/<id>/: the four FONT_*.fnt the game carries,
@@ -63,7 +67,15 @@ export const LOOKS = {
   gameboy: { name: 'Game Boy', tile: 16, font: 'silkscreen', background: '#9BBC0F',
              palette: ['#0F380F', '#306230', '#8BAC0F', '#9BBC0F'],
              names: [t('verde negro'), t('verde oscuro'), t('verde claro'), t('verde pálido')],
-             style: { text: '#9BBC0F', outline: '#0F380F', accent: '#8BAC0F', bad: '#9BBC0F', heart: '#306230' } },
+             style: { text: '#9BBC0F', outline: '#0F380F', accent: '#8BAC0F', bad: '#9BBC0F', heart: '#306230',
+                      talk_bg: '#9BBC0F', talk_edge: '#0F380F', talk_text: '#0F380F', talk_who: '#306230', talk_dim: '#306230',
+                      talk_inner: '#0F380F' } },
+  gameboy_luz: { name: t('Game Boy, más contraste'), tile: 16, font: 'micro5', background: '#E0F8D0', // four greens apart
+                 palette: ['#081820', '#346856', '#88C070', '#E0F8D0'],
+                 names: [t('verde negro'), t('verde oscuro'), t('verde claro'), t('verde pálido')],
+                 style: { text: '#E0F8D0', outline: '#081820', accent: '#88C070', bad: '#E0F8D0', heart: '#346856',
+                          talk_bg: '#E0F8D0', talk_edge: '#081820', talk_text: '#081820', talk_who: '#346856',
+                          talk_dim: '#346856', talk_inner: '#081820' } },
   pico8: { name: 'PICO-8', tile: 8, font: 'micro5', background: '#1D2B53',
            palette: null, // PALETTE's first 16, below
            style: { text: '#FFF1E8', outline: '#000000', accent: '#FFEC27', bad: '#FF004D', heart: '#FF004D' } },
@@ -196,11 +208,12 @@ export function check(p) {
                 tagline: String(p.tagline || '').slice(0, 40), // the line under the name in the console's menu
                 look: LOOKS[p.look] ? p.look : '', tile: p.tile === 8 ? 8 : 16, font: FONTS[p.font] !== undefined ? p.font : '',
                 lang: LANGS[p.lang] ? p.lang : 'es', // (before languages: Spanish; a new game is in the editor's, templates.js)
-                levels: [], sounds: [], videos: [], blocks: p.blocks && typeof p.blocks === 'object' ? p.blocks : null };
+                levels: [], sounds: [], videos: [], blocks: p.blocks && typeof p.blocks === 'object' ? p.blocks : null,
+                transition: !!p.transition }; // blinds between levels
   const names = new Set();
   const old = !(p.format >= 2), palette = PALETTE.map(hex565); // format 1: indices into the palette
   const pixel = v => (!Number.isInteger(v) || v < 0 ? -1 : old ? (v < palette.length ? palette[v] : -1) : v <= 0xFFFF ? v : -1);
-  for (const d of Array.isArray(p.drawings) ? p.drawings.slice(0, 64) : []) {
+  for (const d of Array.isArray(p.drawings) ? p.drawings.slice(0, MAX_DRAWINGS) : []) {
     const w = clampInt(d.w, 1, MAX_SIDE, 16), h = clampInt(d.h, 1, MAX_SIDE, 16);
     const frames = (Array.isArray(d.frames) ? d.frames.slice(0, MAX_FRAMES) : []).map(f =>
       (typeof f === 'string' ? decodeFrame(f, w * h) : null) ||

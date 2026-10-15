@@ -1,0 +1,52 @@
+# The editor's adventure with views: the explorer shows her side going right (and left, flipped) and her back going up;
+# a neighbour turns to face her when she reaches him, she plays an action, and a conversation does not freeze them;
+# blinds close and open between the levels
+tick 30
+press A
+tick 25
+lua h = kit.first("exploradora")
+hold RIGHT 12
+expect_lua h.view == "side" and not h.flip and (h.frame == 2 or h.frame == 3)
+tick 3
+expect_lua h.frame == 2
+hold UP 12
+expect_lua h.view == "up" and (h.frame == 4 or h.frame == 5)
+hold LEFT 8
+expect_lua h.view == "side" and h.flip
+hold DOWN 8
+expect_lua h.view == "down" and (h.frame == 0 or h.frame == 1)
+# the neighbour, reached from his left: he turns to the left (his side view, flipped) and she does her action
+lua v = kit.first("vecino") h.x, h.y = v.x - 10, v.y
+tick 2
+expect_lua hablado == 1 and v.view == "side" and v.flip and v.frame == 1
+tick 3
+expect_lua h.frame == 6
+# her action's last frame stays while the conversation waits, then she stands again
+tick 60
+expect_lua h.frame == 6
+press A
+press A
+tick 10
+expect_lua h.frame == 0
+# reached from below he shows his front; turned to something above him, his back
+lua h.x, h.y = v.x, v.y + 40
+tick 2
+lua h.x, h.y = v.x, v.y + 3
+tick 2
+expect_lua v.view == "down" and v.frame == 0
+press A
+press A
+lua h.x, h.y = v.x, v.y - 60
+tick 2
+lua kit.face(v, {x = v.x, y = v.y - 30, w = 8, h = 8})
+tick 2
+expect_lua v.view == "up" and v.frame == 2
+# the stairs: the blinds close over the first level, then the second one opens
+lua e = kit.first("escalera") h.x, h.y = e.x, e.y
+tick 4
+expect_lua kit.level() == "nivel1"
+tick 12
+expect_lua kit.level() == "nivel2"
+shot vistas_blinds
+tick 12
+expect_ok

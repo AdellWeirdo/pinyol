@@ -36,11 +36,16 @@
 -- kit.mic_level() 0..100, kit.mic_note() Hz. On firmware without a microphone or video these do nothing.
 --
 -- Named animations: a kind's anims = {idle = {first, last}, walk = {...}, hit = {...}} (frames from 0) play by
--- themselves, walk while it moves, idle while it stands; kit.play(o, "hit") plays the hit once. Lives:
+-- themselves, walk while it moves, idle while it stands, also while a conversation waits; idle_side, walk_side,
+-- idle_up and walk_up are its side and back views (idle and walk, the front), chosen by the way it last moved or
+-- was turned (kit.face(o, other)); the side view looks right and is flipped to look left. kit.play(o, "hit") plays
+-- the hit once, kit.play(o, "act1") an action ("act1".."act6") once: while a conversation waits, its last frame stays. Lives:
 -- kit.set_lives(n) shows hearts, kit.add_lives(-1) takes one; at none, "no_lives" fires (or the level is lost) and
 -- trying the level again gives them back. kit.countdown(seconds) shows a clock; at 0, "time_up" fires (or the level
 -- is lost). kit.label(key, text, where, style): "normal", "shadow", "wave", "big", "gradient". data.style =
--- {text, outline, accent, bad, heart} are its colours (a look's palette) and data.words its sentences (its language).
+-- {text, outline, accent, bad, heart, talk_bg, talk_edge, talk_text, talk_who, talk_dim, talk_inner} are its colours
+-- (a look's palette; talk_* the conversation box's, talk_inner a second line inside its edge) and data.words its
+-- sentences (its language). data.transition: blinds close and open between two levels.
 local juice = require("juice")
 local particles = require("particles")
 
@@ -60,6 +65,8 @@ local cells                           -- the map's tile names, row by row
 local LV = {}                         -- the level being played: {id, name, map, objects, background, camera, backdrops}
 local level_i = 1
 local going                           -- the level to go to, once this tick is over
+local trans                           -- the blinds between two levels (data.transition): {to, t, out}
+local TRANS = 10                      -- ticks they take to close, and to open
 local on_cover = false                -- the title screen is showing
 local map_w, map_h = 1, 1             -- KIT_MAP's size: the biggest level's, so one canvas serves them all
 local clock = 0
@@ -70,7 +77,8 @@ local lives, lives_start, countdown -- the hearts and the clock, once a block se
 local WORDS = {start = "Pulsa A para empezar", to_cover = "A: a la portada", again = "A: otra partida",
                retry = "A: probar otra vez", fell = "¡Te has caído!", won = "¡Has ganado!", lost = "Has perdido",
                no_lives = "¡Sin vidas!", time_up = "¡Se acabó el tiempo!"}
-local STYLE = {text = 0xFFFFFF, outline = 0x202020, accent = 0xFFE070, bad = 0xFF7060, heart = 0xFF4060}
+local STYLE = {text = 0xFFFFFF, outline = 0x202020, accent = 0xFFE070, bad = 0xFF7060, heart = 0xFF4060,
+               talk_bg = 0x101820, talk_edge = 0xE8D8B0, talk_text = 0xFFFFFF, talk_who = 0xFFE070, talk_dim = 0xB8C8D8}
 local W, S = WORDS, STYLE             -- the game's own (data.words, data.style), these where it says nothing
 
 local talk                            -- what is being said: {lines = {{who, text}...}, i, shown, ask, sel}
@@ -153,8 +161,8 @@ local function talk_update() -- the conversation, while there is one: true (the 
     if btnp("up") then talk.sel = (talk.sel - 2) % #l.options + 1 end
     if btnp("down") then talk.sel = talk.sel % #l.options + 1 end
     if btnp("a") then picked = talk.sel end
-    if tapped then -- a tap on an answer
-      local row = math.floor((ty * 2 - 262) / 18) + 1
+    if tapped and l.oy then -- a tap on an answer (where talk_draw put them)
+      local row = math.floor((ty * 2 - (l.oy - l.up)) / l.step) + 1
       if row >= 1 and row <= #l.options then picked = row end
     end
     if not picked then return true end
@@ -167,24 +175,40 @@ local function talk_update() -- the conversation, while there is one: true (the 
   return true
 end
 
+local function talk_layout(l) -- once a line: where its answers go, and how far up the box grows for all to fit
+  local y = 222 + (l.who and 18 or 0)
+  local _, th = text(l.text, -999, -999, {width = 420, chars = 0}) -- (measured, nothing drawn)
+  local inner = S.talk_inner and 4 or 0 -- a second line inside the edge takes some room
+  l.up = math.max(0, y + th - 306 + inner)
+  if l.options then
+    l.step = 18
+    for _, o in ipairs(l.options) do l.step = math.max(l.step, select(2, text("> " .. o, -999, -999, {}))) end
+    l.oy = math.max(262, y + th + 2)
+    l.up = math.max(0, l.oy + #l.options * l.step - 308 + inner)
+  end
+end
+
 local function talk_draw()
   if not talk then return end
   local l = talk.lines[talk.i]
-  rect(16, 214, 448, 98, 0x101820)
-  box(18, 216, 444, 94, 0xE8D8B0)
-  local y = 222
+  if not l.up then talk_layout(l) end
+  local up = l.up
+  rect(16, 214 - up, 448, 98 + up, S.talk_bg)
+  box(18, 216 - up, 444, 94 + up, S.talk_edge)
+  if S.talk_inner then box(22, 219 - up, 436, 88 + up, S.talk_inner) end
+  local y = 222 - up
   if l.who then
-    text(l.who, 30, y, {font = "bold", color = 0xFFE070})
+    text(l.who, 30, y, {font = "bold", color = S.talk_who})
     y = y + 18
   end
-  text(l.text, 30, y, {color = 0xFFFFFF, width = 420, chars = math.floor(talk.shown)})
+  text(l.text, 30, y, {color = S.talk_text, width = 420, chars = math.floor(talk.shown)})
   if l.options and talk.shown >= talk.total then
     for i, o in ipairs(l.options) do
       local on = i == (talk.sel or 1)
-      text((on and "> " or "  ") .. o, 40, 244 + i * 18, {color = on and 0xFFE070 or 0xB8C8D8})
+      text((on and "> " or "  ") .. o, 40, l.oy - up + (i - 1) * l.step, {color = on and S.talk_who or S.talk_dim})
     end
   elseif talk.shown >= talk.total and clock % 40 < 26 then
-    tri(446, 296, 456, 296, 451, 302, 0xE8D8B0)
+    tri(446, 296, 456, 296, 451, 302, S.talk_edge)
   end
 end
 
@@ -346,10 +370,18 @@ function M.player() -- whom the camera follows, or the first player-like object
 end
 
 function M.set_sprite(o, name) if o and D.sprites[name] then o.sprite = name end end
-function M.play(o, name) -- a named animation once: "hit" (walk and idle play by themselves)
+function M.play(o, name) -- a named animation once: "hit", or an action "act1".."act6" (walk and idle play by themselves)
   local k = o and D.kinds[o.kind]
   local r = k and k.anims and k.anims[name]
-  if r and name == "hit" then o.hit_t = (math.abs(r[2] - r[1]) + 1) * ((k.animate or 0) > 0 and k.animate or 6) end
+  if not r then return end
+  local t = (math.abs(r[2] - r[1]) + 1) * ((k.animate or 0) > 0 and k.animate or 6)
+  if name == "hit" then o.hit_t = t else o.act, o.act_t = name, t end
+end
+function M.face(o, t) -- o turns towards t: its side, back or front view, as its drawing has them
+  if not (o and t and o ~= t) then return end
+  local dx, dy = (t.x + t.w / 2) - (o.x + o.w / 2), (t.y + t.h / 2) - (o.y + o.h / 2)
+  if math.abs(dx) > math.abs(dy) then o.view, o.flip, o.fx, o.fy = "side", dx < 0, dx < 0 and -1 or 1, 0
+  else o.view, o.fx, o.fy = dy < 0 and "up" or "down", 0, dy < 0 and -1 or 1 end
 end
 
 -- lives and a countdown: shown once set
@@ -451,6 +483,7 @@ local function grid_step(o, speed) -- an arrow held: a cell that way, pushing a 
   if dx == 0 and dy == 0 then return end
   o.fx, o.fy = dx, dy
   if dx ~= 0 then o.flip = dx < 0 end
+  o.view = dy < 0 and "up" or dy > 0 and "down" or "side"
   local cx, cy = cell_of(o)
   local nx, ny = cx + dx, cy + dy
   if not free_cell(nx, ny) then return end
@@ -460,6 +493,39 @@ local function grid_step(o, speed) -- an arrow held: a cell that way, pushing a 
     slide(box, nx + dx, ny + dy, speed)
   end
   slide(o, nx, ny, speed)
+end
+
+local function anim_range(a, o, moving) -- the named animation it is in: an action, a hit, or idle/walk its way
+  if (o.act_t or 0) > 0 and a[o.act] then return a[o.act] end
+  if (o.hit_t or 0) > 0 and a.hit then return a.hit end
+  local v = o.view == "up" and "_up" or o.view == "side" and "_side" or "" -- down: the plain idle and walk
+  if moving then return a["walk" .. v] or a.walk or a["idle" .. v] or a.idle end
+  return a["idle" .. v] or a.idle
+end
+
+local function animate(o, still) -- its frame this tick; still: the game waits (a conversation), nobody walks
+  local k = D.kinds[o.kind] or {}
+  local b = k.behaviour or "still"
+  local moving = not still and (o.vx ~= 0 or o.vy ~= 0)
+  if k.anims then -- named: walk while it moves, idle while it stands, a hit or an action once when told
+    local s = D.sprites[o.sprite]
+    local last = (s and s.frames or 1) - 1
+    local r = anim_range(k.anims, o, moving)
+    local a, z = 0, last
+    if r then a, z = math.max(0, math.min(r[1], last)), math.max(0, math.min(r[2], last)) end
+    if (o.hit_t or 0) > 0 then o.hit_t = o.hit_t - 1 end
+    local every = (k.animate or 0) > 0 and k.animate or 6
+    local hold = still and (o.act_t or 0) > 0 and o.act_t <= every -- an action's last frame waits for the conversation
+    if (o.act_t or 0) > 0 and not hold then o.act_t = o.act_t - 1 end
+    if r ~= o.anim_r then o.anim_r, o.anim = r, 0 end -- a new animation starts from its first frame
+    if not hold then o.anim = o.anim + 1 end
+    o.frame = a + ((o.anim - 1) // every) % (math.max(a, z) - a + 1)
+  elseif (k.animate or 0) > 0 then -- frames go round while it moves (or always, for things that are not players)
+    local player = b == "platformer" or b == "topdown" or b == "grid" or b == "push"
+    o.anim = (moving or not player) and o.anim + 1 or 0
+    local s = D.sprites[o.sprite]
+    o.frame = s and s.frames > 1 and (o.anim // k.animate) % s.frames or 0
+  end
 end
 
 local function behave(o)
@@ -481,6 +547,7 @@ local function behave(o)
     o.vx, o.vy = dx * speed * n, dy * speed * n
     if dx ~= 0 or dy ~= 0 then o.fx, o.fy = dx, dy end
     if dx ~= 0 then o.flip = dx < 0 end
+    if dy ~= 0 then o.view = dy < 0 and "up" or "down" elseif dx ~= 0 then o.view = "side" end
   elseif b == "patrol" then
     if o.vx == 0 then o.dir = -o.dir end
     if gravity and o.ground then -- turns at the edge of what it walks on
@@ -509,23 +576,7 @@ local function behave(o)
   local W, H = world() -- players stay inside the world (a platformer may still fall out of the bottom)
   if b == "platformer" or b == "topdown" or b == "grid" then o.x = math.max(0, math.min(W - o.w, o.x)) end
   if b == "topdown" or b == "grid" then o.y = math.max(0, math.min(H - o.h, o.y)) end
-  if k.anims then -- named: walk while it moves, idle while it stands, a hit once when told
-    local s = D.sprites[o.sprite]
-    local last = (s and s.frames or 1) - 1
-    local r = ((o.hit_t or 0) > 0 and k.anims.hit) or ((o.vx ~= 0 or o.vy ~= 0) and k.anims.walk) or k.anims.idle
-    local a, z = 0, last
-    if r then a, z = math.max(0, math.min(r[1], last)), math.max(0, math.min(r[2], last)) end
-    if (o.hit_t or 0) > 0 then o.hit_t = o.hit_t - 1 end
-    if r ~= o.anim_r then o.anim_r, o.anim = r, 0 end -- a new animation starts from its first frame
-    o.anim = o.anim + 1
-    local every = (k.animate or 0) > 0 and k.animate or 6
-    o.frame = a + ((o.anim - 1) // every) % (math.max(a, z) - a + 1)
-  elseif (k.animate or 0) > 0 then -- frames go round while it moves (or always, for things that are not players)
-    local moving = o.vx ~= 0 or o.vy ~= 0 or (b ~= "platformer" and b ~= "topdown" and b ~= "grid" and b ~= "push")
-    o.anim = moving and o.anim + 1 or 0
-    local s = D.sprites[o.sprite]
-    o.frame = s and s.frames > 1 and (o.anim // k.animate) % s.frames or 0
-  end
+  animate(o, false)
 end
 
 local function overlap(a, b)
@@ -631,7 +682,7 @@ local function play_level(i, first)
 end
 
 local function begin_game(which) -- labels last the whole game; "start" fires once the first level is there
-  labels, lives, lives_start, countdown = {}, nil, nil, nil
+  labels, lives, lives_start, countdown, trans = {}, nil, nil, nil, nil
   M.video()
   local i = 1
   for k, l in ipairs(D.levels) do if k == which or l.id == which then i = k end end
@@ -683,7 +734,16 @@ function M.update()
     end
     return
   end
-  if video_update() or talk_update() then return end -- a video or a conversation: the game waits
+  if trans then -- between two levels: the blinds close, the next level comes, they open
+    trans.t = trans.t + 1
+    for _, o in ipairs(objs) do if o.alive then animate(o, true) end end
+    if trans.t >= TRANS then if trans.out then play_level(trans.to, false) trans = {t = 0} else trans = nil end end
+    return
+  end
+  if video_update() or talk_update() then -- a video or a conversation: the game waits, what is drawn still breathes
+    for _, o in ipairs(objs) do if o.alive then animate(o, true) end end
+    return
+  end
   if juice.update() then return end
   timer = timer + 1
   if countdown and countdown > 0 then
@@ -753,7 +813,9 @@ function M.update()
     cam.x = math.max(0, math.min(mw - 240, math.floor(p.x + p.w / 2 - 120)))
     cam.y = math.max(0, math.min(mh - 160, math.floor(p.y + p.h / 2 - 80)))
   end
-  if going and not ended then play_level(going, false) end
+  if going and not ended then
+    if D.transition then trans, going = {to = going, t = 0, out = true}, nil else play_level(going, false) end
+  end
 end
 
 local PLACES = {top_left = {12, 8, "left"}, top = {240, 8, "center"}, top_right = {468, 8, "right"},
@@ -819,7 +881,10 @@ function M.draw()
     if o.alive then
       local x, y = (o.x - cam.x) * 2 + sx, (o.y - cam.y) * 2 + sy
       if x > -64 and x < SCREEN_W + 64 and y > -64 and y < SCREEN_H + 64 then
-        if o.flip then img("SPR_" .. o.sprite, x, y, {frame = o.frame, scale = 2, flip_x = true})
+        local k = D.kinds[o.kind]
+        local views = k and k.anims and (k.anims.idle_up or k.anims.walk_up or k.anims.idle_side or k.anims.walk_side)
+        if o.flip and not (views and o.view ~= "side") then -- with views, only the side one is flipped
+          img("SPR_" .. o.sprite, x, y, {frame = o.frame, scale = 2, flip_x = true})
         else img("SPR_" .. o.sprite, x, y, o.frame, 2) end
       end
     end
@@ -847,6 +912,10 @@ function M.draw()
                                        width = 440})
   end
   video_draw()
+  if trans then -- ten blinds in the look's darkest colour
+    local h = math.floor(32 * (trans.out and trans.t / TRANS or 1 - trans.t / TRANS) + 0.5)
+    if h > 0 then for y = 0, SCREEN_H - 1, 32 do rect(0, y, SCREEN_W, h, S.outline) end end
+  end
   talk_draw()
   if ended then
     shade(0, 0, SCREEN_W, SCREEN_H)

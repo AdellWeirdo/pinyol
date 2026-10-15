@@ -119,6 +119,11 @@ export function defineBlocks() {
   define('kit_set_tile', ACTION, [t('poner'), { dropdown: () => [[t('nada'), '_'], ...tiles().filter(x => x[1] !== '_')], name: 'TILE' },
     { value: true, name: 'X', check: 'Number', label: t('en x') }, { value: true, name: 'Y', check: 'Number', label: 'y' }], 'statement');
   // named animations: walk and idle play by themselves; a hit when told
+  define('kit_play', OBJECT, [t('animación'), { dropdown: () => [[t('Golpe'), 'hit'], [t('Acción 1'), 'act1'], [t('Acción 2'), 'act2'],
+    [t('Acción 3'), 'act3'], [t('Acción 4'), 'act4'], [t('Acción 5'), 'act5'], [t('Acción 6'), 'act6']], name: 'ANIM' }, { value: true, name: 'OBJ', check: 'Obj', label: t('de') }], 'statement',
+    t('Esos fotogramas de su dibujo, una vez; en una conversación, el último se queda hasta que acaba (se eligen en Dibujos, en Animaciones)'));
+  define('kit_face', OBJECT, [{ value: true, name: 'OBJ', check: 'Obj', label: t('girar') }, { value: true, name: 'TO', check: 'Obj', label: t('hacia') }],
+    'statement', t('Se pone de frente, de espaldas o de lado según dónde esté el otro (si su dibujo tiene esas vistas)'));
   define('kit_play_hit', OBJECT, [{ value: true, name: 'OBJ', check: 'Obj', label: t('animación de golpe de') }], 'statement',
          t('Los fotogramas de golpe de su dibujo, una vez (se eligen en Dibujos, en Animaciones)'));
   // lives and a countdown: hearts and a clock on the screen
@@ -177,7 +182,7 @@ const q = s => JSON.stringify(String(s)); // a Lua string (JSON's escapes are Lu
 function defineLua() {
   const g = lua.luaGenerator, O = lua.Order;
   const val = (b, name, d = '0') => g.valueToCode(b, name, O.NONE) || d;
-  const obj = b => g.valueToCode(b, 'OBJ', O.NONE) || 'nil';
+  const obj = (b, input = 'OBJ') => g.valueToCode(b, input, O.NONE) || 'nil';
   const text = b => g.valueToCode(b, 'TEXT', O.NONE) || '""';
   const body = b => g.statementToCode(b, 'DO') || '';
   const on = (head, b, args = '') => `kit.on(${head}, function(${args})\n${body(b)}end)\n`;
@@ -236,6 +241,8 @@ function defineLua() {
   F.kit_video_stop = () => 'kit.video()\n';
   F.kit_video_end = b => on('"video_end"', b);
   F.kit_play_hit = b => `kit.play(${obj(b)}, "hit")\n`;
+  F.kit_play = b => `kit.play(${obj(b)}, ${JSON.stringify(b.getFieldValue('ANIM'))})\n`;
+  F.kit_face = b => `kit.face(${obj(b)}, ${obj(b, 'TO')})\n`;
   F.kit_set_lives = b => `kit.set_lives(${Number(b.getFieldValue('N')) || 0})\n`;
   F.kit_lose_life = () => 'kit.add_lives(-1)\n';
   F.kit_add_lives = b => `kit.add_lives(${val(b, 'V')})\n`;
@@ -278,7 +285,8 @@ export const TOOLBOX = {
       { kind: 'block', type: 'kit_get', inputs: { OBJ: thisBlock() } }, { kind: 'block', type: 'kit_count' },
       { kind: 'block', type: 'kit_count_on' },
       { kind: 'block', type: 'kit_sprite', inputs: { OBJ: thisBlock() } },
-      { kind: 'block', type: 'kit_play_hit', inputs: { OBJ: thisBlock() } }] },
+      { kind: 'block', type: 'kit_play', inputs: { OBJ: thisBlock() } },
+      { kind: 'block', type: 'kit_face', inputs: { OBJ: thisBlock('otro'), TO: thisBlock() } }] },
     { kind: 'category', name: t('Acciones'), colour: ACTION, contents: [
       { kind: 'block', type: 'kit_sound' }, { kind: 'block', type: 'kit_music' }, { kind: 'block', type: 'kit_music_stop' },
       { kind: 'block', type: 'kit_label', inputs: { TEXT: str(t('Puntos: 0')) } },

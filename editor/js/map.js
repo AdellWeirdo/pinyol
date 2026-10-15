@@ -295,6 +295,7 @@ function renderCover() {
   fontFamily(p.font).then(family => { if (app.project === p) paintCover(cv.getContext('2d'), family); }); // once loaded
   $('game-font').value = p.font || '';
   $('game-lang').value = p.lang || 'es';
+  $('game-transition').checked = !!p.transition;
   cv.classList.toggle('off', !c.on);
   $('cover-on').checked = c.on;
   $('cover-subtitle').value = c.subtitle;
@@ -427,6 +428,7 @@ export function initMap(ctx) {
   $('ending').addEventListener('input', e => { app.project.ending = e.target.value.slice(0, 60); app.changed(); });
   for (const [k, name] of Object.entries(FONTS)) $('game-font').append(new Option(name, k));
   $('game-font').addEventListener('change', e => { app.project.font = e.target.value; app.changed(); render(); });
+  $('game-transition').addEventListener('change', e => { app.project.transition = e.target.checked; app.changed(); });
   for (const [k, name] of Object.entries(LANGS)) $('game-lang').append(new Option(name, k));
   $('game-lang').addEventListener('change', e => { app.project.lang = e.target.value; app.changed(); }); // kit's sentences
   for (const [id, key, max] of [['game-tagline', 'tagline', 40], ['game-author', 'author', 40], ['game-about', 'about', 140]])
