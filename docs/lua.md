@@ -545,6 +545,19 @@ studio.notes(2, {"A1", 0, {"A2", accent = true}, 0, {"A1", slide = true}, "C2", 
 studio.synth(2, {cutoff = 0.6})         -- turned while it plays: the acid sweep
 ```
 
+**Effects.** Each track sends some of itself to an echo and a reverb (`delay` and `reverb`, 0 to 1, in
+`studio.track` and `studio.synth`), and the whole game's sound can go through Lo-fi GBA.
+
+| Call | Does |
+|---|---|
+| `studio.fx({delay, feedback, tone, reverb, size, damp, lofi})` | the echo's time in steps (3 is a dotted 8th; it follows the tempo, gliding as a tape would), its repeats (`feedback` 0 to 0.95) and `tone` (0 dark as a tape echo's, 1 bright); `reverb` `"plate"` or `"gba"`: the two echoes, ~100 and ~117 ms apart, that Nintendo's GBA sound driver fed back into its mix, `size` and `damp` 0 to 1; `lofi = true` holds everything the game plays at 13,379 Hz and cuts it to 8 bits with no dither, as that driver mixed. What is left out stays as it was |
+
+```lua
+studio.track(2, {sound = "SNARE", reverb = 0.4, delay = 0.2})
+studio.synth(9, {cutoff = 0.3, delay = 0.35})
+studio.fx({delay = 3, feedback = 0.45, tone = 0.3, reverb = "gba", size = 0.6, lofi = true})
+```
+
 A track plays the first of a sound's variants every time (a pattern sounds the same each time round), and its sound
 stays in memory while a track holds it. Twelve sounds play at once, with `sfx` too: the one-shot closest to its end gives way.
 

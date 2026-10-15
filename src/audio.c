@@ -57,6 +57,7 @@ typedef struct {
     bool loop;
     uint16_t gen;      /* counts the sounds this voice has started: a handle names one of them */
     int wait;          /* samples of the next block before it starts: a studio step lands on its sample */
+    float send_d, send_r; /* a studio track's sends to its echo and reverb (0 for the game's own sounds) */
 } sfx_voice;
 
 enum { S_AMB0, S_MUS = S_AMB0 + NAMB, S_VOICE0, S_VOICE1, NSTREAMS };
@@ -395,13 +396,14 @@ int audio_sfx_play(const char *id, float gain, float pitch, bool loop) {
     if (c->count > 1 && k >= c->last) k++;
     c->last = k;
     hal_audio_lock();
-    int h = audio_voice_start_locked(c->pcm[k], c->n[k], gain, pitch, loop, 0);
+    int h = audio_voice_start_locked(c->pcm[k], c->n[k], gain, pitch, loop, 0, 0, 0);
     hal_audio_unlock();
     return h;
 }
 
 /* A voice starts pcm, `wait` samples into the next block mixed (the audio lock held). Returns its handle. */
-int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch, bool loop, int wait) {
+int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch, bool loop, int wait, float send_d,
+                             float send_r) {
     pitch = pitch > 0.0625f && pitch < 16 ? pitch : pitch >= 16 ? 16 : 0.0625f; /* NaN too: the lowest */
     int v = -1;
     for (int i = 0; i < SFX_VOICES && v < 0; i++) /* a free voice */
@@ -411,7 +413,8 @@ int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch,
             if (!sfx[i].loop && (v < 0 || sfx[i].n - sfx[i].pos < sfx[v].n - sfx[v].pos)) v = i;
     if (v < 0) v = 0;
     uint16_t gen = (uint16_t)(sfx[v].gen + 1);
-    sfx[v] = (sfx_voice){pcm, n, 0, 0, gain < 0 ? 0 : gain > 1 ? 1 : gain, pitch, loop, gen, wait < 0 ? 0 : wait};
+    sfx[v] = (sfx_voice){pcm, n, 0, 0, gain < 0 ? 0 : gain > 1 ? 1 : gain, pitch, loop, gen, wait < 0 ? 0 : wait,
+                         send_d, send_r};
     return (gen & 0x7FFF) << 4 | (v + 1); /* never 0 */
 }
 
@@ -589,11 +592,14 @@ static inline int16_t limit(float x) {
 /* Called by the platform's audio callback/task with the audio lock held. */
 void audio_mix(int16_t *out, int n) {
     static float acc[CHUNK], amb[CHUNK]; /* single caller (audio callback/task): keep them off its small stack */
+    static float sd[CHUNK], sr[CHUNK];   /* what the studio's tracks send to its echo and its reverb */
     static int16_t buf[CHUNK * MAX_STEMS];
     for (int off = 0; off < n; off += CHUNK) {
         int m = n - off < CHUNK ? n - off : CHUNK;
         memset(acc, 0, sizeof acc);
         memset(amb, 0, sizeof amb);
+        memset(sd, 0, sizeof sd);
+        memset(sr, 0, sizeof sr);
         for (int c = 0; c < NSTREAMS && !paused; c++) { /* pause freezes the world; menu clicks still play */
             stream *s = &st[c];
             if (!s->f) continue;
@@ -625,6 +631,11 @@ void audio_mix(int16_t *out, int n) {
                 for (int i = i0; i < m && x->pcm;) {
                     int k = x->n - x->pos < m - i ? x->n - x->pos : m - i;
                     for (int j = 0; j < k; j++) acc[i + j] += x->pcm[x->pos + j] * x->gain;
+                    if (x->send_d > 0 || x->send_r > 0)
+                        for (int j = 0; j < k; j++) {
+                            float y = x->pcm[x->pos + j] * x->gain;
+                            sd[i + j] += y * x->send_d, sr[i + j] += y * x->send_r;
+                        }
                     x->pos += k, i += k;
                     if (x->pos >= x->n) x->pos = 0, x->pcm = x->loop ? x->pcm : NULL;
                 }
@@ -632,7 +643,8 @@ void audio_mix(int16_t *out, int n) {
                 uint32_t step = (uint32_t)(x->pitch * 65536.0f);
                 for (int i = i0; i < m && x->pcm; i++) {
                     int a = x->pos, b = a + 1 < x->n ? a + 1 : (x->loop ? 0 : a);
-                    acc[i] += (x->pcm[a] + (float)(x->pcm[b] - x->pcm[a]) * (float)x->frac / 65536.0f) * x->gain;
+                    float y = (x->pcm[a] + (float)(x->pcm[b] - x->pcm[a]) * (float)x->frac / 65536.0f) * x->gain;
+                    acc[i] += y, sd[i] += y * x->send_d, sr[i] += y * x->send_r;
                     x->frac += step;
                     x->pos += (int)(x->frac >> 16), x->frac &= 0xFFFF;
                     if (x->pos >= x->n) {
@@ -642,10 +654,11 @@ void audio_mix(int16_t *out, int n) {
                 }
             }
         }
-        if (!paused) studio_mix(acc, m); /* the synth tracks' voices */
+        if (!paused) studio_mix(acc, sd, sr, m); /* the synth tracks' voices */
         psg_mix(acc, m);
         if (!paused && music_sounds()) mus_clock += m; /* (before a module may end) */
         if (!paused) mod_mix(acc, m);
+        if (!paused) studio_fx(acc, sd, sr, m); /* its echo and reverb, then Lo-fi GBA over everything */
         for (int i = 0; i < m; i++) out[off + i] = limit(acc[i] * ramp_next(&master));
     }
     mark_clock = mus_clock, mark_us = hal_micros(), mark_n = n;

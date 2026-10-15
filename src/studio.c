@@ -21,6 +21,7 @@ typedef struct {
     float gain, pitch;
     float vel[STUDIO_STEPS];
     int choke, voice; /* voice: the handle of its last hit, which a hit of its choke group stops */
+    float send_d, send_r; /* to the echo and the reverb (studio_fx.c) */
     bool synth;       /* a synth track: notes on its voice instead of a clip */
     sv_patch patch;
     sv_voice sv;
@@ -49,6 +50,7 @@ static int mark_n;
 static float clampf(float v, float lo, float hi) { return v > lo ? (v < hi ? v : hi) : lo; } /* NaN: lo */
 
 static double step_samples(void) { return AUDIO_HZ * 60.0 / (bpm * 4); }
+double studio_step_samples(void) { return step_samples(); }
 
 static void cut(int choke) {
     for (int j = 0; j < STUDIO_TRACKS; j++)
@@ -59,7 +61,7 @@ static void cut(int choke) {
  * a voice that ends exactly on the hit's sample needs a stop time in sfx_voice */
 static void start(track *t, float vel, int wait) {
     if (t->choke) cut(t->choke);
-    t->voice = audio_voice_start_locked(t->pcm, t->n, t->gain * vel, t->pitch, false, wait);
+    t->voice = audio_voice_start_locked(t->pcm, t->n, t->gain * vel, t->pitch, false, wait, t->send_d, t->send_r);
 }
 
 /* A synth track's step: a note (sliding in if the step before slides into it, held on if it slides into the next),
@@ -101,21 +103,24 @@ void studio_tick(int m) {
 
 void studio_mark(int n) { mark_now = now, mark_us = hal_micros(), mark_n = n; }
 
-void studio_mix(float *acc, int m) {
+void studio_mix(float *acc, float *sd, float *sr, int m) {
+    static float buf[256]; /* audio blocks are 256 samples at most (CHUNK in audio.c) */
     for (int i = 0; i < STUDIO_TRACKS; i++) {
         track *t = &T[i];
-        if (!t->synth) continue;
+        if (!t->synth || (!t->sv.on && !t->ev.pending)) continue;
+        memset(buf, 0, sizeof(float) * (size_t)m);
         event *e = &t->ev;
         if (!e->pending) {
-            sv_render(&t->sv, &t->patch, acc, 0, m);
-            continue;
+            sv_render(&t->sv, &t->patch, buf, 0, m);
+        } else {
+            int at = e->at < m ? e->at : m - 1;
+            sv_render(&t->sv, &t->patch, buf, 0, at);
+            if (e->note) sv_note(&t->sv, &t->patch, e->note, e->accent, e->legato, e->gate);
+            else sv_release(&t->sv);
+            e->pending = false;
+            sv_render(&t->sv, &t->patch, buf, at, m);
         }
-        int at = e->at < m ? e->at : m - 1;
-        sv_render(&t->sv, &t->patch, acc, 0, at);
-        if (e->note) sv_note(&t->sv, &t->patch, e->note, e->accent, e->legato, e->gate);
-        else sv_release(&t->sv);
-        e->pending = false;
-        sv_render(&t->sv, &t->patch, acc, at, m);
+        for (int k = 0; k < m; k++) acc[k] += buf[k], sd[k] += buf[k] * t->send_d, sr[k] += buf[k] * t->send_r;
     }
 }
 
@@ -128,6 +133,7 @@ void studio_reset(void) {
     hal_audio_lock();
     memset(T, 0, sizeof T);
     for (int i = 0; i < STUDIO_TRACKS; i++) T[i].gain = 1, T[i].pitch = 1, sv_defaults(&T[i].patch);
+    studio_fx_reset();
     on = false, bpm = 120, swing = 50, len = 16, up = 0, nheard = 0;
     hal_audio_unlock();
 }
@@ -201,6 +207,14 @@ void studio_note(int i, int note, bool accent) {
     track *t = &T[i];
     if (t->synth && note > 0 && note < 128) sv_note(&t->sv, &t->patch, note, accent, false, (int)(step_samples() * 0.55));
     else if (t->synth) sv_release(&t->sv);
+    hal_audio_unlock();
+}
+
+void studio_sends(int i, float delay, float reverb) {
+    if (i < 0 || i >= STUDIO_TRACKS) return;
+    hal_audio_lock();
+    if (delay >= 0) T[i].send_d = clampf(delay, 0, 1);
+    if (reverb >= 0) T[i].send_r = clampf(reverb, 0, 1);
     hal_audio_unlock();
 }
 

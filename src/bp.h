@@ -375,7 +375,8 @@ void audio_music_clock_locked(int src); /* (the same, the audio lock held: in a 
 bool audio_music_time(double *seconds); /* how far into the song the player hears now; false: none plays */
 void audio_reset(void);
 /* For the studio (studio.c), the audio lock held where it says so */
-int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch, bool loop, int wait); /* a handle */
+int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch, bool loop, int wait, float send_d,
+                             float send_r); /* a handle */
 void audio_voice_stop_locked(int handle);
 bool audio_clip_pin(const char *id, const int16_t **pcm, int *n); /* loaded and kept while a track plays it */
 void audio_clip_unpin(const int16_t *pcm);
@@ -396,7 +397,19 @@ void studio_reset(void);
 void studio_tick(int m);                   /* audio thread, lock held: starts the steps inside the next m samples */
 void studio_mark(int n);                   /* audio thread, lock held: n samples were mixed (for studio_pos) */
 void studio_replace_locked(const int16_t *old, const int16_t *pcm, int n); /* a made sound took old's place */
-void studio_mix(float *acc, int m);        /* audio thread, lock held: the synth tracks' voices into acc */
+void studio_mix(float *acc, float *sd, float *sr, int m); /* audio thread: the synth tracks into acc and the sends */
+void studio_fx(float *acc, const float *sd, const float *sr, int m); /* audio thread: echo, reverb, Lo-fi GBA */
+typedef struct {
+    float delay, feedback, tone; /* the echo: its time in steps (3 is a dotted 8th), repeats 0..0.95, tone 0..1 */
+    int reverb;                  /* STUDIO_PLATE or STUDIO_GBA (two echoes, as Nintendo's GBA sound driver did) */
+    float size, damp;            /* 0..1 */
+    bool lofi;                   /* everything held at 13,379 Hz and 8 bits, as a GBA mixed it */
+} studio_fx_params;
+#define STUDIO_PLATE 0
+#define STUDIO_GBA 1
+void studio_fx_set(const studio_fx_params *f);
+void studio_fx_get(studio_fx_params *f);
+void studio_sends(int track, float delay, float reverb); /* 0..1; negative keeps it */
 #define STUDIO_ACCENT 1
 #define STUDIO_SLIDE 2
 void studio_notes(int track, const uint8_t *notes, const uint8_t *flags, int n); /* MIDI notes (0 rest) and flags */

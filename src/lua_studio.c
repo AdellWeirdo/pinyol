@@ -4,12 +4,17 @@
  *   studio.steps(i, {v, v, ...});  studio.play([step]);  studio.stop();  studio.playing()
  *   studio.pos() -> step, fraction (what the player hears now; nil when stopped);  studio.hit(i [, velocity])
  *   studio.synth(i, {wave, cutoff, res, env, decay, accent, glide, drive, volume, tune})
- *   studio.notes(i, {note, {note, accent = true, slide = true}, 0, ...});  studio.note(i [, note [, accent]]) */
+ *   studio.notes(i, {note, {note, accent = true, slide = true}, 0, ...});  studio.note(i [, note [, accent]])
+ *   studio.fx({delay, feedback, tone, reverb = "plate" | "gba", size, damp, lofi});  sends: track's delay, reverb */
 #include <stdlib.h>
 #include <string.h>
 
 #include "lua_api.h"
 #include "studio_synth.h"
+
+static void sends_from(lua_State *L, int i, int t) { /* a track's {delay, reverb}: how much it sends to each */
+    studio_sends(i, opt_float(L, t, "delay", -1, -1, 1), opt_float(L, t, "reverb", -1, -1, 1));
+}
 
 static int track_arg(lua_State *L, int a) {
     lua_Integer i = luaL_checkinteger(L, a);
@@ -41,6 +46,7 @@ static int l_track(lua_State *L) {
     lua_getfield(L, 2, "choke");
     int choke = lua_isnil(L, -1) ? -1 : (int)luaL_checkinteger(L, -1);
     if (choke < -1 || choke > 15) return luaL_error(L, "studio.track: choke group %d (0, none, to 15)", choke);
+    sends_from(L, i, 2);
     lua_pushboolean(L, studio_track(i, sound, gain, pitch, choke));
     return 1;
 }
@@ -113,6 +119,7 @@ static int l_synth(lua_State *L) {
     p.volume = opt_float(L, 2, "volume", p.volume, 0, 1);
     p.tune = opt_float(L, 2, "tune", p.tune, -48, 48);
     studio_synth(i, &p);
+    sends_from(L, i, 2);
     return 0;
 }
 
@@ -162,6 +169,26 @@ static int l_notes(lua_State *L) {
     return 0;
 }
 
+static const char *const REVERBS[] = {"plate", "gba", NULL};
+
+/* studio.fx({delay, feedback, tone, reverb, size, damp, lofi}): what is left out stays as it was */
+static int l_fx(lua_State *L) {
+    luaL_checktype(L, 1, LUA_TTABLE);
+    studio_fx_params f;
+    studio_fx_get(&f);
+    f.delay = opt_float(L, 1, "delay", f.delay, 0.25f, 16);
+    f.feedback = opt_float(L, 1, "feedback", f.feedback, 0, 0.95f);
+    f.tone = opt_float(L, 1, "tone", f.tone, 0, 1);
+    lua_getfield(L, 1, "reverb");
+    if (!lua_isnil(L, -1)) f.reverb = luaL_checkoption(L, -1, NULL, REVERBS) == 1 ? STUDIO_GBA : STUDIO_PLATE;
+    lua_pop(L, 1);
+    f.size = opt_float(L, 1, "size", f.size, 0, 1);
+    f.damp = opt_float(L, 1, "damp", f.damp, 0, 1);
+    f.lofi = opt_bool(L, 1, "lofi", f.lofi);
+    studio_fx_set(&f);
+    return 0;
+}
+
 static int l_note(lua_State *L) { /* studio.note(i [, note [, accent]]): played by hand; no note lets it go */
     int i = track_arg(L, 1);
     studio_note(i, midi_of(L, 2), lua_toboolean(L, 3));
@@ -172,6 +199,7 @@ void studio_register(lua_State *L) {
     static const luaL_Reg F[] = {{"tempo", l_tempo}, {"length", l_length}, {"track", l_track}, {"steps", l_steps},
                                  {"play", l_play}, {"stop", l_stop}, {"playing", l_playing}, {"pos", l_pos},
                                  {"hit", l_hit}, {"synth", l_synth}, {"notes", l_notes}, {"note", l_note},
+                                 {"fx", l_fx},
                                  {NULL, NULL}};
     luaL_newlib(L, F);
     lua_setglobal(L, "studio");

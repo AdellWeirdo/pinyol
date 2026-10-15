@@ -223,6 +223,90 @@ int main(void) {
     CHECK(rms(2756 - 100, 2756 + 100) > rms(400, 2400) * 0.5); /* no release between them */
     CHECK(fabs(pitch(2756 + 900, 2756 + 1480) - 220) < 8);
 
+    /* the echo: a click sent to it comes back two steps later (5512.5 samples: shared by two), then at half */
+    float hit0[16] = {1};
+    audio_reset();
+    make("CLICK", 20000, 8);
+    studio_track(0, "CLICK", 1, 1, 0);
+    studio_sends(0, 1, 0);
+    studio_steps(0, hit0, 16);
+    studio_tempo(120, 50);
+    studio_fx_params f;
+    studio_fx_get(&f);
+    f.delay = 2, f.feedback = 0.5f, f.tone = 1;
+    studio_fx_set(&f);
+    memset(out, 0, sizeof out);
+    studio_play(0);
+    mix(6 * 2757);
+    int before = 0;
+    for (int i = 100; i < 5400; i++) before = abs(out[i]) > before ? abs(out[i]) : before;
+    CHECK(before < 10);
+    CHECK(abs(out[5512] - 10000) <= 2 && abs(out[5513] - 10000) <= 2);
+    int again = 0;
+    for (int i = 11020; i < 11030; i++) again += abs(out[i]);
+    CHECK(again > 8000 && again < 12000);
+
+    /* the plate: a tail after the click, dying away; at its largest it still does not run away */
+    audio_reset();
+    make("CLICK", 20000, 8);
+    studio_track(0, "CLICK", 1, 1, 0);
+    studio_sends(0, 0, 1);
+    studio_steps(0, hit0, 16);
+    studio_fx_get(&f);
+    f.reverb = STUDIO_PLATE, f.size = 0.6f, f.damp = 0.3f;
+    studio_fx_set(&f);
+    memset(out, 0, sizeof out);
+    studio_play(0);
+    mix(N);
+    double early = rms(2000, 6000), late = rms(30000, 34000);
+    CHECK(early > 50);
+    CHECK(late < early / 3);
+    audio_reset();
+    make("CLICK", 20000, 8);
+    studio_track(0, "CLICK", 1, 1, 0);
+    studio_sends(0, 1, 1);
+    studio_steps(0, all, 16);
+    studio_fx_get(&f);
+    f.size = 1, f.damp = 0, f.feedback = 0.95f;
+    studio_fx_set(&f);
+    studio_play(0);
+    for (int k = 0; k < 5; k++) mix(N);
+    CHECK(rms(N - AUDIO_HZ, N) < 30000);
+
+    /* GBA: Nintendo's two echoes, 2216 and 2585 samples (100 and 117 ms) after the click */
+    audio_reset();
+    make("CLICK", 20000, 8);
+    studio_track(0, "CLICK", 1, 1, 0);
+    studio_sends(0, 0, 1);
+    studio_steps(0, hit0, 16);
+    studio_fx_get(&f);
+    f.reverb = STUDIO_GBA, f.size = 0.5f;
+    studio_fx_set(&f);
+    memset(out, 0, sizeof out);
+    studio_play(0);
+    mix(4000);
+    CHECK(abs(out[2216] - 6800) <= 2 && abs(out[2585] - 6800) <= 2);
+    CHECK(out[2215] == 0 && out[2400] == 0);
+
+    /* Lo-fi GBA: 256 levels, each held about 1.65 samples (13,379 Hz) */
+    audio_reset();
+    make("CLICK", 20000, 400);
+    int16_t *ramp = malloc(sizeof(int16_t) * 4000);
+    for (int i = 0; i < 4000; i++) ramp[i] = (int16_t)((i * 7919) % 31 * 600 - 9000); /* new every sample */
+    audio_sfx_set("RAMP", ramp, 4000);
+    studio_track(0, "RAMP", 1, 1, 0);
+    studio_steps(0, hit0, 16);
+    studio_fx_get(&f);
+    f.lofi = true;
+    studio_fx_set(&f);
+    memset(out, 0, sizeof out);
+    studio_play(0);
+    mix(4000);
+    int odd = 0, changes = 0;
+    for (int i = 1; i < 4000; i++) odd += out[i] % 256 != 0, changes += out[i] != out[i - 1];
+    CHECK(odd == 0);
+    CHECK(changes > 2200 && changes <= 2430); /* 4000 * 13379 / 22050 = 2427 holds, a few land on the same level */
+
     printf("studio: %d checks, %d failed\n", checks, failures);
     return failures != 0;
 }
