@@ -15,7 +15,6 @@
  "Un motor, doce épocas": "One engine, twelve eras",
  "Jugar ahora": "Play now",
  "Ver el código": "See the code",
- "La consola, una placa Freenove FNK0104N, con su pantalla mostrando uno tras otro los doce aspectos": "The console, a Freenove FNK0104N board, its screen showing the twelve looks one after another",
  "Freenove FNK0104N · 480×320 · 60 fps en la placa": "Freenove FNK0104N · 480×320 · 60 fps on the board",
  "Doce aspectos, un motor": "Twelve looks, one engine",
  "Cada cartucho es un ejemplo jugable con las reglas de su consola: su resolución, sus colores, sus capas. Se juega con el teclado (flechas y Z, X) o con los botones de la pantalla en el móvil. Las cifras de fps son de la consola real, jugando.": "Each cartridge is a playable example with its console's rules: its resolution, its colours, its layers. Play with the keyboard (arrows and Z, X) or with the on-screen buttons on a phone. The fps figures are from the real console, playing.",
@@ -277,5 +276,8 @@
  "castellano, català y English": "castellano, català and English",
  "Abrir el editor": "Open the editor",
  "Juegos hechos con él": "Games made with it",
- "LÍNEA 0, un juego de Game Boy Advance hecho entero con el editor, en directo: dibujos, mapas, reglas y a jugar. El montaje, ocho veces más rápido; la partida, a velocidad real.": "LÍNEA 0, a Game Boy Advance game made entirely with the editor, live: drawings, maps, rules and play. The making, eight times faster; the playing, at real speed."
+ "LÍNEA 0, un juego de Game Boy Advance hecho entero con el editor, en directo: dibujos, mapas, reglas y a jugar. El montaje, ocho veces más rápido; la partida, a velocidad real.": "LÍNEA 0, a Game Boy Advance game made entirely with the editor, live: drawings, maps, rules and play. The making, eight times faster; the playing, at real speed.",
+ "La consola, una placa Freenove FNK0104N, arrancando: la intro de pinyol, el menú de Cirera con sus juegos y algunos de ellos en marcha": "The console, a Freenove FNK0104N board, starting up: pinyol's intro, Cirera's menu with its games and some of them running",
+ "Pausar": "Pause",
+ "Tutorial, de tu juego a la Biblioteca: descarga el .zip del editor, rellena el formulario y adjúntalo; un robot lo comprueba y, cuando está aprobado, ya se juega aquí. Las esperas, aceleradas.": "Tutorial, from your game to the Library: download the .zip from the editor, fill in the form and attach it; a robot checks it and, once approved, it plays here. The waits, sped up."
 }

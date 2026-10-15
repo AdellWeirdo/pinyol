@@ -2,25 +2,34 @@
 // animations nobody is looking at.
 document.documentElement.classList.add('js');
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-if (still) document.querySelectorAll('video[autoplay]').forEach(v => { v.removeAttribute('autoplay'); v.pause(); }); // it waits to be played
 
 // The page's words, in the page's language (the page itself is translated when the site is built: site/i18n.py)
 const LANG = document.documentElement.lang;
 const WORDS = {
-  es: { copied: 'Copiado', copy: 'Copiar', select: 'Selecciónalo y copia', noCopy: 'No se ha podido copiar: selecciona el texto y cópialo',
+  es: { pause: 'Pausar', play: 'Reanudar', copied: 'Copiado', copy: 'Copiar', select: 'Selecciónalo y copia', noCopy: 'No se ha podido copiar: selecciona el texto y cópialo',
         newTab: ' (se abre en una pestaña nueva)', retry: 'Reintentar', play: 'Jugar', playX: 'Jugar a ', zip: 'Descargar .zip',
         zipX: t => 'Descargar ' + t + ' para la consola', by: 'por ', loading: 'Cargando la Biblioteca…',
         empty: 'Todavía no hay juegos en la Biblioteca. ¡Sube el primero!', failed: 'No se ha podido cargar la Biblioteca. Comprueba la conexión.' },
-  ca: { copied: 'Copiat', copy: 'Copia', select: 'Selecciona-ho i copia', noCopy: "No s'ha pogut copiar: selecciona el text i copia'l",
+  ca: { pause: 'Pausa', play: 'Reprèn', copied: 'Copiat', copy: 'Copia', select: 'Selecciona-ho i copia', noCopy: "No s'ha pogut copiar: selecciona el text i copia'l",
         newTab: " (s'obre en una pestanya nova)", retry: 'Torna-ho a provar', play: 'Juga', playX: 'Juga a ', zip: 'Descarrega el .zip',
         zipX: t => 'Descarrega ' + t + ' per a la consola', by: 'per ', loading: 'Carregant la Biblioteca…',
         empty: 'Encara no hi ha jocs a la Biblioteca. Puja el primer!', failed: "No s'ha pogut carregar la Biblioteca. Comprova la connexió." },
-  en: { copied: 'Copied', copy: 'Copy', select: 'Select it and copy', noCopy: "Couldn't copy: select the text and copy it",
+  en: { pause: 'Pause', play: 'Play', copied: 'Copied', copy: 'Copy', select: 'Select it and copy', noCopy: "Couldn't copy: select the text and copy it",
         newTab: ' (opens in a new tab)', retry: 'Try again', play: 'Play', playX: 'Play ', zip: 'Download .zip',
         zipX: t => 'Download ' + t + ' for the console', by: 'by ', loading: 'Loading the Library…',
         empty: 'No games in the Library yet. Send the first one!', failed: "Couldn't load the Library. Check the connection." },
 };
 const W = WORDS[LANG] || WORDS.es;
+
+if (still) document.querySelectorAll('video[autoplay]').forEach(v => { v.removeAttribute('autoplay'); v.pause(); }); // they wait to be played
+document.querySelectorAll('.screen-toggle').forEach(b => { // the console's screen: a video that loops, so it can be paused
+  const v = document.querySelector('.screen video');
+  const show = () => { b.textContent = v.paused ? W.play : W.pause; b.setAttribute('aria-pressed', String(v.paused)); };
+  b.addEventListener('click', () => { if (v.paused) v.play().catch(() => {}); else v.pause(); });
+  v.addEventListener('play', show);
+  v.addEventListener('pause', show);
+  show();
+});
 
 const fmt = (v, dec) => new Intl.NumberFormat({ es: 'es-ES', ca: 'ca-ES', en: 'en-GB' }[LANG] || 'es-ES', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v);
 

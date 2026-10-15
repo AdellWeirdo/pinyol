@@ -98,7 +98,7 @@ def play_url(gid: str) -> str:
 def header() -> str:
     return f"""<a class="skip" href="#main">Saltar al contenido</a>
 <header class="top"><div class="wrap">
-<a class="logo" href="#top" aria-label="pinyol, inicio"><img src="img/logo.png" alt="" width="80" height="52"></a>
+<a class="logo" href="#top" aria-label="pinyol, inicio"><span class="logo-anim"><img class="l-leaves" src="img/logo/leaves.png" alt="" width="83" height="52"><img class="l-seed" src="img/logo/seed.png" alt="" width="83" height="52"><img class="l-word" src="img/logo/word.png" alt="" width="83" height="52"></span></a>
 <nav aria-label="Secciones"><ul>
 <li class="keep"><a href="#aspectos">Juegos</a></li><li><a href="#rendimiento">Rendimiento</a></li>
 <li><a href="#crear">Editor</a></li><li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz uno</a></li><li><a href="#consola">La consola</a></li><li><a href="#making">Cómo se hizo</a></li>
@@ -108,9 +108,6 @@ def header() -> str:
 
 
 def hero() -> str:
-    shots = [(k["id"], k["alt"]) for k in LOOKS]
-    imgs = "".join(f'<img src="img/looks/{i}.png" alt="" width="480" height="320" style="animation-delay:{n * 3}s"'
-                   f'{" fetchpriority=high" if n == 0 else " loading=lazy"} decoding="async">' for n, (i, _) in enumerate(shots))
     return f"""<section class="hero" id="top" aria-labelledby="hero-title"><div class="wrap">
 <div>
 <p class="kicker pixel">Motor de juegos libre · ESP32-S3</p>
@@ -119,11 +116,11 @@ def hero() -> str:
 <div class="actions"><a class="btn btn-primary" href="#aspectos">Jugar ahora</a><a class="btn btn-ghost" href="#crear">Crea un juego</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
 <p class="meta">Código MIT · arte y sonido CC0 · {len(LOOKS) + len(OTHERS) + len(CODEX)} juegos de ejemplo</p>
 </div>
-<div><div class="board" data-live role="img" aria-label="La consola, una placa Freenove FNK0104N, con su pantalla mostrando uno tras otro los doce aspectos">
+<div><div class="board" data-live role="img" aria-label="La consola, una placa Freenove FNK0104N, arrancando: la intro de pinyol, el menú de Cirera con sus juegos y algunos de ellos en marcha">
 <span class="hole tl"></span><span class="hole bl"></span><span class="hole tr"></span><span class="hole br"></span>
 <span class="mic" aria-hidden="true">MIC</span><span class="mic-hole"></span><span class="keys" aria-hidden="true"><i></i><i></i></span>
-<div class="glass"><div class="screen">{imgs}</div></div></div>
-<p class="screen-label pixel">Freenove FNK0104N · 480×320 · 60 fps en la placa</p></div>
+<div class="glass"><div class="screen"><video class="boot" src="video/consola.mp4" poster="video/consola.jpg" width="720" height="480" autoplay muted loop playsinline preload="auto"></video></div></div></div>
+<p class="screen-label pixel">Freenove FNK0104N · 480×320 · 60 fps en la placa <button class="screen-toggle" type="button" aria-pressed="false">Pausar</button></p></div>
 </div></section>"""
 
 
@@ -216,6 +213,8 @@ def library() -> str:
 <h2 id="biblioteca-t">La Biblioteca</h2>
 <p class="intro">Juegos hechos por la gente con pinyol: se juegan aquí y se descargan para la consola. ¿Has hecho uno? Súbelo con un formulario: un robot lo abre, lo juega diez segundos y, cuando lo revisamos, aparece aquí.</p>
 <div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="#hazlo">Cómo se hace un juego</a></div>
+<figure class="tutorial"><video src="video/subir.mp4" poster="video/subir.jpg" width="960" height="600" controls preload="none" playsinline aria-describedby="subir-cap"></video>
+<figcaption id="subir-cap">Tutorial, de tu juego a la Biblioteca: descarga el .zip del editor, rellena el formulario y adjúntalo; un robot lo comprueba y, cuando está aprobado, ya se juega aquí. Las esperas, aceleradas.</figcaption></figure>
 <div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="play/player.html">
 <p class="lib-state">La Biblioteca necesita JavaScript para cargarse. Sus juegos también están en <a href="{REPO}/tree/main/library">GitHub</a>.</p></div>
 </div></section>"""

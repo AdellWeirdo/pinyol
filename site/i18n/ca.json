@@ -15,7 +15,6 @@
  "Un motor, doce épocas": "Un motor, dotze èpoques",
  "Jugar ahora": "Juga ara",
  "Ver el código": "Mira el codi",
- "La consola, una placa Freenove FNK0104N, con su pantalla mostrando uno tras otro los doce aspectos": "La consola, una placa Freenove FNK0104N, amb la pantalla mostrant un rere l'altre els dotze aspectes",
  "Freenove FNK0104N · 480×320 · 60 fps en la placa": "Freenove FNK0104N · 480×320 · 60 fps a la placa",
  "Doce aspectos, un motor": "Dotze aspectes, un motor",
  "Cada cartucho es un ejemplo jugable con las reglas de su consola: su resolución, sus colores, sus capas. Se juega con el teclado (flechas y Z, X) o con los botones de la pantalla en el móvil. Las cifras de fps son de la consola real, jugando.": "Cada cartutx és un exemple jugable amb les regles de la seva consola: la resolució, els colors, les capes. Es juga amb el teclat (fletxes i Z, X) o amb els botons de la pantalla al mòbil. Les xifres de fps són de la consola real, jugant.",
@@ -277,5 +276,8 @@
  "castellano, català y English": "castellano, català i English",
  "Abrir el editor": "Obre l'editor",
  "Juegos hechos con él": "Jocs fets amb ell",
- "LÍNEA 0, un juego de Game Boy Advance hecho entero con el editor, en directo: dibujos, mapas, reglas y a jugar. El montaje, ocho veces más rápido; la partida, a velocidad real.": "LÍNEA 0, un joc de Game Boy Advance fet sencer amb l'editor, en directe: dibuixos, mapes, regles i a jugar. El muntatge, vuit vegades més ràpid; la partida, a velocitat real."
+ "LÍNEA 0, un juego de Game Boy Advance hecho entero con el editor, en directo: dibujos, mapas, reglas y a jugar. El montaje, ocho veces más rápido; la partida, a velocidad real.": "LÍNEA 0, un joc de Game Boy Advance fet sencer amb l'editor, en directe: dibuixos, mapes, regles i a jugar. El muntatge, vuit vegades més ràpid; la partida, a velocitat real.",
+ "La consola, una placa Freenove FNK0104N, arrancando: la intro de pinyol, el menú de Cirera con sus juegos y algunos de ellos en marcha": "La consola, una placa Freenove FNK0104N, arrencant: la intro de pinyol, el menú de Cirera amb els seus jocs i alguns en marxa",
+ "Pausar": "Pausa",
+ "Tutorial, de tu juego a la Biblioteca: descarga el .zip del editor, rellena el formulario y adjúntalo; un robot lo comprueba y, cuando está aprobado, ya se juega aquí. Las esperas, aceleradas.": "Tutorial, del teu joc a la Biblioteca: descarrega el .zip de l'editor, omple el formulari i adjunta'l; un robot el comprova i, quan està aprovat, ja es juga aquí. Les esperes, accelerades."
 }
