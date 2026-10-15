@@ -215,7 +215,7 @@ python3 tools/make_gallery.py gallery/ --player build-web --headless build/pinyo
 python3 -m http.server -d gallery       # open http://localhost:8000
 ```
 
-A finished game can go in the site's [Library](https://ipaud.github.io/pinyol/juegos/#biblioteca), to be played there and downloaded for the console: [send it with a form](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), a robot opens it, plays it for ten seconds and, once we review it, it shows up there.
+A finished game can go in the site's [Library](https://ipaud.github.io/pinyol/biblioteca/), to be played there and downloaded for the console: [send it with a form](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), a robot opens it, plays it for ten seconds and, once we review it, it shows up there.
 
 <p align="center"><a href="https://ipaud.github.io/pinyol/video/subir.mp4"><img src="docs/media/library.webp" alt="From the editor's .zip to the Library: the form, the robot's check, the approval and the game playing on the site" width="640"></a><br>
 <sub>From your game to the Library, sped up: <a href="https://ipaud.github.io/pinyol/video/subir.mp4">the whole tutorial</a>.</sub></p>

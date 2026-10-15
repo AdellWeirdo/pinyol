@@ -145,6 +145,39 @@ def stats(np2d: Path) -> dict:
     return {"c_lines": c_lines, "tests": tests, "commits": commits, "examples": examples}
 
 
+def sitemap(paths: list[str]) -> None:
+    """sitemap.xml: every page in every language, for search engines (to give to them: Search Console and the like)."""
+    urls = "".join(f"<url><loc>{page.SITE}{i18n.page_path(lang)}{path}</loc></url>\n" for path in paths for lang in i18n.LANGS)
+    (DIST / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n'
+                                      f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
+
+
+def not_found() -> None:
+    """404.html, which Pages serves at any address it has nothing for: its links absolute, in the three languages."""
+    (DIST / "404.html").write_text(f"""<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>pinyol · 404</title>
+<link rel="icon" href="{page.SITE}img/icon.png">
+<link rel="stylesheet" href="{page.SITE}styles.css">
+</head>
+<body>
+<main class="lost"><div class="wrap">
+<a href="{page.SITE}"><img src="{page.SITE}img/logo.png" alt="pinyol" width="96" height="63"></a>
+<p class="kicker pixel">404</p>
+<h1 class="page-title">Esta página no existe</h1>
+<p class="lede" lang="ca">Aquesta pàgina no existeix.</p>
+<p class="lede" lang="en">This page doesn't exist.</p>
+<div class="actions"><a class="btn btn-primary" href="{page.SITE}">Inicio</a><a class="btn btn-ghost" href="{page.SITE}ca/" lang="ca">Inici</a><a class="btn btn-ghost" href="{page.SITE}en/" lang="en">Home</a></div>
+</div></main>
+</body>
+</html>
+""", encoding="utf-8")
+
+
 def versioned(html: str) -> str:
     """The page with its stylesheet and scripts named with their hash: a new version is fetched at once, not after the
     10 minutes Pages caches a file."""
@@ -187,7 +220,10 @@ def main() -> None:
     tabs = page.site(board, stats(np2d), fw, gamepage.public(games_list), library_ids)
     for path, html in tabs.items():
         page.publish(DIST, versioned(html), path)
+    page.publish(DIST, page.moved("biblioteca/"), "juegos/")  # the old games tab (its games' pages stay under it)
     print(f"{len(tabs)} tabs, juegos/: {gamepage.write(DIST, games_list, versioned)} games, each in {len(i18n.LANGS)} languages")
+    sitemap(list(tabs) + [f"juegos/{g['id']}/" for g in games_list])
+    not_found()
     (DIST / ".nojekyll").write_text("")  # GitHub Pages: serve the folders as they are
     (DIST / ".gitattributes").write_text("".join(f"*.{e} binary\n" for e in ("bin", "wasm", "zip", "png", "woff2", "mp4", "jpg")))
     size = sum(p.stat().st_size for p in DIST.rglob("*") if p.is_file())

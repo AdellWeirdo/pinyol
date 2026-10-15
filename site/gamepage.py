@@ -152,7 +152,7 @@ def render(g: dict, games: list[dict], size_kb: int | None) -> str:
     talk = ' data-ready=""' if GISCUS["category_id"] else ""
     return page.new_tabs(f"""{head(g)}
 <body>
-{page.header("juegos/", f"juegos/{g['id']}/")}
+{page.header("biblioteca/" if g["kind"] == "library" else "crear/", f"juegos/{g['id']}/")}
 <main id="main" class="game" style="--hue:{g['hue']}">
 <section class="game-hero"><div class="wrap">
 <figure class="game-shot">{shot}</figure>

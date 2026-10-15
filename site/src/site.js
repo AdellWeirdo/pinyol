@@ -23,7 +23,7 @@ const W = WORDS[LANG] || WORDS.es;
 
 // The site was one long page; its sections now live in tabs. A link to an old section (pinyol/#instalar, from a
 // release or a README) goes to its tab.
-const MOVED = { aspectos: 'juegos/', ranking: 'juegos/', biblioteca: 'juegos/', hazlo: 'crear/', crear: 'crear/', codex: 'crear/',
+const MOVED = { aspectos: 'crear/', ranking: 'biblioteca/', biblioteca: 'biblioteca/', hazlo: 'crear/', crear: 'crear/', codex: 'crear/',
                 consola: 'consola/', instalar: 'consola/', retroarch: 'consola/', escritorio: 'consola/', rendimiento: 'como-se-hizo/',
                 making: 'como-se-hizo/' };
 const old = location.hash.slice(1);
