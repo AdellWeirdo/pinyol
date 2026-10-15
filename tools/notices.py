@@ -76,7 +76,7 @@ def main() -> None:
         "# Third-party notices\n",
         "pinyol is MIT licensed ([LICENSE](LICENSE)). It carries code and fonts that others wrote, under their own "
         "licences; this file gathers their notices, as those licences ask. Made by `tools/notices.py`.\n",
-        "## In the engine (the simulator, the web player and the console)\n",
+        "## In the engine (the simulator, the web player, the console and the libretro core)\n",
         block("Lua 5.4", "MIT. `third_party/lua`", read(ROOT / "third_party/lua/LICENSE")),
         block("cJSON", "MIT. `third_party/cjson` (and ESP-IDF's `json` component, the same library)",
               read(ROOT / "third_party/cjson/LICENSE")),
@@ -84,6 +84,11 @@ def main() -> None:
         block("Fonts", "SIL Open Font License 1.1 (its text is at the end). What pinyol makes from them (`.fnt`, "
               "`.woff2`) is a Modified Version under that licence, and never carries a Reserved Font Name: Press Start "
               "2P's conversions are called Arcade 8.\n\n" + fonts()),
+        "## In the libretro core (RetroArch, RetroPie)\n",
+        block("puff", "zlib licence. `third_party/puff`, the zip reader's inflate",
+              comment(ROOT / "third_party/puff/puff.h", "Copyright (C)", "madler@alumni")),
+        block("libretro.h", "MIT. `third_party/libretro`, the libretro API",
+              comment(ROOT / "third_party/libretro/libretro.h", "Copyright (C) 2010", "OUT OF OR IN CONNECTION")),
         f"## In the console's firmware (ESP-IDF {IDF.name.removeprefix('esp-idf-')})\n",
         block("ESP-IDF", "Apache License 2.0 (its text is at the end). Copyright Espressif Systems (Shanghai) Co., Ltd. "
               "The drivers, the system, and the precompiled Wi-Fi, ESP-NOW, coexistence and PHY libraries, which are "

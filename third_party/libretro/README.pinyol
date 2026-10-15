@@ -1,0 +1,4 @@
+libretro.h, the libretro API header (MIT: see its opening comment), from RetroArch v1.19.1,
+libretro-common/include/libretro.h, unchanged.
+https://github.com/libretro/RetroArch/blob/v1.19.1/libretro-common/include/libretro.h
+For the libretro core (platform/libretro/libretro.c).
