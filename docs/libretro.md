@@ -5,8 +5,25 @@ RetroArch and in everything built on it: RetroPie and Lakka on a Raspberry Pi, B
 RetroArch, a desktop. It is the same engine as the console's and the simulator's: the same game plays the same.
 
 Tested: built and tested (`ctest -R libretro`) on macOS, on Linux arm64 (Debian 12, the base of Raspberry Pi OS) and
-on 32-bit ARM as in RetroPie's image (Debian 10, GCC 8, CMake 3.13), where RetroPie-Setup also installed it with
-`lr-pinyol.sh`; played in RetroArch 1.22 on a Mac. Not yet tried on a real Raspberry Pi.
+on 32-bit ARM as in RetroPie's image (Debian 10, GCC 8, CMake 3.13); the release's builds pass the same test on
+Debian 10 and 12. RetroPie-Setup installed it with `lr-pinyol.sh` on emulated systems: the release's build on a Pi 3
+(32-bit) and a Pi 4 (64-bit), and built from the source. Played in RetroArch 1.22 on a Mac. Not yet tried on a real
+Raspberry Pi.
+
+## Download it
+
+The release [libretro](https://github.com/ipaud/pinyol/releases/tag/libretro) holds the core built for Linux, from
+the last change to the engine on `main`:
+
+| File | For |
+|---|---|
+| [pinyol_libretro-linux-armhf.zip](https://github.com/ipaud/pinyol/releases/download/libretro/pinyol_libretro-linux-armhf.zip) | 32-bit ARM: a Raspberry Pi 2 and up with a 32-bit system, RetroPie's image among them |
+| [pinyol_libretro-linux-arm64.zip](https://github.com/ipaud/pinyol/releases/download/libretro/pinyol_libretro-linux-arm64.zip) | 64-bit ARM: a Raspberry Pi 3 and up with a 64-bit system, ARM handhelds |
+| [pinyol_libretro-linux-x86_64.zip](https://github.com/ipaud/pinyol/releases/download/libretro/pinyol_libretro-linux-x86_64.zip) | a PC with Linux, Batocera or Lakka; a Steam Deck |
+
+Each zip holds `pinyol_libretro.so`, which goes into RetroArch's cores folder, `pinyol_libretro.info`, for its info
+folder, and the licences. They are built in Debian 10 (`platform/libretro/release.sh`), so they run there and on
+anything newer. For a Raspberry Pi 1 or Zero (ARMv6), a Mac, or anything else, build it.
 
 ## Build it
 
@@ -41,7 +58,7 @@ RetroArch's info folder (*Settings, Directory, Core Info*) for it to show the co
 
 ## RetroPie
 
-RetroPie-Setup builds and installs it with the module in `platform/libretro/lr-pinyol.sh`. On the Raspberry Pi:
+RetroPie-Setup installs it with the module in `platform/libretro/lr-pinyol.sh`. On the Raspberry Pi:
 
 ```sh
 cd ~/RetroPie-Setup
@@ -52,13 +69,15 @@ sudo ./retropie_packages.sh lr-pinyol
 ```
 
 Once the module is in place it is also in RetroPie-Setup's menu (*Manage packages, Manage experimental packages,
-lr-pinyol*). It builds the core on the Pi (a few minutes), installs it, and adds the Pinyol system to
-EmulationStation, which shows the `.pinyol` and `.zip` games in `~/RetroPie/roms/pinyol`. Copy the games there and
-restart EmulationStation. Running it again updates the core.
+lr-pinyol*). It installs the core and adds the Pinyol system to EmulationStation, which shows the `.pinyol` and
+`.zip` games in `~/RetroPie/roms/pinyol`. Copy the games there and restart EmulationStation. On a Raspberry Pi 2 and
+up, or a 64-bit PC, it downloads the core built (seconds); on a Pi 1 or Zero it builds it (a few minutes). Running it
+again updates the core.
 
 ### By hand
 
-The same, step by step (it takes a few minutes):
+The same, step by step, building the core on the Pi (a few minutes). With a build from the release, skip the
+first three lines and unzip it into `/opt/retropie/libretrocores/lr-pinyol/` instead of the `cp`:
 
 ```sh
 sudo apt install -y cmake git

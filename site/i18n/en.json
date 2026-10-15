@@ -234,8 +234,6 @@
  "Juega": "Play",
  "Reinicia EmulationStation y aparece Pinyol con sus juegos. En el mando, X o Y hacen de C, y SELECT de MENU.": "Restart EmulationStation and Pinyol shows up with its games. On the gamepad, X or Y act as C, and SELECT as MENU.",
  "¿Otro RetroArch?": "Another RetroArch?",
- "cómo compilarlo y dónde va": "how to build it and where it goes",
- ". Probado en RetroArch y con el sistema de RetroPie emulado, aún no en una Raspberry Pi de verdad: si lo pruebas,": ". Tested in RetroArch and on an emulated RetroPie system, not yet on a real Raspberry Pi: if you try it,",
  "cuéntanos cómo va": "tell us how it goes",
  "cd ~/RetroPie-Setup": "cd ~/RetroPie-Setup",
  "cd ~/RetroPie-Setup\ncurl -fsSL --create-dirs \\\n  -o ext/pinyol/scriptmodules/libretrocores/lr-pinyol.sh \\\n  https://raw.githubusercontent.com/ipaud/pinyol/main/platform/libretro/lr-pinyol.sh\nsudo ./retropie_packages.sh lr-pinyol": "cd ~/RetroPie-Setup\ncurl -fsSL --create-dirs \\\n  -o ext/pinyol/scriptmodules/libretrocores/lr-pinyol.sh \\\n  https://raw.githubusercontent.com/ipaud/pinyol/main/platform/libretro/lr-pinyol.sh\nsudo ./retropie_packages.sh lr-pinyol",
@@ -324,8 +322,6 @@
  "Las herramientas del motor quitan el fondo, separan los fotogramas, los dejan a la misma escala con los pies alineados y los reducen a 15 colores. Luego se revisa cada uno a ojo.": "The engine's tools remove the background, split the frames, bring them to the same scale with their feet on the same line, and reduce them to 15 colours. Then each one is checked by eye.",
  "El editor web": "The web editor",
  "vectorial": "vector",
- "En la Raspberry Pi, este comando compila el núcleo (tarda unos minutos) y añade Pinyol a EmulationStation.": "On the Raspberry Pi, this command builds the core (it takes a few minutes) and adds Pinyol to EmulationStation.",
- "En un ordenador, Batocera o Lakka, el núcleo se añade a mano:": "On a computer, Batocera or Lakka, the core is added by hand:",
  "Cada punto es un segundo de partida en la placa, mientras un guion juega solo. La línea discontinua es la primera medición; la continua, la actual. El primer segundo carga la escena y no cuenta en las cifras.": "Each point is one second of play on the board, from the performance line logged every second while a script plays the game. Dashed: the first measurement; solid: today's. The first second loads the scene and doesn't count in the figures.",
  "No hizo falta optimizarlos:": "These needed no optimising:",
  "La carcasa Cirera v1.0, en render: imágenes generadas con IA a partir de su modelo 3D. Todavía no se ha impreso.": "The Cirera v1.0 case, rendered: AI-generated images made from its 3D model. It hasn't been printed yet.",
@@ -333,5 +329,11 @@
  "La parte de atrás: una placa oscura con CIRERA y una cereza de píxeles, el modelo S3-01, la batería de 3,7 V y 3000 mAh y USB-C a 5 V": "The back: a dark plate with CIRERA and a pixel cherry, model S3-01, the 3.7 V 3000 mAh battery and USB-C at 5 V",
  "La carcasa v1.0, diseñada": "The v1.0 case, designed",
  "Falta imprimirla y probarla. Entonces se publicarán sus archivos para imprimir (CC BY 4.0), la lista de piezas y el montaje. Mientras tanto, ya se juega con la placa sola.": "It still has to be printed and tested. Then its print files (CC BY 4.0), the parts list and the assembly guide will be published. In the meantime, the bare board already runs the games.",
- "El montaje de la v1.0, animado a partir de su modelo 3D: la carcasa, la placa, las dos placas de cobre de los botones, los cables, la batería y el altavoz.": "The v1.0 assembly, animated from its 3D model: the case, the board, the two copper boards for the buttons, the wires, the battery and the speaker."
+ "El montaje de la v1.0, animado a partir de su modelo 3D: la carcasa, la placa, las dos placas de cobre de los botones, los cables, la batería y el altavoz.": "The v1.0 assembly, animated from its 3D model: the case, the board, the two copper boards for the buttons, the wires, the battery and the speaker.",
+ "En la Raspberry Pi, este comando descarga el núcleo ya compilado (una Pi 1 o Zero lo compila, en unos minutos) y añade Pinyol a EmulationStation.": "On the Raspberry Pi, this command downloads the core already built (a Pi 1 or Zero builds it, in a few minutes) and adds Pinyol to EmulationStation.",
+ "En un ordenador con Linux, Batocera o Lakka,": "On a computer with Linux, Batocera or Lakka,",
+ "el núcleo ya compilado": "the core already built",
+ "va a la carpeta de núcleos de RetroArch;": "goes in RetroArch's cores folder;",
+ "la guía": "the guide",
+ "lo explica. Probado en RetroArch y con el sistema de RetroPie emulado, aún no en una Raspberry Pi de verdad: si lo pruebas,": "explains it. Tested in RetroArch and on an emulated RetroPie system, not yet on a real Raspberry Pi: if you try it,"
 }
