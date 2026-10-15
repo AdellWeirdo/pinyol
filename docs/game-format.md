@@ -513,6 +513,9 @@ NPC whose `<sprite>_HD` exists is drawn at full resolution too:
 - The parts of the HD background that must cover it are drawn over it again at full resolution: the `occluders`, and
   each `foreground` polygon (`[[x, y], ...]` in world px). `FG_<zone ID>` is then not used.
 - Sprites without an HD twin are still drawn into the world.
+- Bigger neighbours need Klaus to stop further off: `"npc_foot": [x, y, w, h]` in `game.json` (world px around a
+  neighbour's feet; default `[-8, -6, 16, 9]`) is the box he cannot enter, and `"npc_reach"` (default 20) how far
+  he can talk to one from.
 
 Entering a zone: sets `visited:<ID>`, updates music and ambience, runs `on_enter`, autosaves (when entered
 through an exit or a `zone` effect and no sequence is running) and shows the arrival card.

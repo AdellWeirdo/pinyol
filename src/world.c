@@ -243,7 +243,8 @@ bool world_collides_at(float x, float y) {
     cJSON_ArrayForEach(o, jget(Z->def, "props")) if (visible(o) && foot_hit(o, jget(o, "foot"), bx, by)) return true;
     static cJSON *npc_foot; /* wide enough that Klaus never overlaps a neighbour's body */
     if (!npc_foot) npc_foot = cJSON_Parse("[-8,-6,16,9]");
-    cJSON_ArrayForEach(o, jget(Z->def, "npcs")) if (visible(o) && foot_hit(o, npc_foot, bx, by)) return true;
+    const cJSON *wide = jget(G.game, "npc_foot"); /* game.json: wider neighbours (HD sprites) keep Klaus further off */
+    cJSON_ArrayForEach(o, jget(Z->def, "npcs")) if (visible(o) && foot_hit(o, cJSON_IsArray(wide) ? wide : npc_foot, bx, by)) return true;
     return false;
 }
 
@@ -312,7 +313,7 @@ static int candidates(cand *out, int max) {
             float x, y;
             anchor_of(o, &x, &y);
             float dx = x - G.klaus.x, dy = y - G.klaus.y, d = sqrtf(dx * dx + dy * dy);
-            if (d > jint(o, "reach", (int)REACH)) continue;
+            if (d > jint(o, "reach", k == 1 ? jint(G.game, "npc_reach", (int)REACH) : (int)REACH)) continue;
             bool facing = dx * fx[G.klaus.facing] + dy * fy[G.klaus.facing] > 0 || d < 4;
             out[n++] = (cand){o, k == 1, x, y, d + (facing ? 0 : 12)};
         }
