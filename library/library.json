@@ -2,11 +2,11 @@
  {
   "id": "abella",
   "title": "Abella",
-  "description": "Una abella de Game Boy porta el pol·len de les flors al rusc mentre la persegueixen vespes i aranyes. Tres nivells (el prat, l'hort i el bosc), rècord desat i una marieta de la sort. Fet en directe amb l'editor web de pinyol.",
+  "description": "Una abella de Game Boy porta el pol·len de les flors al rusc mentre la persegueixen vespes i aranyes. Tres nivells (el prat, l'hort i el bosc), cors de vida, rècord desat i una marieta de la sort. Versió 2: portada il·lustrada, cors, i l'abella es mareja quan la piquen. Feta en directe amb l'editor ",
   "author": "ipaud",
   "license": "CC0",
-  "issue": 1,
-  "date": "2026-10-14",
+  "issue": 2,
+  "date": "2026-10-15",
   "cover": true
  }
 ]
