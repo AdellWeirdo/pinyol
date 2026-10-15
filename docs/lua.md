@@ -697,8 +697,10 @@ visits to a knot. A mistake in the text stops the game with its file and line.
 
 `store(key, value)` keeps a value in the game's saves folder: a number, string, boolean, or a table of them (a list,
 or string keys), nested; `store(key, nil)` forgets it. `stored(key [, default])` reads it back. For high scores,
-options and progress (`store("save", {room = 3, items = {"key", "map"}})`), up to 64 KB in all. Each `store`
-writes the file at once: call it at moments like a level's end, not every frame.
+options and progress (`store("save", {room = 3, items = {"key", "map"}})`), up to 64 KB in all. On a computer each
+`store` writes the file at once; on the console the value is kept at once and the file written a second after the
+last `store` (several in a row are one write), which costs the picture about a fifth of a second: call it at moments
+like a level's end, not every frame.
 
 ## Other
 
