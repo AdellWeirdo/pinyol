@@ -216,7 +216,7 @@ python3 tools/make_gallery.py gallery/ --player build-web --headless build/pinyo
 python3 -m http.server -d gallery       # abre http://localhost:8000
 ```
 
-Un juego terminado puede ir a la [Biblioteca](https://ipaud.github.io/pinyol/juegos/#biblioteca) de la web, para jugarlo allí y descargarlo para la consola: [súbelo con un formulario](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), un robot lo abre, lo juega diez segundos y, cuando lo revisamos, aparece allí.
+Un juego terminado puede ir a la [Biblioteca](https://ipaud.github.io/pinyol/biblioteca/) de la web, para jugarlo allí y descargarlo para la consola: [súbelo con un formulario](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), un robot lo abre, lo juega diez segundos y, cuando lo revisamos, aparece allí.
 
 <p align="center"><a href="https://ipaud.github.io/pinyol/video/subir.mp4"><img src="docs/media/library.webp" alt="Del .zip del editor a la Biblioteca: el formulario, la comprobación del robot, la aprobación y el juego en la web" width="640"></a><br>
 <sub>De tu juego a la Biblioteca, acelerado: <a href="https://ipaud.github.io/pinyol/video/subir.mp4">el tutorial entero</a>.</sub></p>

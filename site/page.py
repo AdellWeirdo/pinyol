@@ -101,7 +101,7 @@ def play_url(gid: str) -> str:
 # The site's tabs: a page each, in each language (publish()). HOME is a page's way to its language's home page, made
 # right for each page's folder when it is published.
 HOME = "@HOME@"
-TABS = [("", "Inicio"), ("juegos/", "Juegos"), ("crear/", "Crear"), ("consola/", "Consola"), ("como-se-hizo/", "Cómo se hizo")]
+TABS = [("", "Inicio"), ("biblioteca/", "Biblioteca"), ("crear/", "Crear"), ("consola/", "Consola"), ("como-se-hizo/", "Cómo se hizo")]
 
 
 def header(tab: str, path: str | None = None) -> str:
@@ -129,7 +129,7 @@ def hero() -> str:
 <p class="kicker pixel">Motor de juegos libre · ESP32-S3</p>
 <h1 id="hero-title">Un motor, doce épocas</h1>
 <p class="lede"><img class="wordmark" src="img/wordmark.png" alt="pinyol" width="65" height="26"> hace juegos con el aspecto de las consolas de los 80 y los 90 y los mueve a 60 fps en una consola de bolsillo con un ESP32‑S3. Dile a tu agente de código qué aspecto quieres y te hace el juego. Aquí puedes jugar a todos.</p>
-<div class="actions"><a class="btn btn-primary" href="{HOME}juegos/">Jugar ahora</a><a class="btn btn-ghost" href="{HOME}crear/">Crear un juego</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
+<div class="actions"><a class="btn btn-primary" href="{HOME}biblioteca/">Jugar ahora</a><a class="btn btn-ghost" href="{HOME}crear/">Crear un juego</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
 <p class="meta">Código MIT · arte y sonido CC0 · {len(LOOKS) + len(OTHERS) + len(CODEX)} juegos de ejemplo</p>
 </div>
 <div><div class="board" data-live role="img" aria-label="La consola (una placa Freenove FNK0104N) arrancando: la intro de pinyol, el menú de Cirera con sus juegos y algunos de ellos en marcha">
@@ -230,7 +230,7 @@ def editor() -> str:
 <h2 id="crear-t">El editor</h2>
 <p class="intro">Dibuja los personajes píxel a píxel, pinta los mapas, pon las reglas con bloques y prueba el juego al momento. Empieza desde cero o desde una plantilla, como Abella o LÍNEA 0.</p>
 <ul class="features">{items}</ul>
-<div class="actions"><a class="btn btn-primary btn-big" href="editor/">Abrir el editor</a><a class="btn btn-ghost" href="{HOME}juegos/#biblioteca">Juegos hechos con él</a></div>
+<div class="actions"><a class="btn btn-primary btn-big" href="editor/">Abrir el editor</a><a class="btn btn-ghost" href="{HOME}biblioteca/">Juegos hechos con él</a></div>
 </div>
 <figure class="editor-video">
 <video src="video/linea0.mp4" poster="video/linea0.jpg" width="1280" height="800" controls muted loop playsinline autoplay preload="metadata" aria-describedby="linea0-cap"></video>
@@ -254,7 +254,7 @@ def ranking(catalog: str, top: int = 10) -> str:
     """The most voted games (games.js, from stats.json), with each one's numbers; the games it may list, as JSON. The
     home page shows the first five, with the way to the rest."""
     title, more = ("Ranking", "") if top == 10 else \
-        ("Lo más votado", f'<p class="more-link"><a class="btn btn-ghost" href="{HOME}juegos/#ranking">Ver el ranking completo</a></p>')
+        ("Lo más votado", f'<p class="more-link"><a class="btn btn-ghost" href="{HOME}biblioteca/#ranking">Ver el ranking completo</a></p>')
     return f"""<section id="ranking" aria-labelledby="ranking-t"><div class="wrap">
 <h2 id="ranking-t">{title}</h2>
 <p class="intro">Los juegos más votados. Se vota con una reacción en la ficha de cada juego; las cifras se actualizan una vez al día.</p>
@@ -265,10 +265,10 @@ def ranking(catalog: str, top: int = 10) -> str:
 
 
 def library(pages: str = "") -> str:
-    """People's games (tools/library.py publishes them in library/): site.js reads the list when the page opens."""
-    return f"""<section id="biblioteca" aria-labelledby="biblioteca-t"><div class="wrap">
-<h2 id="biblioteca-t">La Biblioteca</h2>
-<p class="intro">Juegos hechos por la gente con pinyol: se juegan aquí y se descargan para la consola. ¿Has hecho uno? Súbelo con el formulario: un robot lo abre y lo juega diez segundos; cuando lo hayamos revisado, aparecerá aquí.</p>
+    """People's games (tools/library.py publishes them in library/): site.js reads the list when the page opens. On its
+    own tab, whose title says what it is."""
+    return f"""<section id="biblioteca" class="library-sec" aria-labelledby="biblioteca-t"><div class="wrap">
+<h2 id="biblioteca-t" class="sr">Los juegos</h2>
 <div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="{HOME}crear/#subir">Cómo se sube</a></div>
 <div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="play/player.html" data-pages="{pages}">
 <p class="lib-state">La Biblioteca necesita JavaScript para cargarse. Sus juegos también están en <a href="{REPO}/tree/main/library">GitHub</a>.</p></div>
@@ -280,7 +280,7 @@ def share() -> str:
     return f"""<section id="subir" aria-labelledby="subir-t"><div class="wrap">
 <h2 id="subir-t">Súbelo a la Biblioteca</h2>
 <p class="intro">Cuando tu juego esté listo, súbelo con el formulario: un robot lo abre y lo juega diez segundos, y cuando lo hayamos revisado se podrá jugar en la web y descargar para la consola.</p>
-<div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="{HOME}juegos/#biblioteca">La Biblioteca</a></div>
+<div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="{HOME}biblioteca/">La Biblioteca</a></div>
 <figure class="tutorial"><video src="video/subir.mp4" poster="video/subir.jpg" width="960" height="600" controls preload="none" playsinline aria-describedby="subir-cap"></video>
 <figcaption id="subir-cap">Tutorial, de tu juego a la Biblioteca: descarga el .zip desde el editor, rellena el formulario y adjúntalo. Un robot lo comprueba y, cuando está aprobado, ya se puede jugar aquí. Las esperas van aceleradas.</figcaption></figure>
 <p class="sub">¿Algo tuyo publicado aquí sin tu permiso, o algo que no debería estar? <a href="{REPO}/issues/new?title=Retirar%3A%20">Pide que lo retiremos</a>.</p>
@@ -294,14 +294,14 @@ def highlights(shelf: list[dict]) -> str:
 <h2 id="destacados-t">Seis para empezar</h2>
 <p class="intro">Seis de los doce aspectos, para jugar ahora mismo en el navegador. Las cifras de fps se midieron jugando en la consola real.</p>
 <ul class="jobs">{"".join(cart(k, n, shelf=False) for n, k in enumerate(six))}</ul>
-<p class="more-link"><a class="btn btn-ghost" href="{HOME}juegos/">Ver todos los juegos</a></p>
+<p class="more-link"><a class="btn btn-ghost" href="{HOME}crear/#aspectos">Ver los doce aspectos</a></p>
 </div></section>"""
 
 
 def doors() -> str:
     """The home page's three ways in: to play, to make, the console."""
-    items = [("juegos/", "img/looks/neogeo.png", "Juega", "Doce aspectos de consola, los juegos de la gente y el ranking."),
-             ("crear/", "video/linea0.jpg", "Crea", "Con tu agente de código o con el editor, sin programar, y súbelo a la Biblioteca."),
+    items = [("biblioteca/", "img/covers/ilustres.png", "Juega", "Los juegos que hace la gente con pinyol, y el ranking de los más votados."),
+             ("crear/", "video/linea0.jpg", "Crea", "Doce aspectos de consola para empezar, tu agente de código o el editor, sin programar."),
              ("consola/", "img/console/cirera_frente.webp", "La consola", "La Cirera, su firmware y otras formas de jugar, como RetroArch.")]
     li = "".join(f"""<li class="door"><img src="{img}" alt="" width="480" height="320" loading="lazy" decoding="async">
 <div><h3><a class="stretch" href="{HOME}{t}">{escape(name)}</a> <span class="arrow" aria-hidden="true">→</span></h3><p>{escape(text)}</p></div></li>""" for t, img, name, text in items)
@@ -510,12 +510,12 @@ def site(board: dict, stats: dict, fw: dict | None, catalog: str = "[]", pages: 
     return {
         "": layout("", "pinyol · un motor, doce épocas", desc,
                    f"{hero()}\n{featured()}\n{doors()}\n{highlights(shelf)}\n{ranking(catalog, 5)}"),
-        "juegos/": layout("juegos/", "Juegos · pinyol", "Los juegos de pinyol: doce aspectos de consola, los de la Biblioteca y el ranking, para jugar en el navegador o descargar para la consola.",
-                          page_head("Para jugar en el navegador", "Juegos", "Doce aspectos de consola, los otros ejemplos y los juegos que hace la gente. Cada uno tiene su ficha, con sus cifras, sus comentarios y sus votos.")
-                          + f"\n{looks(shelf)}\n{ranking(catalog)}\n{library(pages)}"),
-        "crear/": layout("crear/", "Crear · pinyol", "Hazte un juego con pinyol: con tu agente de código o con el editor web, sin programar, y súbelo a la Biblioteca.",
-                         page_head("Con tu agente o sin programar", "Crear", "Pídeselo a tu agente de código, o dibújalo y ponle reglas en el editor. Cuando esté listo, súbelo a la Biblioteca.")
-                         + f"\n{make_one()}\n{editor()}\n{codex()}\n{share()}"),
+        "biblioteca/": layout("biblioteca/", "Biblioteca · pinyol", "La Biblioteca de pinyol: los juegos que hace la gente, para jugar en el navegador o descargar para la consola, y el ranking de los más votados.",
+                              page_head("Juegos hechos por la gente", "Biblioteca", "Juegos hechos por la gente con pinyol: se juegan aquí y se descargan para la consola. Cada uno tiene su ficha, con sus cifras, sus comentarios y sus votos.")
+                              + f"\n{library(pages)}\n{ranking(catalog)}"),
+        "crear/": layout("crear/", "Crear · pinyol", "Hazte un juego con pinyol: con tu agente de código, a partir de doce aspectos de consola, o con el editor web, sin programar, y súbelo a la Biblioteca.",
+                         page_head("Con tu agente o sin programar", "Crear", "Elige un aspecto de consola y pídeselo a tu agente de código, o dibújalo y ponle reglas en el editor. Cuando esté listo, súbelo a la Biblioteca.")
+                         + f"\n{make_one()}\n{looks(shelf)}\n{editor()}\n{codex()}\n{share()}"),
         "consola/": layout("consola/", "Consola · pinyol", "La consola Cirera, su firmware para instalar desde el navegador, y pinyol en RetroArch y RetroPie.",
                            page_head("ESP32-S3 · 480×320 · 60 fps", "Consola", "La Cirera, su firmware para instalar desde el navegador y otras formas de jugar a lo mismo, como RetroArch.")
                            + f"\n{console(fw)}\n{retroarch()}", fw),
@@ -523,6 +523,22 @@ def site(board: dict, stats: dict, fw: dict | None, catalog: str = "[]", pages: 
                                 page_head("Una persona y Claude", "Cómo se hizo", "El motor, los juegos y esta web, hechos hablando con Claude Code y medidos en la placa de verdad.")
                                 + f"\n{making(stats)}\n{performance(board, stats['tests'], shelf)}"),
     }
+
+
+def moved(to: str) -> str:
+    """A page that is now elsewhere: it sends there at once."""
+    return f"""<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="0; url={HOME}{to}">
+<meta name="robots" content="noindex">
+<title translate="no">pinyol</title>
+</head>
+<body><p><a href="{HOME}{to}">La Biblioteca</a></p></body>
+</html>
+"""
 
 
 def publish(dist, html: str, path: str = "") -> None:

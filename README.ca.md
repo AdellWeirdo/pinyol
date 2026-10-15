@@ -217,7 +217,7 @@ python3 tools/make_gallery.py gallery/ --player build-web --headless build/pinyo
 python3 -m http.server -d gallery       # obre http://localhost:8000
 ```
 
-Un joc acabat pot anar a la [Biblioteca](https://ipaud.github.io/pinyol/juegos/#biblioteca) del web, per jugar-hi allà i descarregar-lo per a la consola: [puja'l amb un formulari](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), un robot l'obre, el juga deu segons i, quan el revisem, apareix allà.
+Un joc acabat pot anar a la [Biblioteca](https://ipaud.github.io/pinyol/biblioteca/) del web, per jugar-hi allà i descarregar-lo per a la consola: [puja'l amb un formulari](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), un robot l'obre, el juga deu segons i, quan el revisem, apareix allà.
 
 <p align="center"><a href="https://ipaud.github.io/pinyol/video/subir.mp4"><img src="docs/media/library.webp" alt="Del .zip de l'editor a la Biblioteca: el formulari, la comprovació del robot, l'aprovació i el joc al web" width="640"></a><br>
 <sub>Del teu joc a la Biblioteca, accelerat: <a href="https://ipaud.github.io/pinyol/video/subir.mp4">el tutorial sencer</a>.</sub></p>
