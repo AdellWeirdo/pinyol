@@ -7,3 +7,4 @@ examples/*/saves/
 firmware/build-*/
 site/dist/
 site/.cache/
+/dist/
