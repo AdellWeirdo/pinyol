@@ -187,7 +187,8 @@ static void menu_sounds(layer_id top) {
 
 void game_tick(const hal_input *in) {
     G.in.pressed = in->held & ~G.in.held;
-    if ((G.in.pressed & ACT_INV) && !content_has_bag()) G.in.pressed = (G.in.pressed & ~ACT_INV) | ACT_PAUSE;
+    /* an adventure with nothing in its bag pauses on MENU; a Lua game reads MENU itself (btnp("menu")) */
+    if (!G.v2 && (G.in.pressed & ACT_INV) && !content_has_bag()) G.in.pressed = (G.in.pressed & ~ACT_INV) | ACT_PAUSE;
     G.in.held = in->held;
     G.in.tap = in->touch && !G.in.touch;
     G.in.release = !in->touch && G.in.touch;

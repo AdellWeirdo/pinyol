@@ -24,4 +24,9 @@ tick 1
 expect_lua level == nil and battery() == nil
 battery real
 expect_lua_error led("red")
+# MENU reaches a Lua game as MENU, never as START
+press MENU
+expect_lua menus == 1 and starts == 0
+press START
+expect_lua menus == 1 and starts == 1
 expect_ok
