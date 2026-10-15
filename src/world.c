@@ -834,6 +834,13 @@ static const cJSON *current_objective(void) {
     return G.objective;
 }
 
+/* A card's top on the play screen: 54, or low on the screen when Klaus stands under that band (he enters a zone
+ * near its top edge, where the camera cannot centre him) so the card never hides him. */
+int world_card_y(int h) {
+    int feet = (int)(2 * (G.klaus.y - cam_y));
+    return feet > 54 && feet - 72 < 54 + h ? SCREEN_H - h - 64 : 54;
+}
+
 void world_render_marker(surface *s) {
     if (layer_top() != L_PLAY || !Z->def) return;
     const font *f = ui_font(), *b = ui_bold();
@@ -868,7 +875,7 @@ void world_render_marker(surface *s) {
     }
     if (zname && G.banner_ms > 0) { /* arrival card: the place name, centred, with ink rules */
         const font *bl = &G.bold_l;
-        int tw = font_width(bl, zname, -1), w = tw + 96, h = bl->h + 24, x = (SCREEN_W - w) / 2, y = 54;
+        int tw = font_width(bl, zname, -1), w = tw + 96, h = bl->h + 24, x = (SCREEN_W - w) / 2, y = world_card_y(h);
         gfx_panel(s, x, y, w, h);
         font_draw(s, bl, x + 48, y + 12, zname, -1, -1, C_INK);
         gfx_fill(s, x + 14, y + h / 2, 26, 2, C_TERRA);

@@ -528,7 +528,10 @@ void hud_render(surface *s) {
         const font *b = ui_bold();
         asset *ic = gfx_asset("UI_BOOK");
         int w = font_width(b, G.toast, -1) + 28 + ic->w * 2, x = (SCREEN_W - w) / 2, h = b->h + 10;
-        int y = top == L_PAUSE ? SCREEN_H - h - 6 : top == L_PLAY && G.banner_ms > 0 ? 54 + G.bold_l.h + 30 : 54; /* under the arrival card */
+        int card_h = G.bold_l.h + 24, cy = world_card_y(card_h);
+        int y = top == L_PAUSE ? SCREEN_H - h - 6
+              : top == L_PLAY && G.banner_ms > 0 ? (cy == 54 ? cy + card_h + 6 : cy - h - 6) /* by the arrival card */
+              : top == L_PLAY ? world_card_y(h) : 54;
         gfx_plate(s, x, y, w, h, C_PAPER);
         gfx_blit2x(s, ic, 0, x + 8, y + (h - 2 * ic->h) / 2);
         font_draw(s, b, x + 16 + 2 * ic->w, y + 5, G.toast, -1, -1, C_INK);
