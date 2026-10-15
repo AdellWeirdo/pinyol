@@ -11,6 +11,7 @@ import i18n
 REPO = "https://github.com/ipaud/pinyol"
 RAW = "https://raw.githubusercontent.com/ipaud/pinyol/main"  # the Library's games, read when the page opens
 SITE = "https://ipaud.github.io/pinyol/"
+STATS = "https://raw.githubusercontent.com/ipaud/pinyol/stats/stats.json"  # each game's numbers and the ranking: tools/stats.py, daily
 COUNTER = "https://pinyol.goatcounter.com"  # GoatCounter: visits and plays, no cookies, nothing personal (vendor/goatcounter)  # where it will be published (GitHub Pages); only og:image needs it
 
 # The twelve looks: their example, the console it follows, its frame rate on the console as (slowest, fastest
@@ -102,7 +103,7 @@ def header() -> str:
 <a class="logo" href="#top" aria-label="pinyol, inicio"><span class="logo-anim"><img class="l-leaves" src="img/logo/leaves.png" alt="" width="83" height="52"><img class="l-seed" src="img/logo/seed.png" alt="" width="83" height="52"><img class="l-word" src="img/logo/word.png" alt="" width="83" height="52"></span></a>
 <nav aria-label="Secciones"><ul>
 <li class="keep"><a href="#aspectos">Juegos</a></li><li><a href="#rendimiento">Rendimiento</a></li>
-<li><a href="#crear">Editor</a></li><li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz un juego</a></li><li><a href="#consola">La consola</a></li><li><a href="#retroarch">RetroPie</a></li><li><a href="#making">Cómo se hizo</a></li>
+<li><a href="#ranking">Ranking</a></li><li><a href="#crear">Editor</a></li><li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz un juego</a></li><li><a href="#consola">La consola</a></li><li><a href="#retroarch">RetroPie</a></li><li><a href="#making">Cómo se hizo</a></li>
 <li class="keep"><a href="{REPO}">GitHub</a></li></ul></nav>
 {i18n.switcher("es")}
 </div></header>"""
@@ -135,7 +136,8 @@ def cart(k: dict, n: int) -> str:
 <div class="label"><p class="era pixel">{escape(k['era'])}</p><h3>{escape(k['name'])}</h3><p class="what">{escape(k['what'])}</p>
 <ul class="chips"><li class="chip fps{low}">{fps} fps en la consola</li><li class="chip">{made}</li></ul>
 <div class="row"><a class="play" href="{play_url(k['example'])}" data-goatcounter-click="jugar/{k['example']}" aria-label="Jugar a {escape(k['example'])} ({escape(k['name'])})">Jugar</a>
-<a class="zip" href="games/{k['example']}.zip" download data-goatcounter-click="descargar/{k['example']}" aria-label="Descargar {escape(k['example'])} para la consola">Descargar .zip</a></div></div></li>"""
+<a class="zip" href="games/{k['example']}.zip" download data-goatcounter-click="descargar/{k['example']}" aria-label="Descargar {escape(k['example'])} para la consola">Descargar .zip</a>
+<a class="sheet-link" href="juegos/{k['example']}/" aria-label="Ficha de {escape(k['example'])} ({escape(k['name'])})">Ficha</a></div></div></li>"""
 
 
 def measured(board: dict) -> list[dict]:
@@ -153,7 +155,7 @@ def measured(board: dict) -> list[dict]:
 
 def looks(shelf: list[dict]) -> str:
     carts = "".join(cart(k, n) for n, k in enumerate(shelf))
-    others = "".join(f'<li><a href="{play_url(g)}">{escape(t)}</a></li>' for g, t in OTHERS)
+    others = "".join(f'<li><a href="juegos/{g}/">{escape(t)}</a></li>' for g, t in OTHERS)
     return f"""<section id="aspectos" aria-labelledby="aspectos-t"><div class="wrap">
 <h2 id="aspectos-t">Doce aspectos, un motor</h2>
 <p class="intro">Cada cartucho es un ejemplo jugable con las reglas de su consola: su resolución, sus colores, sus capas. Se juega con el teclado (flechas, Z y X) o, en el móvil, con los botones en pantalla. Las cifras de fps se midieron jugando en la consola real.</p>
@@ -223,7 +225,28 @@ def editor() -> str:
 </div></section>"""
 
 
-def library() -> str:
+def featured() -> str:
+    """The cover of the week: games.js shows the game tools/stats.py chose (the most voted of the week, or the most talked
+    about, or one at random), or one at random until it has chosen; hidden until it knows which."""
+    return """<section id="portada" class="featured" aria-labelledby="portada-t" hidden><div class="wrap feat">
+<a class="feat-shot" id="feat-shot" tabindex="-1" aria-hidden="true"><img id="feat-img" alt="" width="480" height="320"></a>
+<div class="feat-info"><p class="kicker pixel" id="portada-t">Portada de la semana</p>
+<h2 class="feat-title" id="feat-title"></h2><p class="feat-why" id="feat-why"></p>
+<div class="actions"><a class="btn btn-primary" id="feat-play">Jugar</a><a class="btn btn-ghost" id="feat-page">Ver la ficha</a></div></div>
+</div></section>"""
+
+
+def ranking(catalog: str) -> str:
+    """The most voted games (games.js, from stats.json), with each one's numbers; the games it may list, as JSON."""
+    return f"""<section id="ranking" aria-labelledby="ranking-t"><div class="wrap">
+<h2 id="ranking-t">Ranking</h2>
+<p class="intro">Los juegos más votados. Se vota con una reacción en la ficha de cada juego; las cifras se actualizan una vez al día.</p>
+<div class="rank" id="rank" data-src="{STATS}"><p class="lib-state">El ranking necesita JavaScript para cargarse.</p></div>
+<script type="application/json" id="catalog">{catalog}</script>
+</div></section>"""
+
+
+def library(pages: str = "") -> str:
     """People's games (tools/library.py publishes them in library/): site.js reads the list when the page opens."""
     return f"""<section id="biblioteca" aria-labelledby="biblioteca-t"><div class="wrap">
 <h2 id="biblioteca-t">La Biblioteca</h2>
@@ -232,7 +255,7 @@ def library() -> str:
 <p class="sub">¿Algo tuyo publicado aquí sin tu permiso, o algo que no debería estar? <a href="{REPO}/issues/new?title=Retirar%3A%20">Pide que lo retiremos</a>.</p>
 <figure class="tutorial"><video src="video/subir.mp4" poster="video/subir.jpg" width="960" height="600" controls preload="none" playsinline aria-describedby="subir-cap"></video>
 <figcaption id="subir-cap">Tutorial, de tu juego a la Biblioteca: descarga el .zip desde el editor, rellena el formulario y adjúntalo. Un robot lo comprueba y, cuando está aprobado, ya se puede jugar aquí. Las esperas van aceleradas.</figcaption></figure>
-<div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="play/player.html">
+<div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="play/player.html" data-pages="{pages}">
 <p class="lib-state">La Biblioteca necesita JavaScript para cargarse. Sus juegos también están en <a href="{REPO}/tree/main/library">GitHub</a>.</p></div>
 </div></section>"""
 
@@ -245,7 +268,8 @@ def codex() -> str:
 <ul class="chips"><li class="chip fps">{j['time']}</li><li class="chip">{j['commands']} comandos</li><li class="chip">{j['tokens']} tokens</li><li class="chip fps{' low' if j['fps'] not in ('59', '60', '61') else ''}">{j['fps']} fps en la consola</li></ul>
 <p class="after">{escape(j['after'])}</p>
 <div class="row"><a class="play" href="{play_url(j['id'])}" aria-label="Jugar a {escape(j['title'])}">Jugar</a>
-<a class="zip" href="games/{j['id']}.zip" download aria-label="Descargar {escape(j['title'])} para la consola">Descargar .zip</a></div></div></li>""" for j in CODEX)
+<a class="zip" href="games/{j['id']}.zip" download aria-label="Descargar {escape(j['title'])} para la consola">Descargar .zip</a>
+<a class="sheet-link" href="juegos/{j['id']}/" aria-label="Ficha de {escape(j['title'])}">Ficha</a></div></div></li>""" for j in CODEX)
     return f"""<section id="codex" aria-labelledby="codex-t"><div class="wrap">
 <h2 id="codex-t">La escalera: cinco encargos</h2>
 <p class="intro">De lo más sencillo a lo más difícil. Cada encargo partió de un clon limpio del repositorio, con un solo mensaje y sin responder a ninguna pregunta. Codex leyó AGENTS.md, compiló el motor, siguió la receta del aspecto y escribió un guion que juega solo al juego, y no paró hasta que pasó la prueba. Luego cada juego se midió en la consola con ese mismo guion. Con {escape(CODEX_RUN)}.</p>
@@ -369,7 +393,7 @@ def thousands(v: int) -> str:
 
 def footer() -> str:
     return f"""<footer><div class="wrap"><img src="img/logo.png" alt="pinyol" width="64" height="42" loading="lazy">
-<span>Código MIT · arte y sonido CC0</span><span>Game Boy, PICO-8, Neo Geo y las demás consolas que se nombran son marcas de sus dueños; pinyol y Cirera no tienen relación con ellos.</span><a href="{REPO}">GitHub</a><a href="{REPO}/blob/main/docs/measurements.md">Mediciones</a><span>Las visitas se cuentan con <a href="https://www.goatcounter.com">GoatCounter</a>, sin cookies ni datos personales.</span></div></footer>"""
+<span>Código MIT · arte y sonido CC0</span><span>Game Boy, PICO-8, Neo Geo y las demás consolas que se nombran son marcas de sus dueños; pinyol y Cirera no tienen relación con ellos.</span><a href="{REPO}">GitHub</a><a href="{REPO}/blob/main/docs/measurements.md">Mediciones</a><span>Las visitas, las partidas y el tiempo jugado se cuentan con <a href="https://www.goatcounter.com">GoatCounter</a>, sin cookies ni datos personales.</span><span>Los comentarios y los votos de cada juego se guardan en GitHub y se cargan con giscus solo si los pides.</span><span>La Biblioteca, el ranking y las cifras de cada juego se leen de GitHub al abrir la página.</span></div></footer>"""
 
 
 NEW_TAB = " (se abre en una pestaña nueva)"
@@ -391,7 +415,7 @@ def new_tabs(html: str) -> str:
     return re.sub(r"<a(\s[^>]*)>(.*?)</a>", one, html, flags=re.S)
 
 
-def render(board: dict, stats: dict, fw: dict | None) -> str:
+def render(board: dict, stats: dict, fw: dict | None, catalog: str = "[]", pages: str = "") -> str:
     shelf = measured(board)
     desc = "pinyol: un motor de juegos libre con doce aspectos retro (Game Boy, Neo Geo, CPS2, PlayStation…) que corre a 60 fps en una consola ESP32-S3 y en el navegador."
     csp = (f"default-src 'self'; img-src 'self' data: https://raw.githubusercontent.com {COUNTER}; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; "
@@ -415,18 +439,21 @@ def render(board: dict, stats: dict, fw: dict | None) -> str:
 <link rel="preload" href="fonts/jersey15.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
 <script src="site.js" defer></script>
+<script src="games.js" defer></script>
 <script data-goatcounter="{COUNTER}/count" async src="vendor/goatcounter/count.js"></script>{'<script type="module" src="vendor/esp-web-tools/install-button.js"></script>' if fw else ""}
 </head>
 <body>
 {header()}
 <main id="main">
 {hero()}
+{featured()}
 {looks(shelf)}
 {performance(board, stats['tests'], shelf)}
 {make_one()}
 {editor()}
 {codex()}
-{library()}
+{ranking(catalog)}
+{library(pages)}
 {console(fw)}
 {retroarch()}
 {making(stats)}

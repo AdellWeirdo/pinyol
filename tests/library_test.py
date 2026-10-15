@@ -3,6 +3,7 @@
     python3 tests/library_test.py build/pinyol_headless
 """
 import json
+import shutil
 import sys
 import tempfile
 import zipfile
@@ -16,9 +17,16 @@ import pack_game  # noqa: E402
 headless = Path(sys.argv[1])
 with tempfile.TemporaryDirectory() as t:
     t = Path(t)
-    good = pack_game.pack(ROOT / "examples" / "bolsillo", t / "zips", False)
+    taken = pack_game.pack(ROOT / "examples" / "bolsillo", t / "zips", False)  # an example's own id: refused
+    r = library.check(taken, t / "taken", headless)
+    assert not r["ok"] and "ya es el de un ejemplo" in r["errors"][0], r
+    mine = t / "mine"
+    shutil.copytree(ROOT / "examples" / "bolsillo", mine, ignore=shutil.ignore_patterns("saves"))
+    meta = json.loads((mine / "game.json").read_text(encoding="utf-8"))
+    (mine / "game.json").write_text(json.dumps({**meta, "id": "mi_bolsillo"}), encoding="utf-8")
+    good = pack_game.pack(mine, t / "zips", False)
     r = library.check(good, t / "good", headless)
-    assert r["ok"] and r["id"] == "bolsillo", r
+    assert r["ok"] and r["id"] == "mi_bolsillo", r
     assert (t / "good" / "cover.png").exists() and (t / "good" / "game" / "game.json").exists()
 
     evil = t / "evil.zip"

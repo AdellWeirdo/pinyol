@@ -17,9 +17,11 @@ HERE = Path(__file__).resolve().parent
 LANGS = {"es": "Español", "ca": "Català", "en": "English"}
 ATTRS = ("alt", "aria-label", "title", "content", "placeholder")  # attributes people read (content: meta description)
 READ_META = ("description", "og:title", "og:description")
-LOCAL = ("img/", "play/", "games/", "editor/", "vendor/", "firmware/", "fonts/", "video/", "styles.css", "site.js")  # a page's own files
+LOCAL = ("img/", "play/", "games/", "editor/", "vendor/", "firmware/", "fonts/", "video/", "styles.css", "site.js",
+         "games.js")  # a page's own files
 # The language links: left as they are by the walk, then swapped for the ones of each page
 KEEP = {"Idioma", *LANGS.values(), *(code.upper() for code in LANGS)}
+VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 
 
 NUMBERS = re.compile(r"^[\d.,–\-\s·%×/=]*(?:ms|fps|MB/s|MB|KB|MHz|min|s|%)?(?:[\d.,–\-\s·%×/=]*(?:ms|fps|MB/s|MB|KB|MHz|min|s|%)?)*$")
@@ -32,6 +34,7 @@ RULES = [
     (r"^Jugar a (.+?)(?: \((.+)\))? \(se abre en una pestaña nueva\)$",
      {"en": "Play {0}{1p} (opens in a new tab)", "ca": "Juga a {0}{1p} (s'obre en una pestanya nova)"}),
     (r"^Descargar (.+) para la consola$", {"en": "Download {0} for the console", "ca": "Descarrega {0} per a la consola"}),
+    (r"^Ficha de (.+?)(?: \((.+)\))?$", {"en": "Details: {0}{1p}", "ca": "Fitxa de {0}{1p}"}),
     (r"^Copiar: (.+)$", {"en": "Copy: {0t}", "ca": "Copia: {0t}"}),
     (r"^(\w+): antes (.+) fps, ahora (.+)$", {"en": "{0}: before, {1t} fps; now {2t}", "ca": "{0}: abans {1t} fps, ara {2t}"}),
     (r"^(\w+): ((?:entre )?\d+(?: y \d+)?) fps$", {"en": "{0}: {1t} fps", "ca": "{0}: {1t} fps"}),
@@ -82,10 +85,11 @@ class _Walk(HTMLParser):
     def __init__(self, table: dict | None, lang: str = "es"):
         super().__init__(convert_charrefs=True)
         self.table, self.lang, self.out, self.texts, self.missing, self.raw = table, lang, [], [], set(), 0
+        self.keep = []  # translate="no": the tag and how deep inside it the walk is, text left as its author wrote it
 
     def tr(self, text: str) -> str:
         key = text.strip()
-        if not key or not worth(key) or key in KEEP:
+        if not key or not worth(key) or key in KEEP or self.keep:
             return text
         self.texts.append(key)
         if self.table is None:
@@ -103,7 +107,7 @@ class _Walk(HTMLParser):
         raw = self.get_starttag_text()
         a = dict(attrs)
         for name, value in attrs:
-            if not value or name not in ATTRS:
+            if not value or name not in ATTRS or a.get("translate") == "no" or self.keep:
                 continue
             if tag == "meta" and name == "content" and (a.get("name") or a.get("property")) not in READ_META:
                 continue  # viewport, CSP, og:type, og:image: not words
@@ -112,6 +116,10 @@ class _Walk(HTMLParser):
                 raw = raw.replace(f'{name}="{escape(value)}"', f'{name}="{escape(new)}"', 1)
         if tag in ("script", "style"):
             self.raw += 1
+        if tag not in VOID and self.keep and tag == self.keep[-1][0]:
+            self.keep[-1][1] += 1
+        elif tag not in VOID and a.get("translate") == "no" and not self.get_starttag_text().endswith("/>"):
+            self.keep.append([tag, 1])
         self.out.append(raw)
 
     def handle_startendtag(self, tag, attrs):
@@ -120,6 +128,10 @@ class _Walk(HTMLParser):
     def handle_endtag(self, tag):
         if tag in ("script", "style"):
             self.raw -= 1
+        if self.keep and tag == self.keep[-1][0]:
+            self.keep[-1][1] -= 1
+            if not self.keep[-1][1]:
+                self.keep.pop()
         self.out.append(f"</{tag}>")
 
     def handle_data(self, data):
@@ -134,21 +146,27 @@ def page_path(lang: str) -> str:
     return "" if lang == "es" else f"{lang}/"
 
 
-def switcher(lang: str) -> str:
-    """The language links of the page in lang."""
-    up = "../" if lang != "es" else ""
+def switcher(lang: str, path: str = "") -> str:
+    """The language links of the page in lang (path: where the page is below each language's root, "juegos/x/")."""
+    up = "../" * (path.count("/") + (lang != "es"))
     items = []
     for code, name in LANGS.items():
         current = ' aria-current="page"' if code == lang else ""
-        items.append(f'<li class="keep"><a href="{up + page_path(code) or "./"}" lang="{code}" hreflang="{code}" aria-label="{name}"'
+        items.append(f'<li class="keep"><a href="{up + page_path(code) + path or "./"}" lang="{code}" hreflang="{code}" aria-label="{name}"'
                      f'{current}>{code.upper()}</a></li>')
     return f'<nav class="langs" aria-label="{"Language" if lang == "en" else "Idioma"}"><ul>{"".join(items)}</ul></nav>'
 
 
-def alternates(site: str) -> str:
+def alternates(site: str, path: str = "") -> str:
     """The <head> links that tell search engines the three pages are one page in three languages."""
-    return "".join(f'<link rel="alternate" hreflang="{code}" href="{site}{page_path(code)}">\n' for code in LANGS) + \
-        f'<link rel="alternate" hreflang="x-default" href="{site}">'
+    return "".join(f'<link rel="alternate" hreflang="{code}" href="{site}{page_path(code)}{path}">\n' for code in LANGS) + \
+        f'<link rel="alternate" hreflang="x-default" href="{site}{path}">'
+
+
+def relocate(html: str, up: str) -> str:
+    """The page's own links (img/, play/, games/...) from a folder `up` below the site's root ("../", "../../")."""
+    return re.sub(r"""((?:src|href|poster|manifest|data-play|data-src)="|url\(')((?:\.\./)*)(""" +
+                  "|".join(re.escape(p) for p in LOCAL) + ")", lambda m: m[1] + up + m[2] + m[3], html)
 
 
 def texts(html: str) -> list[str]:
@@ -157,8 +175,8 @@ def texts(html: str) -> list[str]:
     return list(dict.fromkeys(w.texts))
 
 
-def translate(html: str, lang: str) -> str:
-    """The Spanish page in lang, its local links one folder up (it lives in <lang>/)."""
+def translate(html: str, lang: str, path: str = "") -> str:
+    """The Spanish page in lang, its local links one folder up (it lives in <lang>/; path: where it is below that)."""
     table = json.loads((HERE / "i18n" / f"{lang}.json").read_text(encoding="utf-8"))
     w = _Walk(table, lang)
     w.feed(html)
@@ -166,12 +184,13 @@ def translate(html: str, lang: str) -> str:
     if w.missing:
         raise SystemExit(f"i18n/{lang}.json lacks {len(w.missing)} texts, first: " + " | ".join(sorted(w.missing)[:8]))
     out = "".join(w.out).replace('<html lang="es">', f'<html lang="{lang}">', 1)
-    out = re.sub(r"""((?:src|href|poster|manifest|data-play)="|url\(')(""" + "|".join(re.escape(p) for p in LOCAL) + ")",
-                 r"\1../\2", out)
+    out = relocate(out, "../")
     out = out.replace('href="../play/player.html?', f'href="../play/player.html?lang={lang}&amp;')  # the player in lang too
+    out = re.sub(r'href="((?:\.\./)+)play/player\.html\?(?!lang=)', rf'href="\1play/player.html?lang={lang}&amp;', out)
     out = out.replace('href="../editor/"', f'href="../editor/?lang={lang}"')  # and the editor
-    out = re.sub(r'<link rel="canonical" href="([^"]+)">', lambda m: f'<link rel="canonical" href="{m[1]}{page_path(lang)}">', out)
-    return re.sub(r'<nav class="langs".*?</nav>', lambda _: switcher(lang), out, count=1, flags=re.S)
+    out = re.sub(r'<link rel="canonical" href="([^"]+)">',
+                 lambda m: f'<link rel="canonical" href="{m[1][:len(m[1]) - len(path)]}{page_path(lang)}{path}">', out)
+    return re.sub(r'<nav class="langs".*?</nav>', lambda _: switcher(lang, path), out, count=1, flags=re.S)
 
 
 if __name__ == "__main__":  # the texts no table or rule has yet, for each language

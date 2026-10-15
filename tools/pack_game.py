@@ -6,7 +6,7 @@
 
 The zip holds one folder named after the game's id, so unzipping it into the card's games/ folder installs it.
 Without --sources it holds what the console reads: game.json and the other .json, the Lua files, assets/, audio/,
-fonts/ (and zones/, dialogues/ for pinyol@1 games). Saves are never packed.
+fonts/, video/, story/, maps/, data/ (and zones/, dialogues/ for pinyol@1 games). Saves are never packed.
 """
 from __future__ import annotations
 
@@ -17,7 +17,8 @@ import sys
 import zipfile
 from pathlib import Path
 
-RUNTIME_DIRS = {"assets", "audio", "fonts", "zones", "dialogues"}  # pinyol@2 uses the first three
+RUNTIME_DIRS = {"assets", "audio", "fonts", "video", "story", "maps", "data",  # pinyol@2: video() reads video/,
+                "zones", "dialogues"}  # file() any other file (story/es.txt, maps/...); pinyol@1 the last two
 SKIP = {"saves", "__pycache__", ".git", ".DS_Store"}
 
 

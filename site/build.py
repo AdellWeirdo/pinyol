@@ -2,8 +2,8 @@
 # requires-python = ">=3.10"
 # dependencies = ["pillow>=10", "fonttools>=4", "brotli>=1"]
 # ///
-"""Build pinyol's site (https://ipaud.github.io/pinyol/) into site/dist/: the page, the web player, every example
-as a zip, the editor.
+"""Build pinyol's site (https://ipaud.github.io/pinyol/) into site/dist/: the page, a page for each game (gamepage.py),
+the web player, every example as a zip, the editor.
 
     uv run site/build.py
     python3 -m http.server -d site/dist        # open http://localhost:8000
@@ -31,6 +31,7 @@ DIST = HERE / "dist"
 CACHE = HERE / ".cache"
 
 sys.path.insert(0, str(HERE))
+import gamepage  # noqa: E402
 import i18n  # noqa: E402
 import page  # noqa: E402
 
@@ -86,6 +87,21 @@ def images(np2d: Path) -> None:
     og.save(DIST / "img/og.png", optimize=True)
 
 
+def covers(np2d: Path) -> None:
+    """Each game's cover for its page, the ranking and the cover of the week: the examples' cover.rgb565 (240x160, as
+    the console's menu shows it) as PNG, and the Library's cover.png as it is."""
+    out = DIST / "img/covers"
+    out.mkdir(parents=True)
+    for rgb in (np2d / "examples").glob("*/cover.rgb565"):
+        raw = rgb.read_bytes()
+        px = [int.from_bytes(raw[i:i + 2], "little") for i in range(0, 240 * 160 * 2, 2)]
+        img = Image.new("RGB", (240, 160))
+        img.putdata([((v >> 11) * 255 // 31, (v >> 5 & 63) * 255 // 63, (v & 31) * 255 // 31) for v in px])
+        img.save(out / f"{rgb.parent.name}.png", optimize=True)
+    for png in (np2d / "library").glob("*/cover.png"):
+        shutil.copy(png, out / f"{png.parent.name}.png")
+
+
 FIRMWARE_PARTS = (("bootloader.bin", 0x0), ("partition-table.bin", 0x8000), ("ota_data_initial.bin", 0xF000),
                   ("pinyol_console.bin", 0x20000), ("game.bin", 0x420000))  # firmware/partitions.csv
 
@@ -129,6 +145,14 @@ def stats(np2d: Path) -> dict:
     return {"c_lines": c_lines, "tests": tests, "commits": commits, "examples": examples}
 
 
+def versioned(html: str) -> str:
+    """The page with its stylesheet and scripts named with their hash: a new version is fetched at once, not after the
+    10 minutes Pages caches a file."""
+    for f in ("styles.css", "site.js", "games.js"):
+        html = html.replace(f'"{f}"', f'"{f}?v={hashlib.sha256((DIST / f).read_bytes()).hexdigest()[:8]}"')
+    return html
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--np2d", type=Path, default=HERE.parent, help="the engine's repository (this one)")
@@ -141,7 +165,7 @@ def main() -> None:
     if DIST.exists():
         shutil.rmtree(DIST)
     DIST.mkdir()
-    for f in ("styles.css", "site.js"):
+    for f in ("styles.css", "site.js", "games.js"):
         shutil.copy(HERE / "src" / f, DIST / f)
     build_web = player(np2d)
     (DIST / "play").mkdir()
@@ -150,6 +174,7 @@ def main() -> None:
     games(np2d)
     fonts(np2d)
     images(np2d)
+    covers(np2d)
     shutil.copytree(HERE / "src/img", DIST / "img", dirs_exist_ok=True)
     shutil.copytree(HERE / "vendor/goatcounter", DIST / "vendor/goatcounter")  # the visit counter (page.COUNTER)
     if (HERE / "src/video").exists():  # the editor's video (LÍNEA 0 being made)
@@ -157,13 +182,15 @@ def main() -> None:
     fw = firmware(args.firmware)
     editor(np2d, build_web)
     board = json.loads((HERE / "src/data/board.json").read_text(encoding="utf-8"))
-    html = page.render(board, stats(np2d), fw)
-    for f in ("styles.css", "site.js"):  # a new version is fetched at once, not after the 10 minutes Pages caches a file
-        html = html.replace(f'"{f}"', f'"{f}?v={hashlib.sha256((DIST / f).read_bytes()).hexdigest()[:8]}"')
+    games_list = gamepage.catalog(np2d, page.measured(board))
+    library_ids = " ".join(g["id"] for g in games_list if g["kind"] == "library")
+    html = page.render(board, stats(np2d), fw, gamepage.public(games_list), library_ids)
+    html = versioned(html)
+    print(f"juegos/: {gamepage.write(DIST, games_list, versioned)} games, each in {len(i18n.LANGS)} languages")
     (DIST / "index.html").write_text(html, encoding="utf-8")
     for lang in i18n.LANGS:
         if lang != "es":
-            (DIST / lang).mkdir()
+            (DIST / lang).mkdir(exist_ok=True)  # (its juegos/ is already there)
             (DIST / lang / "index.html").write_text(i18n.translate(html, lang), encoding="utf-8")
     (DIST / ".nojekyll").write_text("")  # GitHub Pages: serve the folders as they are
     (DIST / ".gitattributes").write_text("".join(f"*.{e} binary\n" for e in ("bin", "wasm", "zip", "png", "woff2", "mp4", "jpg")))

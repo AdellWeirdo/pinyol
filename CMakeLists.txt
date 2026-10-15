@@ -149,6 +149,9 @@ endforeach()
 # Games made by the tools, when Python 3 has Pillow: tests/template_lua.script plays one just made by
 # tools/new_game.py --lua, tests/tiled.script one with levels from Tiled (tests/make_tiled_game.py).
 find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_FOUND) # the site's numbers: the minutes played, the ranking, the cover of the week (tools/stats.py)
+  add_test(NAME stats COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/stats.py --test)
+endif()
 set(NO_PIL 1)
 if(Python3_FOUND)
   execute_process(COMMAND ${Python3_EXECUTABLE} -c "import PIL" RESULT_VARIABLE NO_PIL OUTPUT_QUIET ERROR_QUIET)

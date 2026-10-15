@@ -1,0 +1,44 @@
+# Each game's numbers for the site (tools/stats.py): likes and comments from its GitHub Discussion (giscus), visits,
+# plays and time played from GoatCounter (with the secret GOATCOUNTER_TOKEN, a read-only API key; without it those
+# stay empty), the ranking and the cover of the week. Published as stats.json on the branch "stats", one commit that
+# replaces the last, where the site reads it.
+name: stats
+on:
+  schedule:
+    - cron: "17 5 * * *" # every day, 05:17 UTC
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: stats
+  cancel-in-progress: false
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the branch "stats"
+      discussions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Yesterday's, for the cover of the week
+        run: | # none yet (404): a first run; any other failure stops here, so the week's cover is not chosen again
+          code=$(curl -sSL -o old.json -w '%{http_code}' "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/stats/stats.json")
+          if [ "$code" = 404 ]; then echo '{}' > old.json; elif [ "$code" != 200 ]; then echo "stats.json: HTTP $code"; exit 1; fi
+      - name: Today's
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GOATCOUNTER_TOKEN: ${{ secrets.GOATCOUNTER_TOKEN }}
+        run: |
+          python3 tools/stats.py --test
+          mkdir out && python3 tools/stats.py out/stats.json --previous old.json
+      - name: Published on the branch "stats"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd out
+          git init -q -b stats
+          git add stats.json
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "stats: $(date -u +%F)"
+          git push -q --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" stats

@@ -98,6 +98,8 @@ def check_game(game: Path, headless: Path, out: Path) -> dict:
     gid, title = str(meta.get("id", "")), str(meta.get("title", "")).strip()
     if not re.fullmatch(r"[a-z0-9_-]{1,40}", gid):
         errors.append(f"El id de game.json debe ser de 1 a 40 letras minúsculas, cifras, _ o - (es {gid!r}).")
+    if (ROOT / "examples" / gid).is_dir():  # its page, cover and votes would be the example's
+        errors.append(f"El id {gid!r} ya es el de un ejemplo de pinyol: elige otro en game.json.")
     if not 1 <= len(title) <= 48:
         errors.append("game.json necesita un title de 1 a 48 caracteres.")
     if errors:
