@@ -1,0 +1,63 @@
+# The libretro core, built for Linux on 32-bit ARM (Raspberry Pi 2 and up), 64-bit ARM and x86-64, each in Debian 10
+# (platform/libretro/release.sh) so it runs there, in RetroPie's image, and on anything newer. Published as the release
+# "libretro", which always holds the core of the last commit on main that changed the engine: RetroPie's lr-pinyol.sh
+# installs it from there (docs/libretro.md). The firmware's release stays the latest.
+name: libretro
+on:
+  push:
+    branches: [main]
+    paths: ["src/**", "lib/**", "third_party/**", "platform/libretro/**", "platform/link_udp.*", "cmake/**",
+            "CMakeLists.txt", "LICENSE", "THIRD_PARTY_NOTICES.md", ".github/workflows/libretro.yml"]
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: libretro
+  cancel-in-progress: false # (a release half uploaded is worse than one a commit late)
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - {arch: armhf, platform: linux/arm/v7}
+          - {arch: arm64, platform: linux/arm64}
+          - {arch: x86_64, platform: linux/amd64}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@v3
+      - name: Build in Debian 10
+        run: >-
+          docker run --rm --platform ${{ matrix.platform }} -v "$PWD":/src -w /src debian:buster
+          bash platform/libretro/release.sh ${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-${{ matrix.arch }}
+          path: dist/pinyol_libretro-linux-${{ matrix.arch }}.zip
+          if-no-files-found: error
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: The release "libretro", moved to this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          notes="The libretro core of ${GITHUB_SHA::7}, for RetroArch and RetroPie on Linux: armhf (32-bit ARM, Raspberry Pi 2 and up), arm64 and x86_64. Each zip holds the core, its .info, LICENSE and THIRD_PARTY_NOTICES.md. How to install it: https://github.com/$GH_REPO/blob/main/docs/libretro.md"
+          if gh release view libretro >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$GH_REPO/git/refs/tags/libretro" -f sha="$GITHUB_SHA" -F force=true >/dev/null
+            gh release edit libretro --notes "$notes"
+          else
+            gh release create libretro --target "$GITHUB_SHA" --title "pinyol libretro core" --notes "$notes" --latest=false
+          fi
+          gh release upload libretro dist/*.zip --clobber
