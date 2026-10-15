@@ -279,8 +279,53 @@ def making(stats: dict) -> str:
 <p><strong>Medido antes de darlo por bueno.</strong> Cada ejemplo tiene un guion que lo juega solo. En el ordenador compara la suma de control de cada frame con la guardada; en la placa escribe los fps de cada segundo. Las optimizaciones no cambian ni un píxel.</p>
 <p><strong>Libre de verdad.</strong> El código es MIT; el arte, el sonido y los vídeos de los ejemplos, CC0. Cógelo, cámbialo, haz tu consola.</p>
 </div>
+{art_pipeline()}
+{days()}
 <p class="source">Todo el proceso está en el repositorio: <a href="{REPO}/blob/main/docs/art.md">cómo se hace el arte</a>, <a href="{REPO}/blob/main/docs/lua.md">la API de Lua</a>, <a href="{REPO}/blob/main/AGENTS.md">las instrucciones para agentes</a>.</p>
 </div></section>"""
+
+
+def art_pipeline() -> str:
+    """One enemy from the request to the game: mazmorra's goblin, with the real pictures (web-retrogo/assets/cps2/raw,
+    examples/mazmorra/art; site/src/img/making)."""
+    steps = [
+        ("1 · El encargo", '<blockquote><p>Un goblin original para un beat-em-up de fantasía: pequeño, enjuto y encorvado, '
+         'piel verde, orejas enormes, un taparrabos raído y un puñal curvo oxidado. De cuerpo entero, mirando a la '
+         'izquierda. Estilo: sprite de recreativa de mediados de los noventa, píxeles duros, contorno oscuro, unos 15 '
+         'colores. Fondo transparente.</p></blockquote>', "Resumido y traducido del encargo, que se escribió en inglés."),
+        ("2 · La referencia", '<img src="img/making/goblin_ref.webp" alt="El goblin solo, de cuerpo entero: verde, con '
+         'orejas puntiagudas y un puñal curvo" width="360" height="356" loading="lazy" decoding="async">',
+         "El personaje solo. Va adjunto en cada encargo siguiente, para que no cambie de un dibujo a otro."),
+        ("3 · La hoja", '<img src="img/making/goblin_sheet.jpg" alt="Diez poses del goblin en dos filas, sobre un fondo '
+         'oscuro difuminado" width="720" height="480" loading="lazy" decoding="async">',
+         "Diez poses: andar, apuñalar, encajar un golpe y caer. El fondo se pidió transparente y salió pintado."),
+        ("4 · Recortado", '<img class="px" src="img/making/goblin_frames.png" alt="Los diez fotogramas recortados, a la '
+         'misma escala y con los pies en la misma línea" width="535" height="200" loading="lazy" decoding="async">',
+         "Las herramientas del motor quitan el fondo, separan los fotogramas, los dejan a la misma escala con los pies "
+         "en una línea y los reducen a 15 colores. Luego se revisa cada uno a ojo."),
+        ("5 · En el juego", '<img class="px" src="img/making/mazmorra.png" alt="Alba, la espadachina, frente a dos '
+         'goblins en el pasillo de la mazmorra" width="480" height="320" loading="lazy" decoding="async">',
+         "En mazmorra, en grupo, a 60 fps en la consola."),
+    ]
+    li = "".join(f"<li><h4>{t}</h4>{body}<p>{escape(note)}</p></li>" for t, body, note in steps)
+    return f"""<figure class="pipeline reveal" aria-labelledby="pipe-t">
+<figcaption><h3 id="pipe-t">Un enemigo, del encargo al juego</h3>
+<p>El goblin de mazmorra, paso a paso, con las imágenes de verdad.</p></figcaption>
+<ol class="pipe">{li}</ol>
+</figure>"""
+
+
+def days() -> str:
+    """The repository's days, from its git log."""
+    items = [
+        ("2026-10-11", "11 oct", "El motor sale de dos aventuras y se mide en la placa: la imagen va directa al panel, en franjas."),
+        ("2026-10-12", "12 oct", "Un procesador de imagen virtual, como el de la Game Boy Advance, y juegos en Lua de cualquier género."),
+        ("2026-10-13", "13 oct", "Medido en la consola y hecho rápido. El editor web, para hacer juegos sin programar."),
+        ("2026-10-14", "14 oct", "Los aspectos de doce consolas, la primera persona, las instrucciones para que un agente haga juegos, la web y la Biblioteca."),
+        ("2026-10-15", "15 oct", "La web y el editor en tres idiomas, los juegos de Codex e IL·LUSTRES en la Biblioteca."),
+    ]
+    li = "".join(f'<li><time datetime="{d}">{label}</time><p>{escape(t)}</p></li>' for d, label, t in items)
+    return f"""<div class="days reveal"><h3>Cinco días en el repositorio</h3><ol>{li}</ol></div>"""
 
 
 def thousands(v: int) -> str:

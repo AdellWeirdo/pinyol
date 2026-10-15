@@ -54,7 +54,7 @@ a:hover { color: #fff; }
   8%, 100% { transform: none; opacity: 1 } }
 @keyframes logo-leaves { 0%, 6% { transform: scale(0) } 8.5% { transform: scale(1.18) } 10%, 100% { transform: none } }
 @media (prefers-reduced-motion: reduce) { .logo-anim img { animation: none; } }
-.top nav { margin-left: auto; overflow-x: auto; }
+.top nav { position: relative; margin-left: auto; overflow-x: auto; } /* relative: its hidden link texts (.sr) stay inside its scroll */
 .top nav ul { display: flex; gap: var(--s1); list-style: none; margin: 0; padding: 0; white-space: nowrap; }
 .top nav a { display: inline-block; padding: var(--s2) var(--s3); font-size: var(--t-small); text-decoration: none; color: var(--text-2);
              border-radius: var(--radius-s); }
@@ -198,6 +198,27 @@ footer img { height: 1.6rem; width: auto; }
 /* ------------------------------------------------------------------ small pieces */
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .meta { margin: var(--s5) 0 0; color: var(--text-3); font-size: var(--t-small); }
+/* the making-of: one enemy from the request to the game (the real pictures), then the repository's days */
+.pipeline { margin: var(--s8) 0 0; }
+.pipeline figcaption p { margin: 0 0 var(--s5); color: var(--text-2); max-width: 60ch; }
+.pipeline h3, .days h3 { margin: 0 0 var(--s2); }
+.pipe { display: grid; gap: var(--s4); margin: 0; padding: 0; list-style: none;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr)); }
+.pipe li { display: flex; flex-direction: column; gap: var(--s3); padding: var(--s4); border-radius: var(--radius);
+           background: var(--ink-2); box-shadow: var(--shadow-1); }
+.pipe h4 { margin: 0; font: 400 1.45rem/1 "Jersey", sans-serif; color: var(--gold); letter-spacing: .02em; }
+.pipe img { display: block; width: 100%; height: auto; border-radius: var(--radius-s); background: #070914; }
+.pipe img.px { image-rendering: pixelated; }
+.pipe p { margin: 0; color: var(--text-2); font-size: var(--t-small); }
+.pipe blockquote { margin: 0; padding: var(--s3) var(--s4); border-left: 3px solid var(--cherry); background: var(--ink);
+                   border-radius: 0 var(--radius-s) var(--radius-s) 0; }
+.pipe blockquote p { color: var(--text); font-style: italic; }
+.days { margin-top: var(--s8); }
+.days ol { display: grid; gap: var(--s3); margin: var(--s4) 0 0; padding: 0; list-style: none; }
+.days li { display: grid; grid-template-columns: 5.5rem 1fr; gap: var(--s4); align-items: baseline;
+           padding-bottom: var(--s3); border-bottom: 1px solid var(--line); }
+.days time { font: 400 1.6rem/1 "Jersey", sans-serif; color: var(--cherry); }
+.days p { margin: 0; color: var(--text-2); }
 .source { margin-top: var(--s6); color: var(--text-3); font-size: var(--t-small); }
 .source code { display: inline-block; margin-top: var(--s2); padding: .15rem .5rem; border-radius: 6px; background: #070914; color: #dfe3ff;
                font: .8rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
