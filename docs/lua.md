@@ -500,6 +500,36 @@ A sound that stops dead (`decay = 0`) is meant to loop; one that decays fades it
 Making a sound takes a moment (a long one, some hundredths of a second on the console): make them in `_init` or
 between levels, not every frame. A game's made sounds share 1 MB (about 24 seconds).
 
+### The studio: steps on the sample
+
+A drum machine, a tracker's pattern, a rhythm game's own beat: tracks of sounds on steps, played by a sequencer that
+runs where the sound is mixed. Each step starts on its exact sample at any tempo (steps played from `_update` move by
+up to 17 ms, and only tempos of 900/n BPM fall on whole ticks), and keeps time while a frame is slow.
+
+| Call | Does |
+|---|---|
+| `studio.tempo(bpm [, swing])` | 30 to 300 BPM, a step is a 16th; swing 50 (straight) to 75 %, as an MPC's: the odd steps come later (66 is a triplet's feel) |
+| `studio.length(steps)` | steps in the pattern, 1 to 64 (16 at the start: a bar) |
+| `studio.track(i, {sound, gain, pitch, choke})` | track 1 to 16 plays `audio/<sound>.wav` or a sound made with `sound`; `gain` 0 to 1, `pitch` as `sfx`'s, `choke` 1 to 15: a hit cuts the tracks of its group still sounding (an 808's closed hat cuts its open one), 0 none. What is left out stays as it was. `true` if the sound is there |
+| `studio.steps(i, {v, v, ...})` | each step's velocity, 0 (silent) to 1; `true` and `false` are 1 and 0. Change them while it plays |
+| `studio.play([step])`, `studio.stop()`, `studio.playing()` | from that step (1, the first, if left out) |
+| `studio.pos()` | `step, fraction`: the step the player hears now (1 to the length) and how far into it, past what is queued for the speaker (as `music_time`); `nil` when stopped |
+| `studio.hit(i [, velocity])` | the track's sound now, as a pad: what a player plays by hand, recorded on the step `studio.pos()` is nearest to |
+
+```lua
+studio.track(1, {sound = "KICK"})
+studio.track(2, {sound = "HAT", choke = 1})
+studio.track(3, {sound = "HAT_OPEN", choke = 1})
+studio.steps(1, {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0})
+studio.steps(2, {0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0.5, 0})
+studio.tempo(96, 58)
+studio.play()
+local step, f = studio.pos()          -- in _update: light the step's key, nod on the beat
+```
+
+A track plays the first of a sound's variants every time (a pattern sounds the same each time round), and its sound
+stays in memory while a track holds it. Twelve sounds play at once, with `sfx` too: the one-shot closest to its end gives way.
+
 ## The microphone
 
 The console hears: blowing on a candle, singing a note that opens a door, a clap on the beat, a cat's miaow made by

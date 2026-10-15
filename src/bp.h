@@ -374,6 +374,28 @@ void audio_music_clock(int src);        /* 0: music() stopped the song; its cloc
 void audio_music_clock_locked(int src); /* (the same, the audio lock held: in a song's swap) */
 bool audio_music_time(double *seconds); /* how far into the song the player hears now; false: none plays */
 void audio_reset(void);
+/* For the studio (studio.c), the audio lock held where it says so */
+int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch, bool loop, int wait); /* a handle */
+void audio_voice_stop_locked(int handle);
+bool audio_clip_pin(const char *id, const int16_t **pcm, int *n); /* loaded and kept while a track plays it */
+void audio_clip_unpin(const int16_t *pcm);
+
+/* The studio: a step sequencer in the audio thread (studio.c). Tracks play clips on steps, each at its sample. */
+#define STUDIO_TRACKS 16
+#define STUDIO_STEPS 64
+void studio_tempo(float bpm, float swing);  /* swing: 50 (straight) to 75 percent, as an MPC's */
+void studio_length(int steps);             /* steps in the pattern, 1..STUDIO_STEPS (16: a bar of 16ths) */
+bool studio_track(int track, const char *sound, float gain, float pitch, int choke); /* sound NULL: unchanged */
+void studio_steps(int track, const float *vel, int n); /* each step's velocity, 0 (off) to 1 */
+void studio_play(int step);                /* from that step (0-based), at once */
+void studio_stop(void);
+bool studio_playing(void);
+bool studio_pos(int *step, float *frac);   /* the step the player hears now and how far into it; false: none yet */
+void studio_hit(int track, float vel);     /* the track's sound now, as a pad */
+void studio_reset(void);
+void studio_tick(int m);                   /* audio thread, lock held: starts the steps inside the next m samples */
+void studio_mark(int n);                   /* audio thread, lock held: n samples were mixed (for studio_pos) */
+void studio_replace_locked(const int16_t *old, const int16_t *pcm, int n); /* a made sound took old's place */
 void audio_force_missing(const char *id);
 
 /* Synthesised voices (psg.c), mixed with the rest: notes instead of recordings. */

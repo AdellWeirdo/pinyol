@@ -1,0 +1,154 @@
+/* The studio (src/studio.c): each step lands on its sample at any tempo, the swing makes the odd steps late, a tempo
+ * change carries on from the step it is at, a choke group cuts the other sound, a made sound that takes a track's
+ * place is played instead, and studio_pos follows the mix. A one-sample click marks where each step starts. */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "bp.h"
+
+static int failures, checks;
+#define CHECK(c)                                                                                \
+    do {                                                                                        \
+        checks++;                                                                               \
+        if (!(c)) failures++, fprintf(stderr, "%s:%d: CHECK(%s)\n", __FILE__, __LINE__, #c);    \
+    } while (0)
+
+#define N (AUDIO_HZ * 3)
+static int16_t out[N];
+
+static void mix(int n) {
+    for (int off = 0; off < n; off += 256) {
+        hal_audio_lock();
+        audio_mix(out + off, n - off < 256 ? n - off : 256);
+        hal_audio_unlock();
+    }
+}
+
+static void make(const char *id, int16_t level, int n) { /* a made sound: level, then silence */
+    int16_t *pcm = calloc((size_t)n, sizeof *pcm);
+    pcm[0] = level;
+    audio_sfx_set(id, pcm, n);
+}
+
+static int clicks(int *at, int max) { /* where the output jumps from silence */
+    int k = 0;
+    for (int i = 0; i < N && k < max; i++)
+        if (out[i] > 1000 && (i == 0 || out[i - 1] < 1000)) at[k++] = i;
+    return k;
+}
+
+int main(void) {
+    audio_reset();
+    make("CLICK", 20000, 8);
+    float all[16];
+    for (int s = 0; s < 16; s++) all[s] = 1;
+
+    /* 120 BPM: a 16th is 2756.25 samples; step k starts at floor(k * 2756.25) */
+    CHECK(studio_track(0, "CLICK", 1, 1, 0));
+    CHECK(!studio_track(1, "NO_SUCH_SOUND", 1, 1, 0));
+    studio_steps(0, all, 16);
+    studio_tempo(120, 50);
+    studio_play(0);
+    mix(N);
+    int at[64], n = clicks(at, 64);
+    CHECK(n == 24);
+    for (int k = 0; k < n; k++) CHECK(at[k] == (int)(k * 2756.25));
+
+    /* swing 66 %: the odd steps 0.32 of a step late */
+    audio_reset();
+    make("CLICK", 20000, 8);
+    studio_track(0, "CLICK", 1, 1, 0);
+    studio_steps(0, all, 16);
+    studio_tempo(120, 66);
+    studio_play(0);
+    mix(N);
+    n = clicks(at, 64);
+    CHECK(n == 24);
+    for (int k = 0; k < n; k++) CHECK(at[k] == (int)(k * 2756.25 + (k % 2 ? 0.32 * 2756.25 : 0)));
+
+    /* 100 BPM (3307.5 samples, not a whole number of ticks), then 150 from the step it has reached */
+    audio_reset();
+    make("CLICK", 20000, 8);
+    studio_track(0, "CLICK", 1, 1, 0);
+    studio_steps(0, all, 16);
+    studio_tempo(100, 50);
+    studio_play(0);
+    mix(5 * 3307 + 100);
+    studio_tempo(150, 50);
+    memset(out, 0, sizeof out);
+    hal_audio_lock();
+    for (int off = 0; off < N; off += 256) audio_mix(out + off, 256 < N - off ? 256 : N - off);
+    hal_audio_unlock();
+    n = clicks(at, 64);
+    CHECK(n > 10);
+    for (int k = 1; k + 1 < n; k++) CHECK(abs(at[k + 1] - at[k] - 2205) <= 1); /* 150 BPM: 2205 samples a step */
+
+    /* velocities and the track's gain scale the hit; a silent step plays nothing */
+    audio_reset();
+    make("CLICK", 20000, 8);
+    studio_track(0, "CLICK", 0.5f, 1, 0);
+    float half[4] = {1, 0, 0.5f, 0};
+    studio_steps(0, half, 4);
+    studio_length(4);
+    studio_tempo(120, 50);
+    studio_play(0);
+    mix(4 * 2757);
+    CHECK(abs(out[0] - 10000) <= 2);
+    CHECK(abs(out[(int)(2 * 2756.25)] - 5000) <= 2);
+    CHECK(out[2756] == 0);
+
+    /* a choke group: the closed hat on step 1 cuts the open one still ringing from step 0 */
+    audio_reset();
+    int16_t *ring = malloc(sizeof(int16_t) * AUDIO_HZ);
+    for (int i = 0; i < AUDIO_HZ; i++) ring[i] = 3000;
+    audio_sfx_set("OPEN", ring, AUDIO_HZ);
+    make("CLOSED", 20000, 8);
+    studio_track(0, "OPEN", 1, 1, 1);
+    studio_track(1, "CLOSED", 1, 1, 1);
+    float first[2] = {1, 0}, second[2] = {0, 1};
+    studio_steps(0, first, 2);
+    studio_steps(1, second, 2);
+    studio_length(2);
+    studio_tempo(120, 50);
+    studio_play(0);
+    mix(2756 + 512);
+    CHECK(out[1000] == 3000);                 /* ringing */
+    CHECK(out[2756 + 300] == 0);              /* cut by the closed hat (and it, one sample, is over) */
+
+    /* a made sound taking the clip's place is what the track plays from then on */
+    audio_reset();
+    make("CLICK", 20000, 8);
+    studio_track(0, "CLICK", 1, 1, 0);
+    studio_steps(0, all, 16);
+    studio_tempo(120, 50);
+    studio_play(0);
+    mix(1000);
+    make("CLICK", 7000, 8);
+    memset(out, 0, sizeof out);
+    mix(N);
+    int loud = 0, old = 0;
+    for (int i = 0; i < N; i++) loud += out[i] == 7000, old += out[i] == 20000;
+    CHECK(loud > 20);
+    CHECK(old == 0);
+
+    /* where the player is: the step heard, and how far into it (headless: the mix itself is the clock) */
+    audio_reset();
+    make("CLICK", 20000, 8);
+    studio_track(0, "CLICK", 1, 1, 0);
+    studio_steps(0, all, 16);
+    studio_tempo(120, 50);
+    int step;
+    float frac;
+    CHECK(!studio_pos(&step, &frac));         /* stopped */
+    studio_play(3);
+    mix(2756 * 2 + 512);
+    CHECK(studio_pos(&step, &frac));
+    CHECK(step == 5);
+    CHECK(frac >= 0 && frac < 1);
+    studio_stop();
+    CHECK(!studio_pos(&step, &frac));
+
+    printf("studio: %d checks, %d failed\n", checks, failures);
+    return failures != 0;
+}

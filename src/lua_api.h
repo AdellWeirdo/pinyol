@@ -78,6 +78,7 @@ void json_to_lua(lua_State *L, const cJSON *v, int depth);
 
 /* lua_link.c: link.send, link.recv, link.peers, link.id */
 void link_register(lua_State *L);
+void studio_register(lua_State *L);
 
 /* lua_sound.c: sound, sfx, sfx_set, sfx_stop, sfx_on, music, music_layer, tone, note */
 void sound_register(lua_State *L);

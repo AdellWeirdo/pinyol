@@ -42,6 +42,23 @@ local function storm_new(n)
     if not pcall(f, table.unpack(a, 1, 6)) then failures = failures + 1 end
   end
 end
+-- The studio's functions, a storm of their own (its own numbers, so the storms above keep their sequences)
+local STUDIO = {studio.tempo, studio.length, studio.track, studio.steps, studio.play, studio.stop, studio.playing,
+                studio.pos, studio.hit}
+local seed2 = 777
+local function rnd2(n)
+  seed2 = (seed2 * 1103515245 + 12345) % 2147483648
+  return seed2 % n + 1
+end
+local function storm_studio(n)
+  for _ = 1, n do
+    local f, a = STUDIO[rnd2(#STUDIO)], {}
+    for i = 1, rnd2(4) - 1 do a[i] = NEW_VALUES[rnd2(#NEW_VALUES)] end
+    if rnd2(3) == 1 then a[1] = rnd2(20) - 2 end -- often a track number first
+    calls = calls + 1
+    if not pcall(f, table.unpack(a, 1, 3)) then failures = failures + 1 end
+  end
+end
 local fns = {}
 for _, n in ipairs(NAMES) do fns[#fns + 1] = _G[n] end
 for _, f in ipairs({link.send, link.recv, link.peers, link.id}) do fns[#fns + 1] = f end
@@ -77,6 +94,7 @@ end
 function _update()
   storm(60)
   storm_new(10)
+  storm_studio(6)
   for i = 0, 20 do pcall(spr, math.random(0, 127), ship, math.random(-2, 5), math.random(-300, 300),
                          math.random(-300, 300), math.random(0, 0x3FFF)) end
 end

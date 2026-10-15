@@ -1046,6 +1046,7 @@ static void api(lua_State *L) {
     draw_register(L); /* text, shapes, pictures, canvases: lua_draw.c */
     swarm_register(L); /* many things moving the same way: lua_swarm.c */
     link_register(L); /* consoles playing together: lua_link.c */
+    studio_register(L); /* the step sequencer in the audio thread: lua_studio.c */
     sound_register(L); /* sounds, music, notes: lua_sound.c */
     physics_register(L); /* bodies that turn, for lib/physics.lua: lua_physics.c */
     clip_register(L); /* video on canvases: lua_clip.c */

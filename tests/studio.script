@@ -1,0 +1,31 @@
+# The studio: tracks of made sounds on steps, played in the audio thread; studio.pos() follows what is heard
+new
+tick 2
+expect_lua ok_k == true and ok_none == false
+expect_lua studio.pos() == nil and not studio.playing()
+lua studio.play()
+tick 30
+expect_lua studio.playing() and step ~= nil and step >= 1 and step <= 16 and frac >= 0 and frac < 1
+lua s0 = step
+tick 60
+expect_lua step ~= s0
+tick 200
+# 128 BPM for 290 ticks: round the 16 steps more than once, each one heard
+lua n = 0; for k = 1, 16 do if seen[k] then n = n + 1 end end
+expect_lua n == 16
+shot studio_playing
+lua studio.length(4); studio.play(3)
+tick 40
+expect_lua step >= 1 and step <= 4
+lua studio.hit(1, 0.5); studio.hit(3)
+lua studio.stop()
+tick 2
+expect_lua studio.pos() == nil and step == nil
+expect_lua_error studio.track(17, {})
+expect_lua_error studio.track(1, {sound = "../x"})
+expect_lua_error studio.track(1, {choke = 99})
+expect_lua_error studio.length(0)
+expect_lua_error studio.length(65)
+expect_lua_error studio.steps(1, setmetatable({}, {__len = function() return 65 end}))
+expect_lua_error studio.tempo("fast")
+expect_ok
