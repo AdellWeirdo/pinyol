@@ -10,7 +10,8 @@ import i18n
 
 REPO = "https://github.com/ipaud/pinyol"
 RAW = "https://raw.githubusercontent.com/ipaud/pinyol/main"  # the Library's games, read when the page opens
-SITE = "https://ipaud.github.io/pinyol/"  # where it will be published (GitHub Pages); only og:image needs it
+SITE = "https://ipaud.github.io/pinyol/"
+COUNTER = "https://pinyol.goatcounter.com"  # GoatCounter: visits and plays, no cookies, nothing personal (vendor/goatcounter)  # where it will be published (GitHub Pages); only og:image needs it
 
 # The twelve looks: their example, the console it follows, its frame rate on the console as (slowest, fastest
 # second), and the first measure when the board made it faster (docs/measurements.md, "The looks on the console").
@@ -133,8 +134,8 @@ def cart(k: dict, n: int) -> str:
 <div class="shot"><img src="img/looks/{k['id']}.png" alt="{escape(k['alt'])}" width="480" height="320" loading="lazy" decoding="async"></div>
 <div class="label"><p class="era pixel">{escape(k['era'])}</p><h3>{escape(k['name'])}</h3><p class="what">{escape(k['what'])}</p>
 <ul class="chips"><li class="chip fps{low}">{fps} fps en la consola</li><li class="chip">{made}</li></ul>
-<div class="row"><a class="play" href="{play_url(k['example'])}" aria-label="Jugar a {escape(k['example'])} ({escape(k['name'])})">Jugar</a>
-<a class="zip" href="games/{k['example']}.zip" download aria-label="Descargar {escape(k['example'])} para la consola">Descargar .zip</a></div></div></li>"""
+<div class="row"><a class="play" href="{play_url(k['example'])}" data-goatcounter-click="jugar/{k['example']}" aria-label="Jugar a {escape(k['example'])} ({escape(k['name'])})">Jugar</a>
+<a class="zip" href="games/{k['example']}.zip" download data-goatcounter-click="descargar/{k['example']}" aria-label="Descargar {escape(k['example'])} para la consola">Descargar .zip</a></div></div></li>"""
 
 
 def measured(board: dict) -> list[dict]:
@@ -261,7 +262,7 @@ def install(fw: dict | None) -> str:
 <ol><li>Conecta la placa al ordenador por USB.</li><li>Pulsa el botón y elige el puerto de la placa.</li>
 <li>Espera unos minutos: arranca con {fw['games']} juegos en la memoria.</li></ol>
 <esp-web-install-button manifest="firmware/manifest.json">
-<button slot="activate" class="btn btn-primary" type="button">Instalar en la consola</button>
+<button slot="activate" class="btn btn-primary" type="button" data-goatcounter-click="instalar-consola">Instalar en la consola</button>
 <span slot="unsupported" class="note">Este navegador no puede comunicarse con la placa por USB: abre esta página en Chrome o Edge, en un ordenador.</span>
 <span slot="not-allowed" class="note">Para instalar, abre la página por https.</span>
 </esp-web-install-button>
@@ -368,7 +369,7 @@ def thousands(v: int) -> str:
 
 def footer() -> str:
     return f"""<footer><div class="wrap"><img src="img/logo.png" alt="pinyol" width="64" height="42" loading="lazy">
-<span>Código MIT · arte y sonido CC0</span><span>Game Boy, PICO-8, Neo Geo y las demás consolas que se nombran son marcas de sus dueños; pinyol y Cirera no tienen relación con ellos.</span><a href="{REPO}">GitHub</a><a href="{REPO}/blob/main/docs/measurements.md">Mediciones</a></div></footer>"""
+<span>Código MIT · arte y sonido CC0</span><span>Game Boy, PICO-8, Neo Geo y las demás consolas que se nombran son marcas de sus dueños; pinyol y Cirera no tienen relación con ellos.</span><a href="{REPO}">GitHub</a><a href="{REPO}/blob/main/docs/measurements.md">Mediciones</a><span>Las visitas se cuentan con <a href="https://www.goatcounter.com">GoatCounter</a>, sin cookies ni datos personales.</span></div></footer>"""
 
 
 NEW_TAB = " (se abre en una pestaña nueva)"
@@ -393,8 +394,8 @@ def new_tabs(html: str) -> str:
 def render(board: dict, stats: dict, fw: dict | None) -> str:
     shelf = measured(board)
     desc = "pinyol: un motor de juegos libre con doce aspectos retro (Game Boy, Neo Geo, CPS2, PlayStation…) que corre a 60 fps en una consola ESP32-S3 y en el navegador."
-    csp = ("default-src 'self'; img-src 'self' data: https://raw.githubusercontent.com; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; "
-           "connect-src 'self' https://raw.githubusercontent.com; object-src 'none'; base-uri 'self'; form-action 'none'")
+    csp = (f"default-src 'self'; img-src 'self' data: https://raw.githubusercontent.com {COUNTER}; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; "
+           f"connect-src 'self' https://raw.githubusercontent.com {COUNTER}; object-src 'none'; base-uri 'self'; form-action 'none'")
     return new_tabs(f"""<!doctype html>
 <html lang="es">
 <head>
@@ -413,7 +414,8 @@ def render(board: dict, stats: dict, fw: dict | None) -> str:
 <link rel="icon" href="img/icon.png">
 <link rel="preload" href="fonts/jersey15.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
-<script src="site.js" defer></script>{'<script type="module" src="vendor/esp-web-tools/install-button.js"></script>' if fw else ""}
+<script src="site.js" defer></script>
+<script data-goatcounter="{COUNTER}/count" async src="vendor/goatcounter/count.js"></script>{'<script type="module" src="vendor/esp-web-tools/install-button.js"></script>' if fw else ""}
 </head>
 <body>
 {header()}

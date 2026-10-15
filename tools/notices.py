@@ -116,6 +116,8 @@ def main() -> None:
               "musl's own notice follows.", read(next(d / "LICENSE" for d in (EM, EM.parent) if (d / "LICENSE").exists())) + "\n\n" + read(EM / "system/lib/libc/musl/COPYRIGHT")),
         "## In the editor and the site\n",
         block("Blockly", "Apache License 2.0. Copyright Google LLC. `editor/vendor/blockly`"),
+        block("GoatCounter's count.js", "ISC licence (https://opensource.org/licenses/ISC), as the file says. "
+              "`site/vendor/goatcounter`, the site's visit counter."),
         block("ESP Web Tools (with esptool-js)", "Apache License 2.0. ESPHome and Espressif. "
               "`site/vendor/esp-web-tools`, as published; the libraries in its bundle keep their own licences."),
         "## Apache License 2.0\n",

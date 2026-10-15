@@ -151,6 +151,7 @@ def main() -> None:
     fonts(np2d)
     images(np2d)
     shutil.copytree(HERE / "src/img", DIST / "img", dirs_exist_ok=True)
+    shutil.copytree(HERE / "vendor/goatcounter", DIST / "vendor/goatcounter")  # the visit counter (page.COUNTER)
     if (HERE / "src/video").exists():  # the editor's video (LÍNEA 0 being made)
         shutil.copytree(HERE / "src/video", DIST / "video", dirs_exist_ok=True)
     fw = firmware(args.firmware)

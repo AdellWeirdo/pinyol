@@ -335,5 +335,8 @@
  "el núcleo ya compilado": "the core already built",
  "va a la carpeta de núcleos de RetroArch;": "goes in RetroArch's cores folder;",
  "la guía": "the guide",
- "lo explica. Probado en RetroArch y con el sistema de RetroPie emulado, aún no en una Raspberry Pi de verdad: si lo pruebas,": "explains it. Tested in RetroArch and on an emulated RetroPie system, not yet on a real Raspberry Pi: if you try it,"
+ "lo explica. Probado en RetroArch y con el sistema de RetroPie emulado, aún no en una Raspberry Pi de verdad: si lo pruebas,": "explains it. Tested in RetroArch and on an emulated RetroPie system, not yet on a real Raspberry Pi: if you try it,",
+ "Las visitas se cuentan con": "Visits are counted with",
+ "GoatCounter": "GoatCounter",
+ ", sin cookies ni datos personales.": ", without cookies or personal data."
 }
