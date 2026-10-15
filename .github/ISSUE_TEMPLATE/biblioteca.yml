@@ -7,7 +7,8 @@ body:
     attributes:
       value: |
         Un robot comprobará tu juego (lo abre, lo juega diez segundos y saca su portada) y te contestará aquí. Si todo va bien, lo revisamos y aparece en https://ipaud.github.io/pinyol/#biblioteca.
-        El .zip es el de `python3 tools/pack_game.py games/<id>`, el del editor («Guardar archivo») o tu carpeta del juego comprimida. Máximo 8 MB.
+        El .zip es el de `python3 tools/pack_game.py games/<id>`, el del editor («Guardar archivo») o tu carpeta del juego comprimida. Máximo 48 MB (96 MB descomprimido, 4000 archivos).
+        A la consola, un juego de más de 32 MB descomprimido se copia por la tarjeta SD: el cable llega a 32 MB.
   - type: input
     id: titulo
     attributes:
@@ -26,7 +27,8 @@ body:
     id: zip
     attributes:
       label: El juego (.zip)
-      description: Arrastra aquí el .zip de tu juego.
+      description: Arrastra aquí el .zip de tu juego (GitHub adjunta hasta 25 MB). Si pesa más, súbelo como archivo de una
+        Release de tu repositorio y pega aquí su enlace de descarga (https://github.com/tú/repo/releases/download/…/juego.zip).
     validations:
       required: true
   - type: dropdown

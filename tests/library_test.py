@@ -41,6 +41,9 @@ with tempfile.TemporaryDirectory() as t:
     assert f["Título"] == "Mi juego" and f["Licencia"] == "CC0", f
     assert library.ATTACHMENT.findall(f["El juego (.zip)"]) == ["https://github.com/user-attachments/files/123/j.zip"]
     assert not library.ATTACHMENT.findall("https://evil.example/files/1/x.zip")
+    rel = "https://github.com/ana/mi-juego/releases/download/v1.0/juego.zip"  # past the 25 MB GitHub attaches
+    assert library.ATTACHMENT.findall(f"[descarga]({rel})") == [rel]
+    assert not library.ATTACHMENT.findall("https://github.com/ana/mi-juego/blob/main/juego.zip")
     r = library.check(good, t / "form", headless, f)
     assert r["ok"] and r["license"] == "CC0" and r["form_title"] == "Mi juego", r
     print(json.dumps({"library": "ok"}))

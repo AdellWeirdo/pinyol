@@ -35,11 +35,15 @@ LIBRARY = ROOT / "library"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pack_game  # noqa: E402
 
-MAX_ZIP = 8 << 20         # bytes, as sent
-MAX_UNPACKED = 24 << 20   # bytes, all files once opened (a zip bomb stops here)
-MAX_FILES = 800
+# ponytail: published games live in git (library/ on main), so a zip stays under GitHub's 50 MB push warning; once
+# library/ nears ~1 GB, move the zips out (gh-pages pushed as an orphan, or a repo of their own)
+MAX_ZIP = 48 << 20        # bytes, as sent
+MAX_UNPACKED = 96 << 20   # bytes, all files once opened (a zip bomb stops here); the web player's own limit
+MAX_FILES = 4000          # the web player's own limit too (platform/web/player.html, LIMITS)
 PLAY_TICKS = 600          # ten seconds of play
-ATTACHMENT = re.compile(r"https://github\.com/user-attachments/files/\d+/[A-Za-z0-9._%-]+\.zip")
+# the zip dragged into the form (GitHub takes files up to 25 MB), or a bigger one linked from a release of the sender's
+ATTACHMENT = re.compile(r"https://github\.com/(?:user-attachments/files/\d+|[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}"
+                        r"/releases/download/[A-Za-z0-9._%+-]{1,100})/[A-Za-z0-9._%-]+\.zip")
 LICENSES = ("CC0", "CC BY 4.0", "MIT")
 
 
@@ -144,7 +148,8 @@ def check_issue(out: Path, headless: Path) -> dict:
     urls = ATTACHMENT.findall(fields.get("El juego (.zip)", ""))
     out.mkdir(parents=True, exist_ok=True)
     if not urls:
-        result = {"ok": False, "errors": ["No encuentro el .zip: arrástralo al campo «El juego (.zip)» del formulario."]}
+        result = {"ok": False, "errors": ["No encuentro el .zip: arrástralo al campo «El juego (.zip)» del formulario "
+                                            "o, si pesa más de 25 MB, pega ahí el enlace de descarga de una Release."]}
         (out / "result.json").write_text(json.dumps(result, ensure_ascii=False))
         return result
     zip_path = out / "sent.zip"
