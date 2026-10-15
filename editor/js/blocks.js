@@ -98,7 +98,7 @@ export function defineBlocks() {
   // actions
   define('kit_sound', ACTION, [t('sonar'), { dropdown: sounds, name: 'SOUND' }], 'statement');
   define('kit_music', ACTION, [t('poner la música'), { dropdown: tunes, name: 'MUSIC' }], 'statement',
-         t('Una música traída en Sonidos, en bucle (cada nivel empieza con la suya, si tiene)'));
+         t('Una música añadida en Sonidos, en bucle (cada nivel empieza con la suya, si tiene)'));
   define('kit_music_stop', ACTION, [t('parar la música')], 'statement');
   define('kit_label', ACTION, [{ value: true, name: 'TEXT', label: t('mostrar') }, { dropdown: PLACES, name: 'WHERE' }, t('con letra'),
     { dropdown: STYLES, name: 'STYLE' }], 'statement',
@@ -136,12 +136,12 @@ export function defineBlocks() {
   define('kit_stop_countdown', LIVES, [t('parar el reloj')], 'statement');
   define('kit_time_up', LIVES, [t('cuando se acaba el tiempo')], 'event', t('Sin este evento, se pierde y se prueba el nivel otra vez'));
   // saved in the console: still there when it is turned off and on (store, stored); 'récord', the key, is the game's data
-  const KEEP = t('Se queda en la consola aunque la apagues. Úsalo al acabar un nivel o la partida, no en «a cada momento»');
+  const KEEP = t('Se queda en la consola aunque la apagues. Úsalo al acabar un nivel o la partida, no dentro de «en cada momento»');
   define('kit_store', SAVE, [t('guardar como'), { text: 'récord', name: 'KEY' }, { value: true, name: 'V', label: t('el valor') }],
          'statement', KEEP);
   define('kit_store_max', SAVE, [t('guardar como'), { text: 'récord', name: 'KEY' },
     { value: true, name: 'V', check: 'Number', label: t('si es más que lo guardado') }], 'statement', t('{keep}. Para récords', { keep: KEEP }));
-  define('kit_stored', SAVE, [t('lo guardado como'), { text: 'récord', name: 'KEY' }], 'any', t('Lo que se guardó; 0 si aún nada'));
+  define('kit_stored', SAVE, [t('lo guardado como'), { text: 'récord', name: 'KEY' }], 'any', t('Lo que se guardó; 0 si aún no hay nada'));
   // input
   define('kit_button', INPUT, [{ dropdown: BUTTONS, name: 'BUTTON' }, t('está pulsado')], 'Boolean');
   define('kit_tap_x', INPUT, [t('x tocada')], 'Number');
@@ -151,18 +151,18 @@ export function defineBlocks() {
   // the microphone
   define('kit_clap', MIC, [t('al dar una palmada')], 'event',
          t('El micrófono oye un ruido de repente: una palmada, un golpe en la mesa, un grito'));
-  define('kit_blow', MIC, [t('al soplar')], 'event', t('El micrófono oye un soplido: fuerte y sin nota, un momento'));
+  define('kit_blow', MIC, [t('al soplar')], 'event', t('El micrófono oye un soplido: un ruido fuerte y sin nota, durante un momento'));
   define('kit_mic_level', MIC, [t('volumen del micrófono')], 'Number', t('De 0 (silencio) a 100 (un grito cerca). 0 si no hay micrófono'));
-  define('kit_mic_note', MIC, [t('nota que se oye (Hz)')], 'Number', t('La nota de una voz o un silbido; 0 si no hay una clara. Un La es 440'));
+  define('kit_mic_note', MIC, [t('nota que se oye (Hz)')], 'Number', t('La nota de una voz o un silbido; 0 si no hay una clara. El la central es 440'));
   // conversations
   define('kit_say', TALK, [{ value: true, name: 'WHO' }, { value: true, name: 'TEXT', label: t('dice') }], 'statement',
-         t('Un cuadro abajo, letra a letra; el juego espera; A sigue. Varios seguidos salen uno tras otro'));
+         t('Un cuadro abajo, letra a letra; el juego espera y con A sigue. Si hay varios seguidos, salen uno tras otro'));
   define('kit_ask', TALK, [{ value: true, name: 'TEXT', label: t('preguntar') }, { value: true, name: 'A', label: t('opciones') },
     { value: true, name: 'B' }, { value: true, name: 'C' }], 'statement', t('Las opciones vacías no salen. Se elige con arriba, abajo y A'));
   define('kit_answer', TALK, [t('al elegir la respuesta'), { dropdown: [['1', '1'], ['2', '2'], ['3', '3']], name: 'N' }], 'event');
   // video
   define('kit_video_full', VIDEO, [t('poner el vídeo'), { dropdown: videos, name: 'VIDEO' }, t('en toda la pantalla')], 'statement',
-         t('El juego espera a que acabe (A lo salta). Los vídeos se traen en la pestaña Sonidos'));
+         t('El juego espera a que acabe (A lo salta). Los vídeos se añaden en la pestaña Sonidos'));
   define('kit_video_window', VIDEO, [t('poner el vídeo'), { dropdown: videos, name: 'VIDEO' }, t('en una ventana'),
     { dropdown: WINDOWS, name: 'WHERE' }], 'statement', t('En bucle, mientras se juega'));
   define('kit_video_stop', VIDEO, [t('quitar el vídeo')], 'statement');

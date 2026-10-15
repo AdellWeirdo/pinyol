@@ -178,12 +178,12 @@ const WORDS = {
     'mando USB o Bluetooth': 'comandament USB o Bluetooth', 'Descargar este juego para la consola': 'Descarrega aquest joc per a la consola',
     'El .zip está dañado': 'El .zip està malmès', 'No es un archivo .zip': 'No és un fitxer .zip',
     'Demasiados archivos en el .zip': 'Massa fitxers al .zip', 'El juego es demasiado grande': 'El joc és massa gran',
-    'Compresión no soportada en': 'Compressió no admesa a', 'Ruta no válida en el .zip': 'Ruta no vàlida al .zip',
+    'Compresión no admitida en': 'Compressió no admesa a', 'Ruta no válida en el .zip': 'Ruta no vàlida al .zip',
     'No hay game.json en el .zip': 'No hi ha cap game.json al .zip', 'Abriendo el juego…': 'Obrint el joc…',
-    'El id del juego no es válido': "L'id del joc no és vàlid", 'Teclado, mando, ratón o botones en pantalla': 'Teclat, comandament, ratolí o botons a la pantalla',
+    'El id del juego no es válido': "L'identificador del joc no és vàlid", 'Teclado, mando, ratón o botones en pantalla': 'Teclat, comandament, ratolí o botons a la pantalla',
     'Cargando el motor…': 'Carregant el motor…', 'El juego no se puede abrir: sus archivos no encajan': 'El joc no es pot obrir: els fitxers no encaixen',
     'El juego se ha parado': "El joc s'ha aturat", 'El juego no se ha podido abrir': "No s'ha pogut obrir el joc",
-    'Descargando el juego…': 'Descarregant el joc…', 'No se pudo descargar el juego': "No s'ha pogut descarregar el joc",
+    'Descargando el juego…': 'Descarregant el joc…', 'No se ha podido descargar el juego': "No s'ha pogut descarregar el joc",
     'Dirección de juego no válida': 'Adreça de joc no vàlida', 'Mando conectado': 'Comandament connectat',
     '¿Juegas con mando?': 'Jugues amb comandament?', 'Conéctalo por USB o Bluetooth y pulsa cualquier botón.': "Connecta'l per USB o Bluetooth i prem qualsevol botó.",
     'Esperando un mando…': 'Esperant un comandament…', 'Mando listo': 'Comandament a punt', '¡Listo para jugar!': 'A punt per jugar!', 'Jugar sin mando': 'Juga sense comandament',
@@ -196,12 +196,12 @@ const WORDS = {
     'mando USB o Bluetooth': 'USB or Bluetooth gamepad', 'Descargar este juego para la consola': 'Download this game for the console',
     'El .zip está dañado': 'The .zip is damaged', 'No es un archivo .zip': 'Not a .zip file',
     'Demasiados archivos en el .zip': 'Too many files in the .zip', 'El juego es demasiado grande': 'The game is too big',
-    'Compresión no soportada en': 'Unsupported compression in', 'Ruta no válida en el .zip': 'Invalid path in the .zip',
+    'Compresión no admitida en': 'Unsupported compression in', 'Ruta no válida en el .zip': 'Invalid path in the .zip',
     'No hay game.json en el .zip': 'No game.json in the .zip', 'Abriendo el juego…': 'Opening the game…',
-    'El id del juego no es válido': "The game's id is not valid", 'Teclado, mando, ratón o botones en pantalla': 'Keyboard, gamepad, mouse or on-screen buttons',
-    'Cargando el motor…': 'Loading the engine…', 'El juego no se puede abrir: sus archivos no encajan': "The game can't open: its files don't fit together",
-    'El juego se ha parado': 'The game stopped', 'El juego no se ha podido abrir': "The game couldn't be opened",
-    'Descargando el juego…': 'Downloading the game…', 'No se pudo descargar el juego': "Couldn't download the game",
+    'El id del juego no es válido': 'Invalid game ID', 'Teclado, mando, ratón o botones en pantalla': 'Keyboard, gamepad, mouse or on-screen buttons',
+    'Cargando el motor…': 'Loading the engine…', 'El juego no se puede abrir: sus archivos no encajan': "The game can't be opened: its files don't match",
+    'El juego se ha parado': 'The game has stopped', 'El juego no se ha podido abrir': "The game couldn't be opened",
+    'Descargando el juego…': 'Downloading the game…', 'No se ha podido descargar el juego': "Couldn't download the game",
     'Dirección de juego no válida': 'Invalid game address', 'Mando conectado': 'Gamepad connected',
     '¿Juegas con mando?': 'Playing with a gamepad?', 'Conéctalo por USB o Bluetooth y pulsa cualquier botón.': 'Connect it by USB or Bluetooth and press any button.',
     'Esperando un mando…': 'Waiting for a gamepad…', 'Mando listo': 'Gamepad ready', '¡Listo para jugar!': 'Ready to play!', 'Jugar sin mando': 'Play without a gamepad',
@@ -272,7 +272,7 @@ async function unzip(buf) {
     let bytes;
     if (method === 0) bytes = data.slice();
     else if (method === 8) bytes = await inflate(data, size, name);
-    else throw new Error(t('Compresión no soportada en') + ' ' + name);
+    else throw new Error(t('Compresión no admitida en') + ' ' + name);
     if (bytes.length !== size) throw new Error(t('El .zip está dañado') + ' (' + name + ')');
     out.set(name, bytes);
   }
@@ -476,7 +476,7 @@ if (param) {
   const url = new URL(param, location.href);
   if (url.protocol === 'http:' || url.protocol === 'https:') {
     status(t('Descargando el juego…'));
-    fetch(url).then(r => { if (!r.ok) throw new Error(t('No se pudo descargar el juego') + ' (' + r.status + ')'); return r.arrayBuffer(); })
+    fetch(url).then(r => { if (!r.ok) throw new Error(t('No se ha podido descargar el juego') + ' (' + r.status + ')'); return r.arrayBuffer(); })
       .then(buf => load(buf, url.href)).catch(e => status(e.message, true));
   } else status(t('Dirección de juego no válida'), true);
 }

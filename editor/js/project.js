@@ -28,7 +28,7 @@ export const PALETTE = [
 export const BEHAVIOURS = {
   platformer: t('Es el jugador: anda y salta (flechas y A)'),
   topdown: t('Es el jugador, visto desde arriba (flechas)'),
-  grid: t('Es el jugador: de casilla en casilla (puzles)'),
+  grid: t('Es el jugador: se mueve de casilla en casilla (puzles)'),
   patrol: t('Va y viene (se da la vuelta en las paredes)'),
   chase: t('Persigue al jugador'),
   shot: t('Vuela recto (disparos, cosas que caen)'),

@@ -78,7 +78,7 @@ async function bringIn(file) {
     app.toast(got.cut ? t('Vídeo añadido: sus primeros {n} segundos.', { n: VIDEO_MAX_S }) : t('Vídeo añadido: ponlo con los bloques de Vídeo.'));
   } catch (err) {
     note('');
-    app.oops(t('No se ha podido traer ese vídeo: {why}', { why: err.message }));
+    app.oops(t('No se ha podido añadir ese vídeo: {why}', { why: err.message }));
   }
 }
 

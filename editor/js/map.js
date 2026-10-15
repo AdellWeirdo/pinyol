@@ -80,7 +80,7 @@ function renderPieces() {
     if (type === 'tile') el.append(pieceButton({ type: 'erase' }, null, t('Goma')));
     for (const d of list) el.append(pieceButton({ type, name: d.name }, d, d.solid ? t('{name} (sólida)', { name: d.name }) : d.name));
     if (!list.length) el.append(Object.assign(document.createElement('p'), { className: 'hint', textContent: type === 'tile'
-      ? t('Ningún dibujo es baldosa: márcalo en Dibujos.') : t('Ningún dibujo es objeto: márcalo en Dibujos.') }));
+      ? t('Ningún dibujo es baldosa: marca uno en Dibujos.') : t('Ningún dibujo es objeto: marca uno en Dibujos.') }));
   };
   const tilesNow = p.drawings.filter(d => d.use === 'tile'), objectsNow = p.drawings.filter(d => d.use === 'object');
   if (!piece || (piece.type !== 'erase' && !p.drawings.some(d => d.name === piece.name && d.use === piece.type)))

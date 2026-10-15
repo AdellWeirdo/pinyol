@@ -11,7 +11,7 @@ const STEPS = [
     text: () => (TOUCH ? t('Pulsa ▶ Jugar y pruébalo. Usa los botones de debajo de la pantalla. Luego lo cambiaremos.')
       : t('Pulsa ▶ Jugar y pruébalo. Flechas para moverte, Z para saltar. Luego lo cambiaremos.')) },
   { tab: 'draw', at: 'pixels', title: t('Tus dibujos'),
-    text: () => t('Elige un dibujo en la lista y píntalo con el lápiz. Si tiene varios fotogramas (su animación), cambia cada uno o marca «Pintar en todos los fotogramas». «Deshacer» arregla cualquier error.') },
+    text: () => t('Elige un dibujo en la lista y píntalo con el lápiz. Si tiene varios fotogramas (su animación), cambia cada uno o marca «Pintar en todos los fotogramas a la vez». «Deshacer» arregla cualquier error.') },
   { tab: 'draw', at: '.use', title: t('Qué es cada dibujo'),
     text: () => t('Una baldosa es un trozo de suelo o pared. Un objeto es un personaje o una cosa: se mueve como tú digas. Un fondo es un paisaje detrás. También puedes añadir imágenes tuyas.') },
   { tab: 'map', at: 'map-palette', title: t('El mapa de cada nivel'),
@@ -19,11 +19,11 @@ const STEPS = [
   { tab: 'logic', at: 'blockly', title: t('Las reglas son bloques'),
     text: () => t('Lee los bloques como frases: «cuando heroe toca moneda: quitar el otro, sumar 1 a puntos». Arrastra bloques de la izquierda para inventar reglas nuevas.') },
   { tab: 'sound', at: 'song-add', title: t('Sonidos y música'),
-    text: () => t('Haz efectos con las recetas (moneda, salto, láser…), añade sonidos tuyos o compón una música en una cuadrícula. En Mapa, cada nivel elige su música.') },
+    text: () => t('Haz efectos con las recetas (moneda, salto, láser…), añade sonidos tuyos o compón una música en una cuadrícula. En Mapa eliges la música de cada nivel.') },
   { tab: 'game', at: 'play-start', title: t('Prueba tus cambios'),
     text: () => t('Cada vez que cambies algo, juega otra vez. Con «Empezar en» vas directo al nivel que estás haciendo.') },
   { tab: 'game', at: 'export', title: t('A tu consola'),
-    text: () => t('«Pasar a la consola» lo envía por el cable o te da un archivo para la tarjeta. El juego se guarda solo en este navegador; «Guardar archivo» te da una copia.') },
+    text: () => t('«Pasar a la consola» lo envía por el cable o te da un archivo para la tarjeta. El juego se guarda automáticamente en este navegador; «Guardar archivo» te da una copia.') },
 ];
 
 export function initGuide(app, showTab) {

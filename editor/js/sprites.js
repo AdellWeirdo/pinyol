@@ -465,7 +465,7 @@ export function initDrawings(ctx) {
   $('drawing-del').addEventListener('click', () => {
     const d = drawing();
     if (app.project.drawings.length < 2 ||
-        !confirm(t('¿Quitar «{name}»? Sale también de todos los niveles y de la portada, y los bloques que lo usan dejarán de funcionar.',
+        !confirm(t('¿Quitar «{name}»? También se quitará de todos los niveles y de la portada, y los bloques que lo usan dejarán de funcionar.',
                    { name: d.name }))) return;
     app.remove(d.name);
     cur = Math.max(0, cur - 1);
@@ -491,8 +491,8 @@ export function initDrawings(ctx) {
   for (const r of document.querySelectorAll('input[name=use]'))
     r.addEventListener('change', () => { // what it is placed as goes away from the maps: said first
       const d = drawing(), n = app.placed(d.name);
-      if (n && !confirm(n === 1 ? t('«{name}» está puesto 1 vez en el mapa. Si cambia, se quita de los niveles. ¿Seguir?', { name: d.name })
-        : t('«{name}» está puesto {n} veces en el mapa. Si cambia, se quita de los niveles. ¿Seguir?', { name: d.name, n }))) {
+      if (n && !confirm(n === 1 ? t('«{name}» está puesto 1 vez en el mapa. Con este cambio se quitará de los niveles. ¿Seguir?', { name: d.name })
+        : t('«{name}» está puesto {n} veces en el mapa. Con este cambio se quitará de los niveles. ¿Seguir?', { name: d.name, n }))) {
         renderProps();
         return;
       }

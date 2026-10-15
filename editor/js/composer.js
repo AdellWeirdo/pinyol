@@ -180,11 +180,11 @@ export function renderComposer(box, sound, ctx) {
   scroll.append(grid);
   const help = Object.assign(document.createElement('p'), { id: 'song-help', className: 'hint',
     textContent: t('Clic para poner o quitar una nota; arrástrala a la derecha para que dure más.') + ' ' +
-                 t('Con el teclado: flechas, Espacio pone o quita, Mayús+→ alarga, Intro escucha o para.') + ' ' +
+                 t('Con el teclado: flechas para moverte, Espacio para poner o quitar, Mayús+→ para alargar, Intro para escuchar o parar.') + ' ' +
                  t('Amarillo: melodía. Azul: bajo. Rosa: batería.') });
   const longer = Object.assign(document.createElement('button'), { type: 'button', textContent: '↔ ' + t('Alargar notas') });
   longer.setAttribute('aria-pressed', String(stretch));
-  longer.title = t('Mientras está pulsado, tocar una casilla alarga hasta ella la nota de su izquierda');
+  longer.title = t('Mientras está pulsado, al tocar una casilla, la nota que tiene a su izquierda se alarga hasta ella');
   longer.addEventListener('click', () => { stretch = !stretch; longer.setAttribute('aria-pressed', String(stretch)); });
   controls.append(longer);
   box.append(controls, scroll, help);

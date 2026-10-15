@@ -141,7 +141,7 @@ function applyLook(key) {
   if (key === was) return;
   const painted = p.drawings.some(d => d.frames.some(f => f.some(v => v >= 0)));
   if (look.palette && painted &&
-      !confirm(t('Aspecto {name}: los dibujos y los colores de fondo pasan a sus colores (al más parecido). ¿Seguir?', { name: look.name }))) {
+      !confirm(t('Aspecto {name}: los dibujos y los colores de fondo pasarán a los colores de este aspecto (al más parecido). ¿Seguir?', { name: look.name }))) {
     $('look').value = was;
     return;
   }
@@ -154,7 +154,7 @@ function applyLook(key) {
   let said = t('Aspecto {name}.', { name: look.name });
   if (look.tile !== old) {
     if (tiles || p.levels.some(l => l.map.cells.some(Boolean))) {
-      said += ' ' + t('Las baldosas siguen de {old} × {old}: ya hay mapas o baldosas de ese tamaño ({name} las usaba de {tile}).',
+      said += ' ' + t('Las baldosas siguen siendo de {old} × {old}: ya hay mapas o baldosas de ese tamaño ({name} las usa de {tile}).',
                       { old, name: look.name, tile: look.tile });
     } else { // empty maps: the same world, in tiles of the new size
       p.tile = look.tile;

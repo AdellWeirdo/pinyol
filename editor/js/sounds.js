@@ -108,7 +108,7 @@ async function renderClip(s) { // a sound from a file: what it is for, the part 
     const from = s.start * HZ, to = Math.min(s.end > s.start ? s.end * HZ : data.length, from + MAX_S[s.use] * HZ);
     const long = (s.end > s.start ? s.end : dur) - s.start > MAX_S[s.use];
     drawWave(data, from, to, t('{part} s de {all} s', { part: ((to - from) / HZ).toFixed(2), all: dur.toFixed(2) }) +
-      (long ? ' · ' + t('se corta a {n} s', { n: MAX_S[s.use] }) : ''));
+      (long ? ' · ' + t('se corta a los {n} s', { n: MAX_S[s.use] }) : ''));
   };
   slider(box, t('Empieza en'), s.start, 0, dur, 0.01, v => { s.start = Math.min(v, dur - 0.01); app.changed(); redraw(); }, secs);
   slider(box, t('Acaba en'), s.end > s.start ? s.end : dur, 0, dur, 0.01, v => { s.end = v >= dur - 0.005 ? 0 : v; app.changed(); redraw(); }, secs);
