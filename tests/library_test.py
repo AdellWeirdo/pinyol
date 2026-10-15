@@ -36,7 +36,7 @@ with tempfile.TemporaryDirectory() as t:
 
     body = ("### Título\n\nMi juego\n\n### Descripción\n\nUn juego.\n\n### El juego (.zip)\n\n"
             "[j.zip](https://github.com/user-attachments/files/123/j.zip)\n\n### Licencia\n\nCC0\n\n"
-            "### Permisos\n\n- [X] Es mío\n- [X] Acepto\n")
+            "### Permisos\n\n- [X] Es mío\n- [X] Acepto\n- [X] Tengo 14 años\n")
     f = library.form_fields(body)
     assert f["Título"] == "Mi juego" and f["Licencia"] == "CC0", f
     assert library.ATTACHMENT.findall(f["El juego (.zip)"]) == ["https://github.com/user-attachments/files/123/j.zip"]
@@ -46,4 +46,7 @@ with tempfile.TemporaryDirectory() as t:
     assert not library.ATTACHMENT.findall("https://github.com/ana/mi-juego/blob/main/juego.zip")
     r = library.check(good, t / "form", headless, f)
     assert r["ok"] and r["license"] == "CC0" and r["form_title"] == "Mi juego", r
+    f["Permisos"] = "- [X] Es mío\n- [X] Acepto\n- [ ] Tengo 14 años"  # the age box left empty
+    r = library.check(good, t / "form2", headless, f)
+    assert not r["ok"] and any("tres casillas" in e for e in r["errors"]), r
     print(json.dumps({"library": "ok"}))

@@ -68,7 +68,7 @@ Codex: `brew install codex`, y luego `codex login` con una cuenta de ChatGPT. Cl
 su carpeta (`codex`) y pídele el juego que quieras, en cualquier idioma. Lee [AGENTS.md](AGENTS.md), instala lo que
 falta (apruébalo cuando lo pida: instalar se hace fuera de su sandbox), compila el motor, hace el juego en
 `games/<id>/` y lo juega con una prueba para comprobarlo. `./build/pinyol_sim --game games/<id>` lo juega en tu pantalla.
-La [escalera](https://ipaud.github.io/pinyol/#codex) de la web enseña cinco juegos que Codex hizo así, de un Pong a
+La [escalera](https://ipaud.github.io/pinyol/#codex) de la web enseña cinco juegos que Codex hizo así, de un juego de palas a
 un plataformas de velocidad de Mega Drive, cada uno con su encargo, su tiempo y sus tokens, y sus fps en la consola.
 
 ### Sin código: el editor
@@ -152,7 +152,7 @@ Te queda un juego pequeño para cambiar: una sala más grande que la pantalla, u
 | [raton_de_biblioteca](examples/raton_de_biblioteca) | hecho por Codex con una frase en un clon nuevo: un ratón con aspecto de Game Boy en una biblioteca, queso y gatos (luego puesto a pantalla completa a mano) |
 | [oxigeno](examples/oxigeno) | hecho por Codex con una frase: un astronauta con aspecto de ZX Spectrum que busca botellas de oxígeno, con su pantalla de carga de cinta |
 | [museo_nocturno](examples/museo_nocturno) | hecho por Codex con una frase: un museo de noche en primera persona, cinco cuadros robados y vigilantes |
-| [pong](examples/pong) | hecho por Codex con una frase: un Pong vectorial contra la consola, a 7 puntos |
+| [paletes](examples/paletes) | hecho por Codex con una frase: palas y pelota contra la consola, en vectores, a 7 puntos |
 | [costa_relampago](examples/costa_relampago) | hecho por Codex en tres encargos (el juego, su arte generado, 60 fps en la consola): una ardilla con aspecto de Mega Drive en una costa, capas a su propia velocidad y un mar movido línea a línea |
 
 ### Como una aventura hecha de datos
@@ -289,8 +289,12 @@ pinyol se escribió primero para dos aventuras de datos, y luego se abrió con L
 
 ## Licencia
 
-pinyol tiene licencia MIT ([LICENSE](LICENSE)). Incluye [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT), la fuente [Pixelify Sans](third_party/pixelify/OFL.txt) y las fuentes de píxel de [third_party/fonts](third_party/fonts/README.md) (todas SIL Open Font License 1.1). El editor incluye [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0).
+pinyol tiene licencia MIT ([LICENSE](LICENSE)). Incluye [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT), la fuente [Pixelify Sans](third_party/pixelify/OFL.txt) y las fuentes de píxel de [third_party/fonts](third_party/fonts/README.md) (todas SIL Open Font License 1.1). El editor incluye [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0). La web sirve [ESP Web Tools](site/vendor/esp-web-tools/LICENSE) (Apache 2.0) para instalar el firmware; el firmware se construye con [ESP-IDF](https://github.com/espressif/esp-idf) (Apache 2.0, con partes bajo licencias MIT y BSD) y el reproductor web con Emscripten y SDL2. Todos los avisos que piden están en [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), que también va con cada release.
 
 Las imágenes, sonidos, música y vídeo de los ejemplos, la plantilla y las pruebas se hicieron para pinyol, generados
 con un modelo de imagen o dibujados y sintetizados con código (el `art.py` y `art/` de cada juego): se dedican al
 dominio público ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)), para usarlos en tus juegos como quieras.
+
+Game Boy, Game Boy Advance, PlayStation, Saturn, Mega Drive, Super Nintendo, Neo Geo, CPS2, PICO-8, ZX Spectrum,
+Wolfenstein 3D y las demás consolas y juegos que se nombran aquí son marcas de sus dueños. pinyol y Cirera no tienen
+relación con ellos ni su respaldo: los nombres solo dicen a qué aspecto se parece un juego.

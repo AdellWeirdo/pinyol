@@ -69,7 +69,7 @@ la seva carpeta (`codex`) i demana-li el joc que vulguis, en qualsevol idioma. L
 instal·la el que falta (aprova-ho quan t'ho demani: la instal·lació es fa fora de la seva sandbox), compila el motor,
 fa el joc a `games/<id>/` i el juga amb una prova per comprovar-lo. `./build/pinyol_sim --game games/<id>` el juga a
 la teva pantalla. L'[escala](https://ipaud.github.io/pinyol/ca/#codex) del web ensenya cinc jocs que Codex va fer així,
-d'un Pong a un joc de plataformes de velocitat de Mega Drive, cadascun amb el seu encàrrec, el seu temps i els seus
+d'un joc de pales a un joc de plataformes de velocitat de Mega Drive, cadascun amb el seu encàrrec, el seu temps i els seus
 tokens, i els seus fps a la consola.
 
 ### Sense codi: l'editor
@@ -153,7 +153,7 @@ Et queda un joc petit per canviar: una sala més gran que la pantalla, un person
 | [raton_de_biblioteca](examples/raton_de_biblioteca) | fet per Codex amb una frase en un clon nou: un ratolí amb aspecte de Game Boy en una biblioteca, formatge i gats (després posat a pantalla completa a mà) |
 | [oxigeno](examples/oxigeno) | fet per Codex amb una frase: un astronauta amb aspecte de ZX Spectrum que busca ampolles d'oxigen, amb la seva pantalla de càrrega de cinta |
 | [museo_nocturno](examples/museo_nocturno) | fet per Codex amb una frase: un museu de nit en primera persona, cinc quadres robats i vigilants |
-| [pong](examples/pong) | fet per Codex amb una frase: un Pong vectorial contra la consola, a 7 punts |
+| [paletes](examples/paletes) | fet per Codex amb una frase: pales i pilota contra la consola, en vectors, a 7 punts |
 | [costa_relampago](examples/costa_relampago) | fet per Codex en tres encàrrecs (el joc, el seu art generat, 60 fps a la consola): un esquirol amb aspecte de Mega Drive en una costa, capes a la seva pròpia velocitat i un mar mogut línia a línia |
 
 ### Com una aventura feta de dades
@@ -290,8 +290,12 @@ pinyol es va escriure primer per a dues aventures de dades, i després es va obr
 
 ## Llicència
 
-pinyol té llicència MIT ([LICENSE](LICENSE)). Inclou [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT), la font [Pixelify Sans](third_party/pixelify/OFL.txt) i les fonts de píxel de [third_party/fonts](third_party/fonts/README.md) (totes SIL Open Font License 1.1). L'editor inclou [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0).
+pinyol té llicència MIT ([LICENSE](LICENSE)). Inclou [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT), la font [Pixelify Sans](third_party/pixelify/OFL.txt) i les fonts de píxel de [third_party/fonts](third_party/fonts/README.md) (totes SIL Open Font License 1.1). L'editor inclou [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0). El web serveix [ESP Web Tools](site/vendor/esp-web-tools/LICENSE) (Apache 2.0) per instal·lar el firmware; el firmware es construeix amb [ESP-IDF](https://github.com/espressif/esp-idf) (Apache 2.0, amb parts sota llicències MIT i BSD) i el reproductor web amb Emscripten i SDL2. Tots els avisos que demanen són a [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), que també va amb cada release.
 
 Les imatges, sons, música i vídeo dels exemples, la plantilla i les proves es van fer per a pinyol, generats amb un
 model d'imatge o dibuixats i sintetitzats amb codi (l'`art.py` i `art/` de cada joc): es dediquen al domini públic
 ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)), per fer-los servir als teus jocs com vulguis.
+
+Game Boy, Game Boy Advance, PlayStation, Saturn, Mega Drive, Super Nintendo, Neo Geo, CPS2, PICO-8, ZX Spectrum,
+Wolfenstein 3D i les altres consoles i jocs que s'anomenen aquí són marques dels seus propietaris. pinyol i Cirera no
+hi tenen relació ni el seu suport: els noms només diuen a quin aspecte s'assembla un joc.

@@ -59,9 +59,9 @@ OTHERS = [
 # (an autotest build). "after" says what was retouched by hand later, so the page claims no more than Codex did.
 CODEX_RUN = "Codex 0.155 con gpt-6-sol, razonamiento medio"
 CODEX = [
-    dict(id="pong", level=1, title="Pong", look="Vectorial", minutes=3.5, time="3 min 30 s", commands=29, tokens="73 mil",
+    dict(id="paletes", level=1, title="Paletes", look="Vectorial", minutes=3.5, time="3 min 30 s", commands=29, tokens="73 mil",
          fps="61", prompt="Hazme un Pong contra la consola: dos palas, una pelota y un marcador hasta 7 puntos. No me preguntes nada, decide tú.",
-         after="Sin retoques.", alt="Un Pong vectorial: dos palas, la pelota y el marcador"),
+         after="Sin retoques.", alt="Paletes, en vectores: dos palas, la pelota y el marcador"),
     dict(id="raton_de_biblioteca", level=2, title="Ratón de biblioteca", look="Game Boy", minutes=4.8, time="4 min 49 s",
          commands=29, tokens="78 mil", fps="59",
          prompt="Hazme un juego con aspecto de Game Boy: un ratón que recorre una biblioteca saltando entre estanterías y "
@@ -213,6 +213,7 @@ def library() -> str:
 <h2 id="biblioteca-t">La Biblioteca</h2>
 <p class="intro">Juegos hechos por la gente con pinyol: se juegan aquí y se descargan para la consola. ¿Has hecho uno? Súbelo con un formulario: un robot lo abre, lo juega diez segundos y, cuando lo revisamos, aparece aquí.</p>
 <div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="#hazlo">Cómo se hace un juego</a></div>
+<p class="sub">¿Algo tuyo publicado aquí sin tu permiso, o algo que no debería estar? <a href="{REPO}/issues/new?title=Retirar%3A%20">Pide que lo retiremos</a>.</p>
 <figure class="tutorial"><video src="video/subir.mp4" poster="video/subir.jpg" width="960" height="600" controls preload="none" playsinline aria-describedby="subir-cap"></video>
 <figcaption id="subir-cap">Tutorial, de tu juego a la Biblioteca: descarga el .zip del editor, rellena el formulario y adjúntalo; un robot lo comprueba y, cuando está aprobado, ya se juega aquí. Las esperas, aceleradas.</figcaption></figure>
 <div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="play/player.html">
@@ -289,7 +290,7 @@ def thousands(v: int) -> str:
 
 def footer() -> str:
     return f"""<footer><div class="wrap"><img src="img/logo.png" alt="pinyol" width="64" height="42" loading="lazy">
-<span>Código MIT · arte y sonido CC0</span><a href="{REPO}">GitHub</a><a href="{REPO}/blob/main/docs/measurements.md">Mediciones</a></div></footer>"""
+<span>Código MIT · arte y sonido CC0</span><span>Game Boy, PICO-8, Neo Geo y las demás consolas que se nombran son marcas de sus dueños; pinyol y Cirera no tienen relación con ellos.</span><a href="{REPO}">GitHub</a><a href="{REPO}/blob/main/docs/measurements.md">Mediciones</a></div></footer>"""
 
 
 NEW_TAB = " (se abre en una pestaña nueva)"

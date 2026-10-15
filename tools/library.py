@@ -134,8 +134,8 @@ def check(zip_path: Path, out: Path, headless: Path, fields: dict | None = None)
         lic = fields.get("Licencia", "")
         if lic not in LICENSES:
             result["errors"].append(f"Elige una licencia de la lista ({', '.join(LICENSES)}).")
-        if fields.get("Permisos", "").count("[X]") + fields.get("Permisos", "").count("[x]") < 2:
-            result["errors"].append("Marca las dos casillas de permisos.")
+        if fields.get("Permisos", "").count("[X]") + fields.get("Permisos", "").count("[x]") < 3:
+            result["errors"].append("Marca las tres casillas de permisos.")
         result.update(license=lic, form_title=fields.get("Título", "")[:48],
                       form_description=fields.get("Descripción", "")[:300])
         result["ok"] = not result["errors"]

@@ -136,7 +136,6 @@
  "dibuja los sprites píxel a píxel, pinta los mapas y prueba el juego en el mismo navegador.": "dibuixa els sprites píxel a píxel, pinta els mapes i prova el joc al mateix navegador.",
  "La escalera: cinco encargos": "L'escala: cinc encàrrecs",
  "De lo más sencillo a lo más difícil. Un clon limpio del repositorio, una frase cada vez y ninguna pregunta contestada: Codex leyó AGENTS.md, compiló el motor, siguió la receta del aspecto y escribió un guion que juega su juego hasta que pasó. Luego cada juego se midió en la consola, jugando ese guion. Con Codex 0.155 con gpt-6-sol, razonamiento medio.": "De més senzill a més difícil. Un clon net del repositori, una frase cada vegada i cap pregunta contestada: Codex va llegir AGENTS.md, va compilar el motor, va seguir la recepta de l'aspecte i va escriure un guió que juga el seu joc fins que va passar. Després cada joc es va mesurar a la consola, jugant aquell guió. Amb Codex 0.155 i gpt-6-sol, raonament mitjà. (Els encàrrecs es van escriure en castellà; aquí, traduïts.)",
- "Un Pong vectorial: dos palas, la pelota y el marcador": "Un Pong vectorial: dues pales, la pilota i el marcador",
  "Hazme un Pong contra la consola: dos palas, una pelota y un marcador hasta 7 puntos. No me preguntes nada, decide tú.": "Fes-me un Pong contra la consola: dues pales, una pilota i un marcador fins a 7 punts. No em preguntis res, decideix tu.",
  "Sin retoques.": "Sense retocs.",
  "Un ratón saltando entre estanterías de una biblioteca, en cuatro tonos de verde": "Un ratolí saltant entre prestatgeries d'una biblioteca, en quatre tons de verd",
@@ -246,12 +245,10 @@
  "git clone https://github.com/ipaud/pinyol.git": "git clone https://github.com/ipaud/pinyol.git",
  "./build/pinyol_sim --game games/raton": "./build/pinyol_sim --game games/raton",
  "pinyol": "pinyol",
- "Pong": "Pong",
  "Ratón de biblioteca": "Ratón de biblioteca",
  "Oxígeno 48K": "Oxígeno 48K",
  "Museo de medianoche": "Museo de medianoche",
  "Ardilla Relámpago": "Ardilla Relámpago",
- "1 · Pong": "1 · Pong",
  "2 · Ratón de biblioteca": "2 · Ratón de biblioteca",
  "3 · Oxígeno 48K": "3 · Oxígeno 48K",
  "4 · Museo de medianoche": "4 · Museo de medianoche",
@@ -279,5 +276,11 @@
  "LÍNEA 0, un juego de Game Boy Advance hecho entero con el editor, en directo: dibujos, mapas, reglas y a jugar. El montaje, ocho veces más rápido; la partida, a velocidad real.": "LÍNEA 0, un joc de Game Boy Advance fet sencer amb l'editor, en directe: dibuixos, mapes, regles i a jugar. El muntatge, vuit vegades més ràpid; la partida, a velocitat real.",
  "La consola, una placa Freenove FNK0104N, arrancando: la intro de pinyol, el menú de Cirera con sus juegos y algunos de ellos en marcha": "La consola, una placa Freenove FNK0104N, arrencant: la intro de pinyol, el menú de Cirera amb els seus jocs i alguns en marxa",
  "Pausar": "Pausa",
- "Tutorial, de tu juego a la Biblioteca: descarga el .zip del editor, rellena el formulario y adjúntalo; un robot lo comprueba y, cuando está aprobado, ya se juega aquí. Las esperas, aceleradas.": "Tutorial, del teu joc a la Biblioteca: descarrega el .zip de l'editor, omple el formulari i adjunta'l; un robot el comprova i, quan està aprovat, ja es juga aquí. Les esperes, accelerades."
+ "Tutorial, de tu juego a la Biblioteca: descarga el .zip del editor, rellena el formulario y adjúntalo; un robot lo comprueba y, cuando está aprobado, ya se juega aquí. Las esperas, aceleradas.": "Tutorial, del teu joc a la Biblioteca: descarrega el .zip de l'editor, omple el formulari i adjunta'l; un robot el comprova i, quan està aprovat, ja es juga aquí. Les esperes, accelerades.",
+ "Paletes, en vectores: dos palas, la pelota y el marcador": "Paletes, en vectors: dues pales, la pilota i el marcador",
+ "Paletes": "Paletes",
+ "1 · Paletes": "1 · Paletes",
+ "Game Boy, PICO-8, Neo Geo y las demás consolas que se nombran son marcas de sus dueños; pinyol y Cirera no tienen relación con ellos.": "Game Boy, PICO-8, Neo Geo i les altres consoles que s'anomenen són marques dels seus propietaris; pinyol i Cirera no hi tenen relació.",
+ "¿Algo tuyo publicado aquí sin tu permiso, o algo que no debería estar?": "Alguna cosa teva publicada aquí sense el teu permís, o alguna cosa que no hi hauria de ser?",
+ "Pide que lo retiremos": "Demana que la retirem"
 }

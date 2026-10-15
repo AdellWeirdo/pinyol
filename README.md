@@ -68,7 +68,7 @@ Codex: `brew install codex`, then `codex login` with a ChatGPT account. Clone th
 folder (`codex`) and ask for the game you want, in any language. It reads [AGENTS.md](AGENTS.md), installs what is
 missing (approve it when it asks: installing runs outside its sandbox), builds the engine, makes the game in
 `games/<id>/` and plays it with a test to check it. `./build/pinyol_sim --game games/<id>` plays it on your screen.
-The site's [ladder](https://ipaud.github.io/pinyol/#codex) shows five games Codex made this way, from a Pong to a
+The site's [ladder](https://ipaud.github.io/pinyol/#codex) shows five games Codex made this way, from a paddle game to a
 Mega Drive speed platformer, each with its request, its time and tokens, and its frame rate on the console.
 
 ### Without code: the editor
@@ -151,7 +151,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [raton_de_biblioteca](examples/raton_de_biblioteca) | made by Codex from one sentence on a fresh clone: a Game Boy-look mouse in a library, cheese and cats (then put on the whole screen by hand) |
 | [oxigeno](examples/oxigeno) | made by Codex from one sentence: a ZX Spectrum-look astronaut after oxygen bottles, with its tape loading screen |
 | [museo_nocturno](examples/museo_nocturno) | made by Codex from one sentence: a first-person museum at night, five stolen paintings and guards |
-| [pong](examples/pong) | made by Codex from one sentence: a vector Pong against the console, to 7 points |
+| [paletes](examples/paletes) | made by Codex from one sentence: paddles and a ball against the console, in vectors, to 7 points |
 | [costa_relampago](examples/costa_relampago) | made by Codex in three requests (the game, its generated art, 60 fps on the console): a Mega Drive-look squirrel on a coast, layers at their own speeds and a sea moved line by line |
 
 ### As an adventure made of data
@@ -287,8 +287,12 @@ pinyol was first written for two data adventures, and then opened up with Lua fo
 
 ## License
 
-pinyol is MIT licensed ([LICENSE](LICENSE)). It includes [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT) the [Pixelify Sans](third_party/pixelify/OFL.txt) font and the pixel fonts in [third_party/fonts](third_party/fonts/README.md) (all SIL Open Font License 1.1). The editor includes [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0).
+pinyol is MIT licensed ([LICENSE](LICENSE)). It includes [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT) the [Pixelify Sans](third_party/pixelify/OFL.txt) font and the pixel fonts in [third_party/fonts](third_party/fonts/README.md) (all SIL Open Font License 1.1). The editor includes [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0). The site serves [ESP Web Tools](site/vendor/esp-web-tools/LICENSE) (Apache 2.0) to install the firmware; the firmware is built with [ESP-IDF](https://github.com/espressif/esp-idf) (Apache 2.0, with parts under MIT and BSD licences) and the web player with Emscripten and SDL2. Every notice they ask for is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), which also goes with each release.
 
 The pictures, sounds, music and video of the examples, the template and the tests were made for pinyol, generated
 with an image model or drawn and synthesised by code (each game's `art.py` and `art/`): they are dedicated to the
 public domain ([CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)), to use in your own games as you like.
+
+Game Boy, Game Boy Advance, PlayStation, Saturn, Mega Drive, Super Nintendo, Neo Geo, CPS2, PICO-8, ZX Spectrum,
+Wolfenstein 3D and the other consoles and games named here are trademarks of their owners. pinyol and Cirera are not
+affiliated with them or endorsed by them: the names only say which look a game takes after.

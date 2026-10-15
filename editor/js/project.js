@@ -51,7 +51,7 @@ export const LANGS = { es: 'Castellano', ca: 'Català', en: 'English' }; // a ga
 
 // The letters a game can have: the engine's own, or one of these (fonts/<id>/: the four FONT_*.fnt the game carries,
 // made by tools/font2fnt.py from third_party/fonts, and font.woff2 for the cover's preview)
-export const FONTS = { '': t('La del motor'), silkscreen: 'Silkscreen', micro5: 'Micro 5', pressstart2p: 'Press Start 2P',
+export const FONTS = { '': t('La del motor'), silkscreen: 'Silkscreen', micro5: 'Micro 5', pressstart2p: 'Arcade 8',
                        jersey15: 'Jersey 15' };
 
 // A game's look, as a console drew it: its colours (only those, or any snapped to the console's own), the size of its

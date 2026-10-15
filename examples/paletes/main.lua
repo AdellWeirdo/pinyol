@@ -1,4 +1,4 @@
--- Pong vectorial: arriba/abajo mueve la pala; A empieza otra partida.
+-- Paletes, palas y pelota vectoriales: arriba/abajo mueve la pala; A empieza otra partida.
 local FIELD_TOP, FIELD_BOTTOM = 57, 278
 local PAD_W, PAD_H, BALL_R = 10, 54, 5
 local PLAYER_X, CPU_X = 26, 444
@@ -142,7 +142,7 @@ function _draw()
   if state == "title" then
     rect(99, 105, 282, 95, DARK)
     box(99, 105, 282, 95, DIM)
-    text("PONG", 240, 117, {font = "large_bold", scale = 2, color = WHITE, align = "center"})
+    text("PALETES", 240, 117, {font = "large_bold", scale = 2, color = WHITE, align = "center"})
     text("PULSA A PARA JUGAR", 240, 175, {font = "main", color = CYAN, align = "center"})
   elseif state == "serve" then
     text("PREPARADOS", 240, 148, {font = "bold", color = WHITE, align = "center"})

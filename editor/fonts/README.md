@@ -3,6 +3,8 @@
 - `PixelifySans.ttf`: the editor's cover preview of a game with the engine's own letters (`FONT_*.fnt` here).
 - `<id>/`: the letters a game can choose (project.js `FONTS`, set by a look): the four `FONT_*.fnt` the game carries,
   made by `tools/font2fnt.py` from `third_party/fonts` (SIL Open Font License 1.1), and `font.woff2` for the preview.
+  `pressstart2p/` is shown as **Arcade 8**: Press Start 2P's licence reserves its name, so what is made from it
+  (these `.fnt`, and `font.woff2`, renamed inside with fontTools) goes by another.
 
 ```sh
 # scale 2 (world pixels) for the 8-pixel fonts, 1 for Jersey 15; the large ones a step bigger

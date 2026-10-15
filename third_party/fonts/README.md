@@ -19,3 +19,7 @@ characters the engine draws (Windows-1252), the rest are as published.
 | `dotgothic16` | DotGothic16 | 16 (`--px 16`) | Japanese dot-matrix |
 
 Pixelify Sans, the engine's own (`third_party/pixelify`), is there too as `pixelifysans`.
+
+Press Start 2P is published with the Reserved Font Name "Press Start 2P": the TTF here is the original, unchanged, but
+what is made from it (a game's `.fnt`, the editor's `font.woff2`) may not be called by that name. The editor calls it
+**Arcade 8**, and so should a game that names its letters.
