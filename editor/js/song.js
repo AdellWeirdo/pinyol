@@ -1,12 +1,14 @@
 // A song composed in the editor: a loop of steps (sixteenth notes) with a melody, a bass and drums, in a scale where
 // every note goes with every other (pentatonic, by default). Played back here and made into the WAV the console loops,
 // like a song brought in from a file. Plain data and plain maths: Node renders it in the tests.
+import { t } from './i18n.js';
+
 export const HZ = 22050;
 export const SCALES = { penta: [0, 2, 4, 7, 9], major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10] };
-export const SCALE_NAMES = { penta: 'pentatónica (todo suena bien)', major: 'mayor (alegre)', minor: 'menor (misteriosa)' };
-export const WAVES = { square: 'cuadrada', triangle: 'suave', saw: 'brillante', sine: 'redonda' };
-export const DRUMS = [['kick', 'bombo'], ['snare', 'caja'], ['hat', 'platillo']];
-const NOTE = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
+export const SCALE_NAMES = { penta: t('pentatónica (todo suena bien)'), major: t('mayor (alegre)'), minor: t('menor (misteriosa)') };
+export const WAVES = { square: t('cuadrada'), triangle: t('suave'), saw: t('brillante'), sine: t('redonda') };
+export const DRUMS = [['kick', t('bombo')], ['snare', t('caja')], ['hat', t('platillo')]];
+const NOTE = t('Do Do# Re Re# Mi Fa Fa# Sol Sol# La La# Si').split(' '); // (in English: C, D, E...)
 const BASE = { lead: 60, bass: 36 }; // C4 and C2
 const OCTAVES = { lead: 2, bass: 1 };
 

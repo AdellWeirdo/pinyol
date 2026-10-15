@@ -1,7 +1,7 @@
 // The editor: the project kept in the browser as it changes, the tabs, and the game built from it for the player
 // (Jugar), the console's card (a .zip) or the console itself over its cable.
 /* global Blockly */
-import { check, pack, safeName, saveLocal, loadLocal, LOOKS, MAP_MAX, lookColour, hex565, hexOf } from './project.js';
+import { check, pack, safeName, saveLocal, loadLocal, LOOKS, LANGS, MAP_MAX, lookColour, hex565, hexOf } from './project.js';
 import { TEMPLATES, templateEmpty } from './templates.js';
 import { buildFiles } from './build.js';
 import { audioFiles } from './audio.js';
@@ -13,6 +13,7 @@ import { initMap, coverBytes } from './map.js';
 import { initSounds } from './sounds.js';
 import { initVideos } from './videos.js';
 import { initGuide } from './guide.js';
+import { LANG, t, translatePage, chooseLang } from './i18n.js';
 
 const $ = id => document.getElementById(id);
 // what every game carries besides its own: the fonts, and kit with what it uses (a copy, so the game plays the same on a
@@ -24,16 +25,16 @@ let project, ws, tabs = {}, saveTimer = 0, loading = false, blocksBroken = false
 
 // A message at the bottom: read aloud, long enough to read; an error stays until closed; an action can undo something.
 function toast(text, { error = false, action = null } = {}) {
-  const t = $('toast'), act = $('toast-action');
+  const box = $('toast'), act = $('toast-action');
   clearTimeout(toast.timer);
   $('toast-text').textContent = ''; // emptied first: a screen reader announces the change
   requestAnimationFrame(() => { $('toast-text').textContent = text; });
-  t.classList.add('shown');
-  t.classList.toggle('error', error);
+  box.classList.add('shown');
+  box.classList.toggle('error', error);
   act.hidden = !action;
   if (action) act.textContent = action.label, act.onclick = () => { hide(); action.run(); };
   $('toast-close').hidden = !error && !action;
-  const hide = () => t.classList.remove('shown');
+  const hide = () => box.classList.remove('shown');
   if (!error) toast.timer = setTimeout(hide, Math.max(action ? 9000 : 4000, text.length * 70));
 }
 const oops = text => toast(text, { error: true });
@@ -42,15 +43,16 @@ const oops = text => toast(text, { error: true });
 
 function changed() {
   clearTimeout(saveTimer);
-  $('saved').textContent = 'Guardando…';
-  saveTimer = setTimeout(async () => {
-    if (ws && !blocksBroken) project.blocks = Blockly.serialization.workspaces.save(ws); // broken: the stored ones stay
-    if (await saveLocal(project)) $('saved').textContent = 'Guardado en este navegador';
-    else {
-      $('saved').textContent = '';
-      oops('No se ha podido guardar en este navegador. Pulsa «Guardar archivo» para no perder el juego.');
-    }
-  }, 400);
+  $('saved').textContent = t('Guardando…');
+  saveTimer = setTimeout(save, 400);
+}
+async function save() { // -> kept; now: also before the page goes (another language)
+  clearTimeout(saveTimer);
+  if (ws && !blocksBroken) project.blocks = Blockly.serialization.workspaces.save(ws); // broken: the stored ones stay
+  if (await saveLocal(project)) { $('saved').textContent = t('Guardado en este navegador'); return true; }
+  $('saved').textContent = '';
+  oops(t('No se ha podido guardar en este navegador. Pulsa «Guardar archivo» para no perder el juego.'));
+  return false;
 }
 
 function eachField(test, set) { // the blocks' fields that name a drawing or a sound
@@ -139,7 +141,7 @@ function applyLook(key) {
   if (key === was) return;
   const painted = p.drawings.some(d => d.frames.some(f => f.some(v => v >= 0)));
   if (look.palette && painted &&
-      !confirm(`Aspecto ${look.name}: los dibujos y los colores de fondo pasan a sus colores (al más parecido). ¿Seguir?`)) {
+      !confirm(t('Aspecto {name}: los dibujos y los colores de fondo pasan a sus colores (al más parecido). ¿Seguir?', { name: look.name }))) {
     $('look').value = was;
     return;
   }
@@ -149,10 +151,11 @@ function applyLook(key) {
   for (const d of p.drawings) d.frames = d.frames.map(f => f.map(v => lookColour(look, v)));
   for (const x of [...p.levels, p.cover]) x.background = look.background && !painted ? look.background : colour(x.background);
   const old = p.tile || 16, tiles = p.drawings.some(d => d.use === 'tile' && d.w !== look.tile);
-  let said = `Aspecto ${look.name}.`;
+  let said = t('Aspecto {name}.', { name: look.name });
   if (look.tile !== old) {
     if (tiles || p.levels.some(l => l.map.cells.some(Boolean))) {
-      said += ` Las baldosas siguen de ${old} × ${old}: ya hay mapas o baldosas de ese tamaño (${look.name} las usaba de ${look.tile}).`;
+      said += ' ' + t('Las baldosas siguen de {old} × {old}: ya hay mapas o baldosas de ese tamaño ({name} las usaba de {tile}).',
+                      { old, name: look.name, tile: look.tile });
     } else { // empty maps: the same world, in tiles of the new size
       p.tile = look.tile;
       for (const l of p.levels) {
@@ -160,7 +163,7 @@ function applyLook(key) {
         const h = Math.max(160 / p.tile, Math.min(MAP_MAX, Math.round(l.map.h * old / p.tile)));
         Object.assign(l.map, { w, h, cells: new Array(w * h).fill(0) });
       }
-      said += ` Baldosas de ${p.tile} × ${p.tile}.`;
+      said += ' ' + t('Baldosas de {n} × {n}.', { n: p.tile });
     }
   }
   renderPalette();
@@ -185,7 +188,7 @@ function load(p, blocks) {
     try { if (blocks || project.blocks) Blockly.serialization.workspaces.load(blocks || project.blocks, ws); }
     catch {
       blocksBroken = true; // they stay as they were stored until the blocks are changed by hand
-      oops('Los bloques de este juego no se han podido abrir. Si tienes su archivo, ábrelo otra vez con «Abrir».');
+      oops(t('Los bloques de este juego no se han podido abrir. Si tienes su archivo, ábrelo otra vez con «Abrir».'));
     }
     if (blocks) ws.cleanUp(); // a template's blocks: in a column, none on top of another
     loading = false;
@@ -203,12 +206,12 @@ async function replace(p, blocks, said) {
   await saveLocal(project, 'previous');
   load(p, blocks);
   showTab('draw');
-  toast(said, { action: { label: 'Recuperar el anterior', run: async () => {
+  toast(said, { action: { label: t('Recuperar el anterior'), run: async () => {
     const prev = await loadLocal('previous');
-    if (!prev) return oops('No queda ningún juego anterior.');
+    if (!prev) return oops(t('No queda ningún juego anterior.'));
     await saveLocal(project, 'previous');
     load(prev);
-    toast('Has vuelto al juego anterior.');
+    toast(t('Has vuelto al juego anterior.'));
   } } });
 }
 
@@ -218,7 +221,7 @@ const fetched = new Map(); // what every game carries, read once
 async function fetchBytes(f) {
   if (!fetched.has(f)) {
     const r = await fetch(f);
-    if (!r.ok) throw new Error('falta ' + f + ' (¿se ha montado el editor con tools/make_editor.py?)');
+    if (!r.ok) throw new Error(t('falta {file} (¿se ha montado el editor con tools/make_editor.py?)', { file: f }));
     fetched.set(f, new Uint8Array(await r.arrayBuffer()));
   }
   return fetched.get(f);
@@ -244,7 +247,7 @@ async function buildZip(opts) { return zip(await gameFilesOf(opts), project.id);
 
 function renderStart() { // Play from the cover or any level
   const sel = $('play-start'), was = sel.value;
-  sel.replaceChildren(new Option(project.cover.on ? 'la portada' : 'el primer nivel', ''));
+  sel.replaceChildren(new Option(project.cover.on ? t('la portada') : t('el primer nivel'), ''));
   project.levels.forEach((l, i) => sel.append(new Option(`${i + 1}. ${l.name}`, l.id)));
   sel.value = [...sel.options].some(o => o.value === was) ? was : '';
 }
@@ -255,20 +258,21 @@ async function play() {
   playing = true;
   showTab('game');
   const status = $('game-status');
-  status.textContent = 'Preparando el juego…';
+  status.textContent = t('Preparando el juego…');
   status.classList.remove('error');
   try {
     const bytes = await buildZip({ start: $('play-start').value || null });
     const frame = $('player');
     const ready = new Promise(resolve => { frame.onload = resolve; });
-    frame.src = 'player/player.html?embed=1&t=' + Date.now(); /* a fresh engine: it starts once per page */
+    const words = LANG === 'es' ? '' : '&lang=' + LANG; // the player's own words, in the editor's language
+    frame.src = 'player/player.html?embed=1&t=' + Date.now() + words; /* a fresh engine: it starts once per page */
     await ready;
     frame.contentWindow.postMessage({ pinyol: 'play', zip: bytes.buffer }, location.origin, [bytes.buffer]);
-    status.textContent = TOUCH ? 'Juega con los botones de debajo de la pantalla.'
-      : 'Flechas o WASD: mover · Z: A · X: B · C: C · P: START · Mayús+Esc: salir del juego. Haz clic en el juego para jugar.';
+    status.textContent = TOUCH ? t('Juega con los botones de debajo de la pantalla.')
+      : t('Flechas o WASD: mover · Z: A · X: B · C: C · P: START · Mayús+Esc: salir del juego. Haz clic en el juego para jugar.');
     frame.focus();
   } catch (e) {
-    status.textContent = 'No se ha podido preparar el juego: ' + e.message;
+    status.textContent = t('No se ha podido preparar el juego: {why}', { why: e.message });
     status.classList.add('error');
   } finally {
     playing = false;
@@ -292,7 +296,7 @@ function openConsole() {
   $('cable-progress').hidden = true;
   const status = $('cable-status');
   status.classList.remove('error');
-  status.textContent = cableWorks ? '' : 'Este navegador no puede usar el cable: usa Chrome o Edge en un ordenador, o la tarjeta.';
+  status.textContent = cableWorks ? '' : t('Este navegador no puede usar el cable: usa Chrome o Edge en un ordenador, o la tarjeta.');
   $('console').showModal();
 }
 
@@ -305,27 +309,27 @@ async function busy(button, text, work) { // a button that says what it does whi
 
 function initConsole() {
   $('export').addEventListener('click', openConsole);
-  $('zip-download').addEventListener('click', e => busy(e.currentTarget, 'Preparando…', async () => {
+  $('zip-download').addEventListener('click', e => busy(e.currentTarget, t('Preparando…'), async () => {
     try {
       download(await buildZip(), project.id + '.zip', 'application/zip');
       $('cable-status').textContent = '';
-      toast(`Descargado ${project.id}.zip: sigue los pasos para copiarlo a la tarjeta.`);
-    } catch (err) { oops('No se ha podido preparar el juego: ' + err.message); }
+      toast(t('Descargado {file}: sigue los pasos para copiarlo a la tarjeta.', { file: project.id + '.zip' }));
+    } catch (err) { oops(t('No se ha podido preparar el juego: {why}', { why: err.message })); }
   }));
-  $('cable-send').addEventListener('click', e => busy(e.currentTarget, 'Enviando…', async () => {
+  $('cable-send').addEventListener('click', e => busy(e.currentTarget, t('Enviando…'), async () => {
     const status = $('cable-status'), bar = $('cable-progress');
     status.classList.remove('error');
-    status.textContent = 'Preparando el juego…';
+    status.textContent = t('Preparando el juego…');
     try {
       const files = await gameFilesOf();
-      status.textContent = 'Elige la consola en la ventana del navegador.';
+      status.textContent = t('Elige la consola en la ventana del navegador.');
       bar.value = 0;
       bar.hidden = false;
-      await send(files, project.id, f => { bar.value = Math.round(f * 100); status.textContent = `Enviando… ${bar.value} %`; });
-      status.textContent = '¡Ya está! El juego empieza en la consola.';
+      await send(files, project.id, f => { bar.value = Math.round(f * 100); status.textContent = t('Enviando… {n} %', { n: bar.value }); });
+      status.textContent = t('¡Ya está! El juego empieza en la consola.');
     } catch (err) {
       bar.hidden = true;
-      status.textContent = 'No se ha podido enviar: ' + err.message + '.';
+      status.textContent = t('No se ha podido enviar: {why}.', { why: err.message });
       status.classList.add('error');
     }
   }));
@@ -382,15 +386,16 @@ function initMenu() { // Nuevo: a list that opens under the button, closes with 
     });
     list.append(b);
   };
-  for (const t of TEMPLATES)
-    fresh(t.label, async () => replace(await t.make(), t.blocks ? await t.blocks() : templateBlocks(t.key), `Juego nuevo: ${t.label}.`));
-  fresh('Vacío', () => replace(templateEmpty(), { blocks: { languageVersion: 0, blocks: [] } }, 'Juego nuevo, vacío.'));
+  for (const tpl of TEMPLATES)
+    fresh(tpl.label, async () => replace(await tpl.make(), tpl.blocks ? await tpl.blocks() : templateBlocks(tpl.key),
+                                         t('Juego nuevo: {name}.', { name: tpl.label })));
+  fresh(t('Vacío'), () => replace(templateEmpty(), { blocks: { languageVersion: 0, blocks: [] } }, t('Juego nuevo, vacío.')));
 }
 
 function initBlockly() {
-  Object.assign(Blockly.Msg, { // Blockly's own Spanish, said as the editor's blocks say it
-    CONTROLS_IF_MSG_ELSE: 'si no', CONTROLS_IF_MSG_ELSEIF: 'si no, si', VARIABLES_SET: 'poner %1 a %2',
-    MATH_CHANGE_TITLE: 'sumar %2 a %1', MATH_RANDOM_INT_TITLE: 'número al azar entre %1 y %2',
+  Object.assign(Blockly.Msg, { // Blockly's own words, said as the editor's blocks say them
+    CONTROLS_IF_MSG_ELSE: t('si no'), CONTROLS_IF_MSG_ELSEIF: t('si no, si'), VARIABLES_SET: t('poner %1 a %2'),
+    MATH_CHANGE_TITLE: t('sumar %2 a %1'), MATH_RANDOM_INT_TITLE: t('número al azar entre %1 y %2'),
   });
   defineBlocks();
   const theme = Blockly.Theme.defineTheme('pinyol', {
@@ -416,11 +421,19 @@ function initBlockly() {
   });
 }
 
+// Blockly's own words (its menus, its built-in blocks) in the editor's language, before any block is made
+function blocklyWords() {
+  return new Promise((done, fail) => document.head.append(Object.assign(document.createElement('script'), {
+    src: `vendor/blockly/msg/${LANG}.js`, onload: done, onerror: () => fail(new Error(`vendor/blockly/msg/${LANG}.js`)) })));
+}
+
 async function init() {
+  translatePage();
   tabs.draw = initDrawings(app);
   tabs.map = initMap(app);
   tabs.sound = initSounds(app);
   tabs.video = initVideos(app);
+  try { await blocklyWords(); } catch (e) { console.error(e); } // without them the blocks still work (their own words do)
   initBlockly();
   const saved = await loadLocal();
   if (saved) load(saved);
@@ -430,8 +443,15 @@ async function init() {
   initMenu();
   initConsole();
   $('look').addEventListener('change', e => applyLook(e.target.value));
+  for (const [k, name] of Object.entries(LANGS)) $('ui-lang').append(new Option(name, k)); // each in its own words
+  $('ui-lang').value = LANG;
+  $('ui-lang').addEventListener('change', async e => { // the game kept first: the page starts again
+    if (await save() || confirm(t('El juego no se ha podido guardar y se perderá al cambiar de idioma. ¿Cambiar igualmente?')))
+      chooseLang(e.target.value);
+    else e.target.value = LANG;
+  });
   $('title').addEventListener('change', e => { // the game's folder on the card follows its name: two games, two folders
-    project.title = e.target.value.trim().slice(0, 40) || 'Juego';
+    project.title = e.target.value.trim().slice(0, 40) || t('Juego');
     project.id = safeName(project.title, 'juego');
     changed();
     tabs.map.render();
@@ -442,13 +462,13 @@ async function init() {
     if (!f) return;
     let p;
     try { p = check(JSON.parse(await f.text())); }
-    catch { return oops('Ese archivo no es un juego del editor. Abre un archivo .pinyol.json hecho con «Guardar archivo».'); }
-    replace(p, null, `Abierto ${p.title}.`);
+    catch { return oops(t('Ese archivo no es un juego del editor. Abre un archivo .pinyol.json hecho con «Guardar archivo».')); }
+    replace(p, null, t('Abierto {title}.', { title: p.title }));
   });
   $('save').addEventListener('click', () => {
     if (!blocksBroken) project.blocks = Blockly.serialization.workspaces.save(ws);
     download(new TextEncoder().encode(JSON.stringify(pack(project))), project.id + '.pinyol.json', 'application/json');
-    toast(`Guardado en el archivo ${project.id}.pinyol.json (en tus descargas).`);
+    toast(t('Guardado en el archivo {file} (en tus descargas).', { file: project.id + '.pinyol.json' }));
   });
   $('play').addEventListener('click', play);
   $('restart').addEventListener('click', play);

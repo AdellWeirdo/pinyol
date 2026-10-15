@@ -87,7 +87,7 @@ línea, quién lo ha hecho y de qué va. **Jugar** lo juega ahí mismo; **Pasar 
 zip para la tarjeta. Una guía corta acompaña a quien lo abre por primera vez (otra vez con **?**); todo funciona también
 con el teclado, y en un móvil o una tableta. **Nuevo** empieza desde uno de cuatro juegos pequeños para cambiar, cada
 uno con sus dibujos, niveles y reglas: un plataformas, una aventura vista desde arriba (llaves y puertas), un
-matamarcianos y un puzle de empujar cajas. La interfaz está en castellano. Necesita al lado el reproductor web (mira
+matamarcianos y un puzle de empujar cajas. La interfaz está en castellano, catalán o inglés (se elige arriba, en **Idioma**). Necesita al lado el reproductor web (mira
 [más abajo](#comparte-un-juego-juégalo-en-el-navegador) cómo compilarlo):
 
 ```sh

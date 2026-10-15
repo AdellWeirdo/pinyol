@@ -1,16 +1,18 @@
 // A game sent to the console over its USB cable (Web Serial: Chrome and Edge on a computer). The console's side is
 // firmware/main/cable.c: a line each way, every line answered "@pinyol ok" or "@pinyol err <why>", so this never sends
 // faster than the console writes; tools/send_game.py does the same from a terminal.
+import { t } from './i18n.js';
+
 export const cableWorks = 'serial' in navigator;
 const CHUNK = 768, ESPRESSIF = 0x303a, TIMEOUT = Symbol('timeout');
 
 const WHY = [ // what the console says, as the editor says it
-  [/^no room/, 'no cabe en la consola: borra algún juego de la tarjeta'],
-  [/^not a game/, 'la consola no acepta este juego (¿es demasiado grande?)'],
-  [/^cannot write/, 'la consola no puede escribir en su tarjeta (¿está bloqueada o llena?)'],
-  [/^nothing came/, 'el envío se ha cortado'],
+  [/^no room/, t('no cabe en la consola: borra algún juego de la tarjeta')],
+  [/^not a game/, t('la consola no acepta este juego (¿es demasiado grande?)')],
+  [/^cannot write/, t('la consola no puede escribir en su tarjeta (¿está bloqueada o llena?)')],
+  [/^nothing came/, t('el envío se ha cortado')],
 ];
-const said = why => (WHY.find(([re]) => re.test(why)) || [, 'la consola dice: ' + why])[1];
+const said = why => (WHY.find(([re]) => re.test(why)) || [, t('la consola dice: {why}', { why })])[1];
 
 function base64(bytes) {
   let s = '';
@@ -22,9 +24,9 @@ function base64(bytes) {
 export async function send(files, id, progress) {
   let port;
   try { port = await navigator.serial.requestPort({ filters: [{ usbVendorId: ESPRESSIF }] }); }
-  catch { throw new Error('no se ha elegido ninguna consola'); }
+  catch { throw new Error(t('no se ha elegido ninguna consola')); }
   try { await port.open({ baudRate: 115200 }); }
-  catch { throw new Error('el cable está ocupado por otro programa: ciérralo y vuelve a probar'); }
+  catch { throw new Error(t('el cable está ocupado por otro programa: ciérralo y vuelve a probar')); }
   const writer = port.writable.getWriter(), reader = port.readable.getReader(), text = new TextDecoder(), enc = new TextEncoder();
   let buf = '', pending = null;
   const answer = async ms => { // the console's next answer, skipping its log
@@ -37,12 +39,12 @@ export async function send(files, id, progress) {
         if (answer) return answer[1];
       }
       const left = end - Date.now();
-      if (left <= 0) throw new Error('la consola no contesta: ¿está encendida y conectada?');
+      if (left <= 0) throw new Error(t('la consola no contesta: ¿está encendida y conectada?'));
       pending = pending || reader.read(); // a read that outlives a timeout is kept for the next turn
       const r = await Promise.race([pending, new Promise(ok => setTimeout(() => ok(TIMEOUT), left))]);
       if (r === TIMEOUT) continue;
       pending = null;
-      if (r.done) throw new Error('el cable se ha desconectado');
+      if (r.done) throw new Error(t('el cable se ha desconectado'));
       buf += text.decode(r.value, { stream: true });
     }
   };

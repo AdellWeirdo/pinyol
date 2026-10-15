@@ -9,13 +9,14 @@
 <script src="vendor/blockly/blockly_compressed.js"></script>
 <script src="vendor/blockly/blocks_compressed.js"></script>
 <script src="vendor/blockly/lua_compressed.js"></script>
-<script src="vendor/blockly/msg/es.js"></script>
+<!-- Blockly's own words (vendor/blockly/msg/<lang>.js): main.js loads them in the editor's language -->
 </head>
 <body>
 <header class="top">
-  <h1 class="brand"><span class="logo"><img src="logo.png" alt="pinyol" width="57" height="36"></span><span class="sub">editor</span></h1>
+  <h1 class="brand" translate="no"><span class="logo"><img src="logo.png" alt="pinyol" width="57" height="36"></span><span class="sub">editor</span></h1>
   <input id="title" class="title" aria-label="Nombre del juego" maxlength="40" spellcheck="false">
   <label class="look">Aspecto <select id="look"></select></label>
+  <label class="look">Idioma <select id="ui-lang"></select></label>
   <span id="saved" class="saved"></span>
   <nav class="actions" aria-label="Proyecto">
     <div class="menu">
@@ -256,9 +257,9 @@
     <section class="way" aria-labelledby="card-title">
       <h3 id="card-title">Con la tarjeta microSD</h3>
       <ol>
-        <li>Pulsa «Descargar»: se guarda el archivo <b id="zip-name">juego.zip</b>.</li>
-        <li>Descomprímelo: sale la carpeta <b id="folder-name">juego</b>.</li>
-        <li>Copia esa carpeta dentro de la carpeta <b>games</b> de la tarjeta.</li>
+        <li>Pulsa «Descargar»: se guarda el archivo <b id="zip-name" translate="no">juego.zip</b>.</li>
+        <li>Descomprímelo: sale la carpeta <b id="folder-name" translate="no">juego</b>.</li>
+        <li>Copia esa carpeta dentro de la carpeta <b translate="no">games</b> de la tarjeta.</li>
         <li>Pon la tarjeta en la consola y elige el juego en su lista.</li>
       </ol>
       <button type="button" id="zip-download"><span aria-hidden="true">⬇ </span>Descargar</button>

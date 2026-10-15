@@ -1,6 +1,7 @@
 // The project: everything a game made in the editor is, as plain data (saved in the browser, or as a .json file).
 // build.js turns it into a game folder pinyol plays.
 import { checkSong } from './song.js';
+import { t } from './i18n.js';
 
 const VIDEO_B64_MAX = 4.5 * (1 << 20); // a 3 MB clip, as base64
 export const FORMAT = 3; // 3: levels and a cover; 2: pixels in the console's colours (RGB565); 1: palette indices
@@ -13,9 +14,10 @@ export const MAX_BYTES = 4 << 20; // all drawings together, as built (build.js s
 const SEE_THROUGH = 0xF81F; // a saved frame's see-through pixel; a real colour that is this one becomes 0xF81E
 
 // 16 of PICO-8's colours and 8 more: colours at hand that go together (any other can be picked)
-export const COLOUR_NAMES = ['negro', 'azul marino', 'granate', 'verde oscuro', 'marrón', 'gris oscuro', 'gris claro',
-  'blanco', 'rojo', 'naranja', 'amarillo', 'verde', 'azul', 'lavanda', 'rosa', 'carne', 'celeste', 'índigo', 'ámbar',
-  'rojo teja', 'chocolate', 'verde hierba', 'azul medio', 'morado']; // PALETTE's, said
+export const COLOUR_NAMES = [t('negro'), t('azul marino'), t('granate'), t('verde oscuro'), t('marrón'), t('gris oscuro'),
+  t('gris claro'), t('blanco'), t('rojo'), t('naranja'), t('amarillo'), t('verde'), t('azul'), t('lavanda'), t('rosa'),
+  t('carne'), t('celeste'), t('índigo'), t('ámbar'), t('rojo teja'), t('chocolate'), t('verde hierba'), t('azul medio'),
+  t('morado')]; // PALETTE's, said
 export const PALETTE = [
   '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
   '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA',
@@ -24,18 +26,19 @@ export const PALETTE = [
 
 // What a drawing is for. An object moves by itself in one of these ways (kit.lua's behaviours).
 export const BEHAVIOURS = {
-  platformer: 'Es el jugador: anda y salta (flechas y A)',
-  topdown: 'Es el jugador, visto desde arriba (flechas)',
-  grid: 'Es el jugador: de casilla en casilla (puzles)',
-  patrol: 'Va y viene (se da la vuelta en las paredes)',
-  chase: 'Persigue al jugador',
-  shot: 'Vuela recto (disparos, cosas que caen)',
-  push: 'Se deja empujar (cajas de puzle)',
-  still: 'No se mueve',
+  platformer: t('Es el jugador: anda y salta (flechas y A)'),
+  topdown: t('Es el jugador, visto desde arriba (flechas)'),
+  grid: t('Es el jugador: de casilla en casilla (puzles)'),
+  patrol: t('Va y viene (se da la vuelta en las paredes)'),
+  chase: t('Persigue al jugador'),
+  shot: t('Vuela recto (disparos, cosas que caen)'),
+  push: t('Se deja empujar (cajas de puzle)'),
+  still: t('No se mueve'),
 };
-export const SHOT_DIRS = { forward: 'hacia donde mira quien lo crea', up: 'hacia arriba', down: 'hacia abajo',
-                           left: 'hacia la izquierda', right: 'hacia la derecha' };
-export const DRIFTS = { '': 'no', down: 'hacia abajo', up: 'hacia arriba', left: 'hacia la izquierda', right: 'hacia la derecha' };
+export const SHOT_DIRS = { forward: t('hacia donde mira quien lo crea'), up: t('hacia arriba'), down: t('hacia abajo'),
+                           left: t('hacia la izquierda'), right: t('hacia la derecha') };
+export const DRIFTS = { '': t('no'), down: t('hacia abajo'), up: t('hacia arriba'), left: t('hacia la izquierda'),
+                        right: t('hacia la derecha') };
 
 // what a drawing is unless told otherwise (gravity null: what its behaviour says, platformers and patrols fall)
 export const DRAWING = { use: 'tile', solid: false, behaviour: 'still', speed: 1, jump: 4.5, animate: 8, gravity: null,
@@ -43,22 +46,22 @@ export const DRAWING = { use: 'tile', solid: false, behaviour: 'still', speed: 1
 
 export const SIZES = [8, 16, 24, 32, 48, 64];
 export const MAX_FRAMES = 16; // a drawing's frames: room for named animations (still, walking, hit)
-export const ANIMS = { idle: 'Quieto', walk: 'Andar', hit: 'Golpe' }; // kit.lua's named animations
-export const LANGS = { es: 'Castellano', ca: 'Català', en: 'English' }; // a game's own language: kit's sentences in it
+export const ANIMS = { idle: t('Quieto'), walk: t('Andar'), hit: t('Golpe') }; // kit.lua's named animations
+export const LANGS = { es: 'Castellano', ca: 'Català', en: 'English' }; // a game's (and the editor's): each in its own words
 
 // The letters a game can have: the engine's own, or one of these (fonts/<id>/: the four FONT_*.fnt the game carries,
 // made by tools/font2fnt.py from third_party/fonts, and font.woff2 for the cover's preview)
-export const FONTS = { '': 'La del motor', silkscreen: 'Silkscreen', micro5: 'Micro 5', pressstart2p: 'Press Start 2P',
+export const FONTS = { '': t('La del motor'), silkscreen: 'Silkscreen', micro5: 'Micro 5', pressstart2p: 'Press Start 2P',
                        jersey15: 'Jersey 15' };
 
 // A game's look, as a console drew it: its colours (only those, or any snapped to the console's own), the size of its
 // map's tiles, its letters, and the colours of the game's own texts and hearts (kit.lua's data.style)
 const MD = c => Math.min(252, Math.round(c / 36) * 36); // a Mega Drive's 512 colours: 8 steps a channel
 export const LOOKS = {
-  '': { name: 'Libre', palette: null, tile: 16, font: '' },
+  '': { name: t('Libre'), palette: null, tile: 16, font: '' },
   gameboy: { name: 'Game Boy', tile: 16, font: 'silkscreen', background: '#9BBC0F',
              palette: ['#0F380F', '#306230', '#8BAC0F', '#9BBC0F'],
-             names: ['verde negro', 'verde oscuro', 'verde claro', 'verde pálido'],
+             names: [t('verde negro'), t('verde oscuro'), t('verde claro'), t('verde pálido')],
              style: { text: '#9BBC0F', outline: '#0F380F', accent: '#8BAC0F', bad: '#9BBC0F', heart: '#306230' } },
   pico8: { name: 'PICO-8', tile: 8, font: 'micro5', background: '#1D2B53',
            palette: null, // PALETTE's first 16, below
@@ -66,11 +69,11 @@ export const LOOKS = {
   spectrum: { name: 'ZX Spectrum', tile: 8, font: 'pressstart2p', background: '#000000',
               palette: ['#000000', '#0000D7', '#D70000', '#D700D7', '#00D700', '#00D7D7', '#D7D700', '#D7D7D7',
                         '#0000FF', '#FF0000', '#FF00FF', '#00FF00', '#00FFFF', '#FFFF00', '#FFFFFF'],
-              names: ['negro', 'azul', 'rojo', 'magenta', 'verde', 'cian', 'amarillo', 'blanco', 'azul brillante',
-                      'rojo brillante', 'magenta brillante', 'verde brillante', 'cian brillante', 'amarillo brillante',
-                      'blanco brillante'],
+              names: [t('negro'), t('azul'), t('rojo'), t('magenta'), t('verde'), t('cian'), t('amarillo'), t('blanco'),
+                      t('azul brillante'), t('rojo brillante'), t('magenta brillante'), t('verde brillante'),
+                      t('cian brillante'), t('amarillo brillante'), t('blanco brillante')],
               style: { text: '#FFFFFF', outline: '#000000', accent: '#FFFF00', bad: '#FF0000', heart: '#FF0000' } },
-  '16bits': { name: '16 bits', tile: 16, font: 'jersey15', snap: true, // any colour, as one of the console's 512
+  '16bits': { name: t('16 bits'), tile: 16, font: 'jersey15', snap: true, // any colour, as one of the console's 512
               palette: ['#000000', '#242424', '#6C6C6C', '#B4B4B4', '#FCFCFC', '#480000', '#B42424', '#FC4848',
                         '#FC9048', '#FCD86C', '#FCFC90', '#244800', '#48906C', '#6CD848', '#B4FC6C', '#002448',
                         '#0048B4', '#2490FC', '#6CD8FC', '#B4FCFC', '#480048', '#902490', '#D848B4', '#FC90D8',
@@ -176,11 +179,11 @@ export function newLevel(id, name) {
 // made safe after loading: a file from anywhere may be anything
 export function check(p) {
   if (!p || typeof p !== 'object') throw new Error('No es un proyecto');
-  const out = { format: FORMAT, id: safeName(p.id, 'juego'), title: String(p.title || 'Juego').slice(0, 40), drawings: [],
+  const out = { format: FORMAT, id: safeName(p.id, 'juego'), title: String(p.title || t('Juego')).slice(0, 40), drawings: [],
                 author: String(p.author || '').slice(0, 40), about: String(p.about || '').slice(0, 140), // game.json's
                 tagline: String(p.tagline || '').slice(0, 40), // the line under the name in the console's menu
                 look: LOOKS[p.look] ? p.look : '', tile: p.tile === 8 ? 8 : 16, font: FONTS[p.font] !== undefined ? p.font : '',
-                lang: LANGS[p.lang] ? p.lang : 'es',
+                lang: LANGS[p.lang] ? p.lang : 'es', // (before languages: Spanish; a new game is in the editor's, templates.js)
                 levels: [], sounds: [], videos: [], blocks: p.blocks && typeof p.blocks === 'object' ? p.blocks : null };
   const names = new Set();
   const old = !(p.format >= 2), palette = PALETTE.map(hex565); // format 1: indices into the palette
@@ -201,7 +204,7 @@ export function check(p) {
                         drift: DRIFTS[d.drift] !== undefined ? d.drift : '', drift_speed: clampNum(d.drift_speed, 0, 4, 0.5),
                         anims: checkAnims(d.anims, frames.length || 1) });
   }
-  const levels = Array.isArray(p.levels) ? p.levels : [{ id: 'nivel1', name: 'Nivel 1', map: p.map, objects: p.objects,
+  const levels = Array.isArray(p.levels) ? p.levels : [{ id: 'nivel1', name: t('Nivel {n}', { n: 1 }), map: p.map, objects: p.objects,
     background: p.background, camera: p.camera, hide: [] }]; // before levels: one map
   const ids = new Set();
   for (const l of levels.slice(0, LEVELS_MAX)) {
@@ -221,11 +224,11 @@ export function check(p) {
       if (names.has(safeName(o.kind))) level.objects.push({ kind: safeName(o.kind), x: clampNum(o.x, 0, 1024, 0), y: clampNum(o.y, 0, 1024, 0) });
     out.levels.push(level);
   }
-  if (!out.levels.length) out.levels.push(newLevel('nivel1', 'Nivel 1'));
+  if (!out.levels.length) out.levels.push(newLevel('nivel1', t('Nivel {n}', { n: 1 })));
   const c = p.cover && typeof p.cover === 'object' ? p.cover : {};
-  out.cover = { on: c.on !== false, subtitle: String(c.subtitle ?? 'Pulsa A para empezar').slice(0, 60),
+  out.cover = { on: c.on !== false, subtitle: String(c.subtitle ?? t('Pulsa A para empezar')).slice(0, 60),
                 picture: names.has(safeName(c.picture, '')) ? safeName(c.picture) : '', background: colour(c.background, '#1D2B53') };
-  out.ending = String(p.ending || '¡Has ganado!').slice(0, 60);
+  out.ending = String(p.ending || t('¡Has ganado!')).slice(0, 60);
   const snames = new Set();
   for (const s of Array.isArray(p.sounds) ? p.sounds.slice(0, 48) : []) {
     const name = uniqueName(safeName(s.name, 'sonido'), snames);

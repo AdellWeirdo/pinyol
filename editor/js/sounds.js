@@ -5,24 +5,28 @@ import { RECIPES, WAVES, recipe, render as renderSound, play } from './synth.js'
 import { HZ, MAX_S, toBase64, samples, play as playClip, stop as stopClip } from './audio.js';
 import { newSong } from './song.js';
 import { renderComposer, composerPlays } from './composer.js';
+import { t } from './i18n.js';
 
 const $ = id => document.getElementById(id);
 let app, cur = 0;
 
 const SLIDERS = [
-  ['Tono (Hz)', 'freq', 40, 2400, 1], ['Deslizar el tono', 'slide', -8000, 8000, 10], ['Entrada', 'attack', 0, 1, 0.01],
-  ['Duración', 'sustain', 0, 1.5, 0.01], ['Caída', 'decay', 0, 2, 0.01], ['Golpe', 'punch', 0, 1, 0.01],
-  ['Vibrato', 'vibrato', 0, 1, 0.01], ['Velocidad del vibrato', 'vibrato_speed', 0, 30, 0.1],
-  ['Salto de tono', 'arp', 0.25, 3, 0.01], ['Momento del salto', 'arp_time', 0, 0.5, 0.005],
-  ['Quitar agudos', 'lowpass', 0, 1, 0.01], ['Quitar graves', 'highpass', 0, 1, 0.01],
-  ['Repetir cada', 'again', 0, 0.5, 0.005], ['Volumen', 'volume', 0, 1, 0.01],
+  [t('Tono (Hz)'), 'freq', 40, 2400, 1], [t('Deslizar el tono'), 'slide', -8000, 8000, 10], [t('Entrada'), 'attack', 0, 1, 0.01],
+  [t('Duración'), 'sustain', 0, 1.5, 0.01], [t('Caída'), 'decay', 0, 2, 0.01], [t('Golpe|sonido'), 'punch', 0, 1, 0.01],
+  [t('Vibrato'), 'vibrato', 0, 1, 0.01], [t('Velocidad del vibrato'), 'vibrato_speed', 0, 30, 0.1],
+  [t('Salto de tono'), 'arp', 0.25, 3, 0.01], [t('Momento del salto'), 'arp_time', 0, 0.5, 0.005],
+  [t('Quitar agudos'), 'lowpass', 0, 1, 0.01], [t('Quitar graves'), 'highpass', 0, 1, 0.01],
+  [t('Repetir cada'), 'again', 0, 0.5, 0.005], [t('Volumen'), 'volume', 0, 1, 0.01],
 ];
-const WAVE_NAMES = { square: 'cuadrada', triangle: 'triangular', saw: 'sierra', sine: 'senoidal', noise: 'ruido' };
+const WAVE_NAMES = { square: t('cuadrada'), triangle: t('triangular'), saw: t('sierra'), sine: t('senoidal'), noise: t('ruido') };
+// the name a new sound of a recipe gets: a name in the blocks and the game, so the same in any language (RECIPES: labels)
+const RECIPE_NAMES = { coin: 'moneda', laser: 'laser', explosion: 'explosion', powerup: 'mejora', hit: 'golpe', jump: 'salto',
+                       blip: 'bip', random: 'sorpresa' };
 
 const sound = () => app.project.sounds[cur];
 export function paramsOf(s) { return s.params ? { ...s.params } : recipe(s.recipe, s.seed); }
 const hear = s => (s.mod ? undefined : s.song ? playClip(s).then(composerPlays) // a .mod sounds only in the game
-  : s.file ? playClip(s).catch(() => app.oops(`No se ha podido leer el sonido «${s.name}».`)) : play(paramsOf(s)));
+  : s.file ? playClip(s).catch(() => app.oops(t('No se ha podido leer el sonido «{name}».', { name: s.name }))) : play(paramsOf(s)));
 
 function drawWave(data, from = 0, to = data.length, note = '') { // the samples; outside from..to dimmed (cut away)
   const c = $('wave'), g = c.getContext('2d');
@@ -38,7 +42,7 @@ function drawWave(data, from = 0, to = data.length, note = '') { // the samples;
   }
   g.fillStyle = '#9c90b0';
   g.font = '12px system-ui';
-  const said = note || 'Dura ' + (data.length / HZ).toFixed(2) + ' s';
+  const said = note || t('Dura {s} s', { s: (data.length / HZ).toFixed(2) });
   g.fillText(said, 8, 16);
   $('wave-note').textContent = said; // also as text: not only drawn
 }
@@ -48,7 +52,8 @@ function renderList() {
   ul.replaceChildren();
   app.project.sounds.forEach((s, i) => {
     const li = document.createElement('li'), b = document.createElement('button');
-    const kind = s.song ? 'compuesta' : s.mod ? 'música .mod' : s.file ? (s.use === 'music' ? 'música' : 'archivo') : s.params ? 'a mano' : RECIPES[s.recipe] || '';
+    const kind = s.song ? t('compuesta') : s.mod ? t('música .mod') : s.file ? (s.use === 'music' ? t('música') : t('archivo'))
+      : s.params ? t('a mano') : RECIPES[s.recipe] || '';
     b.className = 'item';
     b.append(Object.assign(document.createElement('span'), { className: 'name', textContent: s.name }),
       Object.assign(document.createElement('span'), { className: 'kind', textContent: kind }));
@@ -74,7 +79,7 @@ function renderMade(s) { // a sound made from numbers
   const p = paramsOf(s), box = $('sliders');
   for (const b of $('recipes').children) b.setAttribute('aria-pressed', String(!s.params && b.dataset.r === s.recipe));
   const wave = document.createElement('label'), sel = document.createElement('select');
-  wave.textContent = 'Onda';
+  wave.textContent = t('Onda');
   for (const w of WAVES) sel.append(new Option(WAVE_NAMES[w], w));
   sel.value = p.wave;
   sel.addEventListener('change', () => tweak('wave', sel.value));
@@ -89,24 +94,25 @@ function renderMade(s) { // a sound made from numbers
 async function renderClip(s) { // a sound from a file: what it is for, the part kept, how loud
   const box = $('sliders');
   const use = document.createElement('label'), sel = document.createElement('select');
-  use.textContent = 'Es';
-  sel.append(new Option('un efecto: suena una vez (hasta 5 s)', 'effect'), new Option('música: se repite (hasta 4 min)', 'music'));
+  use.textContent = t('Es');
+  sel.append(new Option(t('un efecto: suena una vez (hasta 5 s)'), 'effect'), new Option(t('música: se repite (hasta 4 min)'), 'music'));
   sel.value = s.use;
   sel.addEventListener('change', () => { s.use = sel.value; app.forgetMusic(); app.changed(); render(); $('sliders').querySelector('select')?.focus(); });
   use.append(sel);
   box.append(use);
   let data;
-  try { data = await samples(s); } catch { drawWave(new Float32Array(1), 0, 1, 'No se ha podido leer este sonido'); return; }
+  try { data = await samples(s); } catch { drawWave(new Float32Array(1), 0, 1, t('No se ha podido leer este sonido')); return; }
   if (sound() !== s) return; // another was chosen meanwhile
   const dur = data.length / HZ, secs = v => Number(v).toFixed(2) + ' s';
   const redraw = () => {
     const from = s.start * HZ, to = Math.min(s.end > s.start ? s.end * HZ : data.length, from + MAX_S[s.use] * HZ);
     const long = (s.end > s.start ? s.end : dur) - s.start > MAX_S[s.use];
-    drawWave(data, from, to, `${((to - from) / HZ).toFixed(2)} s de ${dur.toFixed(2)} s` + (long ? ` · se corta a ${MAX_S[s.use]} s` : ''));
+    drawWave(data, from, to, t('{part} s de {all} s', { part: ((to - from) / HZ).toFixed(2), all: dur.toFixed(2) }) +
+      (long ? ' · ' + t('se corta a {n} s', { n: MAX_S[s.use] }) : ''));
   };
-  slider(box, 'Empieza en', s.start, 0, dur, 0.01, v => { s.start = Math.min(v, dur - 0.01); app.changed(); redraw(); }, secs);
-  slider(box, 'Acaba en', s.end > s.start ? s.end : dur, 0, dur, 0.01, v => { s.end = v >= dur - 0.005 ? 0 : v; app.changed(); redraw(); }, secs);
-  slider(box, 'Volumen', s.volume, 0, 2, 0.05, v => { s.volume = v; app.changed(); });
+  slider(box, t('Empieza en'), s.start, 0, dur, 0.01, v => { s.start = Math.min(v, dur - 0.01); app.changed(); redraw(); }, secs);
+  slider(box, t('Acaba en'), s.end > s.start ? s.end : dur, 0, dur, 0.01, v => { s.end = v >= dur - 0.005 ? 0 : v; app.changed(); redraw(); }, secs);
+  slider(box, t('Volumen'), s.volume, 0, 2, 0.05, v => { s.volume = v; app.changed(); });
   redraw();
 }
 
@@ -141,41 +147,42 @@ function tweak(key, value, quiet) { // the numbers by hand: the sound keeps them
 
 function renderMod() { // the editor cannot play a tracker's module; the engine does
   $('sliders').append(Object.assign(document.createElement('p'), { className: 'hint',
-    textContent: 'Música de tracker (.mod): se repite y ocupa muy poco. Aquí no suena: pulsa Jugar para oírla en el juego.' }));
+    textContent: t('Música de tracker (.mod): se repite y ocupa muy poco. Aquí no suena: pulsa Jugar para oírla en el juego.') }));
 }
 
 // A tracker's module (a ProTracker .mod, from MilkyTracker, OpenMPT...): music kept as it is, for the engine to play
 async function bringInMod(file) {
-  if (file.size > 4 << 20) return app.oops('Ese .mod es demasiado grande: hasta 4 MB.');
+  if (file.size > 4 << 20) return app.oops(t('Ese .mod es demasiado grande: hasta 4 MB.'));
   const bytes = new Uint8Array(await file.arrayBuffer());
-  if (bytes.length < 1084) return app.oops(`«${file.name}» no parece un .mod de ProTracker.`); // its header alone is 1084 bytes
+  if (bytes.length < 1084) return app.oops(t('«{file}» no parece un .mod de ProTracker.', { file: file.name })); // its header alone: 1084 bytes
   const names = new Set(app.project.sounds.map(x => x.name));
   app.project.sounds.push({ name: uniqueName(safeName(file.name.replace(/\.[^.]*$/, ''), 'musica'), names),
                             file: toBase64(bytes), use: 'music', mod: true });
   cur = app.project.sounds.length - 1;
   app.changed();
   render();
-  app.toast('Añadida como música: elígela para un nivel en la pestaña Mapa.');
+  app.toast(t('Añadida como música: elígela para un nivel en la pestaña Mapa.'));
 }
 
 async function bringIn(file) {
   if (!file) return;
   if (/\.mod$/i.test(file.name)) return bringInMod(file);
   if (!(/^audio\//.test(file.type) || /\.(wav|mp3|ogg|oga|m4a|aac|flac|opus|webm)$/i.test(file.name)))
-    return app.oops(`«${file.name}» no es un sonido. Usa un archivo WAV, MP3, OGG o M4A.`);
-  if (file.size > 16 << 20) return app.oops('Ese sonido es demasiado grande: hasta 16 MB.');
-  app.toast('Leyendo el sonido…');
+    return app.oops(t('«{file}» no es un sonido. Usa un archivo WAV, MP3, OGG o M4A.', { file: file.name }));
+  if (file.size > 16 << 20) return app.oops(t('Ese sonido es demasiado grande: hasta 16 MB.'));
+  app.toast(t('Leyendo el sonido…'));
   const names = new Set(app.project.sounds.map(x => x.name));
   const s = { name: uniqueName(safeName((file.name || 'sonido').replace(/\.[^.]*$/, ''), 'sonido'), names),
               file: toBase64(new Uint8Array(await file.arrayBuffer())), use: 'effect', start: 0, end: 0, volume: 1 };
   let data;
-  try { data = await samples(s); } catch { return app.oops(`No se ha podido leer «${file.name}». Prueba con otro archivo o guárdalo como WAV o MP3.`); }
+  try { data = await samples(s); }
+  catch { return app.oops(t('No se ha podido leer «{file}». Prueba con otro archivo o guárdalo como WAV o MP3.', { file: file.name })); }
   s.use = data.length / HZ > MAX_S.effect ? 'music' : 'effect'; // a long one is music
   app.project.sounds.push(s);
   cur = app.project.sounds.length - 1;
   app.changed();
   render();
-  app.toast(s.use === 'music' ? 'Añadido como música: elígela para un nivel en la pestaña Mapa.' : 'Sonido añadido.');
+  app.toast(s.use === 'music' ? t('Añadido como música: elígela para un nivel en la pestaña Mapa.') : t('Sonido añadido.'));
 }
 
 export function initSounds(ctx) {
@@ -195,7 +202,7 @@ export function initSounds(ctx) {
   }
   const add = (r = 'blip') => {
     const names = new Set(app.project.sounds.map(s => s.name));
-    app.project.sounds.push({ name: uniqueName(safeName(RECIPES[r] || 'sonido'), names), recipe: r, seed: 1 + Math.floor(Math.random() * 99999), params: null });
+    app.project.sounds.push({ name: uniqueName(RECIPE_NAMES[r] || 'sonido', names), recipe: r, seed: 1 + Math.floor(Math.random() * 99999), params: null });
     cur = app.project.sounds.length - 1;
     app.changed();
   };
@@ -214,7 +221,7 @@ export function initSounds(ctx) {
     cur = app.project.sounds.length - 1;
     app.changed();
     render();
-    app.toast('Música nueva, con un ejemplo para empezar: cámbiala como quieras y elígela para un nivel en Mapa.');
+    app.toast(t('Música nueva, con un ejemplo para empezar: cámbiala como quieras y elígela para un nivel en Mapa.'));
   });
   $('s-again').addEventListener('click', () => {
     const s = sound();
@@ -224,7 +231,7 @@ export function initSounds(ctx) {
     play(paramsOf(s));
   });
   $('sound-del').addEventListener('click', () => {
-    if (!confirm(`¿Quitar el sonido «${sound().name}»?`)) return;
+    if (!confirm(t('¿Quitar el sonido «{name}»?', { name: sound().name }))) return;
     stopClip();
     app.project.sounds.splice(cur, 1);
     cur = Math.max(0, cur - 1);
@@ -236,7 +243,7 @@ export function initSounds(ctx) {
     const s = sound(), names = new Set(app.project.sounds.filter(x => x !== s).map(x => x.name));
     const name = uniqueName(safeName(e.target.value, s.name), names);
     if (name !== s.name) app.renameSound(s.name, name);
-    if (name !== e.target.value) app.toast(`Se llama «${name}»: sin acentos ni espacios, así sale en los bloques.`);
+    if (name !== e.target.value) app.toast(t('Se llama «{name}»: sin acentos ni espacios, así sale en los bloques.', { name }));
     app.changed();
     render();
   });

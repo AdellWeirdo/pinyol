@@ -88,7 +88,7 @@ cable (Chrome and Edge, with Web Serial) or gives the zip for the card. A short 
 it (again with **?**); everything works from the keyboard too, and on a phone or a tablet. **Nuevo** starts from one of four small games to change, each with
 its own drawings, levels and rules: a platformer, an adventure seen from above (keys and doors), a space shooter
 and a box-pushing puzzle. The interface is in
-Spanish. It needs the web player beside it (see [below](#share-a-game-play-it-in-the-browser) to build it):
+Spanish, Catalan or English (chosen in the header, **Idioma**). It needs the web player beside it (see [below](#share-a-game-play-it-in-the-browser) to build it):
 
 ```sh
 python3 tools/make_editor.py dist/editor --player build-web

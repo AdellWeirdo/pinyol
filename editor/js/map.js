@@ -3,6 +3,7 @@
 // shown at twice the world's pixels, as on the console's screen. The cover is the title screen before them.
 import { MAP_MAX, LEVELS_MAX, FONTS, LANGS, newLevel, uniqueName, lookOf } from './project.js';
 import { drawPixels, thumbnail } from './sprites.js';
+import { t } from './i18n.js';
 
 const $ = id => document.getElementById(id);
 const S = 2; // screen pixels a world pixel
@@ -49,7 +50,7 @@ function renderMap() {
   }
   for (let y = 0; y < m.h; y++)
     for (let x = 0; x < m.w; x++) {
-      const t = m.cells[y * m.w + x], d = t && byName(m.tiles[t - 1]);
+      const cell = m.cells[y * m.w + x], d = cell && byName(m.tiles[cell - 1]);
       if (d) g.drawImage(imageOf(d), x * T() * S, y * T() * S, d.w * S, d.h * S);
     }
   for (const o of l.objects) {
@@ -76,10 +77,10 @@ function renderPieces() {
   const box = (id, list, type) => {
     const el = $(id);
     el.replaceChildren();
-    if (type === 'tile') el.append(pieceButton({ type: 'erase' }, null, 'Goma'));
-    for (const d of list) el.append(pieceButton({ type, name: d.name }, d, d.name + (d.solid ? ' (sólida)' : '')));
+    if (type === 'tile') el.append(pieceButton({ type: 'erase' }, null, t('Goma')));
+    for (const d of list) el.append(pieceButton({ type, name: d.name }, d, d.solid ? t('{name} (sólida)', { name: d.name }) : d.name));
     if (!list.length) el.append(Object.assign(document.createElement('p'), { className: 'hint', textContent: type === 'tile'
-      ? 'Ningún dibujo es baldosa: márcalo en Dibujos.' : 'Ningún dibujo es objeto: márcalo en Dibujos.' }));
+      ? t('Ningún dibujo es baldosa: márcalo en Dibujos.') : t('Ningún dibujo es objeto: márcalo en Dibujos.') }));
   };
   const tilesNow = p.drawings.filter(d => d.use === 'tile'), objectsNow = p.drawings.filter(d => d.use === 'object');
   if (!piece || (piece.type !== 'erase' && !p.drawings.some(d => d.name === piece.name && d.use === piece.type)))
@@ -93,14 +94,14 @@ function renderPieces() {
   $('map-w').value = l.map.w, $('map-h').value = l.map.h, $('map-bg').value = l.background;
   [$('map-w').min, $('map-h').min] = MIN();
   const cam = $('map-camera');
-  cam.replaceChildren(new Option('(el jugador)', ''));
+  cam.replaceChildren(new Option(t('(el jugador)'), ''));
   for (const d of p.drawings.filter(d => d.use === 'object')) cam.append(new Option(d.name, d.name));
   cam.value = l.camera || '';
   musicSelect($('map-music'), l.music);
   const bds = $('map-backdrops'), all = p.drawings.filter(d => d.use === 'backdrop');
   bds.replaceChildren();
   bds.hidden = !all.length;
-  if (all.length) bds.append('Detrás:');
+  if (all.length) bds.append(t('Detrás:'));
   for (const d of all) {
     const lab = document.createElement('label'), box = document.createElement('input');
     Object.assign(box, { type: 'checkbox', checked: !l.hide.includes(d.name) });
@@ -111,7 +112,7 @@ function renderPieces() {
 }
 
 function musicSelect(sel, value) { // none, or a sound brought in as music
-  sel.replaceChildren(new Option('(ninguna)', ''));
+  sel.replaceChildren(new Option(t('(ninguna)'), ''));
   for (const s of app.project.sounds.filter(x => x.use === 'music')) sel.append(new Option(s.name, s.name));
   sel.value = value || '';
 }
@@ -217,7 +218,8 @@ function resize(w, h) {
   const m = level().map, asked = [w, h];
   const [mw, mh] = MIN();
   w = Math.max(mw, Math.min(MAP_MAX, w | 0)), h = Math.max(mh, Math.min(MAP_MAX, h | 0));
-  if (asked[0] !== w || asked[1] !== h) app.toast(`Un mapa mide de ${mw} × ${mh} a ${MAP_MAX} × ${MAP_MAX} baldosas: queda en ${w} × ${h}.`);
+  if (asked[0] !== w || asked[1] !== h)
+    app.toast(t('Un mapa mide de {mw} × {mh} a {max} × {max} baldosas: queda en {w} × {h}.', { mw, mh, max: MAP_MAX, w, h }));
   remember();
   const cells = new Array(w * h).fill(0);
   for (let y = 0; y < Math.min(h, m.h); y++) for (let x = 0; x < Math.min(w, m.w); x++) cells[y * w + x] = m.cells[y * m.w + x];
@@ -302,7 +304,7 @@ function renderCover() {
   $('game-author').value = p.author || '';
   $('game-about').value = p.about || '';
   const pic = $('cover-picture');
-  pic.replaceChildren(new Option('(ninguna)', ''));
+  pic.replaceChildren(new Option(t('(ninguna)'), ''));
   for (const x of p.drawings) pic.append(new Option(x.name, x.name));
   pic.value = c.picture;
   musicSelect($('cover-music'), c.music);
@@ -322,7 +324,7 @@ function renderLevels() {
     li.append(b);
     ul.append(li);
   };
-  item(-1, p.cover.on ? '★ Portada' : '☆ Portada (no se muestra)');
+  item(-1, p.cover.on ? '★ ' + t('Portada') : '☆ ' + t('Portada (no se muestra)'));
   p.levels.forEach((l, i) => item(i, `${i + 1}. ${l.name}`));
   $('level-add').disabled = p.levels.length >= LEVELS_MAX;
   if (focused) ul.querySelector('[aria-current="true"]')?.focus();
@@ -343,7 +345,7 @@ function render() {
 function addLevel() {
   const p = app.project, from = level() || p.levels[0];
   if (p.levels.length >= LEVELS_MAX) return;
-  const n = p.levels.length + 1, l = newLevel(uniqueName('nivel' + n, new Set(p.levels.map(x => x.id))), 'Nivel ' + n);
+  const n = p.levels.length + 1, l = newLevel(uniqueName('nivel' + n, new Set(p.levels.map(x => x.id))), t('Nivel {n}', { n }));
   const [mw, mh] = MIN(); // small tiles: a screen is more of them
   if (l.map.w < mw || l.map.h < mh) Object.assign(l.map, { w: mw, h: mh, cells: new Array(mw * mh).fill(0) });
   l.background = from.background, l.camera = from.camera, l.hide = from.hide.slice(), l.music = from.music;
@@ -405,7 +407,7 @@ export function initMap(ctx) {
   $('level-down').addEventListener('click', () => moveLevel(1));
   $('level-del').addEventListener('click', () => {
     const p = app.project;
-    if (p.levels.length < 2 || !confirm(`¿Quitar «${level().name}» con todo lo que tiene?`)) return;
+    if (p.levels.length < 2 || !confirm(t('¿Quitar «{name}» con todo lo que tiene?', { name: level().name }))) return;
     p.levels.splice(sel, 1);
     sel = Math.max(0, sel - 1);
     app.changed();

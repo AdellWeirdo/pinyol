@@ -88,7 +88,7 @@ fet i de què va. **Jugar** el juga allà mateix; **Pasar a la consola** l'envia
 Una guia curta acompanya qui l'obre per primer cop (un altre cop amb **?**); tot funciona també amb el teclat, i en un
 mòbil o una tauleta. **Nuevo** comença des d'un de quatre jocs petits per canviar, cadascun amb els seus dibuixos,
 nivells i regles: un joc de plataformes, una aventura vista des de dalt (claus i portes), un matamarcians i un
-trencaclosques d'empènyer caixes. La interfície és en castellà. Necessita al costat el reproductor web (mira
+trencaclosques d'empènyer caixes. La interfície és en castellà, català o anglès (es tria a dalt, a **Idioma**). Necessita al costat el reproductor web (mira
 [més avall](#comparteix-un-joc-juga-hi-al-navegador) com compilar-lo):
 
 ```sh

@@ -159,6 +159,7 @@ if(NODE)
   set_tests_properties(make_editor_game PROPERTIES FIXTURES_SETUP editor_game)
   add_test(NAME editor_cable COMMAND ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/editor/test/cable_test.mjs)
   add_test(NAME editor_packed COMMAND ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/editor/test/packed_test.mjs)
+  add_test(NAME editor_i18n COMMAND ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/editor/test/i18n_test.mjs) # Catalan, English
 endif()
 file(GLOB SCRIPTS CONFIGURE_DEPENDS tests/*.script)
 foreach(s ${SCRIPTS})
