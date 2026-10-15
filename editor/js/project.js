@@ -63,7 +63,8 @@ export const LOOKS = {
   gameboy: { name: 'Game Boy', tile: 16, font: 'silkscreen', background: '#9BBC0F',
              palette: ['#0F380F', '#306230', '#8BAC0F', '#9BBC0F'],
              names: [t('verde negro'), t('verde oscuro'), t('verde claro'), t('verde pálido')],
-             style: { text: '#9BBC0F', outline: '#0F380F', accent: '#8BAC0F', bad: '#9BBC0F', heart: '#306230' } },
+             style: { text: '#9BBC0F', outline: '#0F380F', accent: '#8BAC0F', bad: '#9BBC0F', heart: '#306230',
+                      talk_bg: '#9BBC0F', talk_edge: '#0F380F', talk_text: '#0F380F', talk_who: '#306230', talk_dim: '#306230' } },
   pico8: { name: 'PICO-8', tile: 8, font: 'micro5', background: '#1D2B53',
            palette: null, // PALETTE's first 16, below
            style: { text: '#FFF1E8', outline: '#000000', accent: '#FFEC27', bad: '#FF004D', heart: '#FF004D' } },

@@ -40,7 +40,8 @@
 -- kit.set_lives(n) shows hearts, kit.add_lives(-1) takes one; at none, "no_lives" fires (or the level is lost) and
 -- trying the level again gives them back. kit.countdown(seconds) shows a clock; at 0, "time_up" fires (or the level
 -- is lost). kit.label(key, text, where, style): "normal", "shadow", "wave", "big", "gradient". data.style =
--- {text, outline, accent, bad, heart} are its colours (a look's palette) and data.words its sentences (its language).
+-- {text, outline, accent, bad, heart, talk_bg, talk_edge, talk_text, talk_who, talk_dim} are its colours (a look's
+-- palette; talk_* the conversation box's) and data.words its sentences (its language).
 local juice = require("juice")
 local particles = require("particles")
 
@@ -70,7 +71,8 @@ local lives, lives_start, countdown -- the hearts and the clock, once a block se
 local WORDS = {start = "Pulsa A para empezar", to_cover = "A: a la portada", again = "A: otra partida",
                retry = "A: probar otra vez", fell = "¡Te has caído!", won = "¡Has ganado!", lost = "Has perdido",
                no_lives = "¡Sin vidas!", time_up = "¡Se acabó el tiempo!"}
-local STYLE = {text = 0xFFFFFF, outline = 0x202020, accent = 0xFFE070, bad = 0xFF7060, heart = 0xFF4060}
+local STYLE = {text = 0xFFFFFF, outline = 0x202020, accent = 0xFFE070, bad = 0xFF7060, heart = 0xFF4060,
+               talk_bg = 0x101820, talk_edge = 0xE8D8B0, talk_text = 0xFFFFFF, talk_who = 0xFFE070, talk_dim = 0xB8C8D8}
 local W, S = WORDS, STYLE             -- the game's own (data.words, data.style), these where it says nothing
 
 local talk                            -- what is being said: {lines = {{who, text}...}, i, shown, ask, sel}
@@ -153,8 +155,8 @@ local function talk_update() -- the conversation, while there is one: true (the 
     if btnp("up") then talk.sel = (talk.sel - 2) % #l.options + 1 end
     if btnp("down") then talk.sel = talk.sel % #l.options + 1 end
     if btnp("a") then picked = talk.sel end
-    if tapped then -- a tap on an answer
-      local row = math.floor((ty * 2 - 262) / 18) + 1
+    if tapped and l.oy then -- a tap on an answer (where talk_draw put them)
+      local row = math.floor((ty * 2 - (l.oy - l.up)) / l.step) + 1
       if row >= 1 and row <= #l.options then picked = row end
     end
     if not picked then return true end
@@ -167,24 +169,38 @@ local function talk_update() -- the conversation, while there is one: true (the 
   return true
 end
 
+local function talk_layout(l) -- once a line: where its answers go, and how far up the box grows for all to fit
+  local y = 222 + (l.who and 18 or 0)
+  local _, th = text(l.text, -999, -999, {width = 420, chars = 0}) -- (measured, nothing drawn)
+  l.up = math.max(0, y + th - 306)
+  if l.options then
+    l.step = 18
+    for _, o in ipairs(l.options) do l.step = math.max(l.step, select(2, text("> " .. o, -999, -999, {}))) end
+    l.oy = math.max(262, y + th + 2)
+    l.up = math.max(0, l.oy + #l.options * l.step - 308)
+  end
+end
+
 local function talk_draw()
   if not talk then return end
   local l = talk.lines[talk.i]
-  rect(16, 214, 448, 98, 0x101820)
-  box(18, 216, 444, 94, 0xE8D8B0)
-  local y = 222
+  if not l.up then talk_layout(l) end
+  local up = l.up
+  rect(16, 214 - up, 448, 98 + up, S.talk_bg)
+  box(18, 216 - up, 444, 94 + up, S.talk_edge)
+  local y = 222 - up
   if l.who then
-    text(l.who, 30, y, {font = "bold", color = 0xFFE070})
+    text(l.who, 30, y, {font = "bold", color = S.talk_who})
     y = y + 18
   end
-  text(l.text, 30, y, {color = 0xFFFFFF, width = 420, chars = math.floor(talk.shown)})
+  text(l.text, 30, y, {color = S.talk_text, width = 420, chars = math.floor(talk.shown)})
   if l.options and talk.shown >= talk.total then
     for i, o in ipairs(l.options) do
       local on = i == (talk.sel or 1)
-      text((on and "> " or "  ") .. o, 40, 244 + i * 18, {color = on and 0xFFE070 or 0xB8C8D8})
+      text((on and "> " or "  ") .. o, 40, l.oy - up + (i - 1) * l.step, {color = on and S.talk_who or S.talk_dim})
     end
   elseif talk.shown >= talk.total and clock % 40 < 26 then
-    tri(446, 296, 456, 296, 451, 302, 0xE8D8B0)
+    tri(446, 296, 456, 296, 451, 302, S.talk_edge)
   end
 end
 
