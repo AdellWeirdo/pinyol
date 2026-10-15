@@ -253,6 +253,18 @@ seu nom.
 
 Pins i perifèrics, cadascun amb la seva font: [docs/hardware.md](docs/hardware.md).
 
+## Juga-hi a RetroArch: RetroPie, Batocera, Lakka
+
+El motor també és un core [libretro](https://www.libretro.com), que juga el zip d'un joc a RetroArch i a tot el
+que s'hi basa, entre ells una Raspberry Pi amb RetroPie:
+
+```sh
+cmake -B build-release -DCMAKE_BUILD_TYPE=Release
+cmake --build build-release --target pinyol_libretro    # -> build-release/pinyol_libretro.so
+```
+
+Com instal·lar-lo, els controls i el que encara no fa: [docs/libretro.md](docs/libretro.md) (en anglès).
+
 ## Com està fet
 
 ```
@@ -261,6 +273,7 @@ src/             el motor, C11 portable: sense capçaleres de SDL ni d'ESP-IDF (
   lua_game.c     pinyol@2: la sandbox de Lua i la seva API
 platform/sdl/    simulador d'escriptori, i els reproductors web quan es compila amb Emscripten
 platform/null/   pinyol_headless: validador i executor de proves sense finestra
+platform/libretro/ el core libretro, per a RetroArch i RetroPie
 platform/web/    les pàgines web al voltant dels reproductors
 site/            el web (https://ipaud.github.io/pinyol/), fet per site/build.py en castellà, català i anglès
 firmware/        la consola: projecte d'ESP-IDF, compila src/ sense canvis; cirera/ és el seu menú, un joc de pinyol
@@ -270,7 +283,7 @@ tests/           guions de prova dels exemples, i les proves pròpies de la PPU
 tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, font2fnt.py, clip2npv.py, ...
 lib/             llibreries de Lua dins del motor, que qualsevol joc carrega amb require(): juice, particles, physics, keyboard, kit, story
 editor/          l'editor web (HTML i JavaScript tal qual, sense compilar) i Blockly a vendor/
-third_party/     cJSON, Lua 5.4, pocketmod, la font Pixelify Sans i una biblioteca de fonts de píxel (fonts/)
+third_party/     cJSON, Lua 5.4, pocketmod, puff (unzip), libretro.h, la font Pixelify Sans i una biblioteca de fonts de píxel (fonts/)
 ```
 
 El món són 240×160 píxels lògics dibuixats a 2× en un frame de 480×320; el text i la interfície fan servir la resolució completa. La lògica va a 60 ticks per segon a totes les plataformes. A la consola, el frame arriba al panell en franges de 32 files dibuixades directament des del joc mentre s'envia l'anterior, al compàs del refresc del panell; la imatge d'un joc en Lua la dibuixen els dos nuclis. Com va arribar a anar prou ràpid, mesurat: [docs/measurements.md](docs/measurements.md).
@@ -290,7 +303,7 @@ pinyol es va escriure primer per a dues aventures de dades, i després es va obr
 
 ## Llicència
 
-pinyol té llicència MIT ([LICENSE](LICENSE)). Inclou [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT), la font [Pixelify Sans](third_party/pixelify/OFL.txt) i les fonts de píxel de [third_party/fonts](third_party/fonts/README.md) (totes SIL Open Font License 1.1). L'editor inclou [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0). El web serveix [ESP Web Tools](site/vendor/esp-web-tools/LICENSE) (Apache 2.0) per instal·lar el firmware; el firmware es construeix amb [ESP-IDF](https://github.com/espressif/esp-idf) (Apache 2.0, amb parts sota llicències MIT i BSD) i el reproductor web amb Emscripten i SDL2. Tots els avisos que demanen són a [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), que també va amb cada release.
+pinyol té llicència MIT ([LICENSE](LICENSE)). Inclou [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT), [puff](third_party/puff/puff.h) (zlib), el [libretro.h](third_party/libretro/libretro.h) de libretro (MIT), la font [Pixelify Sans](third_party/pixelify/OFL.txt) i les fonts de píxel de [third_party/fonts](third_party/fonts/README.md) (totes SIL Open Font License 1.1). L'editor inclou [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0). El web serveix [ESP Web Tools](site/vendor/esp-web-tools/LICENSE) (Apache 2.0) per instal·lar el firmware; el firmware es construeix amb [ESP-IDF](https://github.com/espressif/esp-idf) (Apache 2.0, amb parts sota llicències MIT i BSD) i el reproductor web amb Emscripten i SDL2. Tots els avisos que demanen són a [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), que també va amb cada release.
 
 Les imatges, sons, música i vídeo dels exemples, la plantilla i les proves es van fer per a pinyol, generats amb un
 model d'imatge o dibuixats i sintetitzats amb codi (l'`art.py` i `art/` de cada joc): es dediquen al domini públic

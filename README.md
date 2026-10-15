@@ -250,6 +250,18 @@ d-pad and A (B asks before turning the console off). A game's cover is its `cove
 
 Pins and peripherals, each with its source: [docs/hardware.md](docs/hardware.md).
 
+## Play it in RetroArch: RetroPie, Batocera, Lakka
+
+The engine is also a [libretro](https://www.libretro.com) core, which plays a game's zip in RetroArch and in
+everything built on it, a Raspberry Pi with RetroPie among them:
+
+```sh
+cmake -B build-release -DCMAKE_BUILD_TYPE=Release
+cmake --build build-release --target pinyol_libretro    # -> build-release/pinyol_libretro.so
+```
+
+How to install it, the controls and what it does not do yet: [docs/libretro.md](docs/libretro.md).
+
 ## How it is built
 
 ```
@@ -258,6 +270,7 @@ src/             the engine, portable C11: no SDL or ESP-IDF headers (hal.h is t
   lua_game.c     pinyol@2: the Lua sandbox and its API
 platform/sdl/    desktop simulator, and the web players when built with Emscripten
 platform/null/   pinyol_headless: validator and test runner without a window
+platform/libretro/ the libretro core, for RetroArch and RetroPie
 platform/web/    the web pages around the players
 site/            the site (https://ipaud.github.io/pinyol/), built by site/build.py in Spanish, Catalan and English
 firmware/        the console: ESP-IDF project, builds src/ unchanged; cirera/ is its menu, a pinyol game
@@ -267,7 +280,7 @@ tests/           test scripts for the examples, and the PPU's own tests
 tools/           new_game.py, png2asset.py, tiled2asset.py, pack_game.py, make_gallery.py, font2fnt.py, clip2npv.py, ...
 lib/             Lua libraries built into the engine, require()d by any game: juice, particles, physics, keyboard, kit, story
 editor/          the web editor (plain HTML and JavaScript, no build step) and Blockly in vendor/
-third_party/     cJSON, Lua 5.4, pocketmod, the Pixelify Sans font and a library of pixel fonts (fonts/)
+third_party/     cJSON, Lua 5.4, pocketmod, puff (unzip), libretro.h, the Pixelify Sans font and a library of pixel fonts (fonts/)
 ```
 
 The world is 240×160 logical pixels drawn at 2× into a 480×320 frame; text and UI use the full resolution. Logic runs at 60 ticks per second on every platform. On the console the frame goes to the panel in 32-row strips drawn straight from the game while the previous strip is sent, in step with the panel's refresh; a Lua game's picture is drawn by both cores. How it got fast enough, measured: [docs/measurements.md](docs/measurements.md).
@@ -287,7 +300,7 @@ pinyol was first written for two data adventures, and then opened up with Lua fo
 
 ## License
 
-pinyol is MIT licensed ([LICENSE](LICENSE)). It includes [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT) the [Pixelify Sans](third_party/pixelify/OFL.txt) font and the pixel fonts in [third_party/fonts](third_party/fonts/README.md) (all SIL Open Font License 1.1). The editor includes [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0). The site serves [ESP Web Tools](site/vendor/esp-web-tools/LICENSE) (Apache 2.0) to install the firmware; the firmware is built with [ESP-IDF](https://github.com/espressif/esp-idf) (Apache 2.0, with parts under MIT and BSD licences) and the web player with Emscripten and SDL2. Every notice they ask for is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), which also goes with each release.
+pinyol is MIT licensed ([LICENSE](LICENSE)). It includes [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT), [puff](third_party/puff/puff.h) (zlib), libretro's [libretro.h](third_party/libretro/libretro.h) (MIT), the [Pixelify Sans](third_party/pixelify/OFL.txt) font and the pixel fonts in [third_party/fonts](third_party/fonts/README.md) (all SIL Open Font License 1.1). The editor includes [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0). The site serves [ESP Web Tools](site/vendor/esp-web-tools/LICENSE) (Apache 2.0) to install the firmware; the firmware is built with [ESP-IDF](https://github.com/espressif/esp-idf) (Apache 2.0, with parts under MIT and BSD licences) and the web player with Emscripten and SDL2. Every notice they ask for is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), which also goes with each release.
 
 The pictures, sounds, music and video of the examples, the template and the tests were made for pinyol, generated
 with an image model or drawn and synthesised by code (each game's `art.py` and `art/`): they are dedicated to the

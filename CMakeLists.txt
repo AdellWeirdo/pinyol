@@ -94,6 +94,26 @@ else()
   message(STATUS "SDL2 not found: pinyol_sim skipped (brew install sdl2)")
 endif()
 
+# The libretro core, for RetroArch and what is built on it (RetroPie, Batocera, Recalbox, Lakka...): docs/libretro.md.
+# -> pinyol_libretro.so (.dylib on a Mac). It exports only retro_*, so the engine's names never meet the frontend's.
+set_target_properties(pinyol_core lua cjson PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_library(pinyol_libretro SHARED platform/libretro/libretro.c platform/link_udp.c third_party/puff/puff.c)
+set_target_properties(pinyol_libretro PROPERTIES PREFIX "")
+target_include_directories(pinyol_libretro PRIVATE third_party/libretro third_party/puff)
+target_compile_options(pinyol_libretro PRIVATE -Wall -Wextra -Werror ${SAN})
+execute_process(COMMAND git rev-parse --short HEAD WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                OUTPUT_VARIABLE PINYOL_REV OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+if(PINYOL_REV) # the version RetroArch shows (as of the last configure)
+  target_compile_definitions(pinyol_libretro PRIVATE PINYOL_VERSION="${PINYOL_REV}")
+endif()
+target_link_libraries(pinyol_libretro PRIVATE pinyol_core)
+if(APPLE)
+  target_link_options(pinyol_libretro PRIVATE "LINKER:-exported_symbol,_retro_*")
+else()
+  target_link_options(pinyol_libretro PRIVATE "LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/platform/libretro/link.T"
+                      "LINKER:--no-undefined")
+endif()
+
 if(NOT PROJECT_IS_TOP_LEVEL) # a game's repo registers its own tests
   return()
 endif()
@@ -151,6 +171,18 @@ if(NOT NO_PIL)
            $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/packed)
   add_test(NAME library COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/library_test.py
            $<TARGET_FILE:pinyol_headless>) # what tools/library.py takes and refuses from the Library's form
+endif()
+# The libretro core as a frontend sees it: a game from its folder, its game.json and its zip plays the same, and a
+# damaged zip or one reaching outside its folder is refused (tests/libretro_test.c is the frontend)
+add_executable(libretro_test tests/libretro_test.c)
+target_include_directories(libretro_test PRIVATE third_party/libretro)
+target_compile_options(libretro_test PRIVATE -Wall -Wextra -Werror ${SAN})
+target_link_options(libretro_test PRIVATE ${SAN})
+target_link_libraries(libretro_test ${CMAKE_DL_LIBS})
+if(Python3_FOUND)
+  add_test(NAME libretro COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/libretro_test.py
+           $<TARGET_FILE:libretro_test> $<TARGET_FILE:pinyol_libretro> ${CMAKE_CURRENT_SOURCE_DIR}/examples/naves
+           ${CMAKE_BINARY_DIR}/libretro)
 endif()
 find_program(NODE node) # the web editor's templates, built as the browser builds them, for script_editor_*
 if(NODE)

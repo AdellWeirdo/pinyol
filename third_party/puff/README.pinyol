@@ -1,0 +1,3 @@
+puff 2.3 (Mark Adler, zlib licence: see puff.h), from zlib 1.3.1, contrib/puff: puff.c and puff.h, unchanged.
+https://github.com/madler/zlib/tree/v1.3.1/contrib/puff
+The libretro core inflates game zips with it (platform/libretro/libretro.c).
