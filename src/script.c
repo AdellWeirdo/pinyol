@@ -122,7 +122,7 @@ static bool go(const char *id) {
     bool npc;
     const cJSON *o = world_find(id, &x, &y, &npc);
     if (!o) FAIL("go: target %s not visible in %s", id, G.zone.id);
-    int reach = jint(o, "reach", 20), best_len = 1 << 30, bx = -1, by = -1, dirs[512];
+    int reach = jint(o, "reach", npc ? jint(G.game, "npc_reach", 20) : 20), best_len = 1 << 30, bx = -1, by = -1, dirs[512];
     for (int ty = (int)(y / TILE) - 3; ty <= (int)(y / TILE) + 3; ty++)
         for (int tx = (int)(x / TILE) - 3; tx <= (int)(x / TILE) + 3; tx++) {
             float cx = tx * TILE + 8, cy = ty * TILE + 12;
