@@ -76,10 +76,16 @@ def safe_extract(zip_path: Path, dest: Path) -> list[str]:
         p = PurePosixPath(i.filename)
         if p.is_absolute() or ".." in p.parts or "\\" in i.filename or (i.external_attr >> 16) & 0o170000 == 0o120000:
             return [f"Ruta no permitida en el .zip: {i.filename!r}."]
-    tops = {PurePosixPath(i.filename).parts[0] for i in infos}
-    strip = len(tops) == 1 and not any(PurePosixPath(i.filename).parts == (next(iter(tops)),) for i in infos)
+    # the game: game.json at the top, or else the one folder holding it; what lies beside it (notes, the editor's
+    # project) stays out
+    paths = [PurePosixPath(i.filename) for i in infos]
+    tops = {p.parts[0] for p in paths if len(p.parts) == 2 and p.parts[1] == "game.json"}
+    root = () if any(p.parts == ("game.json",) for p in paths) else (next(iter(tops)),) if len(tops) == 1 else None
+    if root is None:
+        return ["No hay game.json en la raíz del juego (o en su carpeta)."]
     for i in infos:
-        parts = PurePosixPath(i.filename).parts[1 if strip else 0:]
+        p = PurePosixPath(i.filename)
+        parts = p.parts[len(root):] if p.parts[:len(root)] == root else ()
         if not parts or not pack_game.runtime_file(Path(*parts)):
             continue  # sources, notes, saves: not what the console plays
         out = dest.joinpath(*parts)

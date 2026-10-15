@@ -17,6 +17,9 @@
   .brand { display: block; line-height: 0; } .brand img { height: 40px; width: auto; }
   /* inside pinyol's editor (?embed=1): only the screen and the buttons */
   .embed header, .embed .keys { display: none; }
+  /* on the site's Juega tab (?frame=1): the site's header is above, and its background shows through */
+  .frame .brand, .frame .by { display: none; }
+  .frame, .frame body { background: transparent; }
   h1 { margin: 0; font-size: clamp(1.2rem, 1rem + 1.2vw, 1.8rem); letter-spacing: .01em; }
   .by { color: var(--dim); font-size: .85rem; }
   /* the game draws 480x320: the canvas keeps that ratio, whole pixels stay crisp at any size */
@@ -333,7 +336,8 @@ async function unzip(buf) {
   return out;
 }
 
-/* The game folder from a zip's paths: safe relative paths, the common top folder dropped (mygame/game.json). */
+/* The game folder from a zip's paths: safe relative paths; game.json at the top, or else the one folder holding it
+   (mygame/game.json), whatever lies beside it (a LEEME, the editor's project) left out. */
 function gameFolder(entries) {
   const files = new Map();
   for (const [name, bytes] of entries) {
@@ -343,10 +347,10 @@ function gameFolder(entries) {
     files.set(parts.join('/'), bytes);
   }
   if (!files.has('game.json')) {
-    const tops = new Set([...files.keys()].map(n => n.split('/')[0]));
-    const top = tops.size === 1 ? [...tops][0] : null;
-    if (!top || !files.has(top + '/game.json')) throw new Error(t('No hay game.json en el .zip'));
-    return new Map([...files].map(([n, b]) => [n.slice(top.length + 1), b]));
+    const tops = [...files.keys()].filter(n => /^[^/]+\/game\.json$/.test(n)).map(n => n.split('/')[0]);
+    if (tops.length !== 1) throw new Error(t('No hay game.json en el .zip'));
+    const top = tops[0] + '/';
+    return new Map([...files].filter(([n]) => n.startsWith(top)).map(([n, b]) => [n.slice(top.length), b]));
   }
   return files;
 }
@@ -559,13 +563,34 @@ if (new URLSearchParams(location.search).get('embed') === '1') {
   });
 }
 
+/* On the site's Juega tab (?frame=1): this page tells it how tall it is (so it shows all of it), and opens the .zip it
+   hands over or that is dropped on it: before a game starts, here; after, the tab opens it in a fresh player. */
+const FRAME = new URLSearchParams(location.search).get('frame') === '1' && parent !== window;
+if (FRAME) {
+  document.documentElement.classList.add('frame');
+  document.body.classList.add('frame');
+  const tellSize = () => parent.postMessage({ pinyol: 'size', h: Math.ceil(document.querySelector('main').getBoundingClientRect().height) }, location.origin);
+  new ResizeObserver(tellSize).observe(document.querySelector('main'));
+  addEventListener('message', e => {
+    if (e.origin !== location.origin || !e.data || e.data.pinyol !== 'open' || !(e.data.zip instanceof ArrayBuffer) || started) return;
+    load(e.data.zip);
+  });
+  document.addEventListener('dragover', e => e.preventDefault());
+  document.addEventListener('drop', async e => { /* (the gate's own drop runs first, before a game starts) */
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (f && started) parent.postMessage({ pinyol: 'dropped', zip: await f.arrayBuffer() }, location.origin);
+  });
+  parent.postMessage({ pinyol: 'ready' }, location.origin);
+}
+
 /* The Cirera drawn around the screen: with a mouse, when the screen fits in it at 480 px or more (in steps of 240, so
    the game's pixels stay whole), unless the player turned it off with the Consola button (remembered). */
 const CASE_MM = 174, SCREEN_MM = 74.4, ROOM_Y = 220; /* the case's width, the screen's, what the page needs above and below */
 let shellWanted = true;
 try { shellWanted = localStorage.getItem('pinyol-shell') !== 'off'; } catch (e) { /* storage blocked: the default */ }
 function fitShell() {
-  const room = Math.min(innerWidth - 32, 1800, (innerHeight - ROOM_Y) * 174 / 96);
+  const room = Math.min(innerWidth - 32, 1800, FRAME ? Infinity : (innerHeight - ROOM_Y) * 174 / 96); /* (in a frame, as tall as it needs) */
   const screen = Math.floor(room * SCREEN_MM / CASE_MM / 240) * 240;
   const fits = screen >= 480 && !document.body.classList.contains('embed') && matchMedia('(pointer: fine)').matches;
   const on = fits && shellWanted;

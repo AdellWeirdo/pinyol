@@ -181,7 +181,7 @@ def not_found() -> None:
 def versioned(html: str) -> str:
     """The page with its stylesheet and scripts named with their hash: a new version is fetched at once, not after the
     10 minutes Pages caches a file."""
-    for f in ("styles.css", "site.js", "games.js"):
+    for f in ("styles.css", "site.js", "games.js", "juega.js"):
         html = html.replace(f'"{f}"', f'"{f}?v={hashlib.sha256((DIST / f).read_bytes()).hexdigest()[:8]}"')
     return html
 
@@ -198,7 +198,7 @@ def main() -> None:
     if DIST.exists():
         shutil.rmtree(DIST)
     DIST.mkdir()
-    for f in ("styles.css", "site.js", "games.js"):
+    for f in ("styles.css", "site.js", "games.js", "juega.js"):
         shutil.copy(HERE / "src" / f, DIST / f)
     build_web = player(np2d)
     (DIST / "play").mkdir()
@@ -217,7 +217,7 @@ def main() -> None:
     board = json.loads((HERE / "src/data/board.json").read_text(encoding="utf-8"))
     games_list = gamepage.catalog(np2d, page.measured(board))
     library_ids = " ".join(g["id"] for g in games_list if g["kind"] == "library")
-    tabs = page.site(board, stats(np2d), fw, gamepage.public(games_list), library_ids)
+    tabs = page.site(board, stats(np2d), fw, gamepage.public(games_list), library_ids, gamepage.picker(games_list))
     for path, html in tabs.items():
         page.publish(DIST, versioned(html), path)
     page.publish(DIST, page.moved("biblioteca/"), "juegos/")  # the old games tab (its games' pages stay under it)

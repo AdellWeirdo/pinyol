@@ -112,10 +112,9 @@ function libState(text, retry) {
   }
   lib.replaceChildren(p);
 }
-function playUrl(zip) {
+function playUrl(id) { // on the Juega tab, in this page's language
   const url = new URL(lib.dataset.play, location.href);
-  if (LANG !== 'es') url.searchParams.set('lang', LANG);
-  url.searchParams.set('game', zip);
+  url.searchParams.set('juego', id);
   return url.href;
 }
 function libCard(g, base) {
@@ -127,8 +126,7 @@ function libCard(g, base) {
   if (g.license) chips.append(el('li', { class: 'chip' }, g.license));
   if (/^\d{4}-\d{2}-\d{2}$/.test(g.date || '')) chips.append(el('li', { class: 'chip' }, g.date.split('-').reverse().join('/')));
   const row = el('div', { class: 'row' },
-    el('a', { class: 'play', href: playUrl(zip), target: '_blank', rel: 'noopener',
-              'aria-label': W.playX + g.title + W.newTab }, W.play),
+    el('a', { class: 'play', href: playUrl(g.id), 'aria-label': W.playX + g.title }, W.play),
     el('a', { class: 'zip', href: zip, 'aria-label': W.zipX(g.title) }, W.zip));
   return el('li', { class: 'cart job' }, shot,
     el('div', { class: 'label' }, el('h3', {}, g.title), el('p', { class: 'what' }, g.description || ''),

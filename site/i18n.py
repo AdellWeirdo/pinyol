@@ -18,7 +18,7 @@ LANGS = {"es": "Español", "ca": "Català", "en": "English"}
 ATTRS = ("alt", "aria-label", "title", "content", "placeholder")  # attributes people read (content: meta description)
 READ_META = ("description", "og:title", "og:description")
 LOCAL = ("img/", "play/", "games/", "editor/", "vendor/", "firmware/", "fonts/", "video/", "styles.css", "site.js",
-         "games.js")  # a page's own files
+         "games.js", "juega.js")  # a page's own files
 # The language links: left as they are by the walk, then swapped for the ones of each page
 KEEP = {"Idioma", *LANGS.values(), *(code.upper() for code in LANGS)}
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
@@ -35,6 +35,7 @@ RULES = [
      {"en": "Play {0}{1p} (opens in a new tab)", "ca": "Juga a {0}{1p} (s'obre en una pestanya nova)"}),
     (r"^Descargar (.+) para la consola$", {"en": "Download {0} for the console", "ca": "Descarrega {0} per a la consola"}),
     (r"^Ficha de (.+?)(?: \((.+)\))?$", {"en": "Details: {0}{1p}", "ca": "Fitxa de {0}{1p}"}),
+    (r"^Jugar a (.+?)(?: \((.+)\))?$", {"en": "Play {0}{1p}", "ca": "Juga a {0}{1p}"}),  # (on the Juega tab)
     (r"^(.+) · pinyol$", {"en": "{0t} · pinyol", "ca": "{0t} · pinyol"}),  # a tab's title
     (r"^Copiar: (.+)$", {"en": "Copy: {0t}", "ca": "Copia: {0t}"}),
     (r"^(\w+): antes (.+) fps, ahora (.+)$", {"en": "{0}: before, {1t} fps; now {2t}", "ca": "{0}: abans {1t} fps, ara {2t}"}),
@@ -166,7 +167,7 @@ def alternates(site: str, path: str = "") -> str:
 
 def relocate(html: str, up: str) -> str:
     """The page's own links (img/, play/, games/...) from a folder `up` below the site's root ("../", "../../")."""
-    return re.sub(r"""((?:src|href|poster|manifest|data-play|data-src)="|url\(')((?:\.\./)*)(""" +
+    return re.sub(r"""((?:src|href|poster|manifest|data-play|data-src|data-player)="|url\(')((?:\.\./)*)(""" +
                   "|".join(re.escape(p) for p in LOCAL) + ")", lambda m: m[1] + up + m[2] + m[3], html)
 
 

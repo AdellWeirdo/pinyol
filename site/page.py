@@ -95,13 +95,14 @@ CODEX = [
 
 
 def play_url(gid: str) -> str:
-    return f"play/player.html?game=../games/{gid}.zip"
+    """A game played on the Juega tab (the bare player, play/player.html, is the tab's frame and the editor's)."""
+    return f"{HOME}juega/?juego={gid}"
 
 
 # The site's tabs: a page each, in each language (publish()). HOME is a page's way to its language's home page, made
 # right for each page's folder when it is published.
 HOME = "@HOME@"
-TABS = [("", "Inicio"), ("biblioteca/", "Biblioteca"), ("crear/", "Crear"), ("consola/", "Consola"), ("como-se-hizo/", "Cómo se hizo")]
+TABS = [("juega/", "Juega"), ("biblioteca/", "Biblioteca"), ("crear/", "Crear"), ("consola/", "Consola"), ("como-se-hizo/", "Cómo se hizo")]  # (the logo: home)
 
 
 def header(tab: str, path: str | None = None) -> str:
@@ -129,7 +130,7 @@ def hero() -> str:
 <p class="kicker pixel">Motor de juegos libre · ESP32-S3</p>
 <h1 id="hero-title">Un motor, doce épocas</h1>
 <p class="lede"><img class="wordmark" src="img/wordmark.png" alt="pinyol" width="65" height="26"> hace juegos con el aspecto de las consolas de los 80 y los 90 y los mueve a 60 fps en una consola de bolsillo con un ESP32‑S3. Dile a tu agente de código qué aspecto quieres y te hace el juego. Aquí puedes jugar a todos.</p>
-<div class="actions"><a class="btn btn-primary" href="{HOME}biblioteca/">Jugar ahora</a><a class="btn btn-ghost" href="{HOME}crear/">Crear un juego</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
+<div class="actions"><a class="btn btn-primary" href="{HOME}juega/">Jugar ahora</a><a class="btn btn-ghost" href="{HOME}crear/">Crear un juego</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
 <p class="meta">Código MIT · arte y sonido CC0 · {len(LOOKS) + len(OTHERS) + len(CODEX)} juegos de ejemplo</p>
 </div>
 <div><div class="board" data-live role="img" aria-label="La consola (una placa Freenove FNK0104N) arrancando: la intro de pinyol, el menú de Cirera con sus juegos y algunos de ellos en marcha">
@@ -270,7 +271,7 @@ def library(pages: str = "") -> str:
     return f"""<section id="biblioteca" class="library-sec" aria-labelledby="biblioteca-t"><div class="wrap">
 <h2 id="biblioteca-t" class="sr">Los juegos</h2>
 <div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="{HOME}crear/#subir">Cómo se sube</a></div>
-<div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="play/player.html" data-pages="{pages}">
+<div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="{HOME}juega/" data-pages="{pages}">
 <p class="lib-state">La Biblioteca necesita JavaScript para cargarse. Sus juegos también están en <a href="{REPO}/tree/main/library">GitHub</a>.</p></div>
 </div></section>"""
 
@@ -300,7 +301,8 @@ def highlights(shelf: list[dict]) -> str:
 
 def doors() -> str:
     """The home page's three ways in: to play, to make, the console."""
-    items = [("biblioteca/", "img/covers/ilustres.png", "Juega", "Los juegos que hace la gente con pinyol, y el ranking de los más votados."),
+    items = [("juega/", "img/looks/neogeo.png", "Juega", "El reproductor con todos los juegos: elige uno o abre el tuyo."),
+             ("biblioteca/", "img/covers/ilustres.png", "Biblioteca", "Los juegos que hace la gente con pinyol, y el ranking de los más votados."),
              ("crear/", "video/linea0.jpg", "Crea", "Doce aspectos de consola para empezar, tu agente de código o el editor, sin programar."),
              ("consola/", "img/console/cirera_frente.webp", "La consola", "La Cirera, su firmware y otras formas de jugar, como RetroArch.")]
     li = "".join(f"""<li class="door"><img src="{img}" alt="" width="480" height="320" loading="lazy" decoding="async">
@@ -468,7 +470,7 @@ CSP = (f"default-src 'self'; img-src 'self' data: https://raw.githubusercontent.
        f"base-uri 'self'; form-action 'none'")
 
 
-def layout(path: str, title: str, desc: str, body: str, fw: dict | None = None) -> str:
+def layout(path: str, title: str, desc: str, body: str, fw: dict | None = None, extra: str = "") -> str:
     """A tab's page: its head (title, description, the three languages), the tabs, its sections, the footer."""
     return new_tabs(f"""<!doctype html>
 <html lang="es">
@@ -489,7 +491,7 @@ def layout(path: str, title: str, desc: str, body: str, fw: dict | None = None) 
 <link rel="preload" href="fonts/jersey15.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
 <script src="site.js" defer></script>
-<script src="games.js" defer></script>
+<script src="games.js" defer></script>{extra}
 <script data-goatcounter="{COUNTER}/count" async src="vendor/goatcounter/count.js"></script>{'<script type="module" src="vendor/esp-web-tools/install-button.js"></script>' if fw else ""}
 </head>
 <body>
@@ -503,13 +505,32 @@ def layout(path: str, title: str, desc: str, body: str, fw: dict | None = None) 
 """)
 
 
-def site(board: dict, stats: dict, fw: dict | None, catalog: str = "[]", pages: str = "") -> dict[str, str]:
+def play(catalog: str, picker: str) -> str:
+    """The Juega tab: the player (play/player.html in a frame, juega.js), a game chosen from the list or a .zip of one's
+    own, opened or dropped on the page."""
+    return f"""<section class="play-sec" aria-labelledby="juega-t"><div class="wrap play-head">
+<div><h1 id="juega-t" class="page-title">Juega</h1>
+<p class="lede">Elige un juego de la lista o abre el tuyo: un .zip hecho con pinyol, desde el botón o arrastrándolo a la página.</p></div>
+<label class="btn btn-ghost pick-zip">Abrir tu juego (.zip)<input type="file" id="zip-file" accept=".zip,application/zip"></label>
+</div>
+<div class="stage"><iframe id="player" data-player="play/player.html" title="El reproductor de pinyol" allow="fullscreen; gamepad; microphone; autoplay"></iframe></div>
+</section>
+<section class="picker-sec" aria-labelledby="elige-t"><div class="wrap">
+<h2 id="elige-t">Elige un juego</h2>
+{picker}
+<script type="application/json" id="catalog">{catalog}</script>
+</div></section>"""
+
+
+def site(board: dict, stats: dict, fw: dict | None, catalog: str = "[]", pages: str = "", picker: str = "") -> dict[str, str]:
     """The five tabs, {path: page in Spanish}."""
     shelf = measured(board)
     desc = "pinyol: un motor de juegos libre con doce aspectos retro (Game Boy, Neo Geo, CPS2, PlayStation…) que corre a 60 fps en una consola ESP32-S3 y en el navegador."
     return {
         "": layout("", "pinyol · un motor, doce épocas", desc,
                    f"{hero()}\n{featured()}\n{doors()}\n{highlights(shelf)}\n{ranking(catalog, 5)}"),
+        "juega/": layout("juega/", "Juega · pinyol", "Juega a los juegos de pinyol en el navegador: elige uno de la lista, o abre el .zip de uno tuyo.",
+                         play(catalog, picker), extra='<script src="juega.js" defer></script>'),
         "biblioteca/": layout("biblioteca/", "Biblioteca · pinyol", "La Biblioteca de pinyol: los juegos que hace la gente, para jugar en el navegador o descargar para la consola, y el ranking de los más votados.",
                               page_head("Juegos hechos por la gente", "Biblioteca", "Juegos hechos por la gente con pinyol: se juegan aquí y se descargan para la consola. Cada uno tiene su ficha, con sus cifras, sus comentarios y sus votos.")
                               + f"\n{library(pages)}\n{ranking(catalog)}"),

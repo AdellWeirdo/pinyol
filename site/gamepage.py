@@ -48,11 +48,24 @@ def catalog(np2d: Path, measured: list[dict]) -> list[dict]:
     for lg in json.loads((np2d / "library/library.json").read_text(encoding="utf-8")):
         zip_url = f"{page.RAW}/library/{lg['id']}/game.zip"
         games.append(dict(id=lg["id"], title=lg["title"], description=lg.get("description", ""), zip=zip_url,
-                          play=f"play/player.html?game={zip_url}", image=f"img/covers/{lg['id']}.png" if lg.get("cover") else "",
+                          play=page.play_url(lg["id"]), image=f"img/covers/{lg['id']}.png" if lg.get("cover") else "",
                           alt="", hue="#ffc94a", kind="library", lib=lg, code=f"{page.REPO}/tree/main/library/{lg['id']}"))
     ids = [g["id"] for g in games]
     assert len(set(ids)) == len(ids), f"two games with one id: {sorted(i for i in ids if ids.count(i) > 1)}"
     return games
+
+
+def picker(games: list[dict]) -> str:
+    """The Juega tab's list: every game, in groups, each a link to itself on the tab (juega.js plays it in place)."""
+    groups = [("library", "De la Biblioteca"), ("look", "Doce aspectos"), ("codex", "La escalera de Codex"), ("example", "Otros ejemplos")]
+    out = []
+    for kind, name in groups:
+        items = "".join(
+            f'<li><a class="pick" href="{page.play_url(g["id"])}" data-id="{g["id"]}">'
+            + (f'<img src="{g["image"]}" alt="" width="240" height="160" loading="lazy" decoding="async">' if g["image"] else '<span class="noshot"></span>')
+            + f'<span translate="no">{escape(g["title"])}</span></a></li>' for g in games if g["kind"] == kind)
+        out.append(f'<h3>{name}</h3><ul class="picks">{items}</ul>')
+    return "".join(out)
 
 
 def public(games: list[dict]) -> str:
