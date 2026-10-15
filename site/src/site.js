@@ -2,6 +2,7 @@
 // animations nobody is looking at.
 document.documentElement.classList.add('js');
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (still) document.querySelectorAll('video[autoplay]').forEach(v => { v.removeAttribute('autoplay'); v.pause(); }); // it waits to be played
 
 // The page's words, in the page's language (the page itself is translated when the site is built: site/i18n.py)
 const LANG = document.documentElement.lang;

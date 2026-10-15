@@ -358,4 +358,7 @@ export const TEMPLATES = [
   { key: 'abella', label: 'Abella (Game Boy)', // a whole game, in Catalan, its data loaded only when chosen (abella.js)
     make: async () => check(structuredClone((await import('./abella.js')).ABELLA)),
     blocks: async () => (await import('./abella.js')).ABELLA_BLOCKS },
+  { key: 'linea0', label: 'LÍNEA 0 (Game Boy Advance)', // five levels, five genres, in Spanish (linea0.js)
+    make: async () => check(structuredClone((await import('./linea0.js')).LINEA0)),
+    blocks: async () => (await import('./linea0.js')).LINEA0_BLOCKS },
 ];

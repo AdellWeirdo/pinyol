@@ -151,6 +151,8 @@ def main() -> None:
     fonts(np2d)
     images(np2d)
     shutil.copytree(HERE / "src/img", DIST / "img", dirs_exist_ok=True)
+    if (HERE / "src/video").exists():  # the editor's video (LÍNEA 0 being made)
+        shutil.copytree(HERE / "src/video", DIST / "video", dirs_exist_ok=True)
     fw = firmware(args.firmware)
     editor(np2d, build_web)
     board = json.loads((HERE / "src/data/board.json").read_text(encoding="utf-8"))
@@ -163,7 +165,7 @@ def main() -> None:
             (DIST / lang).mkdir()
             (DIST / lang / "index.html").write_text(i18n.translate(html, lang), encoding="utf-8")
     (DIST / ".nojekyll").write_text("")  # GitHub Pages: serve the folders as they are
-    (DIST / ".gitattributes").write_text("".join(f"*.{e} binary\n" for e in ("bin", "wasm", "zip", "png", "woff2")))
+    (DIST / ".gitattributes").write_text("".join(f"*.{e} binary\n" for e in ("bin", "wasm", "zip", "png", "woff2", "mp4", "jpg")))
     size = sum(p.stat().st_size for p in DIST.rglob("*") if p.is_file())
     print(f"dist/: {sum(1 for _ in DIST.rglob('*'))} files, {size / 1e6:.1f} MB")
 

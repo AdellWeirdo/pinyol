@@ -101,7 +101,7 @@ def header() -> str:
 <a class="logo" href="#top" aria-label="pinyol, inicio"><img src="img/logo.png" alt="" width="80" height="52"></a>
 <nav aria-label="Secciones"><ul>
 <li class="keep"><a href="#aspectos">Juegos</a></li><li><a href="#rendimiento">Rendimiento</a></li>
-<li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz uno</a></li><li><a href="#consola">La consola</a></li><li><a href="#making">Cómo se hizo</a></li>
+<li><a href="#crear">Editor</a></li><li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz uno</a></li><li><a href="#consola">La consola</a></li><li><a href="#making">Cómo se hizo</a></li>
 <li class="keep"><a href="{REPO}">GitHub</a></li></ul></nav>
 {i18n.switcher("es")}
 </div></header>"""
@@ -116,7 +116,7 @@ def hero() -> str:
 <p class="kicker pixel">Motor de juegos libre · ESP32-S3</p>
 <h1 id="hero-title">Un motor, doce épocas</h1>
 <p class="lede"><img class="wordmark" src="img/wordmark.png" alt="pinyol" width="65" height="26"> hace juegos con la cara de las consolas de los 80 y 90 y los mueve a 60 fps en una consola de bolsillo con un ESP32‑S3. Dile a tu agente de código qué aspecto quieres y lo construye. Aquí puedes jugarlos todos.</p>
-<div class="actions"><a class="btn btn-primary" href="#aspectos">Jugar ahora</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
+<div class="actions"><a class="btn btn-primary" href="#aspectos">Jugar ahora</a><a class="btn btn-ghost" href="#crear">Crea un juego</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
 <p class="meta">Código MIT · arte y sonido CC0 · {len(LOOKS) + len(OTHERS) + len(CODEX)} juegos de ejemplo</p>
 </div>
 <div><div class="board" data-live role="img" aria-label="La consola, una placa Freenove FNK0104N, con su pantalla mostrando uno tras otro los doce aspectos">
@@ -182,7 +182,31 @@ def make_one() -> str:
 <li><h3>Pídeselo a tu agente</h3><p>Abre la carpeta con tu agente y dile qué quieres, en tu idioma.</p>{code("Hazme un plataformas con aspecto Game Boy: un ratón que busca queso en una biblioteca.")}</li>
 <li><h3>Juégalo</h3><p>En tu pantalla, o pásalo a la consola por USB.</p>{code("./build/pinyol_sim --game games/raton")}</li>
 </ol>
-<div class="aside-note"><b>¿Sin programar?</b> El <a href="editor/">editor web</a> dibuja los sprites píxel a píxel, pinta los mapas y prueba el juego en el mismo navegador.</div>
+<div class="aside-note"><b>¿Sin programar?</b> El <a href="#crear">editor web</a> hace lo mismo con dibujos y bloques, en el navegador.</div>
+</div></section>"""
+
+
+def editor() -> str:
+    """The editor, with the video of LÍNEA 0 being made in it (site/src/video, recorded with Playwright)."""
+    features = [("Aspecto de consola", "Game Boy, Game Boy Advance, PICO-8, ZX Spectrum o 16 bits: sus colores y su letra"),
+                ("Dibujos que se mueven", "píxel a píxel, con animaciones para estar quieto, andar o recibir un golpe"),
+                ("Reglas con bloques", "vidas, cuenta atrás, diálogos, récords que se guardan"),
+                ("Sonido", "efectos con recetas, una música compuesta en una cuadrícula o un .mod"),
+                ("A la consola", "por el cable USB, o el .zip para la tarjeta"),
+                ("En tres idiomas", "castellano, català y English")]
+    items = "".join(f"<li><b>{escape(a)}</b> <span>{escape(b)}</span></li>" for a, b in features)
+    return f"""<section id="crear" class="editor-sec" aria-labelledby="crear-t"><div class="wrap editor-grid">
+<div class="editor-copy">
+<p class="era pixel">Sin programar · en el navegador</p>
+<h2 id="crear-t">El editor</h2>
+<p class="intro">Dibuja los personajes píxel a píxel, pinta los mapas, pon las reglas con bloques y juégalo al momento. Empieza vacío o desde una plantilla, como Abella o LÍNEA 0.</p>
+<ul class="features">{items}</ul>
+<div class="actions"><a class="btn btn-primary btn-big" href="editor/">Abrir el editor</a><a class="btn btn-ghost" href="#biblioteca">Juegos hechos con él</a></div>
+</div>
+<figure class="editor-video">
+<video src="video/linea0.mp4" poster="video/linea0.jpg" width="1280" height="800" controls muted loop playsinline autoplay preload="metadata" aria-describedby="linea0-cap"></video>
+<figcaption id="linea0-cap">LÍNEA 0, un juego de Game Boy Advance hecho entero con el editor, en directo: dibujos, mapas, reglas y a jugar. El montaje, ocho veces más rápido; la partida, a velocidad real.</figcaption>
+</figure>
 </div></section>"""
 
 
@@ -319,6 +343,7 @@ def render(board: dict, stats: dict, fw: dict | None) -> str:
 {looks()}
 {performance(board, stats['tests'])}
 {make_one()}
+{editor()}
 {codex()}
 {library()}
 {console(fw)}

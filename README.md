@@ -89,9 +89,11 @@ it (again with **?**); everything works from the keyboard too, and on a phone or
 (Game Boy, PICO-8, ZX Spectrum, 16 bits, or free): its console's colours for every drawing, its tiles (8 or 16
 pixels), its letters and the colours of its texts; and a language for the sentences the engine says. Objects can have
 named animations (still, walking, hit), and the Lives and time blocks put hearts and a countdown on the screen.
-**Nuevo** starts from one of five games to change, each with its own drawings, levels and rules: a platformer, an
+**Nuevo** starts from one of six games to change, each with its own drawings, levels and rules: a platformer, an
 adventure seen from above (keys and doors), a space shooter, a box-pushing puzzle and **Abella**, a whole Game Boy
-game in three levels (made live in the editor, and the first game in the site's Library). The interface is in
+game in three levels (made live in the editor, and the first game in the site's Library), and **LÍNEA 0**, a
+Game Boy Advance game in five levels of five genres about a metro that does not obey its own rules (made live too: its
+video is on the site). The interface is in
 Spanish, Catalan or English (chosen in the header, **Idioma**). It needs the web player beside it (see [below](#share-a-game-play-it-in-the-browser) to build it):
 
 ```sh

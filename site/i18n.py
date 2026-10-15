@@ -17,7 +17,7 @@ HERE = Path(__file__).resolve().parent
 LANGS = {"es": "Español", "ca": "Català", "en": "English"}
 ATTRS = ("alt", "aria-label", "title", "content", "placeholder")  # attributes people read (content: meta description)
 READ_META = ("description", "og:title", "og:description")
-LOCAL = ("img/", "play/", "games/", "editor/", "vendor/", "firmware/", "fonts/", "styles.css", "site.js")  # a page's own files
+LOCAL = ("img/", "play/", "games/", "editor/", "vendor/", "firmware/", "fonts/", "video/", "styles.css", "site.js")  # a page's own files
 # The language links: left as they are by the walk, then swapped for the ones of each page
 KEEP = {"Idioma", *LANGS.values(), *(code.upper() for code in LANGS)}
 
@@ -166,7 +166,7 @@ def translate(html: str, lang: str) -> str:
     if w.missing:
         raise SystemExit(f"i18n/{lang}.json lacks {len(w.missing)} texts, first: " + " | ".join(sorted(w.missing)[:8]))
     out = "".join(w.out).replace('<html lang="es">', f'<html lang="{lang}">', 1)
-    out = re.sub(r"""((?:src|href|manifest|data-play)="|url\(')(""" + "|".join(re.escape(p) for p in LOCAL) + ")",
+    out = re.sub(r"""((?:src|href|poster|manifest|data-play)="|url\(')(""" + "|".join(re.escape(p) for p in LOCAL) + ")",
                  r"\1../\2", out)
     out = out.replace('href="../play/player.html?', f'href="../play/player.html?lang={lang}&amp;')  # the player in lang too
     out = out.replace('href="../editor/"', f'href="../editor/?lang={lang}"')  # and the editor

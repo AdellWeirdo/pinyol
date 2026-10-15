@@ -1,0 +1,22 @@
+# The editor's LÍNEA 0 template (Game Boy Advance): the line to Final de Trayecto, the phone a passenger left behind,
+# back to Cabecera and its figures; on to the shy station; then rush hour, everyone seated
+tick 30
+expect_lua kit.state() == "cover"
+press A
+tick 60
+expect_lua kit.level() == "nivel1" and obj == 1
+hold RIGHT 420
+tick 2
+expect_lua obj == 2
+hold LEFT 440
+tick 2
+expect_lua obj == 3 and dist > 1500
+tick 400
+expect_lua kit.level() == "nivel2" and obj == 10
+lua kit.goto_level("nivel5")
+tick 30
+expect_lua kit.level() == "nivel5" and obj == 40
+lua local seats = {{3, 1}, {6, 1}, {8, 1}, {11, 1}} local all = {kit.all("abuela")[1], kit.all("abuela")[2], kit.all("turista")[1], kit.all("turista")[2]} for i, o in ipairs(all) do o.x, o.y = seats[i][1] * 16, seats[i][2] * 16 end
+tick 5
+expect_lua obj == 41
+expect_ok

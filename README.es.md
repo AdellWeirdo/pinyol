@@ -89,10 +89,11 @@ con el teclado, y en un móvil o una tableta. Un juego tiene un
 **aspecto** (Game Boy, PICO-8, ZX Spectrum, 16 bits o libre): los colores de su consola para todos los dibujos, sus
 baldosas (de 8 o 16 píxeles), su letra y los colores de sus textos; y un idioma para las frases que dice el motor. Los
 objetos pueden tener animaciones con nombre (quieto, andar, golpe), y los bloques de Vidas y tiempo ponen corazones y
-una cuenta atrás en la pantalla. **Nuevo** empieza desde uno de cinco juegos para cambiar, cada uno con sus dibujos,
+una cuenta atrás en la pantalla. **Nuevo** empieza desde uno de seis juegos para cambiar, cada uno con sus dibujos,
 niveles y reglas: un plataformas, una aventura vista desde arriba (llaves y puertas), un matamarcianos, un puzle de
 empujar cajas y **Abella**, un juego de Game Boy entero en tres niveles (hecho en directo en el editor, y el primero de
-la Biblioteca de la web). La interfaz está en castellano, catalán o inglés (se elige arriba, en **Idioma**). Necesita al lado el reproductor web (mira
+la Biblioteca de la web), y **LÍNEA 0**, un juego de Game Boy Advance en cinco niveles de cinco géneros sobre un
+metro que no obedece sus propias reglas (hecho también en directo: su vídeo está en la web). La interfaz está en castellano, catalán o inglés (se elige arriba, en **Idioma**). Necesita al lado el reproductor web (mira
 [más abajo](#comparte-un-juego-juégalo-en-el-navegador) cómo compilarlo):
 
 ```sh

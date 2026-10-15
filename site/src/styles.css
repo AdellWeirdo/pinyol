@@ -321,3 +321,20 @@ esp-web-install-button:not(:defined) [slot="unsupported"], esp-web-install-butto
 .lib-state { padding: var(--s5); border-radius: var(--radius); border: 1.5px dashed var(--line); color: var(--text-2); margin: 0; }
 .lib-state .btn { min-height: 40px; margin-left: var(--s2); }
 .job .shot:empty { background: repeating-linear-gradient(45deg, var(--ink-2) 0 12px, var(--ink-3) 12px 24px); }
+
+/* the editor: copy and a button on one side, the video of a game being made on the other */
+.editor-sec { background: radial-gradient(120% 90% at 85% 20%, rgba(232,52,78,.16), transparent 60%), var(--ink-2, #131837);
+  border-block: 1px solid var(--ink-3, #1c2350); }
+.editor-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--s7); align-items: center; }
+.editor-copy h2 { margin-bottom: var(--s3); }
+.features { list-style: none; margin: var(--s5) 0; padding: 0; display: grid; gap: var(--s3); }
+.features li { position: relative; padding-left: 1.6rem; color: var(--text-2); }
+.features li::before { content: ""; position: absolute; left: 0; top: .42em; width: .7rem; height: .7rem; background: var(--gold);
+  box-shadow: 2px 2px 0 var(--cherry-deep); }
+.features b { color: var(--text); margin-right: .25rem; }
+.btn-big { font-size: 1.15rem; padding: .95rem 1.8rem; }
+.editor-video { margin: 0; }
+.editor-video video { display: block; width: 100%; height: auto; border-radius: 14px; background: #0b0e1f;
+  border: 2px solid var(--ink-3, #1c2350); box-shadow: 0 24px 60px -24px #000, 0 0 0 1px rgba(255,201,74,.12); }
+.editor-video figcaption { margin-top: var(--s3); font-size: var(--t-small); color: var(--text-3); }
+@media (max-width: 56em) { .editor-grid { grid-template-columns: 1fr; gap: var(--s5); } }
