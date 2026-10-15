@@ -13,6 +13,7 @@
 - the cover of the week, chosen the first time the job runs in a new week (ISO, Monday): the most voted that week (the
   likes added since the week before), or else the one most commented, or else one at random (seeded by the week) of
   those not shown in the last 8 weeks.
+  While the Library has only the site author's games, the cover is PIN, "our pick".
 """
 from __future__ import annotations
 
@@ -34,12 +35,22 @@ SITE_PATH = "/pinyol/"
 MILESTONES = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90, 120]  # platform/web/player.html sends the same
 NOT_LIKES = {"THUMBS_DOWN", "CONFUSED"}
 FRESH = 8  # weeks a game waits before it can be the random cover again
+# The cover while the Library has only games by the site's own author: this one, as "our pick". The first game sent by
+# someone else ends it, and the cover is chosen as above from the next week on.
+PIN, OWN = "ilustres", "ipaud"
+
+
+def library() -> list[dict]:
+    return json.loads((ROOT / "library/library.json").read_text(encoding="utf-8"))
 
 
 def game_ids() -> list[str]:
-    ids = sorted(p.parent.name for p in (ROOT / "examples").glob("*/game.json"))
-    ids += [g["id"] for g in json.loads((ROOT / "library/library.json").read_text(encoding="utf-8"))]
-    return ids
+    return sorted(p.parent.name for p in (ROOT / "examples").glob("*/game.json")) + [g["id"] for g in library()]
+
+
+def pinned(lib: list[dict]) -> str | None:
+    """The pinned cover, while nobody else has a game in the Library."""
+    return PIN if any(g["id"] == PIN for g in lib) and all(g.get("author") == OWN for g in lib) else None
 
 
 def _get(url: str, token: str, body: dict | None = None) -> dict:
@@ -125,8 +136,16 @@ def week_of(day: dt.date) -> str:
     return f"{y}-W{w:02d}"
 
 
-def choose(ids: list[str], games: dict, prev: dict, week: str) -> tuple[dict, dict, list]:
+def choose(ids: list[str], games: dict, prev: dict, week: str, pin: str | None = None) -> tuple[dict, dict, list]:
     """The cover of the week, the week's starting numbers and the covers so far; kept as they were within a week."""
+    snapshot = lambda: {i: {"likes": games[i]["likes"], "comments": games[i]["comments"]} for i in ids}
+    if pin in ids:
+        featured = {"id": pin, "reason": "pick", "week": week}
+        history = prev.get("history", [])
+        if not history or history[-1] != featured:
+            history = [h for h in history if h.get("week") != week] + [featured]
+        same = prev.get("featured", {}).get("week") == week
+        return featured, prev.get("week_start", {}) if same else snapshot(), history[-52:]
     if prev.get("featured", {}).get("week") == week and prev["featured"].get("id") in ids:
         return prev["featured"], prev.get("week_start", {}), prev.get("history", [])
     start = prev.get("week_start", {})
@@ -141,11 +160,10 @@ def choose(ids: list[str], games: dict, prev: dict, week: str) -> tuple[dict, di
         recent = {h["id"] for h in prev.get("history", [])[-FRESH:]}
         gid, reason = random.Random(week).choice([i for i in ids if i not in recent] or ids), "random"
     featured = {"id": gid, "reason": reason, "week": week}
-    snapshot = {i: {"likes": games[i]["likes"], "comments": games[i]["comments"]} for i in ids}
-    return featured, snapshot, (prev.get("history", []) + [featured])[-52:]
+    return featured, snapshot(), (prev.get("history", []) + [featured])[-52:]
 
 
-def build(ids: list[str], talk: dict, hits: dict | None, prev: dict, today: dt.date, now: str) -> dict:
+def build(ids: list[str], talk: dict, hits: dict | None, prev: dict, today: dt.date, now: str, pin: str | None = None) -> dict:
     games = {}
     for gid in ids:
         t = talk.get(gid, {})
@@ -153,7 +171,7 @@ def build(ids: list[str], talk: dict, hits: dict | None, prev: dict, today: dt.d
                       "url": t.get("url"), **(counts(hits, gid) if hits is not None else
                                              {"visits": None, "plays": None, "minutes": None})}
     ranking = sorted(ids, key=lambda g: (-games[g]["likes"], -games[g]["comments"], -(games[g]["plays"] or 0), g))
-    featured, start, history = choose(ids, games, prev, week_of(today))
+    featured, start, history = choose(ids, games, prev, week_of(today), pin)
     return {"updated": now, "week": week_of(today), "featured": featured, "history": history, "week_start": start,
             "ranking": ranking, "games": games}
 
@@ -179,6 +197,12 @@ def test() -> None:
     talk2 = {**talk, "a": {"likes": 0, "comments": 2}}
     talked = build(ids, talk2, None, quiet, day + dt.timedelta(days=21), "now")
     assert talked["featured"] == {"id": "a", "reason": "comments", "week": "2026-W46"}
+    # pinned: the cover even within a week already chosen, until someone else's game arrives
+    pin = build(ids, talk2, None, talked, day + dt.timedelta(days=22), "now", pin="c")
+    assert pin["featured"] == {"id": "c", "reason": "pick", "week": "2026-W46"} and pin["history"][-1] == pin["featured"]
+    after = build(ids, talk2, None, pin, day + dt.timedelta(days=28), "now")
+    assert after["featured"]["reason"] != "pick"
+    assert pinned([{"id": PIN, "author": OWN}]) == PIN and pinned([{"id": PIN, "author": OWN}, {"id": "x", "author": "ana"}]) is None
     print("stats: ok")
 
 
@@ -200,7 +224,7 @@ def main() -> None:
     gc = os.environ.get("GOATCOUNTER_TOKEN")
     now = dt.datetime.now(dt.timezone.utc)
     hits = goatcounter(gc, a.since) if gc else None
-    stats = build(game_ids(), discussions(token), hits, prev, now.date(), now.isoformat(timespec="seconds"))
+    stats = build(game_ids(), discussions(token), hits, prev, now.date(), now.isoformat(timespec="seconds"), pinned(library()))
     a.out.write_text(json.dumps(stats, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     top = [g for g in stats["ranking"] if stats["games"][g]["likes"] or stats["games"][g]["comments"]][:3]
     print(f"{a.out}: {len(stats['games'])} games, top {top}, cover {stats['featured']}, visits {'yes' if hits is not None else 'no'}")

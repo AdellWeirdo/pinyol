@@ -16,6 +16,8 @@ Every game on the site has a page, `juegos/<id>/` (and `ca/juegos/<id>/`, `en/ju
 into `stats.json`, published on the branch `stats`. The page reads it from there when it opens
 (`site/src/games.js`), and so does the home page for its ranking and its cover of the week: the game most voted that
 week, or else the one most commented, or else one at random that has not been the cover in the last 8 weeks.
+While the Library holds only the site author's games, the cover is IL·LUSTRES (`PIN` in `tools/stats.py`); the
+first game someone else sends ends that, from the next week on.
 
 The comments and votes are [giscus](https://giscus.app): a Discussion per game in the category *Juegos*, titled with
 the game's id, made by giscus the first time someone comments or reacts. Commenting and voting need a GitHub account.

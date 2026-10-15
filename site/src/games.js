@@ -5,19 +5,19 @@
 document.documentElement.classList.add('js');
 const LANG = document.documentElement.lang;
 const WORDS = {
-  es: { votes: 'El juego más votado de la semana', comments: 'El juego más comentado de la semana', random: 'Elegido al azar esta semana',
+  es: { pick: 'Lo destacamos esta semana', votes: 'El juego más votado de la semana', comments: 'El juego más comentado de la semana', random: 'Elegido al azar esta semana',
         loading: 'Cargando el ranking…', empty: 'Todavía no hay votos. Entra en la ficha de un juego y vota el primero.',
         failed: 'No se ha podido cargar el ranking. Comprueba la conexión.', retry: 'Reintentar', likes: 'me gusta',
         talks: 'comentarios', plays: 'partidas', played: 'jugado', numbersLoading: 'Cargando las cifras…',
         numbersNone: 'Todavía no hay cifras: se actualizan una vez al día.', numbersFailed: 'No se han podido cargar las cifras.',
         numbersAt: d => 'Actualizadas el ' + d + '.', week: 'Semana', sheet: 'Ficha', sheetX: t => 'Ficha de ' + t },
-  ca: { votes: 'El joc més votat de la setmana', comments: 'El joc més comentat de la setmana', random: "Triat a l'atzar aquesta setmana",
+  ca: { pick: 'El destaquem aquesta setmana', votes: 'El joc més votat de la setmana', comments: 'El joc més comentat de la setmana', random: "Triat a l'atzar aquesta setmana",
         loading: 'Carregant el rànquing…', empty: 'Encara no hi ha vots. Entra a la fitxa d’un joc i vota el primer.',
         failed: "No s'ha pogut carregar el rànquing. Comprova la connexió.", retry: 'Torna-ho a provar', likes: "m'agrada",
         talks: 'comentaris', plays: 'partides', played: 'jugat', numbersLoading: 'Carregant les xifres…',
         numbersNone: 'Encara no hi ha xifres: s’actualitzen un cop al dia.', numbersFailed: "No s'han pogut carregar les xifres.",
         numbersAt: d => 'Actualitzades el ' + d + '.', week: 'Setmana', sheet: 'Fitxa', sheetX: t => 'Fitxa de ' + t },
-  en: { votes: 'The most voted game of the week', comments: 'The most talked-about game of the week', random: 'Picked at random this week',
+  en: { pick: 'Our pick this week', votes: 'The most voted game of the week', comments: 'The most talked-about game of the week', random: 'Picked at random this week',
         loading: 'Loading the ranking…', empty: 'No votes yet. Open a game’s page and be the first to vote.',
         failed: "Couldn't load the ranking. Check the connection.", retry: 'Try again', likes: 'likes',
         talks: 'comments', plays: 'plays', played: 'played', numbersLoading: 'Loading the numbers…',
