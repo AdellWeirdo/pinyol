@@ -510,6 +510,7 @@ export default {
   "Se pone de frente, de espaldas o de lado según dónde esté el otro (si su dibujo tiene esas vistas)": "It faces the other: front, back or side, as its drawing has those views",
   'La del motor': 'Built-in',
   'Libre': 'Freeform',
+  "Game Boy, más contraste": "Game Boy, more contrast",
   'verde negro': 'darkest green',
   'verde claro': 'light green',
   'verde pálido': 'pale green',

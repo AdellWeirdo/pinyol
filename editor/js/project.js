@@ -70,6 +70,12 @@ export const LOOKS = {
              style: { text: '#9BBC0F', outline: '#0F380F', accent: '#8BAC0F', bad: '#9BBC0F', heart: '#306230',
                       talk_bg: '#9BBC0F', talk_edge: '#0F380F', talk_text: '#0F380F', talk_who: '#306230', talk_dim: '#306230',
                       talk_inner: '#0F380F' } },
+  gameboy_luz: { name: t('Game Boy, más contraste'), tile: 16, font: 'micro5', background: '#E0F8D0', // four greens apart
+                 palette: ['#081820', '#346856', '#88C070', '#E0F8D0'],
+                 names: [t('verde negro'), t('verde oscuro'), t('verde claro'), t('verde pálido')],
+                 style: { text: '#E0F8D0', outline: '#081820', accent: '#88C070', bad: '#E0F8D0', heart: '#346856',
+                          talk_bg: '#E0F8D0', talk_edge: '#081820', talk_text: '#081820', talk_who: '#346856',
+                          talk_dim: '#346856', talk_inner: '#081820' } },
   pico8: { name: 'PICO-8', tile: 8, font: 'micro5', background: '#1D2B53',
            palette: null, // PALETTE's first 16, below
            style: { text: '#FFF1E8', outline: '#000000', accent: '#FFEC27', bad: '#FF004D', heart: '#FF004D' } },

@@ -510,6 +510,7 @@ export default {
   "Se pone de frente, de espaldas o de lado según dónde esté el otro (si su dibujo tiene esas vistas)": "Es posa de cara, d'esquena o de costat segons on sigui l'altre (si el seu dibuix té aquestes vistes)",
   'La del motor': 'La del motor',
   'Libre': 'Lliure',
+  "Game Boy, más contraste": "Game Boy, més contrast",
   'verde negro': 'verd negrós',
   'verde claro': 'verd clar',
   'verde pálido': 'verd pàl·lid',
