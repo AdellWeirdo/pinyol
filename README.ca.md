@@ -6,9 +6,11 @@
 
 **[Juga tots els exemples al navegador](https://ipaud.github.io/pinyol/ca/)**, amb les mesures del motor a la consola.
 
-<p align="center"><img src="docs/logo.png" alt="pinyol" width="480"></p>
+<p align="center"><img src="docs/media/logo.webp" alt="pinyol" width="480"></p>
 
 Un motor petit en C per a jocs 2D a la consola **Cirera**, una portàtil lliure feta amb un ESP32-S3 (pantalla tàctil de 480×320, botons, altaveu, microSD).
+
+<p align="center"><img src="docs/media/console.webp" alt="La consola, una placa Freenove FNK0104N, arrencant: la intro de pinyol, el menú de Cirera amb els seus jocs i alguns en marxa" width="480"></p>
 
 Un joc és **una carpeta**: copia-la a la microSD de la consola dins de `games/<id>/` i apareix a la llista de jocs. La mateixa carpeta funciona en un simulador d'escriptori i al navegador. N'hi ha de dos tipus:
 
@@ -71,6 +73,9 @@ d'un Pong a un joc de plataformes de velocitat de Mega Drive, cadascun amb el se
 tokens, i els seus fps a la consola.
 
 ### Sense codi: l'editor
+
+<p align="center"><a href="https://ipaud.github.io/pinyol/video/linea0.mp4"><img src="docs/media/editor.webp" alt="LÍNEA 0 fet a l'editor: dibuixos, mapes, regles i a jugar" width="640"></a><br>
+<sub>LÍNEA 0, un joc de Game Boy Advance fet sencer amb l'editor, en directe, aquí accelerat: <a href="https://ipaud.github.io/pinyol/video/linea0.mp4">el vídeo sencer</a>.</sub></p>
 
 `editor/` és una pàgina web per fer un joc sense programar: dibuixa les imatges píxel a píxel (amb fotogrames per
 animar-les) o porta-les de fitxers d'imatge (PNG amb transparència, JPG, una fila de fotogrames; deixats anar o
@@ -212,6 +217,11 @@ python3 tools/make_gallery.py gallery/ --player build-web --headless build/pinyo
 python3 -m http.server -d gallery       # obre http://localhost:8000
 ```
 
+Un joc acabat pot anar a la [Biblioteca](https://ipaud.github.io/pinyol/#biblioteca) del web, per jugar-hi allà i descarregar-lo per a la consola: [puja'l amb un formulari](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), un robot l'obre, el juga deu segons i, quan el revisem, apareix allà.
+
+<p align="center"><a href="https://ipaud.github.io/pinyol/video/subir.mp4"><img src="docs/media/library.webp" alt="Del .zip de l'editor a la Biblioteca: el formulari, la comprovació del robot, l'aprovació i el joc al web" width="640"></a><br>
+<sub>Del teu joc a la Biblioteca, accelerat: <a href="https://ipaud.github.io/pinyol/video/subir.mp4">el tutorial sencer</a>.</sub></p>
+
 ## Porta'l a la consola
 
 El més ràpid: el web [instal·la l'última versió](https://ipaud.github.io/pinyol/ca/#consola) en una placa per USB,
@@ -264,6 +274,9 @@ third_party/     cJSON, Lua 5.4, pocketmod, la font Pixelify Sans i una bibliote
 ```
 
 El món són 240×160 píxels lògics dibuixats a 2× en un frame de 480×320; el text i la interfície fan servir la resolució completa. La lògica va a 60 ticks per segon a totes les plataformes. A la consola, el frame arriba al panell en franges de 32 files dibuixades directament des del joc mentre s'envia l'anterior, al compàs del refresc del panell; la imatge d'un joc en Lua la dibuixen els dos nuclis. Com va arribar a anar prou ràpid, mesurat: [docs/measurements.md](docs/measurements.md).
+
+<p align="center"><img src="docs/media/strips.gif" alt="Animació: la pantalla dividida en 15 franges; cadascuna s'omple des de dalt, meitat pel nucli 0 i meitat pel nucli 1, i després apareix al panell mentre es dibuixa la següent" width="480"><br>
+<sub>A càmera lenta: un frame de debò triga 16,6 ms; aquí, 2,4 segons. En vermell, el nucli 0; en groc, el nucli 1.</sub></p>
 
 ## Estat
 

@@ -6,9 +6,11 @@ English · [Español](README.es.md) · [Català](README.ca.md)
 
 **[Play every example in your browser](https://ipaud.github.io/pinyol/)**, with the engine's measures on the console.
 
-<p align="center"><img src="docs/logo.png" alt="pinyol" width="480"></p>
+<p align="center"><img src="docs/media/logo.webp" alt="pinyol" width="480"></p>
 
 A small C engine for 2D games on the **Cirera** console, an open-source handheld built on an ESP32-S3 (480×320 touch screen, buttons, speaker, microSD).
+
+<p align="center"><img src="docs/media/console.webp" alt="The console, a Freenove FNK0104N board, starting up: pinyol's intro, Cirera's menu with its games and some of them running" width="480"></p>
 
 A game is **a folder**: copy it to the console's microSD under `games/<id>/` and it appears in the game list. The same folder runs in a desktop simulator and in the browser. There are two kinds:
 
@@ -70,6 +72,9 @@ The site's [ladder](https://ipaud.github.io/pinyol/#codex) shows five games Code
 Mega Drive speed platformer, each with its request, its time and tokens, and its frame rate on the console.
 
 ### Without code: the editor
+
+<p align="center"><a href="https://ipaud.github.io/pinyol/video/linea0.mp4"><img src="docs/media/editor.webp" alt="LÍNEA 0 being made in the editor: drawings, maps, rules and play" width="640"></a><br>
+<sub>LÍNEA 0, a Game Boy Advance game made entirely with the editor, live, here sped up: <a href="https://ipaud.github.io/pinyol/video/linea0.mp4">the whole video</a>.</sub></p>
 
 `editor/` is a web page for making a game without programming: draw the pictures pixel by pixel (with frames for
 animation) or bring them in from image files (PNG with transparency, JPG, a row of frames; dropped or pasted), in
@@ -210,6 +215,11 @@ python3 tools/make_gallery.py gallery/ --player build-web --headless build/pinyo
 python3 -m http.server -d gallery       # open http://localhost:8000
 ```
 
+A finished game can go in the site's [Library](https://ipaud.github.io/pinyol/#biblioteca), to be played there and downloaded for the console: [send it with a form](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), a robot opens it, plays it for ten seconds and, once we review it, it shows up there.
+
+<p align="center"><a href="https://ipaud.github.io/pinyol/video/subir.mp4"><img src="docs/media/library.webp" alt="From the editor's .zip to the Library: the form, the robot's check, the approval and the game playing on the site" width="640"></a><br>
+<sub>From your game to the Library, sped up: <a href="https://ipaud.github.io/pinyol/video/subir.mp4">the whole tutorial</a>.</sub></p>
+
 ## Run it on the console
 
 The quickest way: the site [installs the latest release](https://ipaud.github.io/pinyol/#consola) on a board over
@@ -261,6 +271,9 @@ third_party/     cJSON, Lua 5.4, pocketmod, the Pixelify Sans font and a library
 ```
 
 The world is 240×160 logical pixels drawn at 2× into a 480×320 frame; text and UI use the full resolution. Logic runs at 60 ticks per second on every platform. On the console the frame goes to the panel in 32-row strips drawn straight from the game while the previous strip is sent, in step with the panel's refresh; a Lua game's picture is drawn by both cores. How it got fast enough, measured: [docs/measurements.md](docs/measurements.md).
+
+<p align="center"><img src="docs/media/strips.gif" alt="Animation: the screen split into 15 strips; each fills from the top, half by core 0 and half by core 1, then appears on the panel while the next is drawn" width="480"><br>
+<sub>In slow motion: a real frame takes 16.6 ms; here, 2.4 seconds. Red, core 0; yellow, core 1.</sub></p>
 
 ## Status
 
