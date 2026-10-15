@@ -1,6 +1,15 @@
 # Cirera firmware (Freenove FNK0104N, ESP32-S3R8): a game list and the pinyol engine (../src, built unchanged as
 # the pinyol_core component) playing any game folder on the card; main/ is this console's platform (pins: docs/hardware.md).
 cmake_minimum_required(VERSION 3.16)
+# The version the console shows (esp_app_desc): the commit, -dirty with local changes. IDF's own git describe would
+# name the nearest tag, and the libretro core's release moves its tag "libretro" along main.
+if(NOT DEFINED PROJECT_VER)
+  execute_process(COMMAND git describe --always --dirty --exclude=* WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                  OUTPUT_VARIABLE PROJECT_VER OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  if(NOT PROJECT_VER)
+    unset(PROJECT_VER)
+  endif()
+endif()
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(pinyol_console)
 
