@@ -59,7 +59,6 @@
  "primera persona · andar": "first person · walking",
  "PICO-8 · jugando": "PICO-8 · playing",
  "vertical · oleadas": "vertical · waves",
- "Los que ya iban a 60 desde el principio:": "Already at 60 from the start:",
  "Animación: la pantalla dividida en 15 franjas; cada una se llena desde arriba, mitad por el núcleo 0 y mitad por el núcleo 1, y luego aparece en el panel mientras se dibuja la siguiente": "Animation: the screen split into 15 strips; each fills from the top, half by core 0 and half by core 1, then appears on the panel while the next is drawn",
  "núcleo 0": "core 0",
  "núcleo 1": "core 1",
@@ -263,7 +262,6 @@
  "de un núcleo en la escena más pesada: capa afín, cuatro capas y 128 sprites": "of one core in the heaviest scene: affine, four layers and 128 sprites",
  "pruebas que juegan solas y comparan cada fotograma, en cada cambio": "self-playing tests that check every frame, run on every change",
  "El segundo más lento y el más rápido de cada ejemplo, jugando en la consola. En gris, la primera medición, antes de optimizar.": "The slowest and fastest second of each example, played on the console. In grey: the first measurement, before optimisation.",
- "Cada punto es un segundo de partida en la placa, mientras un guion juega solo. La línea discontinua es la primera medición; la continua, la actual.": "Each point is one second of play on the board, from the performance line logged every second while a script plays the game. Dashed: the first measurement; solid: today's.",
  "Cómo llega un fotograma a la pantalla": "How a frame reaches the screen",
  "Nunca hay un fotograma entero en memoria: la pantalla se dibuja en 15 franjas de 32 columnas. Los dos núcleos se reparten cada franja en la RAM interna, uno la mitad izquierda y otro la derecha, mientras la franja anterior sale por DMA hacia el panel.": "There is never a whole frame in memory: the screen is drawn in 15 strips of 32 columns. The two cores split each strip, left half and right half, in internal RAM, while DMA sends the previous strip to the panel.",
  "Cómo se encuentra lo que más cuesta": "Finding what's expensive",
@@ -329,5 +327,7 @@
  "El editor web": "The web editor",
  "vectorial": "vector",
  "En la Raspberry Pi, este comando compila el núcleo (tarda unos minutos) y añade Pinyol a EmulationStation.": "On the Raspberry Pi, this command builds the core (it takes a few minutes) and adds Pinyol to EmulationStation.",
- "En un ordenador, Batocera o Lakka, el núcleo se añade a mano:": "On a computer, Batocera or Lakka, the core is added by hand:"
+ "En un ordenador, Batocera o Lakka, el núcleo se añade a mano:": "On a computer, Batocera or Lakka, the core is added by hand:",
+ "Cada punto es un segundo de partida en la placa, mientras un guion juega solo. La línea discontinua es la primera medición; la continua, la actual. El primer segundo carga la escena y no cuenta en las cifras.": "Each point is one second of play on the board, from the performance line logged every second while a script plays the game. Dashed: the first measurement; solid: today's. The first second loads the scene and doesn't count in the figures.",
+ "No hizo falta optimizarlos:": "These needed no optimising:"
 }

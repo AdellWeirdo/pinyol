@@ -137,8 +137,21 @@ def cart(k: dict, n: int) -> str:
 <a class="zip" href="games/{k['example']}.zip" download aria-label="Descargar {escape(k['example'])} para la consola">Descargar .zip</a></div></div></li>"""
 
 
-def looks() -> str:
-    carts = "".join(cart(k, n) for n, k in enumerate(LOOKS))
+def measured(board: dict) -> list[dict]:
+    """The looks with their ranges from the board's own logs where it logged their example second by second (the same
+    numbers the charts draw, a trace's first second left out); the others keep docs/measurements.md's."""
+    logs = {t["id"]: (t["after"]["fps"][charts.LOAD_S:], t["before"]["fps"][charts.LOAD_S:]) for t in board["traces"]}
+    logs.update({s["id"]: (s["fps"], None) for s in board["steady"]})
+    rng = lambda v: (round(min(v)), round(max(v)))
+    out = []
+    for k in LOOKS:
+        now, was = logs.get(k["example"], (None, None))
+        out.append({**k, **({"fps": rng(now)} if now else {}), **({"was": rng(was)} if was else {})})
+    return out
+
+
+def looks(shelf: list[dict]) -> str:
+    carts = "".join(cart(k, n) for n, k in enumerate(shelf))
     others = "".join(f'<li><a href="{play_url(g)}">{escape(t)}</a></li>' for g, t in OTHERS)
     return f"""<section id="aspectos" aria-labelledby="aspectos-t"><div class="wrap">
 <h2 id="aspectos-t">Doce aspectos, un motor</h2>
@@ -148,13 +161,13 @@ def looks() -> str:
 </div></section>"""
 
 
-def performance(board: dict, tests: int) -> str:
+def performance(board: dict, tests: int, shelf: list[dict]) -> str:
     return f"""<section id="rendimiento" class="perf" aria-labelledby="perf-t"><div class="wrap">
 <p class="kicker pixel">ESP32-S3R8 · 240 MHz · PSRAM octal a 80 MHz · pantalla QSPI a 80 MHz</p>
 <h2 id="perf-t">Medido en la consola, no prometido</h2>
 <p class="intro">Cada cifra de esta sección sale de la placa: o un firmware que juega solo siguiendo un guion y anota el rendimiento cada segundo, o un banco de pruebas que repite cada escena cinco veces. Nada de emuladores. A 60 fps, cada fotograma dispone de 16,6 ms.</p>
 {charts.stats_band(board, tests)}
-{charts.looks_chart(LOOKS)}
+{charts.looks_chart(shelf)}
 {charts.traces_chart(board)}
 {charts.strips_demo('img/looks/neogeo.png', 'img/looks/32bits.png', 'Animación: la pantalla dividida en 15 franjas; cada una se llena desde arriba, mitad por el núcleo 0 y mitad por el núcleo 1, y luego aparece en el panel mientras se dibuja la siguiente')}
 {charts.profile_chart(board)}
@@ -376,6 +389,7 @@ def new_tabs(html: str) -> str:
 
 
 def render(board: dict, stats: dict, fw: dict | None) -> str:
+    shelf = measured(board)
     desc = "pinyol: un motor de juegos libre con doce aspectos retro (Game Boy, Neo Geo, CPS2, PlayStation…) que corre a 60 fps en una consola ESP32-S3 y en el navegador."
     csp = ("default-src 'self'; img-src 'self' data: https://raw.githubusercontent.com; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; "
            "connect-src 'self' https://raw.githubusercontent.com; object-src 'none'; base-uri 'self'; form-action 'none'")
@@ -403,8 +417,8 @@ def render(board: dict, stats: dict, fw: dict | None) -> str:
 {header()}
 <main id="main">
 {hero()}
-{looks()}
-{performance(board, stats['tests'])}
+{looks(shelf)}
+{performance(board, stats['tests'], shelf)}
 {make_one()}
 {editor()}
 {codex()}

@@ -81,7 +81,7 @@ def traces_chart(board: dict) -> str:
     cards = []
     for t in board["traces"]:
         b, a = t["before"], t["after"]
-        label = f"{t['id']}: antes {span(b['fps'])} fps, ahora {span(a['fps'])}"
+        label = f"{t['id']}: antes {span(b['fps'][LOAD_S:])} fps, ahora {span(a['fps'][LOAD_S:])}"
         cards.append(f"""<li class="trace">
 <p class="who"><b>{escape(t['id'])}</b> <span>{escape(t['look'])} · {escape(t['scene'])}</span></p>
 {trace_svg(b['fps'], a['fps'], label)}
@@ -94,9 +94,9 @@ def traces_chart(board: dict) -> str:
 {trace_svg(None, s['fps'], label, 160, 40)}<span class="v">{span(s['fps'], "{}–{}")}</span></li>""")
     return f"""<figure class="chart reveal" id="chart-traces">
 <figcaption><h3>Segundo a segundo</h3>
-<p>Cada punto es un segundo de partida en la placa, mientras un guion juega solo. La línea discontinua es la primera medición; la continua, la actual.</p></figcaption>
+<p>Cada punto es un segundo de partida en la placa, mientras un guion juega solo. La línea discontinua es la primera medición; la continua, la actual. El primer segundo carga la escena y no cuenta en las cifras.</p></figcaption>
 <ul class="traces">{''.join(cards)}</ul>
-<p class="sub">Los que ya iban a 60 desde el principio:</p>
+<p class="sub">No hizo falta optimizarlos:</p>
 <ul class="steady">{''.join(steady)}</ul>
 </figure>"""
 
@@ -143,6 +143,9 @@ def cost_chart() -> str:
 <p class="sub">Y por qué casi todo se dibuja en la RAM interna: la velocidad al copiar 1 MB.</p>
 {mem}
 </figure>"""
+
+
+LOAD_S = 1  # a trace's first second loads its scene: it is drawn, but it does not count in the ranges
 
 
 def span(fps: list, both: str = "entre {} y {}") -> str:

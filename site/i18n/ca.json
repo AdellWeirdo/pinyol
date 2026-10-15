@@ -59,7 +59,6 @@
  "primera persona · andar": "primera persona · caminar",
  "PICO-8 · jugando": "PICO-8 · jugant",
  "vertical · oleadas": "vertical · onades",
- "Los que ya iban a 60 desde el principio:": "Els que ja anaven a 60 des del principi:",
  "Animación: la pantalla dividida en 15 franjas; cada una se llena desde arriba, mitad por el núcleo 0 y mitad por el núcleo 1, y luego aparece en el panel mientras se dibuja la siguiente": "Animació: la pantalla dividida en 15 franges; cadascuna s'omple des de dalt, meitat pel nucli 0 i meitat pel nucli 1, i després apareix al panell mentre es dibuixa la següent",
  "núcleo 0": "nucli 0",
  "núcleo 1": "nucli 1",
@@ -263,7 +262,6 @@
  "de un núcleo en la escena más pesada: capa afín, cuatro capas y 128 sprites": "d'un nucli a l'escena més pesada: capa afí, quatre capes i 128 sprites",
  "pruebas que juegan solas y comparan cada fotograma, en cada cambio": "proves que juguen soles i comparen cada fotograma, a cada canvi",
  "El segundo más lento y el más rápido de cada ejemplo, jugando en la consola. En gris, la primera medición, antes de optimizar.": "El segon més lent i el més ràpid de cada exemple jugat a la consola. En gris, la primera mesura, abans d'optimitzar.",
- "Cada punto es un segundo de partida en la placa, mientras un guion juega solo. La línea discontinua es la primera medición; la continua, la actual.": "Cada punt és un segon de joc a la placa: una línia de rendiment per segon mentre un guió juga sol. La línia discontínua és la primera mesura; la contínua, la d'ara.",
  "Cómo llega un fotograma a la pantalla": "Com arriba un fotograma a la pantalla",
  "Nunca hay un fotograma entero en memoria: la pantalla se dibuja en 15 franjas de 32 columnas. Los dos núcleos se reparten cada franja en la RAM interna, uno la mitad izquierda y otro la derecha, mientras la franja anterior sale por DMA hacia el panel.": "No hi ha cap fotograma sencer a la memòria: la pantalla es dibuixa en 15 franges de 32 columnes. Cada franja es fa a la RAM interna, la meitat esquerra en un nucli i la dreta en l'altre, mentre l'anterior surt per DMA cap al panell.",
  "Cómo se encuentra lo que más cuesta": "Com es troba què costa més",
@@ -329,5 +327,7 @@
  "El editor web": "L'editor web",
  "vectorial": "vectorial",
  "En la Raspberry Pi, este comando compila el núcleo (tarda unos minutos) y añade Pinyol a EmulationStation.": "A la Raspberry Pi, aquesta ordre compila el nucli (triga uns minuts) i afegeix Pinyol a EmulationStation.",
- "En un ordenador, Batocera o Lakka, el núcleo se añade a mano:": "En un ordinador, Batocera o Lakka, el nucli s'afegeix a mà:"
+ "En un ordenador, Batocera o Lakka, el núcleo se añade a mano:": "En un ordinador, Batocera o Lakka, el nucli s'afegeix a mà:",
+ "Cada punto es un segundo de partida en la placa, mientras un guion juega solo. La línea discontinua es la primera medición; la continua, la actual. El primer segundo carga la escena y no cuenta en las cifras.": "Cada punt és un segon de joc a la placa: una línia de rendiment per segon mentre un guió juga sol. La línia discontínua és la primera mesura; la contínua, la d'ara. El primer segon carrega l'escena i no compta en les xifres.",
+ "No hizo falta optimizarlos:": "No va caldre optimitzar-los:"
 }
