@@ -27,6 +27,14 @@ with tempfile.TemporaryDirectory() as t:
     good = pack_game.pack(mine, t / "zips", False)
     r = library.check(good, t / "good", headless)
     assert r["ok"] and r["id"] == "mi_bolsillo", r
+    shared = t / "para-compartir.zip"  # as people share it: the game's folder, with notes and the editor's project beside
+    with zipfile.ZipFile(good) as src, zipfile.ZipFile(shared, "w") as z:
+        for n in src.namelist():
+            z.writestr(n, src.read(n))
+        z.writestr("LEEME.txt", "léeme")
+        z.writestr("mi_bolsillo.pinyol.json", "{}")
+    r = library.check(shared, t / "shared", headless)
+    assert r["ok"] and r["id"] == "mi_bolsillo" and not (t / "shared" / "game" / "LEEME.txt").exists(), r
     assert (t / "good" / "cover.png").exists() and (t / "good" / "game" / "game.json").exists()
 
     evil = t / "evil.zip"

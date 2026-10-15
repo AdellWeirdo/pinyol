@@ -52,12 +52,7 @@ function stats(src) {
 }
 const retryable = run => () => { statsOnce = null; run(); };
 
-function playUrl(g) {
-  const url = new URL('play/player.html', ROOT);
-  if (LANG !== 'es') url.searchParams.set('lang', LANG);
-  url.searchParams.set('game', g.zip);
-  return url.href;
-}
+const playUrl = g => new URL('juega/?juego=' + g.id, HOME).href; // on the Juega tab
 
 // The ISO week ("2026-W42"): the same game for everyone this week when it is chosen at random here
 function isoWeek(d = new Date()) {
