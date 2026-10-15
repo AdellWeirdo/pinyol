@@ -150,4 +150,37 @@ for (const t of TEMPLATES) {
   }
   ws.dispose();
 }
-console.log('built', TEMPLATES.map(t => t.key).join(', '), ', sonido, conversa and extras in', out);
+// and the adventure seen from above with views (tests/editor_vistas.script): the explorer's side and back frames, a
+// neighbour who turns to face her, an action played by a block, and blinds between the levels
+{
+  const project = await TEMPLATES.find(t => t.key === 'aventura').make(), hero = project.drawings.find(d => d.name === 'exploradora');
+  const mark = (f, v) => f.map((p, i) => (p < 0 ? p : i % 7 === 0 ? v : p)); // each frame told apart by a few pixels
+  hero.frames = [0, 1, 2, 3, 4, 5, 6].map(i => mark(hero.frames[i % 2], 0x0841 * (i + 1)));
+  hero.anims = { idle: [0, 0], walk: [0, 1], idle_side: [2, 2], walk_side: [2, 3], idle_up: [4, 4], walk_up: [4, 5], act1: [6, 6] };
+  const key = project.drawings.find(d => d.name === 'llave');
+  project.drawings.push({ ...key, name: 'vecino', frames: [0, 1, 2].map(i => mark(key.frames[0], 0x1082 * (i + 1))),
+                          anims: { idle: [0, 0], idle_side: [1, 1], idle_up: [2, 2] } });
+  project.levels[0].objects = project.levels[0].objects.filter(o => o.kind !== 'cangrejo').concat({ kind: 'vecino', x: 160, y: 96 });
+  project.transition = true;
+  setProject(project);
+  const THIS = who => ({ block: { type: 'kit_this', fields: { WHO: who } } }), txt = s => ({ block: { type: 'text', fields: { TEXT: s } } });
+  const blocks = { variables: [{ name: 'hablado', id: 'h' }], blocks: { languageVersion: 0, blocks: [
+    { type: 'kit_touch', fields: { A: 'exploradora', B: 'vecino' }, x: 0, y: 0, inputs: { DO: { block: {
+      type: 'kit_face', inputs: { OBJ: THIS('otro'), TO: THIS('este') }, next: { block: {
+        type: 'kit_play', fields: { ANIM: 'act1' }, inputs: { OBJ: THIS('este') }, next: { block: {
+          type: 'kit_say', inputs: { WHO: txt('Vecino'), TEXT: txt('Hola') }, next: { block: {
+            type: 'variables_set', fields: { VAR: { id: 'h' } }, inputs: { VALUE: { block: { type: 'math_number', fields: { NUM: 1 } } } } } } } } } } } } } },
+    { type: 'kit_touch', fields: { A: 'exploradora', B: 'escalera' }, x: 400, y: 0, inputs: { DO: { block: { type: 'kit_next_level' } } } },
+  ] } };
+  const ws = new Blockly.Workspace();
+  Blockly.serialization.workspaces.load(blocks, ws);
+  const code = workspaceLua(ws);
+  for (const want of ['kit.face(otro, este)', 'kit.play(este, "act1")'])
+    if (!code.includes(want)) throw new Error('vistas: no ' + want + ' in\n' + code);
+  for (const [path, bytes] of buildFiles(project, code, carried)) {
+    mkdirSync(dirname(join(out, 'vistas', path)), { recursive: true });
+    writeFileSync(join(out, 'vistas', path), bytes);
+  }
+  ws.dispose();
+}
+console.log('built', TEMPLATES.map(t => t.key).join(', '), ', sonido, conversa, extras and vistas in', out);
