@@ -60,7 +60,13 @@ a:hover { color: #fff; }
              border-radius: var(--radius-s); }
 .top nav a:hover { background: var(--ink-3); color: var(--text); }
 .top nav a:focus-visible { outline-offset: -3px; } /* the nav scrolls sideways: an outside ring would be cut */
-@media (max-width: 40em) { .top nav li:not(.keep) { display: none; } }
+/* the tabs: the page you are on, marked; on a phone, a row of their own under the logo, scrolling if they must */
+.top .tabs a[aria-current="page"] { color: #fff; background: var(--ink-3); box-shadow: inset 0 -2px 0 var(--cherry); }
+@media (max-width: 52em) {
+  .top .wrap { flex-wrap: wrap; row-gap: 0; }
+  .top .tabs { order: 3; flex-basis: 100%; margin: 0 calc(var(--s2) * -1) var(--s1); }
+  .top .wrap > .langs { margin-left: auto; }
+}
 .top .langs { margin-left: 0; flex: none; }
 .top .langs ul { gap: 0; }
 .top .langs a { padding: var(--s2) var(--s1); font-family: "Silk", monospace; font-size: .72rem; letter-spacing: .04em; }
@@ -386,3 +392,95 @@ esp-web-install-button:not(:defined) [slot="unsupported"], esp-web-install-butto
 .tutorial { margin: var(--s5) 0 var(--s6); max-width: 760px; }
 .tutorial video { display: block; width: 100%; height: auto; border-radius: 12px; background: #0b0e1f; border: 1px solid var(--ink-3); }
 .tutorial figcaption { margin-top: var(--s2); font-size: var(--t-small); color: var(--text-3); }
+
+/* ------------------------------------------------------------------ the cover of the week, the ranking */
+.featured { padding-block: var(--s6) var(--s7); }
+.feat { display: grid; gap: var(--s6); align-items: center; padding: var(--s5); border-radius: calc(var(--radius) * 1.4);
+        background: linear-gradient(120deg, rgba(255,201,74,.12), rgba(232,52,78,.10) 55%, transparent), var(--ink-2);
+        box-shadow: var(--shadow-2), inset 0 0 0 1px rgba(255,201,74,.25); }
+@media (min-width: 48em) { .feat { grid-template-columns: minmax(0, 1.25fr) 1fr; padding: var(--s6); } }
+.feat-shot { display: block; border-radius: var(--radius-s); overflow: hidden; background: #000; aspect-ratio: 3 / 2;
+             box-shadow: 0 0 0 4px #000, 0 0 0 6px rgba(255,201,74,.5), 0 24px 50px -20px #000; transform: rotate(-1.2deg); }
+.feat-shot img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.feat-title { font-size: clamp(2.4rem, 1.6rem + 3.4vw, 4.4rem); line-height: .95; margin: 0 0 var(--s3); }
+.feat-why { color: var(--text-2); margin: 0 0 var(--s5); }
+.rank-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s3); counter-reset: none; }
+.rank-row { display: grid; grid-template-columns: 2.6rem 7.5rem minmax(0, 1fr); gap: var(--s4); align-items: center;
+            padding: var(--s3) var(--s4) var(--s3) var(--s3); border-radius: var(--radius); background: var(--ink-2);
+            box-shadow: var(--shadow-1); transition: transform .25s var(--ease), background .25s; }
+.rank-row:hover, .rank-row:focus-within { transform: translateX(4px); background: var(--ink-3); }
+.rank-n { font-size: 1.6rem; text-align: center; color: var(--text-3); }
+.rank-row:nth-child(1) .rank-n { color: var(--gold); font-size: 2.2rem; }
+.rank-row:nth-child(2) .rank-n { color: #d9def7; font-size: 1.9rem; }
+.rank-row:nth-child(3) .rank-n { color: #e0995a; font-size: 1.75rem; }
+.rank-shot { aspect-ratio: 3 / 2; border-radius: var(--radius-s); overflow: hidden; background: #000; }
+.rank-shot img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.rank-info h3 { font-size: 1.4rem; margin-bottom: var(--s1); }
+.rank-info h3 a { text-decoration: none; }
+.rank-info h3 a::after { content: ""; position: absolute; inset: 0; } /* the whole row opens the game's page */
+.rank-row { position: relative; }
+.rank-info .chips { margin: 0; }
+.chip.like { background: rgba(232,52,78,.16); color: #ff8fa0; }
+@media (max-width: 30em) { .rank-row { grid-template-columns: 2rem 5rem minmax(0, 1fr); gap: var(--s3); } }
+.cart .sheet-link { font-size: var(--t-small); color: var(--text-2); margin-left: auto; }
+
+/* ------------------------------------------------------------------ a game's page (site/gamepage.py) */
+.game section { padding-block: var(--s7); }
+.game .game-hero { padding-block: var(--s7) var(--s6); }
+.game-hero .wrap { display: grid; gap: var(--s6); align-items: center; }
+@media (min-width: 56em) { .game-hero .wrap { grid-template-columns: minmax(0, 1.2fr) 1fr; gap: var(--s7); } }
+.game-shot { margin: 0; position: relative; aspect-ratio: 3 / 2; border-radius: var(--radius); overflow: hidden; background: #000;
+             box-shadow: 0 0 0 5px #05060f, 0 0 0 7px var(--hue), var(--shadow-2); }
+.game-shot img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.game-shot .noshot { display: grid; place-items: center; height: 100%; color: var(--hue); font-size: 2rem; }
+.game-info .kicker { color: var(--hue); }
+.game-title { font-size: clamp(2.6rem, 1.6rem + 4.4vw, 5.2rem); }
+.game-info .lede { color: var(--text-2); font-size: 1.1rem; max-width: 46ch; margin: 0 0 var(--s5); }
+.game-info .meta { color: var(--text-3); font-size: var(--t-small); margin: var(--s4) 0 0; }
+.game h2 { font-size: clamp(1.8rem, 1.4rem + 1.6vw, 2.6rem); }
+.tally { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr)); gap: var(--s3); margin: 0; }
+.tally div { padding: var(--s4); border-radius: var(--radius); background: var(--ink-2); box-shadow: var(--shadow-1);
+             border-top: 3px solid var(--hue); }
+.tally dt { color: var(--text-3); font-size: var(--t-small); }
+.tally dd { margin: var(--s1) 0 0; font: 400 clamp(1.9rem, 1.5rem + 1.4vw, 2.6rem)/1 "Jersey", system-ui, sans-serif; color: #fff;
+            font-variant-numeric: tabular-nums; }
+.tally[aria-busy="true"] dd { color: var(--text-3); animation: tally-wait 1.2s ease-in-out infinite alternate; }
+@keyframes tally-wait { to { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .tally[aria-busy="true"] dd { animation: none; } }
+.tally-note { color: var(--text-3); font-size: var(--t-small); margin: var(--s3) 0 0; }
+.tally-note .lib-state { padding: 0; border: 0; }
+.sheet { display: grid; gap: 0; margin: 0; max-width: 52rem; }
+.sheet div { display: grid; grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr); gap: var(--s4); padding: var(--s3) 0;
+             border-bottom: 1px solid rgba(43,51,104,.7); }
+.sheet dt { color: var(--text-3); }
+.sheet dd { margin: 0; color: var(--text); }
+.sheet blockquote { margin: 0; padding-left: var(--s4); border-left: 3px solid var(--hue); color: var(--text-2); font-style: italic; }
+.sheet blockquote p { margin: 0; }
+@media (max-width: 30em) { .sheet div { grid-template-columns: 1fr; gap: var(--s1); } }
+.talk { padding: var(--s5); border-radius: var(--radius); background: var(--ink-2); box-shadow: var(--shadow-1); }
+.talk p { margin: 0; }
+.talk .talk-ask, .talk .talk-note { display: none; }
+.talk[data-ready] .talk-soon { display: none; }
+.js .talk[data-ready] .talk-ask { display: block; }
+.talk[data-ready] .talk-note { display: block; color: var(--text-3); font-size: var(--t-small); margin-top: var(--s3); }
+.talk-soon { color: var(--text-2); }
+.game-more .cart h3 { font-size: 1.3rem; }
+.stretch { text-decoration: none; }
+.stretch::after { content: ""; position: absolute; inset: 0; } /* the whole card opens the game */
+
+/* ------------------------------------------------------------------ the tabs' pages */
+.page-head { padding-block: var(--s7) var(--s4); }
+.page-title { font-size: clamp(2.8rem, 1.8rem + 4.4vw, 5.4rem); margin-bottom: var(--s4); }
+.page-head .lede { color: var(--text-2); font-size: clamp(1.05rem, 1rem + .4vw, 1.25rem); max-width: 60ch; margin: 0; }
+.page-head + section { padding-top: var(--s6); }
+.more-link { margin: var(--s5) 0 0; }
+.doors-sec { padding-block: var(--s4) var(--s6); }
+.doors { display: grid; gap: var(--s4); list-style: none; padding: 0; margin: 0; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
+.door { position: relative; display: grid; grid-template-rows: auto 1fr; border-radius: var(--radius); overflow: hidden; background: var(--ink-2);
+        box-shadow: var(--shadow-1); transition: transform .3s var(--ease), box-shadow .3s var(--ease); }
+.door:hover, .door:focus-within { transform: translateY(-4px); box-shadow: var(--shadow-2); }
+.door img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; image-rendering: pixelated; filter: saturate(1.1); }
+.door div { padding: var(--s4) var(--s5) var(--s5); border-top: 3px solid var(--cherry); }
+.door .arrow { display: inline-block; color: var(--cherry); transition: transform .25s var(--ease); }
+.door:hover .arrow { transform: translateX(.25em); }
+.door p { color: var(--text-2); margin: var(--s2) 0 0; font-size: var(--t-small); }

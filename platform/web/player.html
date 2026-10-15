@@ -29,6 +29,21 @@
   /* the console's pilot LED, when a game lights it (led() in Lua) */
   #led { position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; border-radius: 50%; pointer-events: none; }
   #led[hidden] { display: none; }
+  /* The Cirera drawn around the screen (a mouse and room enough for the screen at 480 px or more): its case at scale,
+     174 x 96 mm, the screen in its frame's window, the LED at the frame's corner. Only a picture: nothing to click. */
+  .console { position: relative; }
+  .console .case { display: none; }
+  .console.on { width: var(--console-w); aspect-ratio: 174 / 96; justify-self: center; }
+  .console.on .case { display: block; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible;
+                      filter: drop-shadow(0 28px 30px rgba(0, 0, 0, .55)); }
+  .console.on .screen { position: absolute; left: 28.6207%; top: 24.1667%; width: 42.7586%; border-radius: 1px; box-shadow: none; }
+  .console.on #led { left: 24.4253%; top: 14.7917%; width: 2.8736%; height: auto; aspect-ratio: 1; right: auto; }
+  .shell-on main { max-width: 1800px; }
+  .case .key { transition: transform 60ms, filter 60ms; transform-box: fill-box; transform-origin: center; }
+  .case .key.down { transform: translate(0, .35px) scale(.96); filter: brightness(.78); }
+  .case .arm { opacity: 0; transition: opacity 60ms; }
+  .case .arm.down { opacity: .35; }
+  @media (prefers-reduced-motion: reduce) { .case .key, .case .arm { transition: none; } }
   .gate[hidden] { display: none; }
   .gate p { margin: 0; }
   #gate-title { font-size: clamp(1.1rem, .9rem + 1.5vw, 1.9rem); font-weight: 650; }
@@ -118,19 +133,58 @@
     <h1 id="title">pinyol</h1>
     <span class="by">Motor pinyol · consola Cirera</span>
     <span class="tools" id="tools" hidden>
+      <button id="shell" aria-pressed="true" hidden>Consola</button>
       <button id="mute" aria-pressed="false">Silenciar</button>
       <button id="full">Pantalla completa</button>
     </span>
   </header>
+  <div class="console" id="console">
+    <svg class="case" viewBox="0 0 174 96" aria-hidden="true">
+      <defs>
+        <linearGradient id="cs-shell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3eee2"/><stop offset=".55" stop-color="#e6dfcf"/><stop offset="1" stop-color="#d3c9b4"/></linearGradient>
+        <linearGradient id="cs-rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#7d725c" stop-opacity=".45"/></linearGradient>
+        <linearGradient id="cs-bezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34353a"/><stop offset="1" stop-color="#1e1f23"/></linearGradient>
+        <radialGradient id="cs-olive" cx=".38" cy=".3" r=".9"><stop offset="0" stop-color="#7c8c55"/><stop offset="1" stop-color="#4f5c31"/></radialGradient>
+        <radialGradient id="cs-terra" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#e08a62"/><stop offset="1" stop-color="#b0532f"/></radialGradient>
+        <linearGradient id="cs-pill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d3d6dc"/><stop offset="1" stop-color="#9da1a9"/></linearGradient>
+        <radialGradient id="cs-dome" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#9a8f8a"/><stop offset=".6" stop-color="#4a3f3c"/><stop offset="1" stop-color="#2a2321"/></radialGradient>
+      </defs>
+      <rect width="174" height="96" rx="40" fill="url(#cs-shell)"/>
+      <rect x=".6" y=".6" width="172.8" height="94.8" rx="39.4" fill="none" stroke="url(#cs-rim)" stroke-width="1.2"/>
+      <rect x="40" y="13" width="94" height="70" rx="6" fill="url(#cs-bezel)"/>
+      <rect x="40.4" y="13.4" width="93.2" height="69.2" rx="5.6" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width=".8"/>
+      <rect x="49.5" y="22.7" width="75" height="50.6" rx="1" fill="#000"/>
+      <circle cx="45" cy="16.7" r="2.9" fill="#141518"/><circle cx="45" cy="16.7" r="2.5" fill="url(#cs-dome)"/>
+      <circle cx="44.2" cy="35" r=".55" fill="#0c0c0e"/>
+      <path transform="translate(83.72 74.35) scale(.469)" fill="#4a4b52" d="M8 0h5v1h-5zM8 1h4v1h-4zM6 2h5v1h-5zM6 3h2v1h-2zM5 4h2v1h-2zM5 5h1v1h-1zM8 5h1v1h-1zM4 6h2v1h-2zM8 6h2v1h-2zM3 7h2v1h-2zM9 7h1v1h-1zM1 8h4v1h-4zM9 8h1v1h-1zM0 9h6v1h-6zM8 9h4v1h-4zM0 10h6v1h-6zM7 10h6v1h-6zM0 11h6v1h-6zM7 11h6v1h-6zM0 12h6v1h-6zM7 12h6v1h-6zM0 13h6v1h-6zM7 13h6v1h-6zM1 14h4v1h-4zM7 14h6v1h-6zM8 15h4v1h-4z"/>
+      <g fill="#a99f8a" transform="rotate(-28 24 63)"><rect x="17.5" y="61.6" width="13" height="1.3" rx=".65"/><rect x="17.5" y="64.6" width="13" height="1.3" rx=".65"/><rect x="17.5" y="67.6" width="13" height="1.3" rx=".65"/></g>
+      <g>
+        <path d="M19.38 24.4h8v7.6h7.6v8h-7.6v7.6h-8v-7.6h-7.6v-8h7.6z" fill="#3c4526" transform="translate(.35 .7)"/>
+        <path d="M19.38 24h8v8h8v8h-8v8h-8v-8h-8v-8h8z" fill="url(#cs-olive)" stroke="#3c4526" stroke-width=".35" stroke-linejoin="round"/>
+        <rect class="arm" data-b="0" x="19.38" y="24" width="8" height="8" fill="#000"/><rect class="arm" data-b="1" x="19.38" y="40" width="8" height="8" fill="#000"/>
+        <rect class="arm" data-b="2" x="11.38" y="32" width="8" height="8" fill="#000"/><rect class="arm" data-b="3" x="27.38" y="32" width="8" height="8" fill="#000"/>
+        <circle cx="23.38" cy="36" r="1.6" fill="#000" fill-opacity=".18"/>
+      </g>
+      <g fill="#8f8574" font-family="system-ui, sans-serif" font-size="2.6" font-weight="700" text-anchor="middle">
+        <text x="135.6" y="45.6">B</text><text x="164.6" y="39.6">A</text><text x="139.4" y="20.4">C</text>
+        <text transform="rotate(-22 144 71.2)" x="144" y="72.4" font-size="2">MENU</text><text transform="rotate(-22 156 71.2)" x="156" y="72.4" font-size="2">START</text>
+      </g>
+      <g class="key" data-b="5"><circle cx="144.25" cy="39.1" r="5.5" fill="#7d3a1f"/><circle cx="143.9" cy="38.4" r="5.5" fill="url(#cs-terra)"/></g>
+      <g class="key" data-b="4"><circle cx="157.69" cy="33.67" r="5.5" fill="#7d3a1f"/><circle cx="157.34" cy="32.97" r="5.5" fill="url(#cs-terra)"/></g>
+      <g class="key" data-b="6"><circle cx="147.49" cy="23.77" r="5.5" fill="#7d3a1f"/><circle cx="147.14" cy="23.07" r="5.5" fill="url(#cs-terra)"/></g>
+      <g class="key" data-b="8"><g transform="rotate(-22 144 65.5)"><rect x="139.5" y="63.25" width="9" height="4.5" rx="2.25" fill="#777b83" transform="translate(.2 .5)"/><rect x="139.5" y="63.25" width="9" height="4.5" rx="2.25" fill="url(#cs-pill)"/></g></g>
+      <g class="key" data-b="7"><g transform="rotate(-22 156 65.5)"><rect x="151.5" y="63.25" width="9" height="4.5" rx="2.25" fill="#777b83" transform="translate(.2 .5)"/><rect x="151.5" y="63.25" width="9" height="4.5" rx="2.25" fill="url(#cs-pill)"/></g></g>
+    </svg>
   <div class="screen" id="screen">
     <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()" aria-label="Pantalla del juego"></canvas>
-    <span id="led" aria-hidden="true" hidden></span>
     <div class="gate" id="gate">
       <p id="gate-title">Elige un juego</p>
       <button id="play" hidden>Jugar</button>
       <label class="pick" id="pick">Abrir un juego (.zip)<input type="file" id="file" accept=".zip,application/zip"></label>
       <p class="hint" id="hint">o arrástralo aquí</p>
     </div>
+  </div>
+    <span id="led" aria-hidden="true" hidden></span>
   </div>
   <dialog id="pad-ask" aria-labelledby="pad-title" aria-describedby="pad-text">
     <div class="pad-art" aria-hidden="true">
@@ -171,7 +225,7 @@ const $ = id => document.getElementById(id);
 const LANG = new URLSearchParams(location.search).get('lang');
 const WORDS = {
   ca: {
-    'Motor pinyol · consola Cirera': 'Motor pinyol · consola Cirera', 'Silenciar': 'Silencia', 'Pantalla completa': 'Pantalla completa',
+    'Motor pinyol · consola Cirera': 'Motor pinyol · consola Cirera', 'Consola': 'Consola', 'Silenciar': 'Silencia', 'Pantalla completa': 'Pantalla completa',
     'Pantalla del juego': 'Pantalla del joc', 'Elige un juego': 'Tria un joc', 'Jugar': 'Juga', 'Abrir un juego (.zip)': 'Obre un joc (.zip)',
     'o arrástralo aquí': "o arrossega'l aquí", 'Botones de la consola': 'Botons de la consola', 'Arriba': 'Amunt', 'Izquierda': 'Esquerra',
     'Derecha': 'Dreta', 'Abajo': 'Avall', 'Flechas': 'Fletxes', 'mover ·': 'moure ·', 'ratón = pantalla táctil': 'ratolí = pantalla tàctil',
@@ -189,7 +243,7 @@ const WORDS = {
     'Esperando un mando…': 'Esperant un comandament…', 'Mando listo': 'Comandament a punt', '¡Listo para jugar!': 'A punt per jugar!', 'Jugar sin mando': 'Juga sense comandament',
   },
   en: {
-    'Motor pinyol · consola Cirera': 'pinyol engine · Cirera console', 'Silenciar': 'Mute', 'Pantalla completa': 'Full screen',
+    'Motor pinyol · consola Cirera': 'pinyol engine · Cirera console', 'Consola': 'Console', 'Silenciar': 'Mute', 'Pantalla completa': 'Full screen',
     'Pantalla del juego': 'Game screen', 'Elige un juego': 'Choose a game', 'Jugar': 'Play', 'Abrir un juego (.zip)': 'Open a game (.zip)',
     'o arrástralo aquí': 'or drag it here', 'Botones de la consola': 'Console buttons', 'Arriba': 'Up', 'Izquierda': 'Left',
     'Derecha': 'Right', 'Abajo': 'Down', 'Flechas': 'Arrows', 'mover ·': 'move ·', 'ratón = pantalla táctil': 'mouse = touch screen',
@@ -304,7 +358,7 @@ async function load(buf, url) {
     const meta = JSON.parse(new TextDecoder().decode(files.get('game.json')));
     const id = String(meta.id || 'game');
     if (!/^[A-Za-z0-9_-]{1,40}$/.test(id)) throw new Error(t('El id del juego no es válido') + ': ' + id);
-    gameFiles = { files, id, title: String(meta.title || id) };
+    gameFiles = { files, id, title: String(meta.title || id), url };
     $('title').textContent = gameFiles.title;
     document.title = gameFiles.title + ' · pinyol';
     $('gate-title').textContent = gameFiles.title;
@@ -350,8 +404,42 @@ async function start() {
   $('full').hidden = !document.fullscreenEnabled; /* not on the iPhone: its browser only does it for videos */
   status('');
   $('canvas').focus();
+  if (gameFiles.url && fromSite(gameFiles.url) && /^[a-z0-9_-]{1,40}$/.test(gameFiles.id)) track(gameFiles.id, gameFiles.title);
   try { Module.callMain(['--game', '/game', '--saves', '/persist/' + gameFiles.id]); }
   catch (e) { if (e !== 'unwind' && !(e && e.name === 'ExitStatus')) status(t('El juego se ha parado') + ': ' + e, true); }
+}
+
+/* Plays and time played, counted by GoatCounter as the site's visits are (no cookies, nothing personal): partida/<id>
+   when a game from the site starts, tiempo/<id>/<m> when its play passes m minutes with the page in view. GoatCounter
+   counts people, not hits, so the minutes go as milestones, each once (tools/stats.py adds them up). Not counted: a
+   game opened from a file, the editor's, localhost, or a browser left out on the site (#toggle-goatcounter). */
+const COUNTER = 'https://pinyol.goatcounter.com/count';
+const MILESTONES = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90, 120]; /* minutes (tools/stats.py has the same list) */
+function counted() {
+  try { if (localStorage.getItem('skipgc') === 't') return false; } catch (e) { /* storage blocked: counted */ }
+  return location.protocol === 'https:' && !/^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(location.hostname)
+    && !document.body.classList.contains('embed');
+}
+/* A game the site serves: its examples (../games/) or its Library's, not any zip a link points the player at */
+function fromSite(href) {
+  const u = new URL(href);
+  return (u.origin === location.origin && u.pathname.startsWith(new URL('../games/', location.href).pathname))
+    || u.href.startsWith('https://raw.githubusercontent.com/ipaud/pinyol/main/library/');
+}
+function tell(path, title) {
+  const url = COUNTER + '?' + new URLSearchParams({ p: path, t: title, e: 'true', rnd: Math.random().toString(36).slice(2) });
+  if (!(navigator.sendBeacon && navigator.sendBeacon(url))) fetch(url, { mode: 'no-cors', keepalive: true }).catch(() => {});
+}
+function track(id, title) {
+  if (!counted()) return;
+  tell('partida/' + id, title);
+  let played = 0, next = 0, last = performance.now();
+  setInterval(() => {
+    const now = performance.now();
+    if (!document.hidden) played += now - last;
+    last = now;
+    while (next < MILESTONES.length && played >= MILESTONES[next] * 60000) tell('tiempo/' + id + '/' + MILESTONES[next++], title);
+  }, 5000);
 }
 
 /* The sound's AudioContext is made in the click on Jugar: Safari only lets one start inside a click, and the game
@@ -443,7 +531,7 @@ function pollPads() {
   }
   if (started && Module._web_button)
     for (let b = 0; b < 9; b++) if ((held ^ padHeld) >> b & 1) Module._web_button(b, held >> b & 1);
-  padHeld = held;
+  if (held !== padHeld) { padHeld = held; showHeld(); }
   requestAnimationFrame(pollPads);
 }
 addEventListener('gamepadconnected', e => {
@@ -470,6 +558,48 @@ if (new URLSearchParams(location.search).get('embed') === '1') {
     else parent.postMessage({ pinyol: 'error', message: $('status') ? $('status').textContent : t('El juego no se ha podido abrir') }, location.origin);
   });
 }
+
+/* The Cirera drawn around the screen: with a mouse, when the screen fits in it at 480 px or more (in steps of 240, so
+   the game's pixels stay whole), unless the player turned it off with the Consola button (remembered). */
+const CASE_MM = 174, SCREEN_MM = 74.4, ROOM_Y = 220; /* the case's width, the screen's, what the page needs above and below */
+let shellWanted = true;
+try { shellWanted = localStorage.getItem('pinyol-shell') !== 'off'; } catch (e) { /* storage blocked: the default */ }
+function fitShell() {
+  const room = Math.min(innerWidth - 32, 1800, (innerHeight - ROOM_Y) * 174 / 96);
+  const screen = Math.floor(room * SCREEN_MM / CASE_MM / 240) * 240;
+  const fits = screen >= 480 && !document.body.classList.contains('embed') && matchMedia('(pointer: fine)').matches;
+  const on = fits && shellWanted;
+  $('shell').hidden = !fits;
+  $('shell').setAttribute('aria-pressed', String(on));
+  $('console').classList.toggle('on', on);
+  document.body.classList.toggle('shell-on', on);
+  if (on) $('console').style.setProperty('--console-w', screen * CASE_MM / SCREEN_MM + 'px');
+}
+$('shell').addEventListener('click', () => {
+  shellWanted = !shellWanted;
+  try { localStorage.setItem('pinyol-shell', shellWanted ? 'on' : 'off'); } catch (e) { /* not remembered, still done */ }
+  fitShell();
+  $('canvas').focus();
+});
+addEventListener('resize', fitShell);
+fitShell();
+
+/* The drawing's buttons go down with the keys and the gamepad's (the keys as the engine reads them, platform/sdl/main.c) */
+const KEYS = { ArrowUp: 0, KeyW: 0, ArrowDown: 1, KeyS: 1, ArrowLeft: 2, KeyA: 2, ArrowRight: 3, KeyD: 3, KeyZ: 4, Enter: 4,
+               KeyE: 4, Space: 4, KeyX: 5, Escape: 5, Backspace: 5, KeyC: 6, Tab: 6, KeyP: 7, KeyI: 8 };
+let keyHeld = 0;
+function showHeld() {
+  const held = keyHeld | padHeld;
+  for (const el of document.querySelectorAll('.case [data-b]')) el.classList.toggle('down', (held >> el.dataset.b & 1) === 1);
+}
+const key = down => e => {
+  if (!(e.code in KEYS)) return;
+  keyHeld = down ? keyHeld | 1 << KEYS[e.code] : keyHeld & ~(1 << KEYS[e.code]);
+  showHeld();
+};
+addEventListener('keydown', key(true));
+addEventListener('keyup', key(false));
+addEventListener('blur', () => { keyHeld = 0; showHeld(); });
 
 const param = new URLSearchParams(location.search).get('game');
 if (param) {
