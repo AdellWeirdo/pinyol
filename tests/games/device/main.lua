@@ -1,5 +1,6 @@
--- The console itself: its LED and its battery (tests/device.script). CONTROL's tally light: red while on air.
-on_air = false
+-- The console itself: its LED, its battery and its MENU button (tests/device.script). CONTROL's tally light:
+-- red while on air.
+on_air, menus, starts = false, 0, 0
 function _init() show(0) end
 function _update()
   if btnp("a") then
@@ -7,6 +8,8 @@ function _update()
     if on_air then led(0xFF0000) else led() end
   end
   level, charging = battery()
+  if btnp("menu") then menus = menus + 1 end
+  if btnp("start") then starts = starts + 1 end
 end
 function _draw()
   cls(0x101418)
