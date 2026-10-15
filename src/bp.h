@@ -297,6 +297,7 @@ void world_render(surface *world);
 bool world_render_hd(surface *s, const surface *world); /* an HD zone onto a strip: false if the zone is not */
 bool world_is_hd(void);                                  /* the zone drawn this frame is HD */
 void world_render_marker(surface *native);
+int world_card_y(int h);                                 /* top of a card of height h: 54, or low if Klaus is under */
 bool world_box_free(float x, float y);
 bool world_collides_at(float x, float y);
 const cJSON *world_find(const char *id, float *x, float *y, bool *is_npc); /* visible target */
