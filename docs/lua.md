@@ -527,6 +527,24 @@ studio.play()
 local step, f = studio.pos()          -- in _update: light the step's key, nod on the beat
 ```
 
+**Synth tracks.** A track can play notes on a synth voice instead of a sound: an acid bass as a TB-303 plays it,
+one note at a time. Its oscillator is band-limited (no harsh folding at 22 kHz), a soft drive feeds a resonant
+lowpass that an envelope opens on each note, an accented note opens it further and plays louder, and a note that
+slides glides into the next without starting again. A knob turned while it plays glides there, with no zipper.
+
+| Call | Does |
+|---|---|
+| `studio.synth(i, {wave, cutoff, res, env, decay, accent, glide, drive, volume, tune})` | track i plays notes: `wave` `"saw"` or `"square"`; `cutoff`, `res` (how it rings), `env` (how far each note opens the filter), `accent`, `drive`, `volume` 0 to 1; `decay` and `glide` in seconds (the filter's fall, a slide's time); `tune` in semitones. What is left out stays as it was |
+| `studio.notes(i, {...})` | a note per step: MIDI (60 is C4), a name (`"A1"`, `"F#2"`, `"Bb3"`), or `{note, accent = true, slide = true}`; `0`, `false` or nothing is a rest. A slide holds the note into the next step and glides to it |
+| `studio.note(i [, note [, accent]])` | a note played by hand, held a little over half a step; no note lets one go |
+
+```lua
+studio.synth(2, {wave = "saw", cutoff = 0.25, res = 0.8, env = 0.6, decay = 0.2})
+studio.notes(2, {"A1", 0, {"A2", accent = true}, 0, {"A1", slide = true}, "C2", 0, "E1",
+                 "A1", 0, "G1", 0, {"A1", accent = true, slide = true}, "A2", 0, 0})
+studio.synth(2, {cutoff = 0.6})         -- turned while it plays: the acid sweep
+```
+
 A track plays the first of a sound's variants every time (a pattern sounds the same each time round), and its sound
 stays in memory while a track holds it. Twelve sounds play at once, with `sfx` too: the one-shot closest to its end gives way.
 

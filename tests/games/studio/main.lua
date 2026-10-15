@@ -8,6 +8,9 @@ function _init()
   studio.steps(1, {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0})
   studio.steps(3, {0, 0, 1, 0, 0, 0, 1, 0, false, 0, true, 0, 0, 0, 0.5, 0})
   studio.tempo(128, 58)
+  studio.synth(4, {wave = "saw", cutoff = 0.3, res = 0.8, env = 0.6, decay = 0.25, accent = 0.7})
+  studio.notes(4, {"A1", 0, {"A2", accent = true}, 0, {45, slide = true}, "C3", false, "E2",
+                   "A1", 0, "G1", 0, {"A1", accent = true, slide = true}, "A2", 0, 0})
   seen = {}
 end
 

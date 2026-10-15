@@ -44,7 +44,7 @@ local function storm_new(n)
 end
 -- The studio's functions, a storm of their own (its own numbers, so the storms above keep their sequences)
 local STUDIO = {studio.tempo, studio.length, studio.track, studio.steps, studio.play, studio.stop, studio.playing,
-                studio.pos, studio.hit}
+                studio.pos, studio.hit, studio.synth, studio.notes, studio.note}
 local seed2 = 777
 local function rnd2(n)
   seed2 = (seed2 * 1103515245 + 12345) % 2147483648

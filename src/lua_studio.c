@@ -2,10 +2,14 @@
  *
  *   studio.tempo(bpm [, swing]);  studio.length(steps);  studio.track(i, {sound, gain, pitch, choke}) -> loaded?
  *   studio.steps(i, {v, v, ...});  studio.play([step]);  studio.stop();  studio.playing()
- *   studio.pos() -> step, fraction (what the player hears now; nil when stopped);  studio.hit(i [, velocity]) */
+ *   studio.pos() -> step, fraction (what the player hears now; nil when stopped);  studio.hit(i [, velocity])
+ *   studio.synth(i, {wave, cutoff, res, env, decay, accent, glide, drive, volume, tune})
+ *   studio.notes(i, {note, {note, accent = true, slide = true}, 0, ...});  studio.note(i [, note [, accent]]) */
+#include <stdlib.h>
 #include <string.h>
 
 #include "lua_api.h"
+#include "studio_synth.h"
 
 static int track_arg(lua_State *L, int a) {
     lua_Integer i = luaL_checkinteger(L, a);
@@ -87,10 +91,88 @@ static int l_hit(lua_State *L) {
     return 0;
 }
 
+static const char *const SV_WAVES[] = {"saw", "square", NULL};
+
+/* studio.synth(i, {wave, cutoff, res, env, decay, accent, glide, drive, volume, tune}): track i plays notes on a
+ * synth voice; what is left out stays as it was (or as the defaults, the first time). */
+static int l_synth(lua_State *L) {
+    int i = track_arg(L, 1);
+    luaL_checktype(L, 2, LUA_TTABLE);
+    sv_patch p;
+    if (!studio_synth_get(i, &p)) sv_defaults(&p);
+    lua_getfield(L, 2, "wave");
+    if (!lua_isnil(L, -1)) p.wave = luaL_checkoption(L, -1, NULL, SV_WAVES);
+    lua_pop(L, 1);
+    p.cutoff = opt_float(L, 2, "cutoff", p.cutoff, 0, 1);
+    p.res = opt_float(L, 2, "res", p.res, 0, 1);
+    p.env = opt_float(L, 2, "env", p.env, 0, 1);
+    p.decay = opt_float(L, 2, "decay", p.decay, 0.01f, 4);
+    p.accent = opt_float(L, 2, "accent", p.accent, 0, 1);
+    p.glide = opt_float(L, 2, "glide", p.glide, 0.002f, 2);
+    p.drive = opt_float(L, 2, "drive", p.drive, 0, 1);
+    p.volume = opt_float(L, 2, "volume", p.volume, 0, 1);
+    p.tune = opt_float(L, 2, "tune", p.tune, -48, 48);
+    studio_synth(i, &p);
+    return 0;
+}
+
+/* A note as MIDI (60 is C4), a name ("C2", "F#1", "Bb3") or 0, nil or false for a rest. */
+static int midi_of(lua_State *L, int idx) {
+    if (lua_isnoneornil(L, idx) || (lua_isboolean(L, idx) && !lua_toboolean(L, idx))) return 0;
+    if (lua_type(L, idx) == LUA_TSTRING) {
+        const char *s = lua_tostring(L, idx);
+        static const int SEMI[] = {9, 11, 0, 2, 4, 5, 7}; /* A B C D E F G */
+        if (s[0] < 'A' || s[0] > 'G') return luaL_error(L, "studio: \"%s\" is not a note", s);
+        int n = SEMI[s[0] - 'A'], k = 1;
+        if (s[k] == '#') n++, k++;
+        else if (s[k] == 'b') n--, k++;
+        char *end;
+        long oct = strtol(s + k, &end, 10);
+        if (end == s + k || *end || oct < -1 || oct > 9) return luaL_error(L, "studio: \"%s\" is not a note", s);
+        n += 12 * ((int)oct + 1);
+        return n >= 0 && n < 128 ? n : luaL_error(L, "studio: \"%s\" is out of range", s);
+    }
+    lua_Integer n = luaL_checkinteger(L, idx);
+    if (n < 0 || n > 127) return luaL_error(L, "studio: note %d (0, a rest, to 127)", (int)n);
+    return (int)n;
+}
+
+/* studio.notes(i, {...}): each step a note, or {note, accent = true, slide = true}, or 0 / false for a rest */
+static int l_notes(lua_State *L) {
+    int i = track_arg(L, 1);
+    luaL_checktype(L, 2, LUA_TTABLE);
+    int n = (int)luaL_len(L, 2);
+    if (n > STUDIO_STEPS) return luaL_error(L, "studio.notes: %d steps (%d at most)", n, STUDIO_STEPS);
+    uint8_t notes[STUDIO_STEPS], flags[STUDIO_STEPS];
+    for (int s = 0; s < n; s++) {
+        lua_rawgeti(L, 2, s + 1);
+        flags[s] = 0;
+        if (lua_istable(L, -1)) {
+            lua_rawgeti(L, -1, 1);
+            notes[s] = (uint8_t)midi_of(L, -1);
+            lua_pop(L, 1);
+            flags[s] = (uint8_t)((opt_bool(L, lua_gettop(L), "accent", false) ? STUDIO_ACCENT : 0) |
+                                 (opt_bool(L, lua_gettop(L), "slide", false) ? STUDIO_SLIDE : 0));
+        } else {
+            notes[s] = (uint8_t)midi_of(L, -1);
+        }
+        lua_pop(L, 1);
+    }
+    studio_notes(i, notes, flags, n);
+    return 0;
+}
+
+static int l_note(lua_State *L) { /* studio.note(i [, note [, accent]]): played by hand; no note lets it go */
+    int i = track_arg(L, 1);
+    studio_note(i, midi_of(L, 2), lua_toboolean(L, 3));
+    return 0;
+}
+
 void studio_register(lua_State *L) {
     static const luaL_Reg F[] = {{"tempo", l_tempo}, {"length", l_length}, {"track", l_track}, {"steps", l_steps},
                                  {"play", l_play}, {"stop", l_stop}, {"playing", l_playing}, {"pos", l_pos},
-                                 {"hit", l_hit}, {NULL, NULL}};
+                                 {"hit", l_hit}, {"synth", l_synth}, {"notes", l_notes}, {"note", l_note},
+                                 {NULL, NULL}};
     luaL_newlib(L, F);
     lua_setglobal(L, "studio");
 }

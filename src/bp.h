@@ -396,6 +396,11 @@ void studio_reset(void);
 void studio_tick(int m);                   /* audio thread, lock held: starts the steps inside the next m samples */
 void studio_mark(int n);                   /* audio thread, lock held: n samples were mixed (for studio_pos) */
 void studio_replace_locked(const int16_t *old, const int16_t *pcm, int n); /* a made sound took old's place */
+void studio_mix(float *acc, int m);        /* audio thread, lock held: the synth tracks' voices into acc */
+#define STUDIO_ACCENT 1
+#define STUDIO_SLIDE 2
+void studio_notes(int track, const uint8_t *notes, const uint8_t *flags, int n); /* MIDI notes (0 rest) and flags */
+void studio_note(int track, int note, bool accent); /* a note by hand on a synth track; 0 lets it go */
 void audio_force_missing(const char *id);
 
 /* Synthesised voices (psg.c), mixed with the rest: notes instead of recordings. */

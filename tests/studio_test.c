@@ -1,11 +1,13 @@
 /* The studio (src/studio.c): each step lands on its sample at any tempo, the swing makes the odd steps late, a tempo
  * change carries on from the step it is at, a choke group cuts the other sound, a made sound that takes a track's
  * place is played instead, and studio_pos follows the mix. A one-sample click marks where each step starts. */
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "bp.h"
+#include "studio_synth.h"
 
 static int failures, checks;
 #define CHECK(c)                                                                                \
@@ -29,6 +31,36 @@ static void make(const char *id, int16_t level, int n) { /* a made sound: level,
     int16_t *pcm = calloc((size_t)n, sizeof *pcm);
     pcm[0] = level;
     audio_sfx_set(id, pcm, n);
+}
+
+static double rms(int a, int b) {
+    double e = 0;
+    for (int i = a; i < b; i++) e += (double)out[i] * out[i];
+    return sqrt(e / (b - a));
+}
+
+static double hf(int a, int b) { /* the energy of the first difference: how much treble there is */
+    double e = 0;
+    for (int i = a + 1; i < b; i++) e += (double)(out[i] - out[i - 1]) * (out[i] - out[i - 1]);
+    return sqrt(e / (b - a));
+}
+
+static double pitch(int a, int b) { /* Hz, from the first rising zero crossing to the last */
+    int c = 0, first = -1, last = -1;
+    for (int i = a + 1; i < b; i++)
+        if (out[i - 1] < 0 && out[i] >= 0) c++, last = i, first = first < 0 ? i : first;
+    return c > 1 ? (c - 1) * (double)AUDIO_HZ / (last - first) : 0;
+}
+
+static void synth_run(sv_patch p, const uint8_t *notes, const uint8_t *flags, int n) {
+    audio_reset();
+    studio_synth(0, &p);
+    studio_notes(0, notes, flags, n);
+    studio_length(n);
+    studio_tempo(120, 50);
+    memset(out, 0, sizeof out);
+    studio_play(0);
+    mix(N);
 }
 
 static int clicks(int *at, int max) { /* where the output jumps from silence */
@@ -148,6 +180,48 @@ int main(void) {
     CHECK(frac >= 0 && frac < 1);
     studio_stop();
     CHECK(!studio_pos(&step, &frac));
+
+    /* the synth voice: A2 held (sliding into itself) sounds at 110 Hz */
+    sv_patch p;
+    sv_defaults(&p);
+    p.cutoff = 0.5f, p.res = 0.2f, p.env = 0, p.drive = 0;
+    uint8_t a2[16], none[16] = {0}, slides[16];
+    for (int k = 0; k < 16; k++) a2[k] = 45, slides[k] = STUDIO_SLIDE;
+    synth_run(p, a2, slides, 16);
+    CHECK(fabs(pitch(AUDIO_HZ / 4, AUDIO_HZ) - 110) < 2);
+
+    /* a note on step 2 starts on its sample, and is let go a little over half a step later */
+    uint8_t one[4] = {0, 45, 0, 0};
+    synth_run(p, one, none, 4);
+    int onset = 0;
+    while (onset < N && abs(out[onset]) < 30) onset++;
+    CHECK(abs(onset - 2756) <= 2);
+    CHECK(rms(2756 + 400, 2756 + 1400) > 500);
+    CHECK(rms(2756 * 2 - 200, 2756 * 2) < rms(2756 + 400, 2756 + 1400) / 20);
+
+    /* the filter: closed, much less treble than open */
+    sv_patch dark = p, bright = p;
+    dark.cutoff = 0.1f, bright.cutoff = 0.9f;
+    synth_run(dark, a2, slides, 16);
+    double hf_dark = hf(AUDIO_HZ / 4, AUDIO_HZ) / rms(AUDIO_HZ / 4, AUDIO_HZ);
+    synth_run(bright, a2, slides, 16);
+    double hf_bright = hf(AUDIO_HZ / 4, AUDIO_HZ) / rms(AUDIO_HZ / 4, AUDIO_HZ);
+    CHECK(hf_dark * 3 < hf_bright);
+
+    /* an accent plays louder */
+    uint8_t acc[4] = {STUDIO_ACCENT, 0, 0, 0}, plain[4] = {0}, note0[4] = {45, 0, 0, 0};
+    sv_patch ap = p;
+    ap.accent = 1;
+    synth_run(ap, note0, plain, 4);
+    double quiet = rms(200, 1400);
+    synth_run(ap, note0, acc, 4);
+    CHECK(rms(200, 1400) > quiet * 1.2);
+
+    /* a slide: A2 into A3 with no gap, and it gets there */
+    uint8_t up[4] = {45, 57, 0, 0}, sl[4] = {STUDIO_SLIDE, 0, 0, 0};
+    synth_run(p, up, sl, 4);
+    CHECK(rms(2756 - 100, 2756 + 100) > rms(400, 2400) * 0.5); /* no release between them */
+    CHECK(fabs(pitch(2756 + 900, 2756 + 1480) - 220) < 8);
 
     printf("studio: %d checks, %d failed\n", checks, failures);
     return failures != 0;

@@ -642,6 +642,7 @@ void audio_mix(int16_t *out, int n) {
                 }
             }
         }
+        if (!paused) studio_mix(acc, m); /* the synth tracks' voices */
         psg_mix(acc, m);
         if (!paused && music_sounds()) mus_clock += m; /* (before a module may end) */
         if (!paused) mod_mix(acc, m);
