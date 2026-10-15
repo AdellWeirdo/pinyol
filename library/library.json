@@ -1,5 +1,15 @@
 [
  {
+  "id": "linea_0",
+  "title": "LÍNEA 0",
+  "description": "Una red de metro que no obedece sus propias reglas. Cinco niveles, cinco géneros: conducir el tren, una estación tímida, un transbordo de dos minutos, un tren emocional y la hora punta. Hecho en directo con el editor web de pinyol, con aspecto de Game Boy Advance.",
+  "author": "ipaud",
+  "license": "CC0",
+  "issue": 3,
+  "date": "2026-10-15",
+  "cover": true
+ },
+ {
   "id": "ilustres",
   "title": "IL·LUSTRES: Combat de Llegenda",
   "description": "Joc de lluita 1v1 a la manera de la Neo Geo amb 20 il·lustres de la cultura catalana, de Dalí i Gaudí a Caballé i Peret: arcade amb rivals, set bonus i un boss final en dues fases. En català i castellà.",
