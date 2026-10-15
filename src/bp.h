@@ -387,7 +387,7 @@ void audio_clip_unpin(const int16_t *pcm);
 void studio_tempo(float bpm, float swing);  /* swing: 50 (straight) to 75 percent, as an MPC's */
 void studio_length(int steps);             /* steps in the pattern, 1..STUDIO_STEPS (16: a bar of 16ths) */
 bool studio_track(int track, const char *sound, float gain, float pitch, int choke); /* sound NULL: unchanged */
-void studio_steps(int track, const float *vel, int n); /* each step's velocity, 0 (off) to 1 */
+void studio_steps(int track, const float *vel, int n, bool queued); /* 0 (off) to 1; queued: at the next bar */
 void studio_play(int step);                /* from that step (0-based), at once */
 void studio_stop(void);
 bool studio_playing(void);
@@ -412,7 +412,7 @@ void studio_fx_get(studio_fx_params *f);
 void studio_sends(int track, float delay, float reverb); /* 0..1; negative keeps it */
 #define STUDIO_ACCENT 1
 #define STUDIO_SLIDE 2
-void studio_notes(int track, const uint8_t *notes, const uint8_t *flags, int n); /* MIDI notes (0 rest) and flags */
+void studio_notes(int track, const uint8_t *notes, const uint8_t *flags, int n, bool queued); /* MIDI (0 rest) */
 void studio_note(int track, int note, bool accent); /* a note by hand on a synth track; 0 lets it go */
 void audio_force_missing(const char *id);
 

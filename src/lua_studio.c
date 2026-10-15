@@ -1,7 +1,7 @@
 /* The studio (docs/lua.md, "The studio"): a step sequencer in the audio thread, every step on its sample.
  *
  *   studio.tempo(bpm [, swing]);  studio.length(steps);  studio.track(i, {sound, gain, pitch, choke}) -> loaded?
- *   studio.steps(i, {v, v, ...});  studio.play([step]);  studio.stop();  studio.playing()
+ *   studio.steps(i, {v, v, ...} [, next_bar]);  studio.play([step]);  studio.stop();  studio.playing()
  *   studio.pos() -> step, fraction (what the player hears now; nil when stopped);  studio.hit(i [, velocity])
  *   studio.synth(i, {wave, cutoff, res, env, decay, accent, glide, drive, volume, tune})
  *   studio.notes(i, {note, {note, accent = true, slide = true}, 0, ...});  studio.note(i [, note [, accent]])
@@ -51,7 +51,8 @@ static int l_track(lua_State *L) {
     return 1;
 }
 
-/* studio.steps(i, {v, v, ...}): each step's velocity, 0 (silent) to 1; true and false are 1 and 0. */
+/* studio.steps(i, {v, v, ...} [, next_bar]): each step's velocity, 0 (silent) to 1; true and false are 1 and 0.
+ * next_bar: while it plays, the pattern takes over when the sequence next comes round to its first step. */
 static int l_steps(lua_State *L) {
     int i = track_arg(L, 1);
     luaL_checktype(L, 2, LUA_TTABLE);
@@ -63,7 +64,7 @@ static int l_steps(lua_State *L) {
         vel[s] = lua_isboolean(L, -1) ? (float)lua_toboolean(L, -1) : lua_isnil(L, -1) ? 0 : fin(luaL_checknumber(L, -1));
         lua_pop(L, 1);
     }
-    studio_steps(i, vel, n);
+    studio_steps(i, vel, n, lua_toboolean(L, 3));
     return 0;
 }
 
@@ -165,7 +166,7 @@ static int l_notes(lua_State *L) {
         }
         lua_pop(L, 1);
     }
-    studio_notes(i, notes, flags, n);
+    studio_notes(i, notes, flags, n, lua_toboolean(L, 3));
     return 0;
 }
 

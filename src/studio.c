@@ -27,6 +27,10 @@ typedef struct {
     sv_voice sv;
     uint8_t note[STUDIO_STEPS], flags[STUDIO_STEPS]; /* note 0 is a rest; flags: STUDIO_ACCENT, STUDIO_SLIDE */
     event ev;
+    /* a pattern waiting for the next time the sequence comes round to its first step (a song's next section) */
+    bool next_vel, next_notes;
+    float nvel[STUDIO_STEPS];
+    uint8_t nnote[STUDIO_STEPS], nflags[STUDIO_STEPS];
 } track;
 
 static track T[STUDIO_TRACKS];
@@ -79,6 +83,13 @@ static void fire_note(track *t, int s, int wait) {
 }
 
 static void fire(int s, int wait) {
+    if (s == 0) /* the bar line: patterns queued for it take over, before its first step plays */
+        for (int i = 0; i < STUDIO_TRACKS; i++) {
+            track *t = &T[i];
+            if (t->next_vel) memcpy(t->vel, t->nvel, sizeof t->vel), t->next_vel = false;
+            if (t->next_notes)
+                memcpy(t->note, t->nnote, sizeof t->note), memcpy(t->flags, t->nflags, sizeof t->flags), t->next_notes = false;
+        }
     for (int i = 0; i < STUDIO_TRACKS; i++) {
         if (T[i].synth) fire_note(&T[i], s, wait);
         else if (T[i].pcm && T[i].vel[s] > 0) start(&T[i], T[i].vel[s], wait);
@@ -190,13 +201,17 @@ bool studio_synth_get(int i, sv_patch *p) {
     return s;
 }
 
-void studio_notes(int i, const uint8_t *notes, const uint8_t *flags, int n) {
+/* queued: at the next bar line if it is playing (a song's next section), else at once */
+void studio_notes(int i, const uint8_t *notes, const uint8_t *flags, int n, bool queued) {
     if (i < 0 || i >= STUDIO_TRACKS) return;
     hal_audio_lock();
+    bool later = queued && on;
+    uint8_t *nt = later ? T[i].nnote : T[i].note, *fl = later ? T[i].nflags : T[i].flags;
     for (int s = 0; s < STUDIO_STEPS; s++) {
-        T[i].note[s] = s < n && notes[s] < 128 ? notes[s] : 0;
-        T[i].flags[s] = s < n ? flags[s] : 0;
+        nt[s] = s < n && notes[s] < 128 ? notes[s] : 0;
+        fl[s] = s < n ? flags[s] : 0;
     }
+    T[i].next_notes = later;
     hal_audio_unlock();
 }
 
@@ -218,10 +233,13 @@ void studio_sends(int i, float delay, float reverb) {
     hal_audio_unlock();
 }
 
-void studio_steps(int i, const float *vel, int n) {
+void studio_steps(int i, const float *vel, int n, bool queued) {
     if (i < 0 || i >= STUDIO_TRACKS) return;
     hal_audio_lock();
-    for (int s = 0; s < STUDIO_STEPS; s++) T[i].vel[s] = s < n ? clampf(vel[s], 0, 1) : 0;
+    bool later = queued && on;
+    float *v = later ? T[i].nvel : T[i].vel;
+    for (int s = 0; s < STUDIO_STEPS; s++) v[s] = s < n ? clampf(vel[s], 0, 1) : 0;
+    T[i].next_vel = later;
     hal_audio_unlock();
 }
 

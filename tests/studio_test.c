@@ -17,6 +17,7 @@ static int failures, checks;
     } while (0)
 
 #define N (AUDIO_HZ * 3)
+#define studio_steps_now(i, v, n) studio_steps(i, v, n, false)
 static int16_t out[N];
 
 static void mix(int n) {
@@ -55,7 +56,7 @@ static double pitch(int a, int b) { /* Hz, from the first rising zero crossing t
 static void synth_run(sv_patch p, const uint8_t *notes, const uint8_t *flags, int n) {
     audio_reset();
     studio_synth(0, &p);
-    studio_notes(0, notes, flags, n);
+    studio_notes(0, notes, flags, n, false);
     studio_length(n);
     studio_tempo(120, 50);
     memset(out, 0, sizeof out);
@@ -79,7 +80,7 @@ int main(void) {
     /* 120 BPM: a 16th is 2756.25 samples; step k starts at floor(k * 2756.25) */
     CHECK(studio_track(0, "CLICK", 1, 1, 0));
     CHECK(!studio_track(1, "NO_SUCH_SOUND", 1, 1, 0));
-    studio_steps(0, all, 16);
+    studio_steps_now(0, all, 16);
     studio_tempo(120, 50);
     studio_play(0);
     mix(N);
@@ -91,7 +92,7 @@ int main(void) {
     audio_reset();
     make("CLICK", 20000, 8);
     studio_track(0, "CLICK", 1, 1, 0);
-    studio_steps(0, all, 16);
+    studio_steps_now(0, all, 16);
     studio_tempo(120, 66);
     studio_play(0);
     mix(N);
@@ -103,7 +104,7 @@ int main(void) {
     audio_reset();
     make("CLICK", 20000, 8);
     studio_track(0, "CLICK", 1, 1, 0);
-    studio_steps(0, all, 16);
+    studio_steps_now(0, all, 16);
     studio_tempo(100, 50);
     studio_play(0);
     mix(5 * 3307 + 100);
@@ -121,7 +122,7 @@ int main(void) {
     make("CLICK", 20000, 8);
     studio_track(0, "CLICK", 0.5f, 1, 0);
     float half[4] = {1, 0, 0.5f, 0};
-    studio_steps(0, half, 4);
+    studio_steps_now(0, half, 4);
     studio_length(4);
     studio_tempo(120, 50);
     studio_play(0);
@@ -139,8 +140,8 @@ int main(void) {
     studio_track(0, "OPEN", 1, 1, 1);
     studio_track(1, "CLOSED", 1, 1, 1);
     float first[2] = {1, 0}, second[2] = {0, 1};
-    studio_steps(0, first, 2);
-    studio_steps(1, second, 2);
+    studio_steps_now(0, first, 2);
+    studio_steps_now(1, second, 2);
     studio_length(2);
     studio_tempo(120, 50);
     studio_play(0);
@@ -152,7 +153,7 @@ int main(void) {
     audio_reset();
     make("CLICK", 20000, 8);
     studio_track(0, "CLICK", 1, 1, 0);
-    studio_steps(0, all, 16);
+    studio_steps_now(0, all, 16);
     studio_tempo(120, 50);
     studio_play(0);
     mix(1000);
@@ -168,7 +169,7 @@ int main(void) {
     audio_reset();
     make("CLICK", 20000, 8);
     studio_track(0, "CLICK", 1, 1, 0);
-    studio_steps(0, all, 16);
+    studio_steps_now(0, all, 16);
     studio_tempo(120, 50);
     int step;
     float frac;
@@ -229,7 +230,7 @@ int main(void) {
     make("CLICK", 20000, 8);
     studio_track(0, "CLICK", 1, 1, 0);
     studio_sends(0, 1, 0);
-    studio_steps(0, hit0, 16);
+    studio_steps_now(0, hit0, 16);
     studio_tempo(120, 50);
     studio_fx_params f;
     studio_fx_get(&f);
@@ -251,7 +252,7 @@ int main(void) {
     make("CLICK", 20000, 8);
     studio_track(0, "CLICK", 1, 1, 0);
     studio_sends(0, 0, 1);
-    studio_steps(0, hit0, 16);
+    studio_steps_now(0, hit0, 16);
     studio_fx_get(&f);
     f.reverb = STUDIO_PLATE, f.size = 0.6f, f.damp = 0.3f;
     studio_fx_set(&f);
@@ -265,7 +266,7 @@ int main(void) {
     make("CLICK", 20000, 8);
     studio_track(0, "CLICK", 1, 1, 0);
     studio_sends(0, 1, 1);
-    studio_steps(0, all, 16);
+    studio_steps_now(0, all, 16);
     studio_fx_get(&f);
     f.size = 1, f.damp = 0, f.feedback = 0.95f;
     studio_fx_set(&f);
@@ -278,7 +279,7 @@ int main(void) {
     make("CLICK", 20000, 8);
     studio_track(0, "CLICK", 1, 1, 0);
     studio_sends(0, 0, 1);
-    studio_steps(0, hit0, 16);
+    studio_steps_now(0, hit0, 16);
     studio_fx_get(&f);
     f.reverb = STUDIO_GBA, f.size = 0.5f;
     studio_fx_set(&f);
@@ -295,7 +296,7 @@ int main(void) {
     for (int i = 0; i < 4000; i++) ramp[i] = (int16_t)((i * 7919) % 31 * 600 - 9000); /* new every sample */
     audio_sfx_set("RAMP", ramp, 4000);
     studio_track(0, "RAMP", 1, 1, 0);
-    studio_steps(0, hit0, 16);
+    studio_steps_now(0, hit0, 16);
     studio_fx_get(&f);
     f.lofi = true;
     studio_fx_set(&f);
@@ -306,6 +307,23 @@ int main(void) {
     for (int i = 1; i < 4000; i++) odd += out[i] % 256 != 0, changes += out[i] != out[i - 1];
     CHECK(odd == 0);
     CHECK(changes > 2200 && changes <= 2430); /* 4000 * 13379 / 22050 = 2427 holds, a few land on the same level */
+
+    /* a pattern queued while it plays waits for the bar line: the rest of this bar is the old one */
+    audio_reset();
+    make("CLICK", 20000, 8);
+    studio_track(0, "CLICK", 1, 1, 0);
+    float on1[4] = {1, 0, 0, 0}, on3[4] = {0, 0, 1, 0};
+    studio_steps_now(0, on3, 4);
+    studio_length(4);
+    studio_tempo(120, 50);
+    studio_play(0);
+    mix(1000);                                /* now in bar 1's first step; out[k] below is sample 1000 + k */
+    studio_steps(0, on1, 4, true);
+    memset(out, 0, sizeof out);
+    mix(4 * 2757 + 3 * 2757);
+    int hits[8], nh = clicks(hits, 8);
+    CHECK(nh == 2);                           /* bar 1's step 3 (old), bar 2's step 1 (new); not bar 2's step 3 */
+    CHECK(nh == 2 && abs(hits[0] - (int)(2 * 2756.25 - 1000)) <= 1 && abs(hits[1] - (int)(4 * 2756.25 - 1000)) <= 1);
 
     printf("studio: %d checks, %d failed\n", checks, failures);
     return failures != 0;

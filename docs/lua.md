@@ -511,7 +511,7 @@ up to 17 ms, and only tempos of 900/n BPM fall on whole ticks), and keeps time w
 | `studio.tempo(bpm [, swing])` | 30 to 300 BPM, a step is a 16th; swing 50 (straight) to 75 %, as an MPC's: the odd steps come later (66 is a triplet's feel) |
 | `studio.length(steps)` | steps in the pattern, 1 to 64 (16 at the start: a bar) |
 | `studio.track(i, {sound, gain, pitch, choke})` | track 1 to 16 plays `audio/<sound>.wav` or a sound made with `sound`; `gain` 0 to 1, `pitch` as `sfx`'s, `choke` 1 to 15: a hit cuts the tracks of its group still sounding (an 808's closed hat cuts its open one), 0 none. What is left out stays as it was. `true` if the sound is there |
-| `studio.steps(i, {v, v, ...})` | each step's velocity, 0 (silent) to 1; `true` and `false` are 1 and 0. Change them while it plays |
+| `studio.steps(i, {v, v, ...} [, next_bar])` | each step's velocity, 0 (silent) to 1; `true` and `false` are 1 and 0. Change them while it plays; with `next_bar` true they take over when the sequence next comes round to its first step, on its sample: a song's next section, its bar line exact however late the game asks |
 | `studio.play([step])`, `studio.stop()`, `studio.playing()` | from that step (1, the first, if left out) |
 | `studio.pos()` | `step, fraction`: the step the player hears now (1 to the length) and how far into it, past what is queued for the speaker (as `music_time`); `nil` when stopped |
 | `studio.hit(i [, velocity])` | the track's sound now, as a pad: what a player plays by hand, recorded on the step `studio.pos()` is nearest to |
@@ -535,7 +535,7 @@ slides glides into the next without starting again. A knob turned while it plays
 | Call | Does |
 |---|---|
 | `studio.synth(i, {wave, cutoff, res, env, decay, accent, glide, drive, volume, tune})` | track i plays notes: `wave` `"saw"` or `"square"`; `cutoff`, `res` (how it rings), `env` (how far each note opens the filter), `accent`, `drive`, `volume` 0 to 1; `decay` and `glide` in seconds (the filter's fall, a slide's time); `tune` in semitones. What is left out stays as it was |
-| `studio.notes(i, {...})` | a note per step: MIDI (60 is C4), a name (`"A1"`, `"F#2"`, `"Bb3"`), or `{note, accent = true, slide = true}`; `0`, `false` or nothing is a rest. A slide holds the note into the next step and glides to it |
+| `studio.notes(i, {...} [, next_bar])` | a note per step (`next_bar` as in `studio.steps`): MIDI (60 is C4), a name (`"A1"`, `"F#2"`, `"Bb3"`), or `{note, accent = true, slide = true}`; `0`, `false` or nothing is a rest. A slide holds the note into the next step and glides to it |
 | `studio.note(i [, note [, accent]])` | a note played by hand, held a little over half a step; no note lets one go |
 
 ```lua
