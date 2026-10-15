@@ -4,8 +4,9 @@
 RetroArch and in everything built on it: RetroPie and Lakka on a Raspberry Pi, Batocera, Recalbox, handhelds that run
 RetroArch, a desktop. It is the same engine as the console's and the simulator's: the same game plays the same.
 
-Tested: built and tested (`ctest -R libretro`) on macOS and on Linux arm64 (Debian 12, the base of Raspberry Pi OS),
-and played in RetroArch 1.22 on a Mac. Not yet tried on a real Raspberry Pi.
+Tested: built and tested (`ctest -R libretro`) on macOS, on Linux arm64 (Debian 12, the base of Raspberry Pi OS) and
+on 32-bit ARM as in RetroPie's image (Debian 10, GCC 8, CMake 3.13), where RetroPie-Setup also installed it with
+`lr-pinyol.sh`; played in RetroArch 1.22 on a Mac. Not yet tried on a real Raspberry Pi.
 
 ## Build it
 
@@ -40,7 +41,23 @@ RetroArch's info folder (*Settings, Directory, Core Info*) for it to show the co
 
 ## RetroPie
 
-On the Raspberry Pi itself (it takes a few minutes):
+RetroPie-Setup builds and installs it with the module in `platform/libretro/lr-pinyol.sh`. On the Raspberry Pi:
+
+```sh
+mkdir -p ~/RetroPie-Setup/ext/pinyol/scriptmodules/libretrocores
+curl -fsSL https://raw.githubusercontent.com/ipaud/pinyol/main/platform/libretro/lr-pinyol.sh \
+  -o ~/RetroPie-Setup/ext/pinyol/scriptmodules/libretrocores/lr-pinyol.sh
+sudo ~/RetroPie-Setup/retropie_packages.sh lr-pinyol
+```
+
+Once the module is in place it is also in RetroPie-Setup's menu (*Manage packages, Manage experimental packages,
+lr-pinyol*). It builds the core on the Pi (a few minutes), installs it, and adds the Pinyol system to
+EmulationStation, which shows the `.pinyol` and `.zip` games in `~/RetroPie/roms/pinyol`. Copy the games there and
+restart EmulationStation. Running it again updates the core.
+
+### By hand
+
+The same, step by step (it takes a few minutes):
 
 ```sh
 sudo apt install -y cmake git
@@ -103,7 +120,10 @@ RetroArch remaps them per core (*Quick Menu, Controls*).
 
 ## What it does not do yet
 
-- **Save states**, and so rewind, run-ahead and netplay: the games keep their own saves, as on the console.
+- **Save states**, and so rewind, run-ahead and netplay. An emulator saves the memory of the machine it emulates; a
+  pinyol game's state is its Lua heap and the engine's own memory, full of pointers that mean nothing in another run
+  or on another machine. Playing the inputs again from the start instead would take seconds for every minute played.
+  The games keep their own saves, as on the console, and consoles play together over `link` (below).
 - **The microphone**: a game that listens hears silence.
 - **Its music clock** assumes RetroArch's default audio latency (64 ms). A rhythm game played with another one can
   still be tuned in the game (`music_time`, [lua.md](lua.md)).

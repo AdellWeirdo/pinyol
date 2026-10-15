@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.13...3.21) # 3.13: RetroPie's image (Debian 10) builds the libretro core
 project(pinyol C)
 
 set(CMAKE_C_STANDARD 11)
@@ -114,7 +114,7 @@ else()
                       "LINKER:--no-undefined")
 endif()
 
-if(NOT PROJECT_IS_TOP_LEVEL) # a game's repo registers its own tests
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR) # a game's repo registers its own tests
   return()
 endif()
 enable_testing()

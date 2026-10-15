@@ -1115,8 +1115,8 @@ bool v2_load(void) {
     lua_call(Ls, 1, 0);
     lua_pop(Ls, 1);
 
-    const char *main = jstr(G.game, "main") ? jstr(G.game, "main") : "main.lua";
-    if (!safe_name(main)) {
+    const char *entry = jstr(G.game, "main") ? jstr(G.game, "main") : "main.lua";
+    if (!safe_name(entry)) {
         fail("start", "game.json \"main\" is not a file name in the game folder");
         return false;
     }
@@ -1125,21 +1125,21 @@ bool v2_load(void) {
     int rc;
     {
         char path[384];
-        snprintf(path, sizeof path, "%s/%s", G.game_dir, main);
+        snprintf(path, sizeof path, "%s/%s", G.game_dir, entry);
         long len = 0;
         char *src = read_file(path, &len);
         if (!src) {
-            fail(main, "cannot read it");
+            fail(entry, "cannot read it");
             return false;
         }
         char name[96];
-        snprintf(name, sizeof name, "@%s", main);
+        snprintf(name, sizeof name, "@%s", entry);
         rc = luaL_loadbufferx(Ls, src, (size_t)len, name, "t");
         free(src);
     }
     if (rc == LUA_OK) rc = lua_pcall(Ls, 0, 0, -2);
     if (rc != LUA_OK) {
-        fail(main, lua_tostring(Ls, -1));
+        fail(entry, lua_tostring(Ls, -1));
         lua_settop(Ls, 0);
         return false;
     }
