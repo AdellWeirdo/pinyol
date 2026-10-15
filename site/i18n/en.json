@@ -310,5 +310,22 @@
  "Un procesador de imagen virtual, como el de la Game Boy Advance, y juegos en Lua de cualquier género.": "A virtual picture processor, like the Game Boy Advance's, and Lua games of any genre.",
  "Medido en la consola y hecho rápido. El editor web, para hacer juegos sin programar.": "Measured on the console and made fast. The web editor, to make games without programming.",
  "Los aspectos de doce consolas, la primera persona, las instrucciones para que un agente haga juegos, la web y la Biblioteca.": "Twelve consoles' looks, first person, the instructions for an agent to make games, the site and the Library.",
- "La web y el editor en tres idiomas, los juegos de Codex e IL·LUSTRES en la Biblioteca.": "The site and the editor in three languages, Codex's games and IL·LUSTRES in the Library."
+ "La web y el editor en tres idiomas, los juegos de Codex e IL·LUSTRES en la Biblioteca.": "The site and the editor in three languages, Codex's games and IL·LUSTRES in the Library.",
+ "~/RetroPie/roms/pinyol/": "~/RetroPie/roms/pinyol/",
+ "RetroPie": "RetroPie",
+ "En RetroArch y RetroPie": "In RetroArch and RetroPie",
+ "¿Sin la consola? El motor también es un núcleo de libretro: los juegos de pinyol se juegan en RetroArch y en todo lo que se basa en él, como RetroPie o Lakka en una Raspberry Pi, Batocera, Recalbox, las portátiles que lo llevan o un ordenador. Es el mismo motor, así que el juego es el mismo.": "No console? The engine is also a libretro core: pinyol games play in RetroArch and in everything built on it, such as RetroPie or Lakka on a Raspberry Pi, Batocera, Recalbox, the handhelds that run it, or a computer. It is the same engine, so the game is the same.",
+ "Instálalo en RetroPie": "Install it on RetroPie",
+ "En la Raspberry Pi: compila el núcleo, en unos minutos, y añade Pinyol a EmulationStation.": "On the Raspberry Pi: it builds the core, in a few minutes, and adds Pinyol to EmulationStation.",
+ "Copia los juegos": "Copy the games",
+ "El .zip de cualquier juego, como los que se descargan aquí, va a su carpeta.": "Any game's .zip, like the ones you can download here, goes in its folder.",
+ "Juega": "Play",
+ "Reinicia EmulationStation y aparece Pinyol con sus juegos. En el mando, X o Y hacen de C, y SELECT de MENU.": "Restart EmulationStation and Pinyol shows up with its games. On the gamepad, X or Y act as C, and SELECT as MENU.",
+ "¿Otro RetroArch?": "Another RetroArch?",
+ "En un ordenador, Batocera o Lakka el núcleo se añade a mano:": "On a computer, Batocera or Lakka the core is added by hand:",
+ "cómo compilarlo y dónde va": "how to build it and where it goes",
+ ". Probado en RetroArch y con el sistema de RetroPie emulado, aún no en una Raspberry Pi de verdad: si lo pruebas,": ". Tested in RetroArch and on an emulated RetroPie system, not yet on a real Raspberry Pi: if you try it,",
+ "cuéntanos cómo va": "tell us how it goes",
+ "cd ~/RetroPie-Setup": "cd ~/RetroPie-Setup",
+ "cd ~/RetroPie-Setup\ncurl -fsSL --create-dirs \\\n  -o ext/pinyol/scriptmodules/libretrocores/lr-pinyol.sh \\\n  https://raw.githubusercontent.com/ipaud/pinyol/main/platform/libretro/lr-pinyol.sh\nsudo ./retropie_packages.sh lr-pinyol": "cd ~/RetroPie-Setup\ncurl -fsSL --create-dirs \\\n  -o ext/pinyol/scriptmodules/libretrocores/lr-pinyol.sh \\\n  https://raw.githubusercontent.com/ipaud/pinyol/main/platform/libretro/lr-pinyol.sh\nsudo ./retropie_packages.sh lr-pinyol"
 }

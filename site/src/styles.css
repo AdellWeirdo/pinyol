@@ -161,13 +161,14 @@ h3 { font: 400 var(--t-h3)/1.1 "Jersey", system-ui, sans-serif; margin: 0; color
 /* make your own */
 .steps { display: grid; gap: var(--s5); counter-reset: step; list-style: none; padding: 0; margin: 0; }
 @media (min-width: 56em) { .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.steps li { counter-increment: step; background: var(--ink-2); border-radius: var(--radius); padding: var(--s5); box-shadow: var(--shadow-1); }
+.steps li { min-width: 0; counter-increment: step; background: var(--ink-2); border-radius: var(--radius); padding: var(--s5); box-shadow: var(--shadow-1); }
 .steps li::before { content: counter(step); display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 50%;
                     background: var(--cherry-deep); font: 400 1.5rem/1 "Jersey", sans-serif; margin-bottom: var(--s4); }
 .steps p { color: var(--text-2); margin: var(--s2) 0 var(--s4); }
 .code { position: relative; }
 pre { margin: 0; padding: var(--s4); padding-right: 4.5rem; background: #070914; border-radius: var(--radius-s); white-space: pre-wrap; overflow-wrap: anywhere;
       font: .82rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: #dfe3ff; }
+.code.wide pre { white-space: pre; overflow-wrap: normal; overflow-x: auto; }
 .copy { position: absolute; top: var(--s2); right: var(--s2); min-height: 32px; padding: 0 var(--s3); border-radius: var(--radius-s); border: 0;
         background: var(--ink-3); color: var(--text-2); font-size: .75rem; cursor: pointer; }
 .copy:hover { color: #fff; background: var(--line); }
