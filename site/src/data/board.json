@@ -265,7 +265,7 @@
   },
   {
    "id": "rocas",
-   "look": "vector",
+   "look": "vectorial",
    "scene": "jugando",
    "fps": [
     60.7,
@@ -496,7 +496,7 @@
      16.3
     ],
     [
-     "nada encima",
+     "sin nada encima",
      16.2
     ]
    ]

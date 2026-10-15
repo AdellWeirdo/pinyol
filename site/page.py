@@ -15,28 +15,28 @@ SITE = "https://ipaud.github.io/pinyol/"  # where it will be published (GitHub P
 # The twelve looks: their example, the console it follows, its frame rate on the console as (slowest, fastest
 # second), and the first measure when the board made it faster (docs/measurements.md, "The looks on the console").
 LOOKS = [
-    dict(id="gameboy", name="Game Boy", example="bolsillo", era="1989 · cuatro verdes, pantalla entera", art=False, fps=(61, 61), hue="#8bac0f",
-         what="Un plataformas con la paleta de la Game Boy, a pantalla completa.", alt="Un plataformas en cuatro tonos de verde a pantalla completa"),
+    dict(id="gameboy", name="Game Boy", example="bolsillo", era="1989 · cuatro verdes, pantalla completa", art=False, fps=(61, 61), hue="#8bac0f",
+         what="Un plataformas con la paleta de la Game Boy, a pantalla completa.", alt="Un plataformas en cuatro tonos de verde, a pantalla completa"),
     dict(id="spectrum", name="ZX Spectrum", example="cinta", era="1982 · dos colores por bloque", art=False, fps=(49, 61), hue="#ff3b3b",
-         what="Con su carga de cinta, franjas de colores incluidas.", alt="Una sala de ZX Spectrum: bloques de dos colores, un minero y un guardián"),
+         what="Incluye la carga de cinta, con sus franjas de colores.", alt="Una sala de ZX Spectrum: bloques de dos colores, un minero y un guardián"),
     dict(id="pico8", name="PICO-8", example="ladrillos", era="2015 · 128×128 · dieciséis colores", art=False, fps=(56, 60), was=(46, 55), hue="#ff77a8",
-         what="Un rompeladrillos en la paleta de la fantasy console.", alt="Un rompeladrillos de PICO-8 en dieciséis colores"),
+         what="Un rompeladrillos con la paleta de esta consola de fantasía.", alt="Un rompeladrillos de PICO-8 en dieciséis colores"),
     dict(id="lcd", name="Maquinita LCD", example="huevos", era="1980 · figuras que se encienden", art=False, fps=(61, 61), hue="#9aa58c",
-         what="Un cocinero que recoge huevos, figura a figura.", alt="Una maquinita LCD: un cocinero recogiendo huevos, figuras encendidas o apagadas"),
+         what="Un cocinero que recoge huevos y se mueve figura a figura.", alt="Una maquinita LCD: un cocinero que recoge huevos, con figuras que se encienden y se apagan"),
     dict(id="vector", name="Vectorial", example="rocas", era="1979 · solo líneas que brillan", art=False, fps=(61, 61), hue="#7cf7ff",
          what="Rocas y una nave hechas de líneas sobre negro.", alt="Un juego vectorial: líneas brillantes sobre negro"),
     dict(id="gba", name="Game Boy Advance", example="plataformas", era="2001 · capas, sprites, agua que ondula", art=False, fps=(61, 61), hue="#6c5ce7",
-         what="Paralaje, agua transparente y monedas.", alt="Un plataformas de Game Boy Advance con montañas en paralaje y agua"),
+         what="Montañas en paralaje, agua transparente y monedas.", alt="Un plataformas de Game Boy Advance con montañas en paralaje y agua"),
     dict(id="16bits", name="Super Nintendo · Mega Drive", example="veloz", era="1991 · velocidad y scroll por línea", art=False, fps=(40, 59), hue="#2f7bff",
-         what="Un pangolín muy rápido y un mar que se mueve línea a línea.", alt="Un plataformas de 16 bits: tierra a cuadros y un mar movido línea a línea"),
-    dict(id="32bits", name="PlayStation · Saturn 2D", example="gotico", era="1997 · 256 colores, luz mezclada", art=True, fps=(59, 61), was=(31, 31), hue="#b388ff",
-         what="Un castillo de noche: velas que brillan y un fantasma a medias.", alt="La sala de un castillo gótico: brillos de vela, un fantasma y una cazadora con látigo"),
+         what="Un pangolín muy rápido y un mar que se mueve línea a línea.", alt="Un plataformas de 16 bits: tierra a cuadros y un mar que se mueve línea a línea"),
+    dict(id="32bits", name="PlayStation · Saturn 2D", example="gotico", era="1997 · 256 colores, luces translúcidas", art=True, fps=(59, 61), was=(31, 31), hue="#b388ff",
+         what="Un castillo de noche: velas que brillan y un fantasma semitransparente.", alt="La sala de un castillo gótico: velas que brillan, un fantasma y una cazadora con látigo"),
     dict(id="neogeo", name="Neo Geo", example="duelo", era="1990 · luchadores enormes", art=True, fps=(60, 61), hue="#ffc94a",
          what="Lucha uno contra uno en un muelle al atardecer.", alt="Un juego de lucha de Neo Geo: dos luchadores grandes en un muelle al atardecer"),
     dict(id="cps2", name="CPS2", example="torneo", era="1993 · quince colores por luchador", art=True, fps=(60, 61), hue="#e8344e",
-         what="Lucha con un suelo en perspectiva dibujado en bandas.", alt="Un juego de lucha de CPS2: luchadores de quince colores sobre un suelo en perspectiva"),
+         what="Lucha sobre un suelo en perspectiva dibujado en bandas.", alt="Un juego de lucha de CPS2: luchadores de quince colores sobre un suelo en perspectiva"),
     dict(id="vertical", name="Recreativa vertical", example="tormenta", era="1985 · la pantalla girada", art=False, fps=(30, 30), was=(20, 20), hue="#4dd2a1",
-         what="Un matamarcianos para jugar con la consola de lado.", alt="Un matamarcianos vertical, girado: se juega con la consola de lado"),
+         what="Un matamarcianos para jugar con la consola de lado.", alt="Un matamarcianos vertical que se juega con la consola de lado"),
     dict(id="firstperson", name="Primera persona", example="laberinto", era="1992 · a lo Wolfenstein 3D", art=False, fps=(38, 60), was=(20, 31), hue="#c08a5a",
          what="Un laberinto visto desde dentro, con fantasmas y gemas.", alt="Un laberinto en primera persona: pasillos de piedra y un fantasma"),
 ]
@@ -57,36 +57,36 @@ OTHERS = [
 # The ladder: games Codex made, one request each, on a fresh clone with nothing but AGENTS.md (2026-10-14), from the
 # simplest to the hardest. Times, commands and tokens from its logs; fps on the console, each game playing its own test
 # (an autotest build). "after" says what was retouched by hand later, so the page claims no more than Codex did.
-CODEX_RUN = "Codex 0.155 con gpt-6-sol, razonamiento medio"
+CODEX_RUN = "Codex 0.155 y gpt-6-sol, razonamiento medio"
 CODEX = [
     dict(id="paletes", level=1, title="Paletes", look="Vectorial", minutes=3.5, time="3 min 30 s", commands=29, tokens="73 mil",
          fps="61", prompt="Hazme un Pong contra la consola: dos palas, una pelota y un marcador hasta 7 puntos. No me preguntes nada, decide tú.",
-         after="Sin retoques.", alt="Paletes, en vectores: dos palas, la pelota y el marcador"),
+         after="Sin retoques.", alt="Paletes, con aspecto vectorial: dos palas, la pelota y el marcador"),
     dict(id="raton_de_biblioteca", level=2, title="Ratón de biblioteca", look="Game Boy", minutes=4.8, time="4 min 49 s",
          commands=29, tokens="78 mil", fps="59",
          prompt="Hazme un juego con aspecto de Game Boy: un ratón que recorre una biblioteca saltando entre estanterías y "
                 "recogiendo trozos de queso, con gatos que patrullan. Que funcione y se vea bien. No me preguntes nada, decide tú.",
-         after="Retocado después: a pantalla completa, sin el marco de consola.",
+         after="Retocado después: a pantalla completa, sin el marco de la consola.",
          alt="Un ratón saltando entre estanterías de una biblioteca, en cuatro tonos de verde"),
     dict(id="oxigeno", level=3, title="Oxígeno 48K", look="ZX Spectrum", minutes=5.0, time="5 min 2 s", commands=40,
          tokens="104 mil", fps="30–60",
          prompt="Quiero un juego con aspecto de ZX Spectrum, con su pantalla de carga de cinta: un astronauta en una estación "
                 "espacial que recoge botellas de oxígeno antes de que se le acabe el aire, esquivando robots. No me preguntes nada, decide tú.",
-         after="Retocado después: el título de la portada y los textos, dentro de sus cuadros.",
+         after="Retocado después: el título de la portada y los textos, para que quepan en sus cuadros.",
          alt="La pantalla de carga: un astronauta con una botella de oxígeno ante una estación espacial"),
     dict(id="museo_nocturno", level=4, title="Museo de medianoche", look="Primera persona", minutes=6.1, time="6 min 8 s",
          commands=33, tokens="84 mil", fps="42",
          prompt="Hazme un juego en primera persona tipo Wolfenstein: un museo de noche, buscas cinco cuadros robados mientras "
                 "esquivas a los vigilantes. No me preguntes nada, decide tú.",
          after="Retocado después: el texto de la pantalla final.",
-         alt="Un pasillo de museo en primera persona con un cuadro al fondo"),
+         alt="Un pasillo de museo visto en primera persona, con un cuadro al fondo"),
     dict(id="costa_relampago", level=5, title="Ardilla Relámpago", look="Mega Drive", minutes=18.6, time="18 min 34 s",
          commands=102, tokens="252 mil", fps="59",
          prompt="Hazme un plataformas de velocidad con aspecto de Mega Drive: una ardilla que corre por una costa con rampas y "
                 "bucles, varias capas de fondo moviéndose a distintas velocidades, el mar del fondo ondulando línea a línea, "
                 "enemigos y frutas que recoger. Que vaya rápido y se vea bien. No me preguntes nada, decide tú.",
-         after="Tres encargos: el juego (4 min 41 s), su arte generado con imágenes (10 min 8 s, iba a 30 fps) y hacerlo ir a "
-               "60 en la consola con un suelo propio (3 min 45 s). Sin retoques a mano.",
+         after="Tres encargos: el juego (4 min 41 s); el arte, generado con IA (10 min 8 s; con él iba a 30 fps), y hacerlo "
+               "ir a 60 fps en la consola con un suelo hecho a medida (3 min 45 s). Sin retoques a mano.",
          alt="Una ardilla corriendo por una costa con palmeras, colinas y el mar"),
 ]
 
@@ -101,7 +101,7 @@ def header() -> str:
 <a class="logo" href="#top" aria-label="pinyol, inicio"><span class="logo-anim"><img class="l-leaves" src="img/logo/leaves.png" alt="" width="83" height="52"><img class="l-seed" src="img/logo/seed.png" alt="" width="83" height="52"><img class="l-word" src="img/logo/word.png" alt="" width="83" height="52"></span></a>
 <nav aria-label="Secciones"><ul>
 <li class="keep"><a href="#aspectos">Juegos</a></li><li><a href="#rendimiento">Rendimiento</a></li>
-<li><a href="#crear">Editor</a></li><li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz uno</a></li><li><a href="#consola">La consola</a></li><li><a href="#retroarch">RetroPie</a></li><li><a href="#making">Cómo se hizo</a></li>
+<li><a href="#crear">Editor</a></li><li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz un juego</a></li><li><a href="#consola">La consola</a></li><li><a href="#retroarch">RetroPie</a></li><li><a href="#making">Cómo se hizo</a></li>
 <li class="keep"><a href="{REPO}">GitHub</a></li></ul></nav>
 {i18n.switcher("es")}
 </div></header>"""
@@ -112,11 +112,11 @@ def hero() -> str:
 <div>
 <p class="kicker pixel">Motor de juegos libre · ESP32-S3</p>
 <h1 id="hero-title">Un motor, doce épocas</h1>
-<p class="lede"><img class="wordmark" src="img/wordmark.png" alt="pinyol" width="65" height="26"> hace juegos con la cara de las consolas de los 80 y 90 y los mueve a 60 fps en una consola de bolsillo con un ESP32‑S3. Dile a tu agente de código qué aspecto quieres y lo construye. Aquí puedes jugarlos todos.</p>
-<div class="actions"><a class="btn btn-primary" href="#aspectos">Jugar ahora</a><a class="btn btn-ghost" href="#crear">Crea un juego</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
+<p class="lede"><img class="wordmark" src="img/wordmark.png" alt="pinyol" width="65" height="26"> hace juegos con el aspecto de las consolas de los 80 y los 90 y los mueve a 60 fps en una consola de bolsillo con un ESP32‑S3. Dile a tu agente de código qué aspecto quieres y te hace el juego. Aquí puedes jugar a todos.</p>
+<div class="actions"><a class="btn btn-primary" href="#aspectos">Jugar ahora</a><a class="btn btn-ghost" href="#crear">Crear un juego</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
 <p class="meta">Código MIT · arte y sonido CC0 · {len(LOOKS) + len(OTHERS) + len(CODEX)} juegos de ejemplo</p>
 </div>
-<div><div class="board" data-live role="img" aria-label="La consola, una placa Freenove FNK0104N, arrancando: la intro de pinyol, el menú de Cirera con sus juegos y algunos de ellos en marcha">
+<div><div class="board" data-live role="img" aria-label="La consola (una placa Freenove FNK0104N) arrancando: la intro de pinyol, el menú de Cirera con sus juegos y algunos de ellos en marcha">
 <span class="hole tl"></span><span class="hole bl"></span><span class="hole tr"></span><span class="hole br"></span>
 <span class="mic" aria-hidden="true">MIC</span><span class="mic-hole"></span><span class="keys" aria-hidden="true"><i></i><i></i></span>
 <div class="glass"><div class="screen"><video class="boot" src="video/consola.mp4" poster="video/consola.jpg" width="720" height="480" autoplay muted loop playsinline preload="auto"></video></div></div></div>
@@ -142,7 +142,7 @@ def looks() -> str:
     others = "".join(f'<li><a href="{play_url(g)}">{escape(t)}</a></li>' for g, t in OTHERS)
     return f"""<section id="aspectos" aria-labelledby="aspectos-t"><div class="wrap">
 <h2 id="aspectos-t">Doce aspectos, un motor</h2>
-<p class="intro">Cada cartucho es un ejemplo jugable con las reglas de su consola: su resolución, sus colores, sus capas. Se juega con el teclado (flechas y Z, X) o con los botones de la pantalla en el móvil. Las cifras de fps son de la consola real, jugando.</p>
+<p class="intro">Cada cartucho es un ejemplo jugable con las reglas de su consola: su resolución, sus colores, sus capas. Se juega con el teclado (flechas, Z y X) o, en el móvil, con los botones en pantalla. Las cifras de fps se midieron jugando en la consola real.</p>
 <ul class="shelf">{carts}</ul>
 <div class="more"><h3>Y {len(OTHERS)} ejemplos más</h3><ul>{others}</ul></div>
 </div></section>"""
@@ -152,14 +152,14 @@ def performance(board: dict, tests: int) -> str:
     return f"""<section id="rendimiento" class="perf" aria-labelledby="perf-t"><div class="wrap">
 <p class="kicker pixel">ESP32-S3R8 · 240 MHz · PSRAM octal a 80 MHz · pantalla QSPI a 80 MHz</p>
 <h2 id="perf-t">Medido en la consola, no prometido</h2>
-<p class="intro">Cada cifra de esta sección sale de la placa: un firmware que juega solo con un guion y escribe una línea de rendimiento por segundo, o un banco de pruebas que repite cada escena cinco veces. Nada de emulador. Un frame a 60 fps tiene 16,6 ms.</p>
+<p class="intro">Cada cifra de esta sección sale de la placa: o un firmware que juega solo siguiendo un guion y anota el rendimiento cada segundo, o un banco de pruebas que repite cada escena cinco veces. Nada de emuladores. A 60 fps, cada fotograma dispone de 16,6 ms.</p>
 {charts.stats_band(board, tests)}
 {charts.looks_chart(LOOKS)}
 {charts.traces_chart(board)}
 {charts.strips_demo('img/looks/neogeo.png', 'img/looks/32bits.png', 'Animación: la pantalla dividida en 15 franjas; cada una se llena desde arriba, mitad por el núcleo 0 y mitad por el núcleo 1, y luego aparece en el panel mientras se dibuja la siguiente')}
 {charts.profile_chart(board)}
 {charts.cost_chart()}
-<p class="source">Fuente: <a href="{REPO}/blob/main/docs/measurements.md">docs/measurements.md</a>, con el método y cada medida desde el primer día. Mídelo en tu placa:
+<p class="source">Fuente: <a href="{REPO}/blob/main/docs/measurements.md">docs/measurements.md</a>, con el método y cada medición desde el primer día. Mídelo en tu placa:
 <code>idf.py -DBP_BENCH=ON build flash monitor</code></p>
 </div></section>"""
 
@@ -175,36 +175,36 @@ def code(text: str, wide: bool = False) -> str:
 def make_one() -> str:
     return f"""<section id="hazlo" aria-labelledby="hazlo-t"><div class="wrap">
 <h2 id="hazlo-t">Hazte un juego</h2>
-<p class="intro">pinyol está pensado para hacerse con un agente de código, como Codex o Claude Code. El agente lee las instrucciones del repositorio, instala lo que falta, sigue la receta del aspecto que pidas y prueba el juego antes de dártelo.</p>
+<p class="intro">pinyol está pensado para usarse con un agente de código, como Codex o Claude Code. El agente lee las instrucciones del repositorio, instala lo que falta, sigue la receta del aspecto que pidas y prueba el juego antes de dártelo.</p>
 <ol class="steps">
 <li><h3>Baja el motor</h3><p>En un Mac con Homebrew o en Linux.</p>{code(f"git clone {REPO}.git" + chr(10) + "cd pinyol")}</li>
-<li><h3>Pídeselo a tu agente</h3><p>Abre la carpeta con tu agente y dile qué quieres, en tu idioma.</p>{code("Hazme un plataformas con aspecto Game Boy: un ratón que busca queso en una biblioteca.")}</li>
-<li><h3>Juégalo</h3><p>En tu pantalla, o pásalo a la consola por USB.</p>{code("./build/pinyol_sim --game games/raton")}</li>
+<li><h3>Pídeselo a tu agente</h3><p>Abre la carpeta con tu agente y dile qué quieres, en tu idioma.</p>{code("Hazme un plataformas con aspecto de Game Boy: un ratón que busca queso en una biblioteca.")}</li>
+<li><h3>Juégalo</h3><p>En el ordenador, o pásalo a la consola por USB.</p>{code("./build/pinyol_sim --game games/raton")}</li>
 </ol>
-<div class="aside-note"><b>¿Sin programar?</b> El <a href="#crear">editor web</a> hace lo mismo con dibujos y bloques, en el navegador.</div>
+<div class="aside-note"><b>¿Sin programar?</b> <a href="#crear">El editor web</a> hace lo mismo con dibujos y bloques, en el navegador.</div>
 </div></section>"""
 
 
 def editor() -> str:
     """The editor, with the video of LÍNEA 0 being made in it (site/src/video, recorded with Playwright)."""
-    features = [("Aspecto de consola", "Game Boy, Game Boy Advance, PICO-8, ZX Spectrum o 16 bits: sus colores y su letra"),
+    features = [("Aspecto de consola", "Game Boy, Game Boy Advance, PICO-8, ZX Spectrum o 16 bits: sus colores y su tipo de letra"),
                 ("Dibujos que se mueven", "píxel a píxel, con animaciones para estar quieto, andar o recibir un golpe"),
                 ("Reglas con bloques", "vidas, cuenta atrás, diálogos, récords que se guardan"),
-                ("Sonido", "efectos con recetas, una música compuesta en una cuadrícula o un .mod"),
-                ("A la consola", "por el cable USB, o el .zip para la tarjeta"),
+                ("Sonido", "efectos a partir de recetas, música compuesta en una cuadrícula o un .mod"),
+                ("A la consola", "por cable USB o en un .zip para la tarjeta"),
                 ("En tres idiomas", "castellano, català y English")]
     items = "".join(f"<li><b>{escape(a)}</b> <span>{escape(b)}</span></li>" for a, b in features)
     return f"""<section id="crear" class="editor-sec" aria-labelledby="crear-t"><div class="wrap editor-grid">
 <div class="editor-copy">
 <p class="era pixel">Sin programar · en el navegador</p>
 <h2 id="crear-t">El editor</h2>
-<p class="intro">Dibuja los personajes píxel a píxel, pinta los mapas, pon las reglas con bloques y juégalo al momento. Empieza vacío o desde una plantilla, como Abella o LÍNEA 0.</p>
+<p class="intro">Dibuja los personajes píxel a píxel, pinta los mapas, pon las reglas con bloques y prueba el juego al momento. Empieza desde cero o desde una plantilla, como Abella o LÍNEA 0.</p>
 <ul class="features">{items}</ul>
 <div class="actions"><a class="btn btn-primary btn-big" href="editor/">Abrir el editor</a><a class="btn btn-ghost" href="#biblioteca">Juegos hechos con él</a></div>
 </div>
 <figure class="editor-video">
 <video src="video/linea0.mp4" poster="video/linea0.jpg" width="1280" height="800" controls muted loop playsinline autoplay preload="metadata" aria-describedby="linea0-cap"></video>
-<figcaption id="linea0-cap">LÍNEA 0, un juego de Game Boy Advance hecho entero con el editor, en directo: dibujos, mapas, reglas y a jugar. El montaje, ocho veces más rápido; la partida, a velocidad real.</figcaption>
+<figcaption id="linea0-cap">LÍNEA 0, un juego de Game Boy Advance hecho entero con el editor y grabado de principio a fin: dibujos, mapas, reglas y a jugar. La creación va ocho veces más rápida; la partida, a velocidad real.</figcaption>
 </figure>
 </div></section>"""
 
@@ -213,11 +213,11 @@ def library() -> str:
     """People's games (tools/library.py publishes them in library/): site.js reads the list when the page opens."""
     return f"""<section id="biblioteca" aria-labelledby="biblioteca-t"><div class="wrap">
 <h2 id="biblioteca-t">La Biblioteca</h2>
-<p class="intro">Juegos hechos por la gente con pinyol: se juegan aquí y se descargan para la consola. ¿Has hecho uno? Súbelo con un formulario: un robot lo abre, lo juega diez segundos y, cuando lo revisamos, aparece aquí.</p>
+<p class="intro">Juegos hechos por la gente con pinyol: se juegan aquí y se descargan para la consola. ¿Has hecho uno? Súbelo con el formulario: un robot lo abre y lo juega diez segundos; cuando lo hayamos revisado, aparecerá aquí.</p>
 <div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="#hazlo">Cómo se hace un juego</a></div>
 <p class="sub">¿Algo tuyo publicado aquí sin tu permiso, o algo que no debería estar? <a href="{REPO}/issues/new?title=Retirar%3A%20">Pide que lo retiremos</a>.</p>
 <figure class="tutorial"><video src="video/subir.mp4" poster="video/subir.jpg" width="960" height="600" controls preload="none" playsinline aria-describedby="subir-cap"></video>
-<figcaption id="subir-cap">Tutorial, de tu juego a la Biblioteca: descarga el .zip del editor, rellena el formulario y adjúntalo; un robot lo comprueba y, cuando está aprobado, ya se juega aquí. Las esperas, aceleradas.</figcaption></figure>
+<figcaption id="subir-cap">Tutorial, de tu juego a la Biblioteca: descarga el .zip desde el editor, rellena el formulario y adjúntalo. Un robot lo comprueba y, cuando está aprobado, ya se puede jugar aquí. Las esperas van aceleradas.</figcaption></figure>
 <div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="play/player.html">
 <p class="lib-state">La Biblioteca necesita JavaScript para cargarse. Sus juegos también están en <a href="{REPO}/tree/main/library">GitHub</a>.</p></div>
 </div></section>"""
@@ -234,7 +234,7 @@ def codex() -> str:
 <a class="zip" href="games/{j['id']}.zip" download aria-label="Descargar {escape(j['title'])} para la consola">Descargar .zip</a></div></div></li>""" for j in CODEX)
     return f"""<section id="codex" aria-labelledby="codex-t"><div class="wrap">
 <h2 id="codex-t">La escalera: cinco encargos</h2>
-<p class="intro">De lo más sencillo a lo más difícil. Un clon limpio del repositorio, una frase cada vez y ninguna pregunta contestada: Codex leyó AGENTS.md, compiló el motor, siguió la receta del aspecto y escribió un guion que juega su juego hasta que pasó. Luego cada juego se midió en la consola, jugando ese guion. Con {escape(CODEX_RUN)}.</p>
+<p class="intro">De lo más sencillo a lo más difícil. Cada encargo partió de un clon limpio del repositorio, con un solo mensaje y sin responder a ninguna pregunta. Codex leyó AGENTS.md, compiló el motor, siguió la receta del aspecto y escribió un guion que juega solo al juego, y no paró hasta que pasó la prueba. Luego cada juego se midió en la consola con ese mismo guion. Con {escape(CODEX_RUN)}.</p>
 {charts.bars([(f"{j['level']} · {j['title']}", j['minutes'], f"{j['time']} · {j['fps']} fps") for j in CODEX], 20, None, "")}
 <ul class="jobs">{jobs}</ul>
 </div></section>"""
@@ -244,15 +244,15 @@ def install(fw: dict | None) -> str:
     """The console's firmware installed from the browser (ESP Web Tools, Web Serial), when the site was built with it."""
     if not fw:
         return ""
-    return f"""<div class="install" id="instalar"><h3>Instálala desde el navegador</h3>
+    return f"""<div class="install" id="instalar"><h3>Instala el firmware desde el navegador</h3>
 <ol><li>Conecta la placa al ordenador por USB.</li><li>Pulsa el botón y elige el puerto de la placa.</li>
 <li>Espera unos minutos: arranca con {fw['games']} juegos en la memoria.</li></ol>
 <esp-web-install-button manifest="firmware/manifest.json">
 <button slot="activate" class="btn btn-primary" type="button">Instalar en la consola</button>
-<span slot="unsupported" class="note">Este navegador no puede hablar con la placa por USB: ábrela en Chrome o Edge, en un ordenador.</span>
-<span slot="not-allowed" class="note">Instalar necesita la página en https.</span>
+<span slot="unsupported" class="note">Este navegador no puede comunicarse con la placa por USB: abre esta página en Chrome o Edge, en un ordenador.</span>
+<span slot="not-allowed" class="note">Para instalar, abre la página por https.</span>
 </esp-web-install-button>
-<p class="note">Firmware {escape(fw['version'])} · {fw['mb']} MB · <a href="{REPO}/releases/tag/{fw['tag']}">los archivos, para esptool</a></p></div>"""
+<p class="note">Firmware {escape(fw['version'])} · {fw['mb']} MB · <a href="{REPO}/releases/tag/{fw['tag']}">los archivos para esptool</a></p></div>"""
 
 
 def console(fw: dict | None) -> str:
@@ -261,9 +261,9 @@ def console(fw: dict | None) -> str:
     dl = "".join(f"<dt>{escape(a)}</dt><dd>{escape(b)}</dd>" for a, b in spec)
     return f"""<section id="consola" aria-labelledby="consola-t"><div class="wrap">
 <h2 id="consola-t">La consola</h2>
-<p class="intro">Una placa de desarrollo con pantalla que se compra hecha. El motor la exprime: dibuja directamente en franjas, reparte el trabajo entre los dos núcleos y guarda en la tarjeta lo que no cabe.</p>
+<p class="intro">Una placa de desarrollo con pantalla, que se compra ya montada. El motor la exprime: dibuja directamente por franjas, reparte el trabajo entre los dos núcleos y guarda en la tarjeta lo que no cabe en memoria.</p>
 <div class="hw"><dl class="spec">{dl}</dl>
-<div class="side">{install(fw)}<div class="pending"><h3>La carcasa, en preparación</h3><p>Carcasa imprimible, botones y lista de materiales para montarla tú. Mientras tanto, la placa sola ya juega.</p>
+<div class="side">{install(fw)}<div class="pending"><h3>La carcasa, en preparación</h3><p>Pronto: carcasa imprimible, botones y lista de materiales para montarla tú. Mientras tanto, ya se juega con la placa sola.</p>
 <p><a href="{REPO}/blob/main/docs/hardware.md">Cómo conectarla</a> · <a href="https://github.com/Freenove/Freenove_ESP32_S3_Display">La placa de Freenove</a></p></div></div></div>
 </div></section>"""
 
@@ -276,11 +276,11 @@ def retroarch() -> str:
 <h2 id="retroarch-t">En RetroArch y RetroPie</h2>
 <p class="intro">¿Sin la consola? El motor también es un núcleo de libretro: los juegos de pinyol se juegan en RetroArch y en todo lo que se basa en él, como RetroPie o Lakka en una Raspberry Pi, Batocera, Recalbox, las portátiles que lo llevan o un ordenador. Es el mismo motor, así que el juego es el mismo.</p>
 <ol class="steps">
-<li><h3>Instálalo en RetroPie</h3><p>En la Raspberry Pi: compila el núcleo, en unos minutos, y añade Pinyol a EmulationStation.</p>{code(setup, wide=True)}</li>
+<li><h3>Instálalo en RetroPie</h3><p>En la Raspberry Pi, este comando compila el núcleo (tarda unos minutos) y añade Pinyol a EmulationStation.</p>{code(setup, wide=True)}</li>
 <li><h3>Copia los juegos</h3><p>El .zip de cualquier juego, como los que se descargan aquí, va a su carpeta.</p>{code("~/RetroPie/roms/pinyol/")}</li>
 <li><h3>Juega</h3><p>Reinicia EmulationStation y aparece Pinyol con sus juegos. En el mando, X o Y hacen de C, y SELECT de MENU.</p></li>
 </ol>
-<div class="aside-note"><b>¿Otro RetroArch?</b> En un ordenador, Batocera o Lakka el núcleo se añade a mano: <a href="{REPO}/blob/main/docs/libretro.md">cómo compilarlo y dónde va</a>. Probado en RetroArch y con el sistema de RetroPie emulado, aún no en una Raspberry Pi de verdad: si lo pruebas, <a href="{REPO}/issues">cuéntanos cómo va</a>.</div>
+<div class="aside-note"><b>¿Otro RetroArch?</b> En un ordenador, Batocera o Lakka, el núcleo se añade a mano: <a href="{REPO}/blob/main/docs/libretro.md">cómo compilarlo y dónde va</a>. Probado en RetroArch y con el sistema de RetroPie emulado, aún no en una Raspberry Pi de verdad: si lo pruebas, <a href="{REPO}/issues">cuéntanos cómo va</a>.</div>
 </div></section>"""
 
 
@@ -292,10 +292,10 @@ def making(stats: dict) -> str:
 <h2 id="making-t">Cómo se hizo</h2>
 <ul class="stats reveal">{li}</ul>
 <div class="story">
-<p><strong>Una persona y Claude.</strong> El motor, los ejemplos, las herramientas y esta web se escribieron hablando con Claude Code: cada idea se probaba en el simulador, se medía en la placa y se corregía con lo que la placa decía.</p>
-<p><strong>El arte, generado y encajado.</strong> Los aspectos que lo piden (Neo Geo, CPS2, 32 bits) usan imágenes generadas con IA. Unas herramientas del motor las recortan, las escalan a la altura justa, separan los fotogramas y las reducen a la paleta de la consola. Los aspectos pequeños se dibujan con código.</p>
-<p><strong>Medido antes de darlo por bueno.</strong> Cada ejemplo tiene un guion que lo juega solo. En el ordenador compara la suma de control de cada frame con la guardada; en la placa escribe los fps de cada segundo. Las optimizaciones no cambian ni un píxel.</p>
-<p><strong>Libre de verdad.</strong> El código es MIT; el arte, el sonido y los vídeos de los ejemplos, CC0. Cógelo, cámbialo, haz tu consola.</p>
+<p><strong>Una persona y Claude.</strong> El motor, los ejemplos, las herramientas y esta web se escribieron hablando con Claude Code: cada idea se probaba en el simulador, se medía en la placa y se corregía según lo que mostraban las mediciones.</p>
+<p><strong>El arte, generado y ajustado.</strong> Los aspectos que lo necesitan (Neo Geo, CPS2, 32 bits) usan imágenes generadas con IA. Las herramientas del motor las recortan, las escalan a la altura justa, separan los fotogramas y las reducen a la paleta de la consola. Los aspectos de baja resolución se dibujan con código.</p>
+<p><strong>Medido antes de darlo por bueno.</strong> Cada ejemplo tiene un guion que lo juega solo. En el ordenador, el guion compara la suma de control de cada fotograma con la guardada; en la placa, anota los fps de cada segundo. Así se comprueba que las optimizaciones no cambian ni un píxel.</p>
+<p><strong>Libre de verdad.</strong> El código tiene licencia MIT; el arte, el sonido y los vídeos de los ejemplos, CC0. Cógelo, cámbialo y haz tu propia consola.</p>
 </div>
 {art_pipeline()}
 {days()}
@@ -307,28 +307,28 @@ def art_pipeline() -> str:
     """One enemy from the request to the game: mazmorra's goblin, with the real pictures (web-retrogo/assets/cps2/raw,
     examples/mazmorra/art; site/src/img/making)."""
     steps = [
-        ("1 · El encargo", '<blockquote><p>Un goblin original para un beat-em-up de fantasía: pequeño, enjuto y encorvado, '
+        ("1 · El encargo", '<blockquote><p>Un goblin original para un beat \'em up de fantasía: pequeño, enjuto y encorvado, '
          'piel verde, orejas enormes, un taparrabos raído y un puñal curvo oxidado. De cuerpo entero, mirando a la '
-         'izquierda. Estilo: sprite de recreativa de mediados de los noventa, píxeles duros, contorno oscuro, unos 15 '
+         'izquierda. Estilo: sprite de recreativa de mediados de los noventa, píxeles nítidos, contorno oscuro, unos 15 '
          'colores. Fondo transparente.</p></blockquote>', "Resumido y traducido del encargo, que se escribió en inglés."),
         ("2 · La referencia", '<img src="img/making/goblin_ref.webp" alt="El goblin solo, de cuerpo entero: verde, con '
          'orejas puntiagudas y un puñal curvo" width="360" height="356" loading="lazy" decoding="async">',
-         "El personaje solo. Va adjunto en cada encargo siguiente, para que no cambie de un dibujo a otro."),
-        ("3 · La hoja", '<img src="img/making/goblin_sheet.jpg" alt="Diez poses del goblin en dos filas, sobre un fondo '
+         "El personaje solo. Se adjunta a cada encargo siguiente para que no cambie de un dibujo a otro."),
+        ("3 · La hoja de poses", '<img src="img/making/goblin_sheet.jpg" alt="Diez poses del goblin en dos filas, sobre un fondo '
          'oscuro difuminado" width="720" height="480" loading="lazy" decoding="async">',
          "Diez poses: andar, apuñalar, encajar un golpe y caer. El fondo se pidió transparente y salió pintado."),
-        ("4 · Recortado", '<img class="px" src="img/making/goblin_frames.png" alt="Los diez fotogramas recortados, a la '
+        ("4 · El recorte", '<img class="px" src="img/making/goblin_frames.png" alt="Los diez fotogramas recortados, a la '
          'misma escala y con los pies en la misma línea" width="535" height="200" loading="lazy" decoding="async">',
          "Las herramientas del motor quitan el fondo, separan los fotogramas, los dejan a la misma escala con los pies "
-         "en una línea y los reducen a 15 colores. Luego se revisa cada uno a ojo."),
+         "alineados y los reducen a 15 colores. Luego se revisa cada uno a ojo."),
         ("5 · En el juego", '<img class="px" src="img/making/mazmorra.png" alt="Alba, la espadachina, frente a dos '
          'goblins en el pasillo de la mazmorra" width="480" height="320" loading="lazy" decoding="async">',
-         "En mazmorra, en grupo, a 60 fps en la consola."),
+         "En mazmorra salen en grupo, a 60 fps en la consola."),
     ]
     li = "".join(f"<li><h4>{t}</h4>{body}<p>{escape(note)}</p></li>" for t, body, note in steps)
     return f"""<figure class="pipeline reveal" aria-labelledby="pipe-t">
 <figcaption><h3 id="pipe-t">Un enemigo, del encargo al juego</h3>
-<p>El goblin de mazmorra, paso a paso, con las imágenes de verdad.</p></figcaption>
+<p>El goblin del juego mazmorra, paso a paso, con las imágenes reales.</p></figcaption>
 <ol class="pipe">{li}</ol>
 </figure>"""
 
@@ -336,11 +336,11 @@ def art_pipeline() -> str:
 def days() -> str:
     """The repository's days, from its git log."""
     items = [
-        ("2026-10-11", "11 oct", "El motor sale de dos aventuras y se mide en la placa: la imagen va directa al panel, en franjas."),
-        ("2026-10-12", "12 oct", "Un procesador de imagen virtual, como el de la Game Boy Advance, y juegos en Lua de cualquier género."),
-        ("2026-10-13", "13 oct", "Medido en la consola y hecho rápido. El editor web, para hacer juegos sin programar."),
-        ("2026-10-14", "14 oct", "Los aspectos de doce consolas, la primera persona, las instrucciones para que un agente haga juegos, la web y la Biblioteca."),
-        ("2026-10-15", "15 oct", "La web y el editor en tres idiomas, los juegos de Codex e IL·LUSTRES en la Biblioteca."),
+        ("2026-10-11", "11 oct.", "El motor nace de dos juegos de aventuras y se mide en la placa: la imagen va directa al panel, por franjas."),
+        ("2026-10-12", "12 oct.", "Un procesador de imagen virtual, como el de la Game Boy Advance, y juegos en Lua de cualquier género."),
+        ("2026-10-13", "13 oct.", "Medición y optimización en la consola. El editor web, para hacer juegos sin programar."),
+        ("2026-10-14", "14 oct.", "Los aspectos de doce consolas, la vista en primera persona, las instrucciones para que un agente haga juegos, la web y la Biblioteca."),
+        ("2026-10-15", "15 oct.", "La web y el editor en tres idiomas, los juegos de Codex e IL·LUSTRES en la Biblioteca."),
     ]
     li = "".join(f'<li><time datetime="{d}">{label}</time><p>{escape(t)}</p></li>' for d, label, t in items)
     return f"""<div class="days reveal"><h3>Cinco días en el repositorio</h3><ol>{li}</ol></div>"""
