@@ -210,7 +210,9 @@ bool cable_receive(uint16_t *frame, char *id, size_t id_size) {
     snprintf(path, sizeof path, "%s/games", root());
     mkdir(path, 0755);
     remove_tree(tmp);
-    if ((uint64_t)want_bytes + 256 * 1024 > free_bytes()) { /* room for it while the old copy is still there */
+    /* a whole game needs room for itself while the old copy is still there; a patch replaces file by file, so it
+     * needs only its own size and a little for the file system */
+    if ((uint64_t)want_bytes + (patching ? 32 : 256) * 1024 > free_bytes()) {
         say("err no room: %llu KB free", (unsigned long long)(free_bytes() / 1024));
         return false;
     }

@@ -25,7 +25,7 @@ static void wipe_saves(const char *dir) {
     for (struct dirent *e; (e = readdir(d));) {
         size_t n = strlen(e->d_name);
         if ((n > 4 && (!strcmp(e->d_name + n - 4, ".sav") || !strcmp(e->d_name + n - 4, ".ppm"))) ||
-            !strcmp(e->d_name, "v2.json")) { /* (a Lua game's store) */
+            !strncmp(e->d_name, "v2.json", 7)) { /* (a Lua game's store: v2.json, v2.json.b, v2.json.tmp) */
             char p[512];
             snprintf(p, sizeof p, "%s/%s", dir, e->d_name);
             unlink(p);

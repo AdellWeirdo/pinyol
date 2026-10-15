@@ -55,6 +55,7 @@ void game_shutdown(void);
 void game_tick(const hal_input *in);
 void game_render(uint16_t *native); /* SCREEN_W x SCREEN_H RGB565 */
 bool game_quit_requested(void);
+bool save_file_atomic(const char *path, const char *txt); /* a game's saves, never half-written (hal_save's work) */
 void audio_mix(int16_t *out, int n); /* AUDIO_HZ mono; caller holds the audio lock */
 int script_run(const char *path, void (*frame)(void)); /* 0 = all expectations passed */
 int content_validate(void);                            /* number of errors, each logged */

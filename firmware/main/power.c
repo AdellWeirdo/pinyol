@@ -135,6 +135,7 @@ bool power_critical(void) { return critical; }
 
 
 void power_off(void) {
+    hal_save_flush(); /* the game's last store() is still on its way to the flash */
     hal_log("power: off");
     off = true;
     audio_out_off();

@@ -53,6 +53,62 @@ void hal_log(const char *fmt, ...) {
 
 uint32_t hal_micros(void) { return (uint32_t)esp_timer_get_time(); }
 
+/* A game's saves, written by a task a moment after the last store(): on the flash's FAT a save takes most of a
+ * second, which the game would spend frozen. The newest text wins; the game's end waits for it (hal.h). */
+static SemaphoreHandle_t save_mx, save_write_mx;
+static TaskHandle_t saver;
+static char *save_txt, save_path[400];
+#define SAVE_QUIET_MS 1000
+
+static void save_now(void) {
+    xSemaphoreTake(save_write_mx, portMAX_DELAY);
+    xSemaphoreTake(save_mx, portMAX_DELAY);
+    char *t = save_txt, p[400];
+    snprintf(p, sizeof p, "%s", save_path);
+    save_txt = NULL;
+    xSemaphoreGive(save_mx);
+    if (t) {
+        int64_t a = esp_timer_get_time();
+        if (!save_file_atomic(p, t)) hal_log("saves: %s could not be written", p);
+        else hal_log("saves: %u bytes in %.0f ms", (unsigned)strlen(t), (esp_timer_get_time() - a) / 1000.0);
+        free(t);
+    }
+    xSemaphoreGive(save_write_mx);
+}
+
+static void saver_task(void *arg) {
+    (void)arg;
+    for (;;) {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        while (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(SAVE_QUIET_MS))) { /* until the stores stop for a moment */ }
+        save_now();
+    }
+}
+
+bool hal_save(const char *path, const char *txt) {
+    if (!saver) {
+        save_mx = xSemaphoreCreateMutex();
+        save_write_mx = xSemaphoreCreateMutex();
+        if (!save_mx || !save_write_mx || xTaskCreate(saver_task, "saves", 6144, NULL, 2, &saver) != pdPASS) {
+            saver = NULL;
+            return save_file_atomic(path, txt);
+        }
+    }
+    char *t = strdup(txt);
+    if (!t) return save_file_atomic(path, txt);
+    xSemaphoreTake(save_mx, portMAX_DELAY);
+    free(save_txt);
+    save_txt = t;
+    snprintf(save_path, sizeof save_path, "%s", path);
+    xSemaphoreGive(save_mx);
+    xTaskNotifyGive(saver);
+    return true;
+}
+
+void hal_save_flush(void) {
+    if (saver) save_now();
+}
+
 /* hal_parallel: the second part runs on core 1, where the audio mixer (higher priority) and the idle game-list
  * presenter live; the caller is the game loop on core 0. */
 static TaskHandle_t part1_task, part1_waiter;
