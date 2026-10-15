@@ -120,8 +120,8 @@ export function defineBlocks() {
     { value: true, name: 'X', check: 'Number', label: t('en x') }, { value: true, name: 'Y', check: 'Number', label: 'y' }], 'statement');
   // named animations: walk and idle play by themselves; a hit when told
   define('kit_play', OBJECT, [t('animación'), { dropdown: () => [[t('Golpe'), 'hit'], [t('Acción 1'), 'act1'], [t('Acción 2'), 'act2'],
-    [t('Acción 3'), 'act3'], [t('Acción 4'), 'act4']], name: 'ANIM' }, { value: true, name: 'OBJ', check: 'Obj', label: t('de') }], 'statement',
-    t('Esos fotogramas de su dibujo, una vez (se eligen en Dibujos, en Animaciones)'));
+    [t('Acción 3'), 'act3'], [t('Acción 4'), 'act4'], [t('Acción 5'), 'act5'], [t('Acción 6'), 'act6']], name: 'ANIM' }, { value: true, name: 'OBJ', check: 'Obj', label: t('de') }], 'statement',
+    t('Esos fotogramas de su dibujo, una vez; en una conversación, el último se queda hasta que acaba (se eligen en Dibujos, en Animaciones)'));
   define('kit_face', OBJECT, [{ value: true, name: 'OBJ', check: 'Obj', label: t('girar') }, { value: true, name: 'TO', check: 'Obj', label: t('hacia') }],
     'statement', t('Se pone de frente, de espaldas o de lado según dónde esté el otro (si su dibujo tiene esas vistas)'));
   define('kit_play_hit', OBJECT, [{ value: true, name: 'OBJ', check: 'Obj', label: t('animación de golpe de') }], 'statement',

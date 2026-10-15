@@ -39,7 +39,7 @@
 -- themselves, walk while it moves, idle while it stands, also while a conversation waits; idle_side, walk_side,
 -- idle_up and walk_up are its side and back views (idle and walk, the front), chosen by the way it last moved or
 -- was turned (kit.face(o, other)); the side view looks right and is flipped to look left. kit.play(o, "hit") plays
--- the hit once, kit.play(o, "act1") an action ("act1".."act4") once. Lives:
+-- the hit once, kit.play(o, "act1") an action ("act1".."act6") once: while a conversation waits, its last frame stays. Lives:
 -- kit.set_lives(n) shows hearts, kit.add_lives(-1) takes one; at none, "no_lives" fires (or the level is lost) and
 -- trying the level again gives them back. kit.countdown(seconds) shows a clock; at 0, "time_up" fires (or the level
 -- is lost). kit.label(key, text, where, style): "normal", "shadow", "wave", "big", "gradient". data.style =
@@ -370,7 +370,7 @@ function M.player() -- whom the camera follows, or the first player-like object
 end
 
 function M.set_sprite(o, name) if o and D.sprites[name] then o.sprite = name end end
-function M.play(o, name) -- a named animation once: "hit", or an action "act1".."act4" (walk and idle play by themselves)
+function M.play(o, name) -- a named animation once: "hit", or an action "act1".."act6" (walk and idle play by themselves)
   local k = o and D.kinds[o.kind]
   local r = k and k.anims and k.anims[name]
   if not r then return end
@@ -514,10 +514,11 @@ local function animate(o, still) -- its frame this tick; still: the game waits (
     local a, z = 0, last
     if r then a, z = math.max(0, math.min(r[1], last)), math.max(0, math.min(r[2], last)) end
     if (o.hit_t or 0) > 0 then o.hit_t = o.hit_t - 1 end
-    if (o.act_t or 0) > 0 then o.act_t = o.act_t - 1 end
-    if r ~= o.anim_r then o.anim_r, o.anim = r, 0 end -- a new animation starts from its first frame
-    o.anim = o.anim + 1
     local every = (k.animate or 0) > 0 and k.animate or 6
+    local hold = still and (o.act_t or 0) > 0 and o.act_t <= every -- an action's last frame waits for the conversation
+    if (o.act_t or 0) > 0 and not hold then o.act_t = o.act_t - 1 end
+    if r ~= o.anim_r then o.anim_r, o.anim = r, 0 end -- a new animation starts from its first frame
+    if not hold then o.anim = o.anim + 1 end
     o.frame = a + ((o.anim - 1) // every) % (math.max(a, z) - a + 1)
   elseif (k.animate or 0) > 0 then -- frames go round while it moves (or always, for things that are not players)
     local player = b == "platformer" or b == "topdown" or b == "grid" or b == "push"

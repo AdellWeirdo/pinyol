@@ -21,11 +21,13 @@ tick 2
 expect_lua hablado == 1 and v.view == "side" and v.flip and v.frame == 1
 tick 3
 expect_lua h.frame == 6
+# her action's last frame stays while the conversation waits, then she stands again
 tick 60
+expect_lua h.frame == 6
+press A
+press A
+tick 10
 expect_lua h.frame == 0
-press A
-press A
-tick 5
 # reached from below he shows his front; turned to something above him, his back
 lua h.x, h.y = v.x, v.y + 40
 tick 2

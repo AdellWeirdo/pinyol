@@ -45,11 +45,12 @@ export const DRAWING = { use: 'tile', solid: false, behaviour: 'still', speed: 1
                          dir: 'forward', parallax: 0.5, drift: '', drift_speed: 0.5 };
 
 export const SIZES = [8, 16, 24, 32, 48, 64];
-export const MAX_FRAMES = 32; // a drawing's frames: room for named animations (still, walking, hit), views and actions
+export const MAX_FRAMES = 64; // a drawing's frames: room for named animations (still, walking, hit), views and actions
 export const MAX_DRAWINGS = 512; // a game's drawings: tiles a map is made of count one each
 export const ANIMS = { idle: t('Quieto'), walk: t('Andar'), hit: t('Golpe'), // kit.lua's named animations: the front,
   idle_side: t('Quieto de lado'), walk_side: t('Andar de lado'), idle_up: t('Quieto de espaldas'), // its side and back
-  walk_up: t('Andar de espaldas'), act1: t('Acción 1'), act2: t('Acción 2'), act3: t('Acción 3'), act4: t('Acción 4') }; // views, actions
+  walk_up: t('Andar de espaldas'), act1: t('Acción 1'), act2: t('Acción 2'), act3: t('Acción 3'), act4: t('Acción 4'), // views, actions
+  act5: t('Acción 5'), act6: t('Acción 6') };
 export const LANGS = { es: 'Castellano', ca: 'Català', en: 'English' }; // a game's (and the editor's): each in its own words
 
 // The letters a game can have: the engine's own, or one of these (fonts/<id>/: the four FONT_*.fnt the game carries,
