@@ -1,5 +1,15 @@
 [
  {
+  "id": "ilustres",
+  "title": "IL·LUSTRES: Combat de Llegenda",
+  "description": "Joc de lluita 1v1 a la manera de la Neo Geo amb 20 il·lustres de la cultura catalana, de Dalí i Gaudí a Caballé i Peret: arcade amb rivals, set bonus i un boss final en dues fases. En català i castellà.",
+  "author": "ipaud",
+  "license": "CC BY 4.0",
+  "issue": 0,
+  "date": "2026-10-15",
+  "cover": true
+ },
+ {
   "id": "abella",
   "title": "Abella",
   "description": "Una abella de Game Boy porta el pol·len de les flors al rusc mentre la persegueixen vespes i aranyes. Tres nivells (el prat, l'hort i el bosc), cors de vida, rècord desat i una marieta de la sort. Versió 2: portada il·lustrada, cors, i l'abella es mareja quan la piquen. Feta en directe amb l'editor ",
