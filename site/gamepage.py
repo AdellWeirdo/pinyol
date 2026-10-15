@@ -8,7 +8,6 @@ The pages are written in Spanish with the site's own links (img/, play/...) and 
 from __future__ import annotations
 
 import json
-import re
 from html import escape
 from pathlib import Path
 
@@ -18,7 +17,7 @@ import page
 # giscus: a Discussion per game (its id), in the category "Juegos". category_id stays empty until the category exists
 # (docs/comments.md): until then the pages say the comments are on their way.
 GISCUS = {"repo": "ipaud/pinyol", "repo_id": "R_kgDOVJaigg", "category": "Juegos", "category_id": ""}
-HOME = "@HOME@"  # the language's home page, from a game's page: ../../ once translated and moved
+HOME = page.HOME  # the language's home page, from a game's page (../../ once published)
 # A game whose game.json describes it in another language, as the site says it in Spanish (the tables translate it)
 SAID = {"control": "Realizas el informativo de la noche de 1994 desde la sala de control: cortas cámaras, lanzas el "
                    "vídeo y pones rótulos al ritmo de la sintonía, con el LED de la consola como piloto rojo. Hasta que "
@@ -92,17 +91,6 @@ def head(g: dict) -> str:
 </head>"""
 
 
-def header(g: dict) -> str:
-    return f"""<a class="skip" href="#main">Saltar al contenido</a>
-<header class="top"><div class="wrap">
-<a class="logo" href="{HOME}" aria-label="pinyol, inicio"><img src="img/logo.png" alt="" width="83" height="54"></a>
-<nav aria-label="Secciones"><ul>
-<li class="keep"><a href="{HOME}#aspectos">Juegos</a></li><li><a href="{HOME}#ranking">Ranking</a></li><li><a href="{HOME}#biblioteca">Biblioteca</a></li>
-<li class="keep"><a href="{page.REPO}">GitHub</a></li></ul></nav>
-{i18n.switcher("es", f"juegos/{g['id']}/")}
-</div></header>"""
-
-
 def kicker(g: dict) -> str:
     if g["kind"] == "look":
         return f"<span>{escape(g['look']['name'])}</span> · <span>{escape(g['look']['era'])}</span>"
@@ -164,7 +152,7 @@ def render(g: dict, games: list[dict], size_kb: int | None) -> str:
     talk = ' data-ready=""' if GISCUS["category_id"] else ""
     return page.new_tabs(f"""{head(g)}
 <body>
-{header(g)}
+{page.header("juegos/", f"juegos/{g['id']}/")}
 <main id="main" class="game" style="--hue:{g['hue']}">
 <section class="game-hero"><div class="wrap">
 <figure class="game-shot">{shot}</figure>
@@ -211,15 +199,7 @@ def render(g: dict, games: list[dict], size_kb: int | None) -> str:
 def write(dist: Path, games: list[dict], versioned=lambda html: html) -> int:
     """Each game's page in the three languages, under dist/juegos/ and dist/<lang>/juegos/."""
     for g in games:
-        path = f"juegos/{g['id']}/"
         zip_file = dist / g["zip"] if g["kind"] != "library" else None
         size = round(zip_file.stat().st_size / 1024) if zip_file and zip_file.exists() else None
-        html = versioned(render(g, games, size))
-        for lang in i18n.LANGS:
-            out = html if lang == "es" else i18n.translate(html, lang, path)
-            out = i18n.relocate(out, "../../").replace(HOME, "../../")
-            out = re.sub(r'<nav class="langs".*?</nav>', lambda _: i18n.switcher(lang, path), out, count=1, flags=re.S)  # (its links were right)
-            target = dist / i18n.page_path(lang) / path / "index.html"
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(out, encoding="utf-8")
+        page.publish(dist, versioned(render(g, games, size)), f"juegos/{g['id']}/")
     return len(games)

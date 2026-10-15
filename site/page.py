@@ -46,6 +46,7 @@ LOOKS = [
 ORDER = ["neogeo", "cps2", "gameboy", "spectrum", "pico8", "lcd", "32bits", "16bits", "vector", "gba", "vertical", "firstperson"]
 LOOKS = sorted(LOOKS, key=lambda k: ORDER.index(k["id"]))
 BIG = {"neogeo", "cps2", "32bits", "16bits"}
+HIGHLIGHTS = {"neogeo", "cps2", "32bits", "gba", "gameboy", "spectrum"}  # the home page's six
 HERO_EXTRA = [("loading", "La pantalla de carga de un juego de ZX Spectrum"), ("32bits_boss", "El jefe calavera girando y creciendo")]
 
 # The other examples, playable too (id, title)
@@ -97,16 +98,29 @@ def play_url(gid: str) -> str:
     return f"play/player.html?game=../games/{gid}.zip"
 
 
-def header() -> str:
+# The site's tabs: a page each, in each language (publish()). HOME is a page's way to its language's home page, made
+# right for each page's folder when it is published.
+HOME = "@HOME@"
+TABS = [("", "Inicio"), ("juegos/", "Juegos"), ("crear/", "Crear"), ("consola/", "Consola"), ("como-se-hizo/", "Cómo se hizo")]
+
+
+def header(tab: str, path: str | None = None) -> str:
+    """The logo, the tabs (tab: the one this page is in) and the languages (path: this page's, if not the tab's)."""
+    current = ' aria-current="page"'
+    items = "".join(f'<li><a href="{HOME}{t}"{current if t == tab else ""}>{name}</a></li>' for t, name in TABS)
     return f"""<a class="skip" href="#main">Saltar al contenido</a>
 <header class="top"><div class="wrap">
-<a class="logo" href="#top" aria-label="pinyol, inicio"><span class="logo-anim"><img class="l-leaves" src="img/logo/leaves.png" alt="" width="83" height="52"><img class="l-seed" src="img/logo/seed.png" alt="" width="83" height="52"><img class="l-word" src="img/logo/word.png" alt="" width="83" height="52"></span></a>
-<nav aria-label="Secciones"><ul>
-<li class="keep"><a href="#aspectos">Juegos</a></li><li><a href="#rendimiento">Rendimiento</a></li>
-<li><a href="#ranking">Ranking</a></li><li><a href="#crear">Editor</a></li><li><a href="#biblioteca">Biblioteca</a></li><li><a href="#hazlo">Haz un juego</a></li><li><a href="#consola">La consola</a></li><li><a href="#retroarch">RetroPie</a></li><li><a href="#making">Cómo se hizo</a></li>
-<li class="keep"><a href="{REPO}">GitHub</a></li></ul></nav>
-{i18n.switcher("es")}
+<a class="logo" href="{HOME}" aria-label="pinyol, inicio"><span class="logo-anim"><img class="l-leaves" src="img/logo/leaves.png" alt="" width="83" height="52"><img class="l-seed" src="img/logo/seed.png" alt="" width="83" height="52"><img class="l-word" src="img/logo/word.png" alt="" width="83" height="52"></span></a>
+<nav class="tabs" aria-label="Secciones"><ul>{items}<li><a href="{REPO}">GitHub</a></li></ul></nav>
+{i18n.switcher("es", tab if path is None else path)}
 </div></header>"""
+
+
+def page_head(kicker: str, title: str, lede: str) -> str:
+    """A tab's own title, short: what is in it."""
+    return f"""<section class="page-head"><div class="wrap">
+<p class="kicker pixel">{kicker}</p><h1 class="page-title">{title}</h1><p class="lede">{lede}</p>
+</div></section>"""
 
 
 def hero() -> str:
@@ -115,7 +129,7 @@ def hero() -> str:
 <p class="kicker pixel">Motor de juegos libre · ESP32-S3</p>
 <h1 id="hero-title">Un motor, doce épocas</h1>
 <p class="lede"><img class="wordmark" src="img/wordmark.png" alt="pinyol" width="65" height="26"> hace juegos con el aspecto de las consolas de los 80 y los 90 y los mueve a 60 fps en una consola de bolsillo con un ESP32‑S3. Dile a tu agente de código qué aspecto quieres y te hace el juego. Aquí puedes jugar a todos.</p>
-<div class="actions"><a class="btn btn-primary" href="#aspectos">Jugar ahora</a><a class="btn btn-ghost" href="#crear">Crear un juego</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
+<div class="actions"><a class="btn btn-primary" href="{HOME}juegos/">Jugar ahora</a><a class="btn btn-ghost" href="{HOME}crear/">Crear un juego</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
 <p class="meta">Código MIT · arte y sonido CC0 · {len(LOOKS) + len(OTHERS) + len(CODEX)} juegos de ejemplo</p>
 </div>
 <div><div class="board" data-live role="img" aria-label="La consola (una placa Freenove FNK0104N) arrancando: la intro de pinyol, el menú de Cirera con sus juegos y algunos de ellos en marcha">
@@ -126,18 +140,18 @@ def hero() -> str:
 </div></section>"""
 
 
-def cart(k: dict, n: int) -> str:
+def cart(k: dict, n: int, shelf: bool = True) -> str:
     fps = charts.fps_range(k["fps"])
     low = " low" if k["fps"][0] < 56 else ""
     made = "arte generado con IA" if k["art"] else "dibujado con código"
-    big = " big" if k["id"] in BIG else ""
+    big = " big" if shelf and k["id"] in BIG else ""
     return f"""<li class="cart{big}" style="--hue:{k['hue']}">
 <div class="shot"><img src="img/looks/{k['id']}.png" alt="{escape(k['alt'])}" width="480" height="320" loading="lazy" decoding="async"></div>
 <div class="label"><p class="era pixel">{escape(k['era'])}</p><h3>{escape(k['name'])}</h3><p class="what">{escape(k['what'])}</p>
 <ul class="chips"><li class="chip fps{low}">{fps} fps en la consola</li><li class="chip">{made}</li></ul>
 <div class="row"><a class="play" href="{play_url(k['example'])}" data-goatcounter-click="jugar/{k['example']}" aria-label="Jugar a {escape(k['example'])} ({escape(k['name'])})">Jugar</a>
 <a class="zip" href="games/{k['example']}.zip" download data-goatcounter-click="descargar/{k['example']}" aria-label="Descargar {escape(k['example'])} para la consola">Descargar .zip</a>
-<a class="sheet-link" href="juegos/{k['example']}/" aria-label="Ficha de {escape(k['example'])} ({escape(k['name'])})">Ficha</a></div></div></li>"""
+<a class="sheet-link" href="{HOME}juegos/{k['example']}/" aria-label="Ficha de {escape(k['example'])} ({escape(k['name'])})">Ficha</a></div></div></li>"""
 
 
 def measured(board: dict) -> list[dict]:
@@ -155,7 +169,7 @@ def measured(board: dict) -> list[dict]:
 
 def looks(shelf: list[dict]) -> str:
     carts = "".join(cart(k, n) for n, k in enumerate(shelf))
-    others = "".join(f'<li><a href="juegos/{g}/">{escape(t)}</a></li>' for g, t in OTHERS)
+    others = "".join(f'<li><a href="{HOME}juegos/{g}/">{escape(t)}</a></li>' for g, t in OTHERS)
     return f"""<section id="aspectos" aria-labelledby="aspectos-t"><div class="wrap">
 <h2 id="aspectos-t">Doce aspectos, un motor</h2>
 <p class="intro">Cada cartucho es un ejemplo jugable con las reglas de su consola: su resolución, sus colores, sus capas. Se juega con el teclado (flechas, Z y X) o, en el móvil, con los botones en pantalla. Las cifras de fps se midieron jugando en la consola real.</p>
@@ -216,7 +230,7 @@ def editor() -> str:
 <h2 id="crear-t">El editor</h2>
 <p class="intro">Dibuja los personajes píxel a píxel, pinta los mapas, pon las reglas con bloques y prueba el juego al momento. Empieza desde cero o desde una plantilla, como Abella o LÍNEA 0.</p>
 <ul class="features">{items}</ul>
-<div class="actions"><a class="btn btn-primary btn-big" href="editor/">Abrir el editor</a><a class="btn btn-ghost" href="#biblioteca">Juegos hechos con él</a></div>
+<div class="actions"><a class="btn btn-primary btn-big" href="editor/">Abrir el editor</a><a class="btn btn-ghost" href="{HOME}juegos/#biblioteca">Juegos hechos con él</a></div>
 </div>
 <figure class="editor-video">
 <video src="video/linea0.mp4" poster="video/linea0.jpg" width="1280" height="800" controls muted loop playsinline autoplay preload="metadata" aria-describedby="linea0-cap"></video>
@@ -236,12 +250,16 @@ def featured() -> str:
 </div></section>"""
 
 
-def ranking(catalog: str) -> str:
-    """The most voted games (games.js, from stats.json), with each one's numbers; the games it may list, as JSON."""
+def ranking(catalog: str, top: int = 10) -> str:
+    """The most voted games (games.js, from stats.json), with each one's numbers; the games it may list, as JSON. The
+    home page shows the first five, with the way to the rest."""
+    title, more = ("Ranking", "") if top == 10 else \
+        ("Lo más votado", f'<p class="more-link"><a class="btn btn-ghost" href="{HOME}juegos/#ranking">Ver el ranking completo</a></p>')
     return f"""<section id="ranking" aria-labelledby="ranking-t"><div class="wrap">
-<h2 id="ranking-t">Ranking</h2>
+<h2 id="ranking-t">{title}</h2>
 <p class="intro">Los juegos más votados. Se vota con una reacción en la ficha de cada juego; las cifras se actualizan una vez al día.</p>
-<div class="rank" id="rank" data-src="{STATS}"><p class="lib-state">El ranking necesita JavaScript para cargarse.</p></div>
+<div class="rank" id="rank" data-src="{STATS}" data-top="{top}"><p class="lib-state">El ranking necesita JavaScript para cargarse.</p></div>
+{more}
 <script type="application/json" id="catalog">{catalog}</script>
 </div></section>"""
 
@@ -251,13 +269,43 @@ def library(pages: str = "") -> str:
     return f"""<section id="biblioteca" aria-labelledby="biblioteca-t"><div class="wrap">
 <h2 id="biblioteca-t">La Biblioteca</h2>
 <p class="intro">Juegos hechos por la gente con pinyol: se juegan aquí y se descargan para la consola. ¿Has hecho uno? Súbelo con el formulario: un robot lo abre y lo juega diez segundos; cuando lo hayamos revisado, aparecerá aquí.</p>
-<div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="#hazlo">Cómo se hace un juego</a></div>
-<p class="sub">¿Algo tuyo publicado aquí sin tu permiso, o algo que no debería estar? <a href="{REPO}/issues/new?title=Retirar%3A%20">Pide que lo retiremos</a>.</p>
-<figure class="tutorial"><video src="video/subir.mp4" poster="video/subir.jpg" width="960" height="600" controls preload="none" playsinline aria-describedby="subir-cap"></video>
-<figcaption id="subir-cap">Tutorial, de tu juego a la Biblioteca: descarga el .zip desde el editor, rellena el formulario y adjúntalo. Un robot lo comprueba y, cuando está aprobado, ya se puede jugar aquí. Las esperas van aceleradas.</figcaption></figure>
+<div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="{HOME}crear/#subir">Cómo se sube</a></div>
 <div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="play/player.html" data-pages="{pages}">
 <p class="lib-state">La Biblioteca necesita JavaScript para cargarse. Sus juegos también están en <a href="{REPO}/tree/main/library">GitHub</a>.</p></div>
 </div></section>"""
+
+
+def share() -> str:
+    """How a game goes to the Library (the create tab): the form, the video, and how to ask for something to go."""
+    return f"""<section id="subir" aria-labelledby="subir-t"><div class="wrap">
+<h2 id="subir-t">Súbelo a la Biblioteca</h2>
+<p class="intro">Cuando tu juego esté listo, súbelo con el formulario: un robot lo abre y lo juega diez segundos, y cuando lo hayamos revisado se podrá jugar en la web y descargar para la consola.</p>
+<div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="{HOME}juegos/#biblioteca">La Biblioteca</a></div>
+<figure class="tutorial"><video src="video/subir.mp4" poster="video/subir.jpg" width="960" height="600" controls preload="none" playsinline aria-describedby="subir-cap"></video>
+<figcaption id="subir-cap">Tutorial, de tu juego a la Biblioteca: descarga el .zip desde el editor, rellena el formulario y adjúntalo. Un robot lo comprueba y, cuando está aprobado, ya se puede jugar aquí. Las esperas van aceleradas.</figcaption></figure>
+<p class="sub">¿Algo tuyo publicado aquí sin tu permiso, o algo que no debería estar? <a href="{REPO}/issues/new?title=Retirar%3A%20">Pide que lo retiremos</a>.</p>
+</div></section>"""
+
+
+def highlights(shelf: list[dict]) -> str:
+    """Six of the looks to start with, on the home page; the rest on the games tab."""
+    six = [k for k in shelf if k["id"] in HIGHLIGHTS]
+    return f"""<section id="destacados" aria-labelledby="destacados-t"><div class="wrap">
+<h2 id="destacados-t">Seis para empezar</h2>
+<p class="intro">Seis de los doce aspectos, para jugar ahora mismo en el navegador. Las cifras de fps se midieron jugando en la consola real.</p>
+<ul class="jobs">{"".join(cart(k, n, shelf=False) for n, k in enumerate(six))}</ul>
+<p class="more-link"><a class="btn btn-ghost" href="{HOME}juegos/">Ver todos los juegos</a></p>
+</div></section>"""
+
+
+def doors() -> str:
+    """The home page's three ways in: to play, to make, the console."""
+    items = [("juegos/", "img/looks/neogeo.png", "Juega", "Doce aspectos de consola, los juegos de la gente y el ranking."),
+             ("crear/", "video/linea0.jpg", "Crea", "Con tu agente de código o con el editor, sin programar, y súbelo a la Biblioteca."),
+             ("consola/", "img/console/cirera_frente.webp", "La consola", "La Cirera, su firmware y otras formas de jugar, como RetroArch.")]
+    li = "".join(f"""<li class="door"><img src="{img}" alt="" width="480" height="320" loading="lazy" decoding="async">
+<div><h3><a class="stretch" href="{HOME}{t}">{escape(name)}</a> <span class="arrow" aria-hidden="true">→</span></h3><p>{escape(text)}</p></div></li>""" for t, img, name, text in items)
+    return f"""<section class="doors-sec" aria-labelledby="doors-t"><div class="wrap"><h2 id="doors-t" class="sr">Las secciones</h2><ul class="doors">{li}</ul></div></section>"""
 
 
 def codex() -> str:
@@ -269,7 +317,7 @@ def codex() -> str:
 <p class="after">{escape(j['after'])}</p>
 <div class="row"><a class="play" href="{play_url(j['id'])}" aria-label="Jugar a {escape(j['title'])}">Jugar</a>
 <a class="zip" href="games/{j['id']}.zip" download aria-label="Descargar {escape(j['title'])} para la consola">Descargar .zip</a>
-<a class="sheet-link" href="juegos/{j['id']}/" aria-label="Ficha de {escape(j['title'])}">Ficha</a></div></div></li>""" for j in CODEX)
+<a class="sheet-link" href="{HOME}juegos/{j['id']}/" aria-label="Ficha de {escape(j['title'])}">Ficha</a></div></div></li>""" for j in CODEX)
     return f"""<section id="codex" aria-labelledby="codex-t"><div class="wrap">
 <h2 id="codex-t">La escalera: cinco encargos</h2>
 <p class="intro">De lo más sencillo a lo más difícil. Cada encargo partió de un clon limpio del repositorio, con un solo mensaje y sin responder a ninguna pregunta. Codex leyó AGENTS.md, compiló el motor, siguió la receta del aspecto y escribió un guion que juega solo al juego, y no paró hasta que pasó la prueba. Luego cada juego se midió en la consola con ese mismo guion. Con {escape(CODEX_RUN)}.</p>
@@ -298,7 +346,7 @@ def console(fw: dict | None) -> str:
             ("Pantalla", "3,5″, 480×320, ST77922 por QSPI, táctil"), ("Sonido", "ES8311 con altavoz"), ("Lo demás", "microSD, batería, USB")]
     dl = "".join(f"<dt>{escape(a)}</dt><dd>{escape(b)}</dd>" for a, b in spec)
     return f"""<section id="consola" aria-labelledby="consola-t"><div class="wrap">
-<h2 id="consola-t">La consola</h2>
+<h2 id="consola-t">La Cirera</h2>
 <p class="intro">Una placa de desarrollo con pantalla, que se compra ya montada. El motor la exprime: dibuja directamente por franjas, reparte el trabajo entre los dos núcleos y guarda en la tarjeta lo que no cabe en memoria.</p>
 <figure class="renders"><img src="img/console/cirera_frente.webp" alt="La consola Cirera de frente: carcasa marfil, cruceta verde, botones A, B y C de color terracota, MENU y START grises y una pelea de Neo Geo en la pantalla" width="1200" height="800" loading="lazy" decoding="async"><img src="img/console/cirera_detras.webp" alt="La parte de atrás: una placa oscura con CIRERA y una cereza de píxeles, el modelo S3-01, la batería de 3,7 V y 3000 mAh y USB-C a 5 V" width="1200" height="800" loading="lazy" decoding="async"><figcaption>La carcasa Cirera v1.0, en render: imágenes generadas con IA a partir de su modelo 3D. Todavía no se ha impreso.</figcaption></figure>
 <figure class="tutorial"><video src="video/montaje.mp4" poster="video/montaje.jpg" width="960" height="540" controls muted preload="none" playsinline aria-describedby="montaje-cap"></video><figcaption id="montaje-cap">El montaje de la v1.0, animado a partir de su modelo 3D: la carcasa, la placa, las dos placas de cobre de los botones, los cables, la batería y el altavoz.</figcaption></figure>
@@ -329,7 +377,7 @@ def making(stats: dict) -> str:
              (stats["commits"], "commits en el repositorio")]
     li = "".join(f'<li><b data-count="{v}" data-dec="0">{thousands(v)}</b><span>{escape(t)}</span></li>' for v, t in items)
     return f"""<section id="making" aria-labelledby="making-t"><div class="wrap">
-<h2 id="making-t">Cómo se hizo</h2>
+<h2 id="making-t" class="sr">En cifras</h2>
 <ul class="stats reveal">{li}</ul>
 <div class="story">
 <p><strong>Una persona y Claude.</strong> El motor, los ejemplos, las herramientas y esta web se escribieron hablando con Claude Code: cada idea se probaba en el simulador, se medía en la placa y se corregía según lo que mostraban las mediciones.</p>
@@ -415,26 +463,28 @@ def new_tabs(html: str) -> str:
     return re.sub(r"<a(\s[^>]*)>(.*?)</a>", one, html, flags=re.S)
 
 
-def render(board: dict, stats: dict, fw: dict | None, catalog: str = "[]", pages: str = "") -> str:
-    shelf = measured(board)
-    desc = "pinyol: un motor de juegos libre con doce aspectos retro (Game Boy, Neo Geo, CPS2, PlayStation…) que corre a 60 fps en una consola ESP32-S3 y en el navegador."
-    csp = (f"default-src 'self'; img-src 'self' data: https://raw.githubusercontent.com {COUNTER}; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; "
-           f"connect-src 'self' https://raw.githubusercontent.com {COUNTER}; object-src 'none'; base-uri 'self'; form-action 'none'")
+CSP = (f"default-src 'self'; img-src 'self' data: https://raw.githubusercontent.com {COUNTER}; style-src 'self' 'unsafe-inline'; "
+       f"script-src 'self'; font-src 'self'; connect-src 'self' https://raw.githubusercontent.com {COUNTER}; object-src 'none'; "
+       f"base-uri 'self'; form-action 'none'")
+
+
+def layout(path: str, title: str, desc: str, body: str, fw: dict | None = None) -> str:
+    """A tab's page: its head (title, description, the three languages), the tabs, its sections, the footer."""
     return new_tabs(f"""<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="{csp}">
-<title>pinyol · un motor, doce épocas</title>
+<meta http-equiv="Content-Security-Policy" content="{CSP}">
+<title>{title}</title>
 <meta name="description" content="{escape(desc)}">
-<meta property="og:title" content="pinyol · un motor, doce épocas">
+<meta property="og:title" content="{title}">
 <meta property="og:description" content="{escape(desc)}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="{SITE}img/og.png">
 <meta name="theme-color" content="#0b0e1f">
-<link rel="canonical" href="{SITE}">
-{i18n.alternates(SITE)}
+<link rel="canonical" href="{SITE}{path}">
+{i18n.alternates(SITE, path)}
 <link rel="icon" href="img/icon.png">
 <link rel="preload" href="fonts/jersey15.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
@@ -443,22 +493,47 @@ def render(board: dict, stats: dict, fw: dict | None, catalog: str = "[]", pages
 <script data-goatcounter="{COUNTER}/count" async src="vendor/goatcounter/count.js"></script>{'<script type="module" src="vendor/esp-web-tools/install-button.js"></script>' if fw else ""}
 </head>
 <body>
-{header()}
+{header(path)}
 <main id="main">
-{hero()}
-{featured()}
-{looks(shelf)}
-{performance(board, stats['tests'], shelf)}
-{make_one()}
-{editor()}
-{codex()}
-{ranking(catalog)}
-{library(pages)}
-{console(fw)}
-{retroarch()}
-{making(stats)}
+{body}
 </main>
 {footer()}
 </body>
 </html>
 """)
+
+
+def site(board: dict, stats: dict, fw: dict | None, catalog: str = "[]", pages: str = "") -> dict[str, str]:
+    """The five tabs, {path: page in Spanish}."""
+    shelf = measured(board)
+    desc = "pinyol: un motor de juegos libre con doce aspectos retro (Game Boy, Neo Geo, CPS2, PlayStation…) que corre a 60 fps en una consola ESP32-S3 y en el navegador."
+    return {
+        "": layout("", "pinyol · un motor, doce épocas", desc,
+                   f"{hero()}\n{featured()}\n{doors()}\n{highlights(shelf)}\n{ranking(catalog, 5)}"),
+        "juegos/": layout("juegos/", "Juegos · pinyol", "Los juegos de pinyol: doce aspectos de consola, los de la Biblioteca y el ranking, para jugar en el navegador o descargar para la consola.",
+                          page_head("Para jugar en el navegador", "Juegos", "Doce aspectos de consola, los otros ejemplos y los juegos que hace la gente. Cada uno tiene su ficha, con sus cifras, sus comentarios y sus votos.")
+                          + f"\n{looks(shelf)}\n{ranking(catalog)}\n{library(pages)}"),
+        "crear/": layout("crear/", "Crear · pinyol", "Hazte un juego con pinyol: con tu agente de código o con el editor web, sin programar, y súbelo a la Biblioteca.",
+                         page_head("Con tu agente o sin programar", "Crear", "Pídeselo a tu agente de código, o dibújalo y ponle reglas en el editor. Cuando esté listo, súbelo a la Biblioteca.")
+                         + f"\n{make_one()}\n{editor()}\n{codex()}\n{share()}"),
+        "consola/": layout("consola/", "Consola · pinyol", "La consola Cirera, su firmware para instalar desde el navegador, y pinyol en RetroArch y RetroPie.",
+                           page_head("ESP32-S3 · 480×320 · 60 fps", "Consola", "La Cirera, su firmware para instalar desde el navegador y otras formas de jugar a lo mismo, como RetroArch.")
+                           + f"\n{console(fw)}\n{retroarch()}", fw),
+        "como-se-hizo/": layout("como-se-hizo/", "Cómo se hizo · pinyol", "Cómo se hicieron pinyol y su web con Claude, y su rendimiento medido en la consola.",
+                                page_head("Una persona y Claude", "Cómo se hizo", "El motor, los juegos y esta web, hechos hablando con Claude Code y medidos en la placa de verdad.")
+                                + f"\n{making(stats)}\n{performance(board, stats['tests'], shelf)}"),
+    }
+
+
+def publish(dist, html: str, path: str = "") -> None:
+    """A page in the three languages: dist/<path>, dist/ca/<path>, dist/en/<path>, its links made right for each."""
+    up = "../" * path.count("/")
+    for lang in i18n.LANGS:
+        out = html if lang == "es" else i18n.translate(html, lang, path)
+        if up:
+            out = i18n.relocate(out, up)
+            out = re.sub(r'<nav class="langs".*?</nav>', lambda _: i18n.switcher(lang, path), out, count=1, flags=re.S)
+        out = out.replace(HOME, up or "./")
+        target = dist / i18n.page_path(lang) / path / "index.html"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(out, encoding="utf-8")

@@ -29,6 +29,8 @@ const LOCALE = { es: 'es-ES', ca: 'ca-ES', en: 'en-GB' }[LANG] || 'es-ES';
 const num = v => new Intl.NumberFormat(LOCALE).format(v);
 const time = m => m < 60 ? num(m) + ' min' : num(Math.floor(m / 60)) + ' h' + (m % 60 ? ' ' + m % 60 + ' min' : '');
 const ROOT = new URL('.', document.querySelector('link[rel="stylesheet"]').href); // the site's root, from any page
+const HOME = new URL(LANG === 'ca' || LANG === 'en' ? LANG + '/' : './', ROOT);           // this language's home page
+const sheetUrl = id => new URL('juegos/' + id + '/', HOME).href;
 const ID = /^[a-z0-9_-]{1,40}$/;
 
 function el(tag, attrs, ...kids) {
@@ -74,7 +76,7 @@ const byId = Object.fromEntries(CATALOG.map(g => [g.id, g]));
 function showFeatured(choice) {
   const g = choice && byId[choice.id];
   if (!g) return;
-  const page = new URL('juegos/' + g.id + '/', location.href).href;
+  const page = sheetUrl(g.id);
   if (g.image) document.getElementById('feat-img').src = new URL(g.image, ROOT).href;
   document.getElementById('feat-shot').href = page;
   document.getElementById('feat-title').textContent = g.title;
@@ -102,7 +104,7 @@ function rankRow(g, n, s) {
   if (s.plays != null) facts.append(el('li', { class: 'chip' }, num(s.plays) + ' ' + W.plays));
   if (s.minutes) facts.append(el('li', { class: 'chip' }, time(s.minutes) + ' ' + W.played));
   return el('li', { class: 'rank-row' }, el('span', { class: 'rank-n pixel' }, String(n)), shot,
-    el('div', { class: 'rank-info' }, el('h3', {}, el('a', { href: 'juegos/' + g.id + '/' }, g.title)), facts));
+    el('div', { class: 'rank-info' }, el('h3', {}, el('a', { href: sheetUrl(g.id) }, g.title)), facts));
 }
 
 async function loadRanking() {
@@ -110,15 +112,17 @@ async function loadRanking() {
   rankState(box, W.loading);
   try {
     const data = await stats(box.dataset.src);
-    showFeatured(data && data.featured && byId[data.featured.id] ? data.featured
-      : { id: pick(CATALOG, isoWeek()).id, reason: 'random', week: isoWeek() });
+    if (document.getElementById('portada'))
+      showFeatured(data && data.featured && byId[data.featured.id] ? data.featured
+        : { id: pick(CATALOG, isoWeek()).id, reason: 'random', week: isoWeek() });
     const games = (data && data.games) || {};
     const ranked = ((data && data.ranking) || []).filter(id => ID.test(id) && byId[id] && games[id]
-      && ((games[id].likes || 0) + (games[id].comments || 0)) > 0).slice(0, 10);
+      && ((games[id].likes || 0) + (games[id].comments || 0)) > 0).slice(0, +box.dataset.top || 10);
     if (!ranked.length) return rankState(box, W.empty);
     box.replaceChildren(el('ol', { class: 'rank-list' }, ...ranked.map((id, i) => rankRow(byId[id], i + 1, games[id]))));
   } catch {
-    if (document.getElementById('portada').hidden && CATALOG.length) showFeatured({ id: pick(CATALOG, isoWeek()).id, reason: 'random' });
+    const feat = document.getElementById('portada');
+    if (feat && feat.hidden && CATALOG.length) showFeatured({ id: pick(CATALOG, isoWeek()).id, reason: 'random' });
     rankState(box, W.failed, retryable(loadRanking));
   }
 }
@@ -134,7 +138,7 @@ if (lib && lib.dataset.pages) {
       const zip = card.querySelector('a.zip');
       const id = zip && (zip.getAttribute('href').match(/\/library\/([a-z0-9_-]{1,40})\/game\.zip$/) || [])[1];
       const title = (card.querySelector('h3') || {}).textContent || id;
-      if (id && pages.has(id)) zip.after(' ', el('a', { class: 'sheet-link', href: 'juegos/' + id + '/', 'aria-label': W.sheetX(title) }, W.sheet));
+      if (id && pages.has(id)) zip.after(' ', el('a', { class: 'sheet-link', href: sheetUrl(id), 'aria-label': W.sheetX(title) }, W.sheet));
     }
   }).observe(lib, { childList: true, subtree: true });
 }

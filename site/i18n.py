@@ -35,6 +35,7 @@ RULES = [
      {"en": "Play {0}{1p} (opens in a new tab)", "ca": "Juga a {0}{1p} (s'obre en una pestanya nova)"}),
     (r"^Descargar (.+) para la consola$", {"en": "Download {0} for the console", "ca": "Descarrega {0} per a la consola"}),
     (r"^Ficha de (.+?)(?: \((.+)\))?$", {"en": "Details: {0}{1p}", "ca": "Fitxa de {0}{1p}"}),
+    (r"^(.+) · pinyol$", {"en": "{0t} · pinyol", "ca": "{0t} · pinyol"}),  # a tab's title
     (r"^Copiar: (.+)$", {"en": "Copy: {0t}", "ca": "Copia: {0t}"}),
     (r"^(\w+): antes (.+) fps, ahora (.+)$", {"en": "{0}: before, {1t} fps; now {2t}", "ca": "{0}: abans {1t} fps, ara {2t}"}),
     (r"^(\w+): ((?:entre )?\d+(?: y \d+)?) fps$", {"en": "{0}: {1t} fps", "ca": "{0}: {1t} fps"}),

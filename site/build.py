@@ -184,14 +184,10 @@ def main() -> None:
     board = json.loads((HERE / "src/data/board.json").read_text(encoding="utf-8"))
     games_list = gamepage.catalog(np2d, page.measured(board))
     library_ids = " ".join(g["id"] for g in games_list if g["kind"] == "library")
-    html = page.render(board, stats(np2d), fw, gamepage.public(games_list), library_ids)
-    html = versioned(html)
-    print(f"juegos/: {gamepage.write(DIST, games_list, versioned)} games, each in {len(i18n.LANGS)} languages")
-    (DIST / "index.html").write_text(html, encoding="utf-8")
-    for lang in i18n.LANGS:
-        if lang != "es":
-            (DIST / lang).mkdir(exist_ok=True)  # (its juegos/ is already there)
-            (DIST / lang / "index.html").write_text(i18n.translate(html, lang), encoding="utf-8")
+    tabs = page.site(board, stats(np2d), fw, gamepage.public(games_list), library_ids)
+    for path, html in tabs.items():
+        page.publish(DIST, versioned(html), path)
+    print(f"{len(tabs)} tabs, juegos/: {gamepage.write(DIST, games_list, versioned)} games, each in {len(i18n.LANGS)} languages")
     (DIST / ".nojekyll").write_text("")  # GitHub Pages: serve the folders as they are
     (DIST / ".gitattributes").write_text("".join(f"*.{e} binary\n" for e in ("bin", "wasm", "zip", "png", "woff2", "mp4", "jpg")))
     size = sum(p.stat().st_size for p in DIST.rglob("*") if p.is_file())

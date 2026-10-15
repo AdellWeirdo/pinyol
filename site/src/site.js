@@ -21,6 +21,14 @@ const WORDS = {
 };
 const W = WORDS[LANG] || WORDS.es;
 
+// The site was one long page; its sections now live in tabs. A link to an old section (pinyol/#instalar, from a
+// release or a README) goes to its tab.
+const MOVED = { aspectos: 'juegos/', ranking: 'juegos/', biblioteca: 'juegos/', hazlo: 'crear/', crear: 'crear/', codex: 'crear/',
+                consola: 'consola/', instalar: 'consola/', retroarch: 'consola/', escritorio: 'consola/', rendimiento: 'como-se-hizo/',
+                making: 'como-se-hizo/' };
+const old = location.hash.slice(1);
+if (MOVED[old] && !document.getElementById(old) && document.getElementById('portada')) location.replace(new URL(MOVED[old] + '#' + old, location.href));
+
 if (still) document.querySelectorAll('video[autoplay]').forEach(v => { v.removeAttribute('autoplay'); v.pause(); }); // they wait to be played
 document.querySelectorAll('.screen-toggle').forEach(b => { // the console's screen: a video that loops, so it can be paused
   const v = document.querySelector('.screen video');
