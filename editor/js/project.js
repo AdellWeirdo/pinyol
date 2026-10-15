@@ -57,6 +57,7 @@ export const FONTS = { '': t('La del motor'), silkscreen: 'Silkscreen', micro5: 
 // A game's look, as a console drew it: its colours (only those, or any snapped to the console's own), the size of its
 // map's tiles, its letters, and the colours of the game's own texts and hearts (kit.lua's data.style)
 const MD = c => Math.min(252, Math.round(c / 36) * 36); // a Mega Drive's 512 colours: 8 steps a channel
+const GBA = c => Math.min(248, Math.round(c / 8) * 8); // a Game Boy Advance's 32768: 32 steps a channel
 export const LOOKS = {
   '': { name: t('Libre'), palette: null, tile: 16, font: '' },
   gameboy: { name: 'Game Boy', tile: 16, font: 'silkscreen', background: '#9BBC0F',
@@ -73,11 +74,22 @@ export const LOOKS = {
                       t('azul brillante'), t('rojo brillante'), t('magenta brillante'), t('verde brillante'),
                       t('cian brillante'), t('amarillo brillante'), t('blanco brillante')],
               style: { text: '#FFFFFF', outline: '#000000', accent: '#FFFF00', bad: '#FF0000', heart: '#FF0000' } },
-  '16bits': { name: t('16 bits'), tile: 16, font: 'jersey15', snap: true, // any colour, as one of the console's 512
+  '16bits': { name: t('16 bits'), tile: 16, font: 'jersey15', snap: MD, // any colour, as one of the console's 512
               palette: ['#000000', '#242424', '#6C6C6C', '#B4B4B4', '#FCFCFC', '#480000', '#B42424', '#FC4848',
                         '#FC9048', '#FCD86C', '#FCFC90', '#244800', '#48906C', '#6CD848', '#B4FC6C', '#002448',
                         '#0048B4', '#2490FC', '#6CD8FC', '#B4FCFC', '#480048', '#902490', '#D848B4', '#FC90D8',
                         '#482400', '#906C48', '#D8B490', '#FCD8B4', '#244848', '#486C90', '#9090D8', '#D8D8FC'] },
+  gba: { name: 'Game Boy Advance', tile: 16, font: '', snap: GBA, // any colour in 15 bits; 32 bright ones at hand
+         palette: ['#101018', '#283048', '#485878', '#8098B8', '#D0D8E8', '#F8F8F8', '#602030', '#C03040', '#F86048',
+                   '#F8A060', '#F8D048', '#F8F0A0', '#284020', '#488838', '#80C050', '#C8E878', '#183858', '#2868B0',
+                   '#48A0E8', '#98D8F8', '#382058', '#7048A8', '#B080E0', '#F0A8D8', '#483020', '#886040', '#C89868',
+                   '#F0D0A8', '#205858', '#38A098', '#78D8C0', '#A8A8B0'],
+         names: [t('negro tinta'), t('azul noche'), t('pizarra'), t('pizarra clara'), t('niebla'), t('blanco'), t('granate'),
+                 t('rojo'), t('coral'), t('naranja'), t('amarillo'), t('crema'), t('verde bosque'), t('verde'), t('lima'),
+                 t('lima pálido'), t('azul profundo'), t('azul'), t('celeste'), t('hielo'), t('morado oscuro'), t('morado'),
+                 t('lila'), t('rosa'), t('marrón oscuro'), t('marrón'), t('canela'), t('piel'), t('verde azulado oscuro'),
+                 t('verde azulado'), t('menta'), t('gris')],
+         style: { text: '#F8F8F8', outline: '#101018', accent: '#F8D048', bad: '#F86048', heart: '#F05068' } },
 };
 LOOKS.pico8.palette = PALETTE.slice(0, 16);
 LOOKS.pico8.names = COLOUR_NAMES.slice(0, 16);
@@ -87,7 +99,7 @@ export const lookOf = p => LOOKS[p && p.look] || LOOKS[''];
 export function lookColour(look, v) {
   if (v < 0 || !look.palette || look === LOOKS['']) return v;
   const [r, g, b] = rgbOf(v);
-  if (look.snap) return rgb565(MD(r), MD(g), MD(b));
+  if (look.snap) return rgb565(look.snap(r), look.snap(g), look.snap(b));
   let best = v, d = Infinity;
   for (const hex of look.palette) {
     const [pr, pg, pb] = rgbOf(hex565(hex)), e = (pr - r) ** 2 * 3 + (pg - g) ** 2 * 4 + (pb - b) ** 2 * 2;
