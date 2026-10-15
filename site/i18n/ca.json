@@ -118,7 +118,6 @@
  "Conecta la placa al ordenador por USB.": "Connecta la placa a l'ordinador per USB.",
  "Pulsa el botón y elige el puerto de la placa.": "Prem el botó i tria el port de la placa.",
  "Instalar en la consola": "Instal·la a la consola",
- "La carcasa, en preparación": "La carcassa, en preparació",
  "Cómo conectarla": "Com connectar-la",
  "La placa de Freenove": "La placa de Freenove",
  "líneas de C en el motor": "línies de C al motor",
@@ -298,7 +297,6 @@
  "Este navegador no puede comunicarse con la placa por USB: abre esta página en Chrome o Edge, en un ordenador.": "Aquest navegador no pot parlar amb la placa per USB: obre aquesta pàgina a Chrome o Edge, en un ordinador.",
  "Para instalar, abre la página por https.": "Per instal·lar, cal obrir la pàgina amb https.",
  "los archivos para esptool": "els fitxers, per a esptool",
- "Pronto: carcasa imprimible, botones y lista de materiales para montarla tú. Mientras tanto, ya se juega con la placa sola.": "Carcassa imprimible, botons i llista de materials per muntar-la tu. Mentrestant, ja pots jugar amb la placa sola.",
  "El motor, los ejemplos, las herramientas y esta web se escribieron hablando con Claude Code: cada idea se probaba en el simulador, se medía en la placa y se corregía según lo que mostraban las mediciones.": "El motor, els exemples, les eines i aquest web es van escriure parlant amb Claude Code: cada idea es provava al simulador, es mesurava a la placa i es corregia segons el que deia la placa.",
  "El arte, generado y ajustado.": "L'art, generat i encaixat.",
  "Los aspectos que lo necesitan (Neo Geo, CPS2, 32 bits) usan imágenes generadas con IA. Las herramientas del motor las recortan, las escalan a la altura justa, separan los fotogramas y las reducen a la paleta de la consola. Los aspectos de baja resolución se dibujan con código.": "Els aspectes que ho demanen (Neo Geo, CPS2, 32 bits) fan servir imatges generades amb IA. Les eines del motor les retallen, les escalen a l'alçada justa, en separen els fotogrames i les redueixen a la paleta de la consola. Els aspectes de baixa resolució es dibuixen amb codi.",
@@ -329,5 +327,10 @@
  "En la Raspberry Pi, este comando compila el núcleo (tarda unos minutos) y añade Pinyol a EmulationStation.": "A la Raspberry Pi, aquesta ordre compila el nucli (triga uns minuts) i afegeix Pinyol a EmulationStation.",
  "En un ordenador, Batocera o Lakka, el núcleo se añade a mano:": "En un ordinador, Batocera o Lakka, el nucli s'afegeix a mà:",
  "Cada punto es un segundo de partida en la placa, mientras un guion juega solo. La línea discontinua es la primera medición; la continua, la actual. El primer segundo carga la escena y no cuenta en las cifras.": "Cada punt és un segon de joc a la placa: una línia de rendiment per segon mentre un guió juga sol. La línia discontínua és la primera mesura; la contínua, la d'ara. El primer segon carrega l'escena i no compta en les xifres.",
- "No hizo falta optimizarlos:": "No va caldre optimitzar-los:"
+ "No hizo falta optimizarlos:": "No va caldre optimitzar-los:",
+ "La carcasa Cirera v1.0, en render: imágenes generadas con IA a partir de su modelo 3D. Todavía no se ha impreso.": "La carcassa Cirera v1.0, en render: imatges generades amb IA a partir del seu model 3D. Encara no s'ha imprès.",
+ "La consola Cirera de frente: carcasa marfil, cruceta verde, botones A, B y C de color terracota, MENU y START grises y una pelea de Neo Geo en la pantalla": "La consola Cirera de cara: carcassa marfil, creueta verda, botons A, B i C de color terracota, MENU i START grisos i un combat de Neo Geo a la pantalla",
+ "La parte de atrás: una placa oscura con CIRERA y una cereza de píxeles, el modelo S3-01, la batería de 3,7 V y 3000 mAh y USB-C a 5 V": "La part del darrere: una placa fosca amb CIRERA i una cirera de píxels, el model S3-01, la bateria de 3,7 V i 3000 mAh i USB-C a 5 V",
+ "La carcasa v1.0, diseñada": "La carcassa v1.0, dissenyada",
+ "Falta imprimirla y probarla. Entonces se publicarán sus archivos para imprimir (CC BY 4.0), la lista de piezas y el montaje. Mientras tanto, ya se juega con la placa sola.": "Falta imprimir-la i provar-la. Llavors se'n publicaran els fitxers per imprimir (CC BY 4.0), la llista de peces i el muntatge. Mentrestant, ja es pot jugar amb la placa sola."
 }

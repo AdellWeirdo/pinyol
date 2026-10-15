@@ -275,8 +275,9 @@ def console(fw: dict | None) -> str:
     return f"""<section id="consola" aria-labelledby="consola-t"><div class="wrap">
 <h2 id="consola-t">La consola</h2>
 <p class="intro">Una placa de desarrollo con pantalla, que se compra ya montada. El motor la exprime: dibuja directamente por franjas, reparte el trabajo entre los dos núcleos y guarda en la tarjeta lo que no cabe en memoria.</p>
+<figure class="renders"><img src="img/console/cirera_frente.webp" alt="La consola Cirera de frente: carcasa marfil, cruceta verde, botones A, B y C de color terracota, MENU y START grises y una pelea de Neo Geo en la pantalla" width="1200" height="800" loading="lazy" decoding="async"><img src="img/console/cirera_detras.webp" alt="La parte de atrás: una placa oscura con CIRERA y una cereza de píxeles, el modelo S3-01, la batería de 3,7 V y 3000 mAh y USB-C a 5 V" width="1200" height="800" loading="lazy" decoding="async"><figcaption>La carcasa Cirera v1.0, en render: imágenes generadas con IA a partir de su modelo 3D. Todavía no se ha impreso.</figcaption></figure>
 <div class="hw"><dl class="spec">{dl}</dl>
-<div class="side">{install(fw)}<div class="pending"><h3>La carcasa, en preparación</h3><p>Pronto: carcasa imprimible, botones y lista de materiales para montarla tú. Mientras tanto, ya se juega con la placa sola.</p>
+<div class="side">{install(fw)}<div class="pending"><h3>La carcasa v1.0, diseñada</h3><p>Falta imprimirla y probarla. Entonces se publicarán sus archivos para imprimir (CC BY 4.0), la lista de piezas y el montaje. Mientras tanto, ya se juega con la placa sola.</p>
 <p><a href="{REPO}/blob/main/docs/hardware.md">Cómo conectarla</a> · <a href="https://github.com/Freenove/Freenove_ESP32_S3_Display">La placa de Freenove</a></p></div></div></div>
 </div></section>"""
 

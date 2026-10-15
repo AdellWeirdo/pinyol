@@ -118,7 +118,6 @@
  "Conecta la placa al ordenador por USB.": "Connect the board to your computer over USB.",
  "Pulsa el botón y elige el puerto de la placa.": "Press the button and choose the board's port.",
  "Instalar en la consola": "Install on the console",
- "La carcasa, en preparación": "The case, in the works",
  "Cómo conectarla": "How to wire it",
  "La placa de Freenove": "The Freenove board",
  "líneas de C en el motor": "lines of C in the engine",
@@ -298,7 +297,6 @@
  "Este navegador no puede comunicarse con la placa por USB: abre esta página en Chrome o Edge, en un ordenador.": "This browser can't talk to the board over USB: open this page in Chrome or Edge on a computer.",
  "Para instalar, abre la página por https.": "Installing requires HTTPS.",
  "los archivos para esptool": "the files for esptool",
- "Pronto: carcasa imprimible, botones y lista de materiales para montarla tú. Mientras tanto, ya se juega con la placa sola.": "A printable case, buttons and a bill of materials so you can build it yourself. In the meantime, the bare board already runs the games.",
  "El motor, los ejemplos, las herramientas y esta web se escribieron hablando con Claude Code: cada idea se probaba en el simulador, se medía en la placa y se corregía según lo que mostraban las mediciones.": "The engine, examples, tools and this site were written in conversation with Claude Code: every idea was tried in the simulator, measured on the board and corrected based on what the board showed.",
  "El arte, generado y ajustado.": "The art, generated and made to fit.",
  "Los aspectos que lo necesitan (Neo Geo, CPS2, 32 bits) usan imágenes generadas con IA. Las herramientas del motor las recortan, las escalan a la altura justa, separan los fotogramas y las reducen a la paleta de la consola. Los aspectos de baja resolución se dibujan con código.": "The looks that call for it (Neo Geo, CPS2, 32-bit) use AI-generated images. The engine's tools cut them out, scale them to the right height, split them into frames and reduce them to the console's palette. The low-res looks are drawn with code.",
@@ -329,5 +327,10 @@
  "En la Raspberry Pi, este comando compila el núcleo (tarda unos minutos) y añade Pinyol a EmulationStation.": "On the Raspberry Pi, this command builds the core (it takes a few minutes) and adds Pinyol to EmulationStation.",
  "En un ordenador, Batocera o Lakka, el núcleo se añade a mano:": "On a computer, Batocera or Lakka, the core is added by hand:",
  "Cada punto es un segundo de partida en la placa, mientras un guion juega solo. La línea discontinua es la primera medición; la continua, la actual. El primer segundo carga la escena y no cuenta en las cifras.": "Each point is one second of play on the board, from the performance line logged every second while a script plays the game. Dashed: the first measurement; solid: today's. The first second loads the scene and doesn't count in the figures.",
- "No hizo falta optimizarlos:": "These needed no optimising:"
+ "No hizo falta optimizarlos:": "These needed no optimising:",
+ "La carcasa Cirera v1.0, en render: imágenes generadas con IA a partir de su modelo 3D. Todavía no se ha impreso.": "The Cirera v1.0 case, rendered: AI-generated images made from its 3D model. It hasn't been printed yet.",
+ "La consola Cirera de frente: carcasa marfil, cruceta verde, botones A, B y C de color terracota, MENU y START grises y una pelea de Neo Geo en la pantalla": "The Cirera console from the front: ivory case, green D-pad, terracotta A, B and C buttons, grey MENU and START, and a Neo Geo fight on the screen",
+ "La parte de atrás: una placa oscura con CIRERA y una cereza de píxeles, el modelo S3-01, la batería de 3,7 V y 3000 mAh y USB-C a 5 V": "The back: a dark plate with CIRERA and a pixel cherry, model S3-01, the 3.7 V 3000 mAh battery and USB-C at 5 V",
+ "La carcasa v1.0, diseñada": "The v1.0 case, designed",
+ "Falta imprimirla y probarla. Entonces se publicarán sus archivos para imprimir (CC BY 4.0), la lista de piezas y el montaje. Mientras tanto, ya se juega con la placa sola.": "It still has to be printed and tested. Then its print files (CC BY 4.0), the parts list and the assembly guide will be published. In the meantime, the bare board already runs the games."
 }

@@ -175,6 +175,11 @@ pre { margin: 0; padding: var(--s4); padding-right: 4.5rem; background: #070914;
 .aside-note { margin-top: var(--s6); padding: var(--s5); border-radius: var(--radius); border: 1.5px dashed var(--line); color: var(--text-2); }
 
 /* the console's parts */
+/* the case's renders (AI images made from its 3D model: the caption says so) */
+.renders { display: grid; gap: var(--s4); margin: 0 0 var(--s7); }
+@media (min-width: 48em) { .renders { grid-template-columns: 1fr 1fr; } }
+.renders img { display: block; width: 100%; height: auto; border-radius: var(--radius); box-shadow: var(--shadow-1); }
+.renders figcaption { grid-column: 1 / -1; color: var(--text-3); font-size: var(--t-small); }
 .hw { display: grid; gap: var(--s6); align-items: start; }
 @media (min-width: 56em) { .hw { grid-template-columns: 1fr 1fr; } }
 dl.spec { display: grid; grid-template-columns: max-content 1fr; gap: var(--s3) var(--s5); margin: 0; }
