@@ -20,6 +20,7 @@ typedef struct {
     float ic1, ic2;            /* the filter's two states */
     float fenv, amp, cut;      /* filter envelope, amplitude, the base cutoff smoothed (no zipper) */
     float a1, a2, a3;          /* filter coefficients, worked out every few samples */
+    float k_cut, k_env, k_res; /* what they were worked out for: a filter standing still keeps them (a held pad) */
     int coef;                  /* samples until they are worked out again */
     int gate;                  /* samples until the note is let go; -1 held (sliding into the next) */
     bool on, acc, legato;

@@ -5,6 +5,7 @@
  * and plays louder; a slide that glides the pitch into the next note without starting its envelopes again. One note
  * at a time. Runs in the audio thread, the lock held. */
 #include <math.h>
+#include <stdint.h>
 
 #include "bp.h"
 #include "studio_synth.h"
@@ -19,6 +20,17 @@ static const float PI = 3.14159265f;
 void sv_defaults(sv_patch *p) {
     *p = (sv_patch){.wave = 0, .cutoff = 0.35f, .res = 0.6f, .env = 0.5f, .decay = 0.3f, .accent = 0.5f,
                     .glide = 0.06f, .drive = 0.2f, .volume = 0.8f, .tune = 0};
+}
+
+/* 1 / d for d >= 1 (the saturation's 1 + |x|): this chip has no float divide, and __divsf3 is a software call that
+ * cost more than the rest of a sample. A first guess from the float's bits, then three Newton steps (error < 1e-7). */
+static inline float recip(float d) {
+    union { float f; uint32_t i; } u = {d};
+    u.i = 0x7EF311C7u - u.i;
+    float r = u.f;
+    r = r * (2 - d * r);
+    r = r * (2 - d * r);
+    return r * (2 - d * r);
 }
 
 static float polyblep(float t, float dt) { /* the step's corner smoothed over one sample each side */
@@ -41,7 +53,7 @@ void sv_note(sv_voice *v, const sv_patch *p, int note, bool accent, bool legato,
         v->freq = hz;
         v->fenv = 1 + (accent ? p->accent : 0);
         v->acc = accent;
-        if (!v->on) v->cut = p->cutoff, v->coef = 0;
+        if (!v->on) v->cut = p->cutoff, v->coef = 0, v->k_cut = -1;
     }
     v->on = true;
     v->gate = gate;
@@ -57,7 +69,8 @@ void sv_render(sv_voice *v, const sv_patch *p, float *out, int from, int to) {
     float level = p->volume * SCALE * (v->acc ? 1 + 0.4f * p->accent : 1) / (1 + p->drive);
     for (int i = from; i < to; i++) {
         v->freq += (v->target - v->freq) * gk;
-        float dt = fminf(v->freq / AUDIO_HZ, 0.45f);
+        float dt = v->freq * (1.0f / AUDIO_HZ);
+        if (dt > 0.45f) dt = 0.45f;
         v->phase += dt;
         if (v->phase >= 1) v->phase -= 1;
         float x;
@@ -69,13 +82,19 @@ void sv_render(sv_voice *v, const sv_patch *p, float *out, int from, int to) {
             x = (v->phase < 0.5f ? 1 : -1) + polyblep(v->phase, dt) - polyblep(t2, dt);
         }
         x *= drive;
-        x /= 1 + fabsf(x); /* soft saturation: louder in, rounder out */
+        x *= recip(1 + fabsf(x)); /* soft saturation: louder in, rounder out */
         v->fenv *= fdec;
         v->cut += (p->cutoff - v->cut) * 0.002f; /* a knob turned while it plays glides there */
         if (--v->coef <= 0) {
-            float fc = 30 * powf(300, v->cut) * exp2f(p->env * 6 * v->fenv);
-            float g = tanf(PI * fminf(fc, 9000) / AUDIO_HZ);
-            v->a1 = 1 / (1 + g * (g + k)), v->a2 = g * v->a1, v->a3 = g * v->a2;
+            float e = p->env * 6 * v->fenv; /* octaves the envelope opens it */
+            /* powf, exp2f and tanf cost more than all the rest of a sample: only when the cutoff has moved
+             * (by 0.06 % of its frequency or more), not for a filter standing still */
+            if (fabsf(v->cut - v->k_cut) > 1e-4f || fabsf(e - v->k_env) > 1e-3f || k != v->k_res) {
+                float fc = 30 * powf(300, v->cut) * exp2f(e);
+                float g = tanf(PI * fminf(fc, 9000) / AUDIO_HZ);
+                v->a1 = 1 / (1 + g * (g + k)), v->a2 = g * v->a1, v->a3 = g * v->a2;
+                v->k_cut = v->cut, v->k_env = e, v->k_res = k;
+            }
             v->coef = COEF_EVERY;
         }
         float v3 = x - v->ic2, v1 = v->a1 * v->ic1 + v->a2 * v3, v2 = v->ic2 + v->a2 * v->ic1 + v->a3 * v3;
