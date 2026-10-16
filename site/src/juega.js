@@ -1,6 +1,7 @@
 // The Juega tab: the player in a frame (play/player.html?frame=1), the game chosen in the list (?juego=<id>, so a
 // link opens it) or a .zip of one's own, from the button or dropped anywhere on the page. The frame says how tall it
-// is; a new game gets a fresh player, as the engine starts once per page.
+// is; a new game gets a fresh player, as the engine starts once per page. The Library's games approved since the site
+// was built come from its list on GitHub, as the Biblioteca tab reads it.
 (() => {
   'use strict';
   const LANG = document.documentElement.lang;
@@ -67,5 +68,35 @@
     const id = new URLSearchParams(location.search).get('juego');
     return id && GAMES[id] ? id : null;
   };
-  show(chosen());
+
+  async function newInLibrary() {
+    const ul = document.getElementById('picks-library');
+    if (!ul) return;
+    const r = await fetch(ul.dataset.src, { cache: 'no-cache' });
+    if (!r.ok) return;
+    const fresh = (await r.json()).filter(g => g && /^[a-z0-9_-]{1,40}$/.test(g.id) && typeof g.title === 'string' && !GAMES[g.id]);
+    ul.prepend(...fresh.map(g => {
+      GAMES[g.id] = { id: g.id, title: g.title, zip: ul.dataset.base + g.id + '/game.zip' };
+      const a = document.createElement('a');
+      a.className = 'pick';
+      a.href = '?juego=' + g.id;
+      a.dataset.id = g.id;
+      const shot = document.createElement(g.cover ? 'img' : 'span');
+      if (g.cover) Object.assign(shot, { src: ul.dataset.base + g.id + '/cover.png', alt: '', width: 240, height: 160, loading: 'lazy', decoding: 'async' });
+      else shot.className = 'noshot';
+      const name = document.createElement('span');
+      name.translate = false;
+      name.textContent = g.title;
+      a.append(shot, name);
+      const li = document.createElement('li');
+      li.append(a);
+      return li;
+    }));
+  }
+
+  // a link to a game newer than the site waits for the Library's list; without the list, the site's own games still play
+  const asked = new URLSearchParams(location.search).get('juego');
+  const late = asked && !GAMES[asked];
+  if (!late) show(chosen());
+  newInLibrary().catch(() => {}).finally(() => { if (late) show(chosen()); });
 })();
