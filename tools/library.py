@@ -76,10 +76,16 @@ def safe_extract(zip_path: Path, dest: Path) -> list[str]:
         p = PurePosixPath(i.filename)
         if p.is_absolute() or ".." in p.parts or "\\" in i.filename or (i.external_attr >> 16) & 0o170000 == 0o120000:
             return [f"Ruta no permitida en el .zip: {i.filename!r}."]
-    tops = {PurePosixPath(i.filename).parts[0] for i in infos}
-    strip = len(tops) == 1 and not any(PurePosixPath(i.filename).parts == (next(iter(tops)),) for i in infos)
+    # the game: game.json at the top, or else the one folder holding it; what lies beside it (notes, the editor's
+    # project) stays out
+    paths = [PurePosixPath(i.filename) for i in infos]
+    tops = {p.parts[0] for p in paths if len(p.parts) == 2 and p.parts[1] == "game.json"}
+    root = () if any(p.parts == ("game.json",) for p in paths) else (next(iter(tops)),) if len(tops) == 1 else None
+    if root is None:
+        return ["No hay game.json en la raíz del juego (o en su carpeta)."]
     for i in infos:
-        parts = PurePosixPath(i.filename).parts[1 if strip else 0:]
+        p = PurePosixPath(i.filename)
+        parts = p.parts[len(root):] if p.parts[:len(root)] == root else ()
         if not parts or not pack_game.runtime_file(Path(*parts)):
             continue  # sources, notes, saves: not what the console plays
         out = dest.joinpath(*parts)
@@ -98,6 +104,8 @@ def check_game(game: Path, headless: Path, out: Path) -> dict:
     gid, title = str(meta.get("id", "")), str(meta.get("title", "")).strip()
     if not re.fullmatch(r"[a-z0-9_-]{1,40}", gid):
         errors.append(f"El id de game.json debe ser de 1 a 40 letras minúsculas, cifras, _ o - (es {gid!r}).")
+    if (ROOT / "examples" / gid).is_dir():  # its page, cover and votes would be the example's
+        errors.append(f"El id {gid!r} ya es el de un ejemplo de pinyol: elige otro en game.json.")
     if not 1 <= len(title) <= 48:
         errors.append("game.json necesita un title de 1 a 48 caracteres.")
     if errors:

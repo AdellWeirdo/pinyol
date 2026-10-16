@@ -68,7 +68,7 @@ Codex: `brew install codex`, i després `codex login` amb un compte de ChatGPT. 
 la seva carpeta (`codex`) i demana-li el joc que vulguis, en qualsevol idioma. Llegeix [AGENTS.md](AGENTS.md),
 instal·la el que falta (aprova-ho quan t'ho demani: la instal·lació es fa fora de la seva sandbox), compila el motor,
 fa el joc a `games/<id>/` i el juga amb una prova per comprovar-lo. `./build/pinyol_sim --game games/<id>` el juga a
-la teva pantalla. L'[escala](https://ipaud.github.io/pinyol/ca/#codex) del web ensenya cinc jocs que Codex va fer així,
+la teva pantalla. L'[escala](https://ipaud.github.io/pinyol/ca/crear/#codex) del web ensenya cinc jocs que Codex va fer així,
 d'un joc de pales a un joc de plataformes de velocitat de Mega Drive, cadascun amb el seu encàrrec, el seu temps i els seus
 tokens, i els seus fps a la consola.
 
@@ -217,14 +217,14 @@ python3 tools/make_gallery.py gallery/ --player build-web --headless build/pinyo
 python3 -m http.server -d gallery       # obre http://localhost:8000
 ```
 
-Un joc acabat pot anar a la [Biblioteca](https://ipaud.github.io/pinyol/#biblioteca) del web, per jugar-hi allà i descarregar-lo per a la consola: [puja'l amb un formulari](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), un robot l'obre, el juga deu segons i, quan el revisem, apareix allà.
+Un joc acabat pot anar a la [Biblioteca](https://ipaud.github.io/pinyol/biblioteca/) del web, per jugar-hi allà i descarregar-lo per a la consola: [puja'l amb un formulari](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), un robot l'obre, el juga deu segons i, quan el revisem, apareix allà.
 
 <p align="center"><a href="https://ipaud.github.io/pinyol/video/subir.mp4"><img src="docs/media/library.webp" alt="Del .zip de l'editor a la Biblioteca: el formulari, la comprovació del robot, l'aprovació i el joc al web" width="640"></a><br>
 <sub>Del teu joc a la Biblioteca, accelerat: <a href="https://ipaud.github.io/pinyol/video/subir.mp4">el tutorial sencer</a>.</sub></p>
 
 ## Porta'l a la consola
 
-El més ràpid: el web [instal·la l'última versió](https://ipaud.github.io/pinyol/ca/#consola) en una placa per USB,
+El més ràpid: el web [instal·la l'última versió](https://ipaud.github.io/pinyol/ca/consola/#consola) en una placa per USB,
 des de Chrome o Edge, amb quinze jocs a la seva memòria flash.
 
 El firmware de [firmware/](firmware/) és la plataforma de la consola: pantalla, tàctil, botons, àudio, microSD, bateria i actualitzacions per la targeta. Necessita [ESP-IDF 5.4](https://docs.espressif.com/projects/esp-idf/en/v5.4.2/esp32s3/get-started/).

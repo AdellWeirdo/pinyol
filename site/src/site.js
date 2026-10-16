@@ -21,6 +21,14 @@ const WORDS = {
 };
 const W = WORDS[LANG] || WORDS.es;
 
+// The site was one long page; its sections now live in tabs. A link to an old section (pinyol/#instalar, from a
+// release or a README) goes to its tab.
+const MOVED = { aspectos: 'crear/', ranking: 'biblioteca/', biblioteca: 'biblioteca/', hazlo: 'crear/', crear: 'crear/', codex: 'crear/',
+                consola: 'consola/', instalar: 'consola/', retroarch: 'consola/', escritorio: 'consola/', rendimiento: 'como-se-hizo/',
+                making: 'como-se-hizo/' };
+const old = location.hash.slice(1);
+if (MOVED[old] && !document.getElementById(old) && document.getElementById('portada')) location.replace(new URL(MOVED[old] + '#' + old, location.href));
+
 if (still) document.querySelectorAll('video[autoplay]').forEach(v => { v.removeAttribute('autoplay'); v.pause(); }); // they wait to be played
 document.querySelectorAll('.screen-toggle').forEach(b => { // the console's screen: a video that loops, so it can be paused
   const v = document.querySelector('.screen video');
@@ -104,10 +112,9 @@ function libState(text, retry) {
   }
   lib.replaceChildren(p);
 }
-function playUrl(zip) {
+function playUrl(id) { // on the Juega tab, in this page's language
   const url = new URL(lib.dataset.play, location.href);
-  if (LANG !== 'es') url.searchParams.set('lang', LANG);
-  url.searchParams.set('game', zip);
+  url.searchParams.set('juego', id);
   return url.href;
 }
 function libCard(g, base) {
@@ -119,8 +126,7 @@ function libCard(g, base) {
   if (g.license) chips.append(el('li', { class: 'chip' }, g.license));
   if (/^\d{4}-\d{2}-\d{2}$/.test(g.date || '')) chips.append(el('li', { class: 'chip' }, g.date.split('-').reverse().join('/')));
   const row = el('div', { class: 'row' },
-    el('a', { class: 'play', href: playUrl(zip), target: '_blank', rel: 'noopener',
-              'aria-label': W.playX + g.title + W.newTab }, W.play),
+    el('a', { class: 'play', href: playUrl(g.id), 'aria-label': W.playX + g.title }, W.play),
     el('a', { class: 'zip', href: zip, 'aria-label': W.zipX(g.title) }, W.zip));
   return el('li', { class: 'cart job' }, shot,
     el('div', { class: 'label' }, el('h3', {}, g.title), el('p', { class: 'what' }, g.description || ''),

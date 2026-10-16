@@ -68,7 +68,7 @@ Codex: `brew install codex`, then `codex login` with a ChatGPT account. Clone th
 folder (`codex`) and ask for the game you want, in any language. It reads [AGENTS.md](AGENTS.md), installs what is
 missing (approve it when it asks: installing runs outside its sandbox), builds the engine, makes the game in
 `games/<id>/` and plays it with a test to check it. `./build/pinyol_sim --game games/<id>` plays it on your screen.
-The site's [ladder](https://ipaud.github.io/pinyol/#codex) shows five games Codex made this way, from a paddle game to a
+The site's [ladder](https://ipaud.github.io/pinyol/crear/#codex) shows five games Codex made this way, from a paddle game to a
 Mega Drive speed platformer, each with its request, its time and tokens, and its frame rate on the console.
 
 ### Without code: the editor
@@ -215,14 +215,14 @@ python3 tools/make_gallery.py gallery/ --player build-web --headless build/pinyo
 python3 -m http.server -d gallery       # open http://localhost:8000
 ```
 
-A finished game can go in the site's [Library](https://ipaud.github.io/pinyol/#biblioteca), to be played there and downloaded for the console: [send it with a form](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), a robot opens it, plays it for ten seconds and, once we review it, it shows up there.
+A finished game can go in the site's [Library](https://ipaud.github.io/pinyol/biblioteca/), to be played there and downloaded for the console: [send it with a form](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), a robot opens it, plays it for ten seconds and, once we review it, it shows up there.
 
 <p align="center"><a href="https://ipaud.github.io/pinyol/video/subir.mp4"><img src="docs/media/library.webp" alt="From the editor's .zip to the Library: the form, the robot's check, the approval and the game playing on the site" width="640"></a><br>
 <sub>From your game to the Library, sped up: <a href="https://ipaud.github.io/pinyol/video/subir.mp4">the whole tutorial</a>.</sub></p>
 
 ## Run it on the console
 
-The quickest way: the site [installs the latest release](https://ipaud.github.io/pinyol/#consola) on a board over
+The quickest way: the site [installs the latest release](https://ipaud.github.io/pinyol/consola/#consola) on a board over
 USB, from Chrome or Edge, with fifteen games in its flash.
 
 The firmware in [firmware/](firmware/) is the console's platform: screen, touch, buttons, audio, microSD, battery and updates over the card. It needs [ESP-IDF 5.4](https://docs.espressif.com/projects/esp-idf/en/v5.4.2/esp32s3/get-started/).
