@@ -382,8 +382,8 @@ def desktop() -> str:
     return f"""<section id="escritorio" aria-labelledby="escritorio-t"><div class="wrap">
 <h2 id="escritorio-t">Cirera en tu ordenador</h2>
 <p class="intro">La consola, hecha aplicación para Mac, Windows y Linux: su menú, los juegos de ejemplo dentro y cualquier juego de la Biblioteca. Es el mismo motor, así que el juego es el mismo, con teclado o con mando.</p>
-<div class="actions"><a class="btn btn-primary" href="{dl}/Cirera-mac.zip" data-goatcounter-click="cirera-mac">Descargar para Mac</a><a class="btn btn-primary" href="{dl}/Cirera-windows.zip" data-goatcounter-click="cirera-windows">Descargar para Windows</a><a class="btn btn-primary" href="{dl}/Cirera-linux-x86_64.tar.gz" data-goatcounter-click="cirera-linux">Descargar para Linux</a></div>
-<p class="meta">Mac: macOS 11 o posterior, con Apple Silicon o Intel · Windows 10 o posterior, de 64 bits · Linux: Ubuntu 22.04, Debian 12 o posteriores, de 64 bits · unos 9 MB</p>
+<div class="actions"><a class="btn btn-primary btn-dl" href="{dl}/Cirera-mac.zip" data-goatcounter-click="cirera-mac">Descargar para Mac <small>Intel y Apple Silicon</small></a><a class="btn btn-primary btn-dl" href="{dl}/Cirera-windows.zip" data-goatcounter-click="cirera-windows">Descargar para Windows <small>64 bits</small></a><a class="btn btn-primary btn-dl" href="{dl}/Cirera-linux-x86_64.tar.gz" data-goatcounter-click="cirera-linux">Descargar para Linux <small>x86_64</small></a></div>
+<p class="meta">Mac: macOS 11 o posterior, una sola aplicación para los Mac con Intel y con Apple Silicon · Windows 10 o posterior · Linux: Ubuntu 22.04, Debian 12 o posteriores · unos 9 MB</p>
 <p class="meta">¿Linux en ARM, como una Raspberry Pi con el sistema de 64 bits? <a href="{dl}/Cirera-linux-aarch64.tar.gz" data-goatcounter-click="cirera-linux-arm">Descárgala para ARM</a>.</p>
 <ol class="steps">
 <li><h3>Ábrela la primera vez</h3><p>Aún no está firmada por Apple ni por Microsoft, así que el sistema te avisa la primera vez.</p>

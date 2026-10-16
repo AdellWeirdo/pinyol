@@ -504,5 +504,9 @@
  "La consola Cirera, su firmware para instalar desde el navegador, la Cirera como aplicación para Mac, Windows y Linux, y pinyol en RetroArch y RetroPie.": "La consola Cirera, el seu firmware per instal·lar des del navegador, la Cirera com a aplicació per a Mac, Windows i Linux, i pinyol a RetroArch i RetroPie.",
  "La consola, hecha aplicación para Mac, Windows y Linux: su menú, los juegos de ejemplo dentro y cualquier juego de la Biblioteca. Es el mismo motor, así que el juego es el mismo, con teclado o con mando.": "La consola, feta aplicació per a Mac, Windows i Linux: el seu menú, els jocs d'exemple a dins i qualsevol joc de la Biblioteca. És el mateix motor, així que el joc és el mateix, amb teclat o amb comandament.",
  "Mac: macOS 11 o posterior, con Apple Silicon o Intel · Windows 10 o posterior, de 64 bits · Linux: Ubuntu 22.04, Debian 12 o posteriores, de 64 bits · unos 9 MB": "Mac: macOS 11 o posterior, amb Apple Silicon o Intel · Windows 10 o posterior, de 64 bits · Linux: Ubuntu 22.04, Debian 12 o posteriors, de 64 bits · uns 9 MB",
- "¿Linux en ARM, como una Raspberry Pi con el sistema de 64 bits?": "Linux en ARM, com una Raspberry Pi amb el sistema de 64 bits?"
+ "¿Linux en ARM, como una Raspberry Pi con el sistema de 64 bits?": "Linux en ARM, com una Raspberry Pi amb el sistema de 64 bits?",
+ "Intel y Apple Silicon": "Intel i Apple Silicon",
+ "64 bits": "64 bits",
+ "x86_64": "x86_64",
+ "Mac: macOS 11 o posterior, una sola aplicación para los Mac con Intel y con Apple Silicon · Windows 10 o posterior · Linux: Ubuntu 22.04, Debian 12 o posteriores · unos 9 MB": "Mac: macOS 11 o posterior, una sola aplicació per als Mac amb Intel i amb Apple Silicon · Windows 10 o posterior · Linux: Ubuntu 22.04, Debian 12 o posteriors · uns 9 MB"
 }
