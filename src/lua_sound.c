@@ -187,9 +187,12 @@ static int l_mic(lua_State *L) {
     }
     float level, pitch;
     bool hit, rec;
-    if (!mic_open() || !mic_read(&level, &pitch, &hit, &rec)) return lua_pushnil(L), 1;
+    const char *kind;
+    if (!mic_open() || !mic_read(&level, &pitch, &hit, &rec, &kind)) return lua_pushnil(L), 1;
     lua_pushnumber(L, level), lua_pushnumber(L, pitch), lua_pushboolean(L, hit), lua_pushboolean(L, rec);
-    return 4;
+    if (kind) lua_pushstring(L, kind);
+    else lua_pushnil(L);
+    return 5;
 }
 
 /* mic_record(id, seconds): what the microphone hears becomes the sound id (sfx(id)) when the time is up (10 s at

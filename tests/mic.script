@@ -32,6 +32,32 @@ tick 30
 mic 0.2
 tick 3
 expect_lua heard.hits == before + 1
+# what kind of sound: a breath (wind on the microphone: low and without a note, held), a voice, a whistle (a clean
+# high note), a clap (a sudden sound without a note); plain noise is none of them, silence neither
+mic 0
+tick 30
+expect_lua heard.kind == nil
+mic 0.6 blow
+tick 2
+expect_lua heard.kind ~= "blow"
+tick 6
+expect_lua heard.kind == "blow" and heard.pitch == 0
+mic 0
+tick 30
+mic 0.8
+tick 1
+expect_lua heard.kind == "clap"
+tick 10
+expect_lua heard.kind == nil
+mic 0.5 220
+tick 4
+expect_lua heard.kind == "voice"
+mic 0.6 880
+tick 4
+expect_lua heard.kind == "whistle"
+mic 0
+tick 2
+expect_lua heard.kind == nil
 # a recording: half a second of a tone becomes a sound, on time or stopped sooner
 mic 0.5 330
 lua ok = mic_record("VOZ", 0.5)

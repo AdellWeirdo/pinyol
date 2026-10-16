@@ -568,7 +568,7 @@ the player. The browser asks the player first; the simulator uses the computer's
 
 | Call | Does |
 |---|---|
-| `mic()` | `level, pitch, hit, recording`, or `nil` where there is no microphone (or the player said no). The first call starts listening |
+| `mic()` | `level, pitch, hit, recording, kind`, or `nil` where there is no microphone (or the player said no). The first call starts listening |
 | `mic(false)` | stops listening |
 | `mic_record(id, seconds)` | what it hears for up to 10 seconds becomes the sound `id`, played with `sfx(id)` like any other; `true` if it started |
 | `mic_record()` | ends the recording sooner |
@@ -578,17 +578,25 @@ the player. The browser asks the player first; the simulator uses the computer's
   (noise, a breath, silence). `note("A4")` gives the Hz of a note to compare with.
 - `hit` is true on the one tick a sudden sound starts: a clap, a knock on the table, a shout.
 - `recording` is true while `mic_record` is still listening.
+- `kind` is what the sound is, or `nil` (silence, or a sound that is none of these):
+  `"blow"` someone blowing on the console (wind on the microphone: low, without a note, held a moment: a candle, dust,
+  a sail), `"voice"` a voice, sung or shouted (it has a pitch; how loud is `level`), `"whistle"` a whistle or any clean
+  high note (500 Hz and up), `"clap"` a clap or a knock (a `hit` without a note). Plain noise, a fan, the street, is
+  none of them.
 
 ```lua
-local level, pitch, hit = mic()
+local level, pitch, hit, _, kind = mic()
 if not level then                         -- no microphone: a button does it instead
   blowing = btn("a")
 else
-  blowing = level > 0.5 and pitch == 0    -- loud and without a note: a breath
+  blowing = kind == "blow"
+  shouting = kind == "voice" and level > 0.7
   singing = math.abs(pitch - note("C5")) < 15
-  if hit then clap() end
+  if kind == "clap" then clap() end
 end
 ```
+
+Listening costs the game some time every tick on the console: `mic(false)` when it is not needed.
 
 The microphone also hears the console's own speaker: a game that listens for the player plays its music softly
 meanwhile, or not at all. Made sounds and recordings share the same 1 MB.

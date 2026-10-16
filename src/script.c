@@ -290,11 +290,14 @@ static bool run_line(char *cmd, char *arg) {
         if (!link_sent_lately(arg)) FAIL("expect_link_sent %s: not in the last messages sent", arg);
         return true;
     }
-    if (!strcmp(cmd, "mic")) { /* pinyol@2: mic LEVEL [HZ]: the microphone hears a tone (no HZ: noise); mic none: none */
+    if (!strcmp(cmd, "mic")) { /* pinyol@2: mic LEVEL [HZ]: the microphone hears a tone (no HZ: noise); mic LEVEL blow:
+        * someone blowing on it; mic none: none */
         float level = 0, hz = 0;
-        if (!strcmp(arg, "none")) mic_inject(false, 0, 0);
-        else if (sscanf(arg, "%f %f", &level, &hz) >= 1) mic_inject(true, level, hz);
-        else FAIL("mic: LEVEL [HZ] or none");
+        char word[16] = "";
+        if (!strcmp(arg, "none")) mic_inject(false, 0, 0, false);
+        else if (sscanf(arg, "%f %15s", &level, word) == 2 && !strcmp(word, "blow")) mic_inject(true, level, 0, true);
+        else if (sscanf(arg, "%f %f", &level, &hz) >= 1) mic_inject(true, level, hz, false);
+        else FAIL("mic: LEVEL [HZ], LEVEL blow or none");
         return true;
     }
     if (!strcmp(cmd, "battery")) { /* pinyol@2: battery LEVEL [charging]; battery none; battery real */
