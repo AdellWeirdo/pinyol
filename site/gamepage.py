@@ -56,15 +56,17 @@ def catalog(np2d: Path, measured: list[dict]) -> list[dict]:
 
 
 def picker(games: list[dict]) -> str:
-    """The Juega tab's list: every game, in groups, each a link to itself on the tab (juega.js plays it in place)."""
+    """The Juega tab's list: every game, in groups, each a link to itself on the tab (juega.js plays it in place). The
+    Library's group says where its list is, so juega.js adds the games approved since the site was built."""
     groups = [("library", "De la Biblioteca"), ("look", "Doce aspectos"), ("codex", "La escalera de Codex"), ("example", "Otros ejemplos")]
+    lib = f' id="picks-library" data-src="{page.RAW}/library/library.json" data-base="{page.RAW}/library/"'
     out = []
     for kind, name in groups:
         items = "".join(
             f'<li><a class="pick" href="{page.play_url(g["id"])}" data-id="{g["id"]}">'
             + (f'<img src="{g["image"]}" alt="" width="240" height="160" loading="lazy" decoding="async">' if g["image"] else '<span class="noshot"></span>')
             + f'<span translate="no">{escape(g["title"])}</span></a></li>' for g in games if g["kind"] == kind)
-        out.append(f'<h3>{name}</h3><ul class="picks">{items}</ul>')
+        out.append(f'<h3>{name}</h3><ul class="picks"{lib if kind == "library" else ""}>{items}</ul>')
     return "".join(out)
 
 
