@@ -216,11 +216,29 @@ def make_one() -> str:
 </div></section>"""
 
 
+def engine() -> str:
+    """What the engine brings, for whoever is about to make a game (the Crear tab): the facts of docs/lua.md."""
+    parts = [("Imagen", "Una consola virtual como la Game Boy Advance: 240×160 con cuatro capas, 128 sprites, paletas, transparencias y efectos por línea, y encima textos y paneles a 480×320."),
+             ("Mundos", "Mode 7, primera persona a lo Wolfenstein 3D, enjambres de cientos de balas, cuadrículas y niveles dibujados en Tiled."),
+             ("Sonido", "Efectos hechos con recetas o con números, cuatro voces de sintetizador como las de la Game Boy Advance, música en capas que entran y salen, y módulos .mod de hasta 32 canales."),
+             ("El studio", "Un secuenciador de pasos dentro del audio: pistas de sonidos y un bajo ácido como el de una TB-303, con eco, reverb y Lo-fi GBA. Cada paso suena en su muestra exacta, y un patrón nuevo entra justo en el siguiente compás."),
+             ("La consola", "Pantalla táctil, micrófono, el LED y la batería, vídeo desde la tarjeta y partidas entre consolas cercanas, sin router."),
+             ("Para programar", "Lua, con librerías dentro: física, partículas, historias, teclado y el kit de aventuras. Las partidas se guardan sin congelar el juego, y un guion prueba cada juego solo.")]
+    items = "".join(f'<li class="engine-card{" new" if name == "El studio" else ""}"><h3>{escape(name)}</h3>'
+                    + ('<span class="chip">Nuevo</span>' if name == "El studio" else "") + f"<p>{escape(text)}</p></li>" for name, text in parts)
+    return f"""<section id="motor" aria-labelledby="motor-t"><div class="wrap">
+<h2 id="motor-t">Lo que trae el motor</h2>
+<p class="intro">Todo esto funciona igual en la consola, en el ordenador y en el navegador, y tu agente lo conoce porque está en las instrucciones del repositorio.</p>
+<ul class="engine-grid">{items}</ul>
+<p class="more-link"><a class="btn btn-ghost" href="{REPO}/blob/main/docs/lua.md">La API de Lua, con ejemplos</a></p>
+</div></section>"""
+
+
 def editor() -> str:
     """The editor, with the video of LÍNEA 0 being made in it (site/src/video, recorded with Playwright)."""
     features = [("Aspecto de consola", "Game Boy, Game Boy Advance, PICO-8, ZX Spectrum o 16 bits: sus colores y su tipo de letra"),
-                ("Dibujos que se mueven", "píxel a píxel, con animaciones para estar quieto, andar o recibir un golpe"),
-                ("Reglas con bloques", "vidas, cuenta atrás, diálogos, récords que se guardan"),
+                ("Dibujos que se mueven", "píxel a píxel, de frente, de lado y de espaldas, con animaciones para andar, recibir un golpe o hacer hasta seis acciones"),
+                ("Reglas con bloques", "vidas, cuenta atrás, diálogos, girarse hacia alguien, récords que se guardan y persianas entre niveles"),
                 ("Sonido", "efectos a partir de recetas, música compuesta en una cuadrícula o un .mod"),
                 ("A la consola", "por cable USB o en un .zip para la tarjeta"),
                 ("En tres idiomas", "castellano, català y English")]
@@ -431,9 +449,10 @@ def days() -> str:
         ("2026-10-13", "13 oct.", "Medición y optimización en la consola. El editor web, para hacer juegos sin programar."),
         ("2026-10-14", "14 oct.", "Los aspectos de doce consolas, la vista en primera persona, las instrucciones para que un agente haga juegos, la web y la Biblioteca."),
         ("2026-10-15", "15 oct.", "La web y el editor en tres idiomas, los juegos de Codex e IL·LUSTRES en la Biblioteca."),
+        ("2026-10-16", "16 oct.", "El studio de sonido, un secuenciador con sintetizador y efectos. La web, en pestañas, con la pestaña Juega y una página y un ranking para cada juego."),
     ]
     li = "".join(f'<li><time datetime="{d}">{label}</time><p>{escape(t)}</p></li>' for d, label, t in items)
-    return f"""<div class="days reveal"><h3>Cinco días en el repositorio</h3><ol>{li}</ol></div>"""
+    return f"""<div class="days reveal"><h3>Seis días en el repositorio</h3><ol>{li}</ol></div>"""
 
 
 def thousands(v: int) -> str:
@@ -536,7 +555,7 @@ def site(board: dict, stats: dict, fw: dict | None, catalog: str = "[]", pages: 
                               + f"\n{library(pages)}\n{ranking(catalog)}"),
         "crear/": layout("crear/", "Crear · pinyol", "Hazte un juego con pinyol: con tu agente de código, a partir de doce aspectos de consola, o con el editor web, sin programar, y súbelo a la Biblioteca.",
                          page_head("Con tu agente o sin programar", "Crear", "Elige un aspecto de consola y pídeselo a tu agente de código, o dibújalo y ponle reglas en el editor. Cuando esté listo, súbelo a la Biblioteca.")
-                         + f"\n{make_one()}\n{looks(shelf)}\n{editor()}\n{codex()}\n{share()}"),
+                         + f"\n{make_one()}\n{engine()}\n{looks(shelf)}\n{editor()}\n{codex()}\n{share()}"),
         "consola/": layout("consola/", "Consola · pinyol", "La consola Cirera, su firmware para instalar desde el navegador, y pinyol en RetroArch y RetroPie.",
                            page_head("ESP32-S3 · 480×320 · 60 fps", "Consola", "La Cirera, su firmware para instalar desde el navegador y otras formas de jugar a lo mismo, como RetroArch.")
                            + f"\n{console(fw)}\n{retroarch()}", fw),
