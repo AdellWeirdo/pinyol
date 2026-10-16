@@ -7,6 +7,7 @@
   --ink: #0b0e1f; --ink-2: #131837; --ink-3: #1c2350; --line: #2b3368;
   --text: #eef0ff; --text-2: #bcc2ea; --text-3: #8f97cc;
   --cherry: #e8344e; --cherry-deep: #c41d38; --gold: #ffc94a; --leaf: #6fd08c;
+  --stem: #8b5a2b; --leaf-deep: #4fb862;   /* with --cherry, Cirera's three stripes (img/cirera-rayas.svg) */
   --s1: .25rem; --s2: .5rem; --s3: .75rem; --s4: 1rem; --s5: 1.5rem; --s6: 2rem; --s7: 3rem; --s8: 4.5rem;
   --radius: 14px; --radius-s: 8px;
   --shadow-1: 0 1px 0 rgba(255,255,255,.06) inset, 0 6px 18px rgba(0,0,0,.35);
@@ -38,8 +39,11 @@ a:hover { color: #fff; }
 .pixel { font-family: "Silk", ui-monospace, monospace; letter-spacing: .02em; text-transform: uppercase; }
 
 /* ------------------------------------------------------------------ header */
-.top { position: sticky; top: 0; z-index: 5; backdrop-filter: blur(10px); background: rgba(11,14,31,.78);
-       border-bottom: 1px solid rgba(43,51,104,.6); }
+.top { position: sticky; top: 0; z-index: 5; backdrop-filter: blur(10px); background: rgba(11,14,31,.78); }
+/* under the header, Cirera's three stripes as a rule: cherry, stem, leaf */
+.top::after { content: ""; position: absolute; inset: auto 0 0; height: 8px; pointer-events: none;
+              background: linear-gradient(var(--cherry) 0 2px, transparent 2px 3px, var(--stem) 3px 5px,
+                                          transparent 5px 6px, var(--leaf-deep) 6px 8px); }
 .top .wrap { display: flex; align-items: center; gap: var(--s4); min-height: 4.25rem; }
 .top .logo img { height: 3.25rem; width: auto; }
 /* the logo plays the console's intro again every 15 s: the seed drops, the word slides in, the leaves sprout */
@@ -182,6 +186,7 @@ pre { margin: 0; padding: var(--s4); padding-right: 4.5rem; background: #070914;
 
 /* the console's parts */
 /* the case's renders (AI images made from its 3D model: the caption says so) */
+h2 .rayas { display: inline-block; height: .62em; width: auto; margin-right: .3em; vertical-align: .06em; }
 .renders { display: grid; gap: var(--s4); margin: 0 0 var(--s7); }
 @media (min-width: 48em) { .renders { grid-template-columns: 1fr 1fr; } }
 .renders img { display: block; width: 100%; height: auto; border-radius: var(--radius); box-shadow: var(--shadow-1); }
