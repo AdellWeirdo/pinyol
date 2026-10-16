@@ -395,6 +395,7 @@ bool studio_playing(void);
 bool studio_pos(int *step, float *frac);   /* the step the player hears now and how far into it; false: none yet */
 void studio_hit(int track, float vel);     /* the track's sound now, as a pad */
 void studio_reset(void);
+void studio_fx_free(void); /* the engine's end: the effects' memory back */
 void studio_tick(int m);                   /* audio thread, lock held: starts the steps inside the next m samples */
 void studio_mark(int n);                   /* audio thread, lock held: n samples were mixed (for studio_pos) */
 void studio_replace_locked(const int16_t *old, const int16_t *pcm, int n); /* a made sound took old's place */

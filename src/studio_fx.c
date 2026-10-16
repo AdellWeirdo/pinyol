@@ -11,6 +11,7 @@
  * 1.5 s goes to PSRAM (it reads and writes at two places that move along: the cache serves them). Eight seconds with
  * nothing sent to them and they stop costing anything. */
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "bp.h"
@@ -47,6 +48,13 @@ static void clear(void) {
     memset(gbuf, 0, sizeof gbuf), memset(cpos, 0, sizeof cpos), memset(apos, 0, sizeof apos);
     memset(cfilt, 0, sizeof cfilt);
     dpos = gpos = 0, dlen = dlp = 0;
+}
+
+void studio_fx_free(void) { /* the engine's end (a libretro core unloaded): the echo's buffer goes */
+    hal_audio_lock();
+    free(dbuf);
+    dbuf = NULL;
+    hal_audio_unlock();
 }
 
 void studio_fx_reset(void) { /* the game's thread, at a game's start: the echo's buffer is made here, once */

@@ -94,6 +94,7 @@ void game_shutdown(void) {
     v2_free();
     arena_free();
     audio_reset();
+    studio_fx_free();
     gfx_reset();
     content_free();
     free(G.font.bits);

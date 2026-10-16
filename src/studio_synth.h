@@ -33,6 +33,7 @@ void sv_render(sv_voice *v, const sv_patch *p, float *out, int from, int to); /*
 /* Between the studio's files: a step's length in samples now (studio.c); the effects back to silence (studio_fx.c) */
 double studio_step_samples(void);
 void studio_fx_reset(void);
+void studio_fx_free(void);
 
 /* studio.c: a track becomes a synth track with that patch; its patch now (false: it is not a synth track) */
 void studio_synth(int track, const sv_patch *p);
