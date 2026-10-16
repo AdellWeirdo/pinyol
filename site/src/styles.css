@@ -521,5 +521,11 @@ esp-web-install-button:not(:defined) [slot="unsupported"], esp-web-install-butto
 .engine-card p { color: var(--text-2); margin: 0; font-size: var(--t-small); line-height: 1.6; }
 .engine-card.new { border-top-color: var(--gold); background: linear-gradient(140deg, rgba(255,201,74,.14), transparent 60%), var(--ink-2); }
 .engine-card.new .chip { position: absolute; top: var(--s4); right: var(--s4); background: rgba(255,201,74,.18); color: var(--gold); }
-.btn-dl { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; line-height: 1.2; padding-block: var(--s2); }
-.btn-dl small { font-size: .75rem; font-weight: 500; opacity: .85; }
+/* the desktop app's downloads: the system's mark, then what and for which machines; room around each */
+.dl-row { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); max-width: 68rem;
+          margin: var(--s2) 0 var(--s5); }
+.btn-dl { justify-content: flex-start; gap: var(--s4); min-height: 4.5rem; padding: var(--s3) var(--s5); border-radius: var(--radius); }
+.btn-dl .os { width: 2rem; height: 2rem; flex: none; fill: currentColor; }
+.btn-dl .dl-text { display: flex; flex-direction: column; gap: .15rem; line-height: 1.25; text-align: left; }
+.btn-dl .dl-text > span { font-size: 1.05rem; font-weight: 700; white-space: nowrap; }
+.btn-dl small { font-size: .82rem; font-weight: 500; opacity: .9; }

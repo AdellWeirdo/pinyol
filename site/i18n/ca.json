@@ -508,5 +508,6 @@
  "Intel y Apple Silicon": "Intel i Apple Silicon",
  "64 bits": "64 bits",
  "x86_64": "x86_64",
- "Mac: macOS 11 o posterior, una sola aplicación para los Mac con Intel y con Apple Silicon · Windows 10 o posterior · Linux: Ubuntu 22.04, Debian 12 o posteriores · unos 9 MB": "Mac: macOS 11 o posterior, una sola aplicació per als Mac amb Intel i amb Apple Silicon · Windows 10 o posterior · Linux: Ubuntu 22.04, Debian 12 o posteriors · uns 9 MB"
+ "Mac: macOS 11 o posterior, una sola aplicación para los Mac con Intel y con Apple Silicon · Windows 10 o posterior · Linux: Ubuntu 22.04, Debian 12 o posteriores · unos 9 MB": "Mac: macOS 11 o posterior, una sola aplicació per als Mac amb Intel i amb Apple Silicon · Windows 10 o posterior · Linux: Ubuntu 22.04, Debian 12 o posteriors · uns 9 MB",
+ "Apple, Mac y macOS son marcas de Apple; Windows, de Microsoft, y Linux, de Linus Torvalds.": "Apple, Mac i macOS són marques d'Apple; Windows, de Microsoft, i Linux, de Linus Torvalds."
 }
