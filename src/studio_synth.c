@@ -41,7 +41,7 @@ void sv_note(sv_voice *v, const sv_patch *p, int note, bool accent, bool legato,
         v->freq = hz;
         v->fenv = 1 + (accent ? p->accent : 0);
         v->acc = accent;
-        if (!v->on) v->cut = p->cutoff, v->coef = 0;
+        if (!v->on) v->cut = p->cutoff, v->coef = 0, v->k_cut = -1;
     }
     v->on = true;
     v->gate = gate;
@@ -73,9 +73,15 @@ void sv_render(sv_voice *v, const sv_patch *p, float *out, int from, int to) {
         v->fenv *= fdec;
         v->cut += (p->cutoff - v->cut) * 0.002f; /* a knob turned while it plays glides there */
         if (--v->coef <= 0) {
-            float fc = 30 * powf(300, v->cut) * exp2f(p->env * 6 * v->fenv);
-            float g = tanf(PI * fminf(fc, 9000) / AUDIO_HZ);
-            v->a1 = 1 / (1 + g * (g + k)), v->a2 = g * v->a1, v->a3 = g * v->a2;
+            float e = p->env * 6 * v->fenv; /* octaves the envelope opens it */
+            /* powf, exp2f and tanf cost more than all the rest of a sample: only when the cutoff has moved
+             * (by 0.06 % of its frequency or more), not for a filter standing still */
+            if (fabsf(v->cut - v->k_cut) > 1e-4f || fabsf(e - v->k_env) > 1e-3f || k != v->k_res) {
+                float fc = 30 * powf(300, v->cut) * exp2f(e);
+                float g = tanf(PI * fminf(fc, 9000) / AUDIO_HZ);
+                v->a1 = 1 / (1 + g * (g + k)), v->a2 = g * v->a1, v->a3 = g * v->a2;
+                v->k_cut = v->cut, v->k_env = e, v->k_res = k;
+            }
             v->coef = COEF_EVERY;
         }
         float v3 = x - v->ic2, v1 = v->a1 * v->ic1 + v->a2 * v3, v2 = v->ic2 + v->a2 * v->ic1 + v->a3 * v3;
