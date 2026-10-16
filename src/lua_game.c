@@ -7,6 +7,8 @@
  * files from the game's own folder. Lua is built with 32-bit numbers everywhere, so a game behaves the same on the
  * console, the desktop and the web. */
 #include <math.h>
+#include <stdio.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -888,35 +890,58 @@ static cJSON *store;
 
 static void store_path(char *p, size_t n) { snprintf(p, n, "%s/v2.json", G.save_dir); }
 
-static cJSON *store_read(const char *path) {
+/* The saves live in two files, v2.json and v2.json.b, written in turn: each ends its JSON with "#gen N" and the
+ * newest one that reads whole is the saves (a cut mid-write spoils only the one being written). Each is padded to
+ * whole 4 KB sectors and rewritten in place, so a save on the console's FAT touches its data and little else. */
+static cJSON *store_read(const char *path, long *gen) {
     char *txt = read_file(path, NULL);
-    cJSON *j = txt ? cJSON_Parse(txt) : NULL;
+    cJSON *j = txt ? cJSON_Parse(txt) : NULL; /* stops at the end of the JSON: the "#gen" after it is not read */
+    const char *g = txt ? strstr(txt, "\n#gen ") : NULL;
+    *gen = g ? strtol(g + 6, NULL, 10) : 0;
     free(txt);
     if (!cJSON_IsObject(j)) cJSON_Delete(j), j = NULL;
     return j;
 }
 
+static long store_gen; /* the newest file's generation: the next save writes the other with this + 1 */
+
 static cJSON *store_get(void) {
     if (store) return store;
-    char p[384], tmp[400];
+    char p[384], b[400], tmp[400];
+    long ga = -1, gb = -1;
     store_path(p, sizeof p);
+    snprintf(b, sizeof b, "%s.b", p);
     snprintf(tmp, sizeof tmp, "%s.tmp", p);
-    if (!(store = store_read(p)) && !(store = store_read(tmp))) store = cJSON_CreateObject(); /* tmp: cut mid-save */
+    cJSON *a = store_read(p, &ga), *bb = store_read(b, &gb);
+    if (a && (!bb || ga >= gb)) store = a, store_gen = ga, cJSON_Delete(bb);
+    else if (bb) store = bb, store_gen = gb, cJSON_Delete(a);
+    else if (!(store = store_read(tmp, &ga))) store = cJSON_CreateObject(); /* tmp: a save cut by an older engine */
     return store;
 }
 
-/* The saves to disk without ever leaving a half-written file: a new copy first, then it takes the old one's name. */
-static bool store_write(const char *txt) {
-    char p[384], tmp[400];
-    store_path(p, sizeof p);
-    snprintf(tmp, sizeof tmp, "%s.tmp", p);
-    FILE *f = fopen(tmp, "wb");
+/* The saves into the older of the two files (see store_read), in place when it is already the right size. */
+#define SAVE_SECTOR 4096
+bool save_file_atomic(const char *p, const char *txt) {
+    char path[400], tail[32];
+    long gen = __atomic_add_fetch(&store_gen, 1, __ATOMIC_SEQ_CST);
+    snprintf(path, sizeof path, gen % 2 ? "%s.b" : "%s", p);
+    int nt = snprintf(tail, sizeof tail, "\n#gen %ld\n", gen);
+    size_t n = strlen(txt), size = (n + (size_t)nt + SAVE_SECTOR) / SAVE_SECTOR * SAVE_SECTOR;
+    struct stat st;
+    FILE *f = (!stat(path, &st) && (size_t)st.st_size == size) ? fopen(path, "r+b") : fopen(path, "wb");
     if (!f) return false;
-    bool ok = fputs(txt, f) >= 0;
-    ok = (fclose(f) == 0) && ok;
-    if (!ok) return remove(tmp), false;
-    remove(p); /* FAT cannot rename onto an existing file; if the power goes now, store_get reads tmp */
-    return rename(tmp, p) == 0;
+    bool ok = fwrite(txt, 1, n, f) == n && fwrite(tail, 1, (size_t)nt, f) == (size_t)nt;
+    for (size_t k = n + (size_t)nt; ok && k < size; k++) ok = fputc(' ', f) != EOF; /* the rest of the sector */
+    return (fclose(f) == 0) && ok;
+}
+
+__attribute__((weak)) bool hal_save(const char *path, const char *txt) { return save_file_atomic(path, txt); }
+__attribute__((weak)) void hal_save_flush(void) {}
+
+static bool store_write(const char *txt) {
+    char p[384];
+    store_path(p, sizeof p);
+    return hal_save(p, txt);
 }
 
 /* A game's value as JSON (store, link.send): numbers, strings, booleans and tables of them, lists or string keys.
@@ -1046,6 +1071,7 @@ static void api(lua_State *L) {
     draw_register(L); /* text, shapes, pictures, canvases: lua_draw.c */
     swarm_register(L); /* many things moving the same way: lua_swarm.c */
     link_register(L); /* consoles playing together: lua_link.c */
+    studio_register(L); /* the step sequencer in the audio thread: lua_studio.c */
     sound_register(L); /* sounds, music, notes: lua_sound.c */
     physics_register(L); /* bodies that turn, for lib/physics.lua: lua_physics.c */
     clip_register(L); /* video on canvases: lua_clip.c */
@@ -1075,6 +1101,7 @@ void v2_free(void) {
     if (Ls) lua_close(Ls);
     Ls = NULL;
     assets_free();
+    hal_save_flush(); /* a save still on its way is written before the game goes */
     cJSON_Delete(store);
     store = NULL;
     draw_free();

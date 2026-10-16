@@ -55,6 +55,7 @@ void game_shutdown(void);
 void game_tick(const hal_input *in);
 void game_render(uint16_t *native); /* SCREEN_W x SCREEN_H RGB565 */
 bool game_quit_requested(void);
+bool save_file_atomic(const char *path, const char *txt); /* a game's saves, never half-written (hal_save's work) */
 void audio_mix(int16_t *out, int n); /* AUDIO_HZ mono; caller holds the audio lock */
 int script_run(const char *path, void (*frame)(void)); /* 0 = all expectations passed */
 int content_validate(void);                            /* number of errors, each logged */
@@ -374,6 +375,46 @@ void audio_music_clock(int src);        /* 0: music() stopped the song; its cloc
 void audio_music_clock_locked(int src); /* (the same, the audio lock held: in a song's swap) */
 bool audio_music_time(double *seconds); /* how far into the song the player hears now; false: none plays */
 void audio_reset(void);
+/* For the studio (studio.c), the audio lock held where it says so */
+int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch, bool loop, int wait, float send_d,
+                             float send_r); /* a handle */
+void audio_voice_stop_locked(int handle);
+bool audio_clip_pin(const char *id, const int16_t **pcm, int *n); /* loaded and kept while a track plays it */
+void audio_clip_unpin(const int16_t *pcm);
+
+/* The studio: a step sequencer in the audio thread (studio.c). Tracks play clips on steps, each at its sample. */
+#define STUDIO_TRACKS 16
+#define STUDIO_STEPS 64
+void studio_tempo(float bpm, float swing);  /* swing: 50 (straight) to 75 percent, as an MPC's */
+void studio_length(int steps);             /* steps in the pattern, 1..STUDIO_STEPS (16: a bar of 16ths) */
+bool studio_track(int track, const char *sound, float gain, float pitch, int choke); /* sound NULL: unchanged */
+void studio_steps(int track, const float *vel, int n, bool queued); /* 0 (off) to 1; queued: at the next bar */
+void studio_play(int step);                /* from that step (0-based), at once */
+void studio_stop(void);
+bool studio_playing(void);
+bool studio_pos(int *step, float *frac);   /* the step the player hears now and how far into it; false: none yet */
+void studio_hit(int track, float vel);     /* the track's sound now, as a pad */
+void studio_reset(void);
+void studio_tick(int m);                   /* audio thread, lock held: starts the steps inside the next m samples */
+void studio_mark(int n);                   /* audio thread, lock held: n samples were mixed (for studio_pos) */
+void studio_replace_locked(const int16_t *old, const int16_t *pcm, int n); /* a made sound took old's place */
+void studio_mix(float *acc, float *sd, float *sr, int m); /* audio thread: the synth tracks into acc and the sends */
+void studio_fx(float *acc, const float *sd, const float *sr, int m); /* audio thread: echo, reverb, Lo-fi GBA */
+typedef struct {
+    float delay, feedback, tone; /* the echo: its time in steps (3 is a dotted 8th), repeats 0..0.95, tone 0..1 */
+    int reverb;                  /* STUDIO_PLATE or STUDIO_GBA (two echoes, as Nintendo's GBA sound driver did) */
+    float size, damp;            /* 0..1 */
+    bool lofi;                   /* everything held at 13,379 Hz and 8 bits, as a GBA mixed it */
+} studio_fx_params;
+#define STUDIO_PLATE 0
+#define STUDIO_GBA 1
+void studio_fx_set(const studio_fx_params *f);
+void studio_fx_get(studio_fx_params *f);
+void studio_sends(int track, float delay, float reverb); /* 0..1; negative keeps it */
+#define STUDIO_ACCENT 1
+#define STUDIO_SLIDE 2
+void studio_notes(int track, const uint8_t *notes, const uint8_t *flags, int n, bool queued); /* MIDI (0 rest) */
+void studio_note(int track, int note, bool accent); /* a note by hand on a synth track; 0 lets it go */
 void audio_force_missing(const char *id);
 
 /* Synthesised voices (psg.c), mixed with the rest: notes instead of recordings. */

@@ -56,6 +56,12 @@ int hal_audio_latency(void);
  * touch the same memory. */
 void hal_parallel(void (*fn)(int part, void *ctx), void *ctx);
 uint32_t hal_micros(void); /* a microsecond clock, for timing (wraps after ~71 minutes) */
+/* A game's saves into their file (save_file_atomic does it, bp.h). The console hands them to a task that writes a
+ * moment later, since a FAT write on its flash takes most of a second: several store() in a row become one write and
+ * the game does not stop for it. hal_save_flush waits for what is pending (the game ends). Platforms that write at
+ * once need not define them: src/lua_game.c has both as weak defaults. */
+bool hal_save(const char *path, const char *txt);
+void hal_save_flush(void);
 /* realloc for big or script data, in memory that may be slower (PSRAM on the console); free() releases it. */
 void *hal_realloc_slow(void *p, size_t n);
 
