@@ -1,5 +1,15 @@
 [
  {
+  "id": "brujita_globos",
+  "title": "Munchi's rescue",
+  "description": "Ayuda a Blush a rescatar al pobre Munchi. Genera burbujas con su varita para ascender por el arbol y ten cuidado con los enemigos!\n\n[Munchis-Rescue-para-compartir.zip](https://github.com/user-attachments/files/33573019/Munchis-Rescue-para-compartir.zip)",
+  "author": "AdellWeirdo",
+  "license": "CC0",
+  "issue": 4,
+  "date": "2026-10-16",
+  "cover": true
+ },
+ {
   "id": "linea_0",
   "title": "LÍNEA 0",
   "description": "Una red de metro que no obedece sus propias reglas. Cinco niveles, cinco géneros: conducir el tren, una estación tímida, un transbordo de dos minutos, un tren emocional y la hora punta. Hecho en directo con el editor web de pinyol, con aspecto de Game Boy Advance.",
