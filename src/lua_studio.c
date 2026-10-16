@@ -5,7 +5,7 @@
  *   studio.pos() -> step, fraction (what the player hears now; nil when stopped);  studio.hit(i [, velocity])
  *   studio.synth(i, {wave, cutoff, res, env, decay, accent, glide, drive, volume, tune})
  *   studio.notes(i, {note, {note, accent = true, slide = true}, 0, ...});  studio.note(i [, note [, accent]])
- *   studio.fx({delay, feedback, tone, reverb = "plate" | "gba", size, damp, lofi});  sends: track's delay, reverb */
+ *   studio.fx({delay, feedback, tone, reverb = "plate" | "gba", size, damp, gate, lofi});  sends: track's delay, reverb */
 #include <stdlib.h>
 #include <string.h>
 
@@ -172,7 +172,7 @@ static int l_notes(lua_State *L) {
 
 static const char *const REVERBS[] = {"plate", "gba", NULL};
 
-/* studio.fx({delay, feedback, tone, reverb, size, damp, lofi}): what is left out stays as it was */
+/* studio.fx({delay, feedback, tone, reverb, size, damp, gate, lofi}): what is left out stays as it was */
 static int l_fx(lua_State *L) {
     luaL_checktype(L, 1, LUA_TTABLE);
     studio_fx_params f;
@@ -185,6 +185,7 @@ static int l_fx(lua_State *L) {
     lua_pop(L, 1);
     f.size = opt_float(L, 1, "size", f.size, 0, 1);
     f.damp = opt_float(L, 1, "damp", f.damp, 0, 1);
+    f.gate = opt_bool(L, 1, "gate", f.gate);
     f.lofi = opt_bool(L, 1, "lofi", f.lofi);
     studio_fx_set(&f);
     return 0;

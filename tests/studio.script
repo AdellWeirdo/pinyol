@@ -22,7 +22,8 @@ lua studio.synth(4, {cutoff = 0.9, wave = "square"}); studio.note(4, "C2", true)
 lua studio.track(1, {delay = 0.5, reverb = 0.3}); studio.synth(4, {delay = 0.2})
 lua studio.fx({delay = 3, feedback = 0.6, tone = 0.2, reverb = "gba", size = 0.7, lofi = true})
 tick 30
-lua studio.fx({reverb = "plate", lofi = false})
+lua studio.fx({reverb = "plate", gate = true, lofi = false})
+lua studio.fx({gate = false})
 lua studio.length(4); studio.play(3)
 tick 40
 expect_lua step >= 1 and step <= 4

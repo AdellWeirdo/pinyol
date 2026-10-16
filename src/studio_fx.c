@@ -21,7 +21,7 @@
 #define GBA_TAP1 2216                /* 6 and 7 frames of 224 samples at 13,379 Hz, in samples at AUDIO_HZ */
 #define GBA_TAP2 2585
 
-static studio_fx_params P = {3, 0.35f, 0.5f, STUDIO_PLATE, 0.5f, 0.5f, false};
+static studio_fx_params P = {3, 0.35f, 0.5f, STUDIO_PLATE, 0.5f, 0.5f, false, false};
 
 static float *dbuf; /* DELAY_MAX samples, in PSRAM */
 static int dpos;
@@ -37,6 +37,8 @@ static long idle;                      /* samples with nothing sent: past IDLE_M
 #define IDLE_MAX (AUDIO_HZ * 8)
 static int gpos;
 static float lph, lheld;
+static int gate_hold;
+static float gate_gain;
 
 static float clampf(float v, float lo, float hi) { return v > lo ? (v < hi ? v : hi) : lo; }
 
@@ -48,6 +50,7 @@ static void clear(void) {
     memset(gbuf, 0, sizeof gbuf), memset(cpos, 0, sizeof cpos), memset(apos, 0, sizeof apos);
     memset(cfilt, 0, sizeof cfilt);
     dpos = gpos = 0, dlen = dlp = 0;
+    gate_hold = 0, gate_gain = 0;
 }
 
 void studio_fx_free(void) { /* the engine's end (a libretro core unloaded): the echo's buffer goes */
@@ -61,18 +64,21 @@ void studio_fx_reset(void) { /* the game's thread, at a game's start: the echo's
     if (!dbuf) dbuf = hal_realloc_slow(NULL, sizeof(float) * DELAY_MAX);
     clear();
     lph = lheld = 0, idle = IDLE_MAX;
-    P = (studio_fx_params){3, 0.35f, 0.5f, STUDIO_PLATE, 0.5f, 0.5f, false};
+    P = (studio_fx_params){3, 0.35f, 0.5f, STUDIO_PLATE, 0.5f, 0.5f, false, false};
 }
 
 void studio_fx_set(const studio_fx_params *f) {
     hal_audio_lock();
     bool snap = f->delay != P.delay;
+    bool reset_gate = f->gate && (!P.gate || (P.reverb == STUDIO_GBA && f->reverb != STUDIO_GBA));
     P.delay = clampf(f->delay, 0.25f, 16);
     P.feedback = clampf(f->feedback, 0, 0.95f);
     P.tone = clampf(f->tone, 0, 1);
     P.reverb = f->reverb == STUDIO_GBA ? STUDIO_GBA : STUDIO_PLATE;
     P.size = clampf(f->size, 0, 1), P.damp = clampf(f->damp, 0, 1);
     P.lofi = f->lofi;
+    if (reset_gate) gate_hold = 0, gate_gain = 0;
+    P.gate = f->gate;
     if (snap) dlen = 0; /* a new time is taken at once; only a tempo change glides */
     hal_audio_unlock();
 }
@@ -115,7 +121,14 @@ static inline float plate(float in) {
         if (++apos[k] == AL[k]) apos[k] = 0;
         a += AL[k];
     }
-    return out * 3;
+    if (!P.gate) return out * 3;
+    /* Key from the send, not the reverb output: an old tail cannot hold its own gate open.
+     * A short hold lets the plate bloom; the release suppresses clicks at closure. */
+    if (in != 0) gate_hold = AUDIO_HZ / 5;
+    float target = gate_hold > 0 ? 1.0f : 0.0f;
+    if (gate_hold > 0) gate_hold--;
+    gate_gain += (target - gate_gain) * (target > gate_gain ? 0.02f : 0.005f);
+    return out * 3 * gate_gain;
 }
 
 static inline float gba(float in) { /* two taps fed back: their gains add up to under 1, so it always dies away */

@@ -551,7 +551,7 @@ studio.synth(2, {cutoff = 0.6})         -- turned while it plays: the acid sweep
 
 | Call | Does |
 |---|---|
-| `studio.fx({delay, feedback, tone, reverb, size, damp, lofi})` | the echo's time in steps (3 is a dotted 8th; it follows the tempo, gliding as a tape would), its repeats (`feedback` 0 to 0.95) and `tone` (0 dark as a tape echo's, 1 bright); `reverb` `"plate"` or `"gba"`: the two echoes, ~100 and ~117 ms apart, that Nintendo's GBA sound driver fed back into its mix, `size` and `damp` 0 to 1; `lofi = true` holds everything the game plays at 13,379 Hz and cuts it to 8 bits with no dither, as that driver mixed. What is left out stays as it was |
+| `studio.fx({delay, feedback, tone, reverb, size, damp, gate, lofi})` | the echo's time in steps (3 is a dotted 8th; it follows the tempo, gliding as a tape would), its repeats (`feedback` 0 to 0.95) and `tone` (0 dark as a tape echo's, 1 bright); `reverb` `"plate"` or `"gba"`: the two echoes, ~100 and ~117 ms apart, that Nintendo's GBA sound driver fed back into its mix, `size` and `damp` 0 to 1; `gate = true` cuts the plate's wet tail about 200 ms after its send falls silent (no effect on GBA); `lofi = true` holds everything the game plays at 13,379 Hz and cuts it to 8 bits with no dither, as that driver mixed. What is left out stays as it was |
 
 ```lua
 studio.track(2, {sound = "SNARE", reverb = 0.4, delay = 0.2})

@@ -406,6 +406,7 @@ typedef struct {
     int reverb;                  /* STUDIO_PLATE or STUDIO_GBA (two echoes, as Nintendo's GBA sound driver did) */
     float size, damp;            /* 0..1 */
     bool lofi;                   /* everything held at 13,379 Hz and 8 bits, as a GBA mixed it */
+    bool gate;                   /* plate only: close its wet tail shortly after the reverb send falls silent */
 } studio_fx_params;
 #define STUDIO_PLATE 0
 #define STUDIO_GBA 1

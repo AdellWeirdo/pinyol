@@ -262,6 +262,48 @@ int main(void) {
     double early = rms(2000, 6000), late = rms(30000, 34000);
     CHECK(early > 50);
     CHECK(late < early / 3);
+
+    /* Gated plate: keep its early splash, then shut the wet tail after the input stops. */
+    audio_reset();
+    studio_fx_get(&f);
+    f.reverb = STUDIO_PLATE, f.gate = true;
+    studio_fx_set(&f);
+    static float gated[12000], dry_send[12000], wet_send[12000];
+    wet_send[0] = 20000;
+    for (int off = 0; off < 12000; off += 256)
+        studio_fx(gated + off, dry_send + off, wet_send + off, 12000 - off < 256 ? 12000 - off : 256);
+    double splash = 0, shut = 0;
+    for (int i = 1000; i < 3000; i++) splash += fabs(gated[i]);
+    for (int i = 8000; i < 12000; i++) shut += fabs(gated[i]);
+    CHECK(splash > 100);
+    CHECK(shut < 1);
+    /* A quiet continuing send holds the gate open while an earlier audible tail rings. */
+    audio_reset();
+    studio_fx_get(&f);
+    f.reverb = STUDIO_PLATE, f.gate = true;
+    studio_fx_set(&f);
+    memset(gated, 0, sizeof gated);
+    for (int i = 1; i < 12000; i++) wet_send[i] = 20;
+    for (int off = 0; off < 12000; off += 256)
+        studio_fx(gated + off, dry_send + off, wet_send + off, 12000 - off < 256 ? 12000 - off : 256);
+    double quiet_tail = 0;
+    for (int i = 8000; i < 12000; i++) quiet_tail += fabs(gated[i]);
+    CHECK(quiet_tail > shut + 100);
+    memset(wet_send, 0, sizeof wet_send);
+    wet_send[0] = 20000;
+    studio_fx_get(&f);
+    CHECK(f.gate);
+    audio_reset();
+    studio_fx_get(&f);
+    f.reverb = STUDIO_PLATE, f.gate = false;
+    studio_fx_set(&f);
+    memset(gated, 0, sizeof gated);
+    for (int off = 0; off < 12000; off += 256)
+        studio_fx(gated + off, dry_send + off, wet_send + off, 12000 - off < 256 ? 12000 - off : 256);
+    double open_tail = 0;
+    for (int i = 8000; i < 12000; i++) open_tail += fabs(gated[i]);
+    CHECK(open_tail > shut + 100);
+
     audio_reset();
     make("CLICK", 20000, 8);
     studio_track(0, "CLICK", 1, 1, 0);
