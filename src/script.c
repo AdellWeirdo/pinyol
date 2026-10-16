@@ -336,6 +336,22 @@ static bool run_line(char *cmd, char *arg) {
         if (sscanf(arg, "%d %d", &x, &y) != 2) FAIL("tap X Y");
         return tick_input(0, true, x, y) && tick(0);
     }
+    if (!strcmp(cmd, "touch")) { /* touch X Y [TICKS]: a finger held there that long, then lifted (a long press) */
+        int x, y, n = 1;
+        if (sscanf(arg, "%d %d %d", &x, &y, &n) < 2) FAIL("touch X Y [TICKS]");
+        for (int i = 0; i < n; i++)
+            if (!tick_input(0, true, x, y)) return false;
+        return tick(0);
+    }
+    if (!strcmp(cmd, "drag") || !strcmp(cmd, "swipe")) { /* drag X1 Y1 X2 Y2 [TICKS]: a finger down at the first
+        * point goes in a straight line to the second, then lifts; 30 ticks unless said. swipe: the same in 8 */
+        int x1, y1, x2, y2, n = cmd[0] == 's' ? 8 : 30;
+        if (sscanf(arg, "%d %d %d %d %d", &x1, &y1, &x2, &y2, &n) < 4) FAIL("%s X1 Y1 X2 Y2 [TICKS]", cmd);
+        if (n < 1) n = 1;
+        for (int i = 0; i <= n; i++)
+            if (!tick_input(0, true, x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n)) return false;
+        return tick(0);
+    }
     if (!strcmp(cmd, "hold")) {
         char k[32];
         int n = 0;
