@@ -732,6 +732,9 @@ A test script plays the game with real input (see `tests/plataformas.script`):
 new                              # start (runs _init)
 press A                          # a button for one tick; hold RIGHT 30 holds it for 30
 tap 240 160                      # a finger down and up at that screen pixel (480x320)
+touch 240 160 60                 # a finger held there 60 ticks, then lifted (a long press)
+drag 40 200 440 200 30           # a finger along a line in 30 ticks (a knob turned, a fader, steps painted)
+swipe 400 100 400 20             # the same, quick (8 ticks)
 tick 20                          # let 20 ticks pass
 expect_lua state == "play"       # a Lua expression that must be true
 lua P.x = 100                    # run Lua in the game (set up a situation)

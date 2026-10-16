@@ -1,0 +1,16 @@
+# The script's gestures: a tap, a finger held, a drag along a line, a quick swipe (screen pixels, 480x320).
+new
+tick 2
+tap 100 60
+tick 2
+expect_lua lifts == 1 and down_at[1] == 50 and down_at[2] == 30
+touch 200 100 40
+tick 2
+expect_lua lifts == 2 and held == 40 and now_at[1] == 100 and now_at[2] == 50
+drag 40 200 440 200 20
+tick 2
+expect_lua lifts == 3 and down_at[1] == 20 and now_at[1] == 220 and held == 21 and path == 200
+swipe 400 100 400 20
+tick 2
+expect_lua lifts == 4 and now_at[2] == 10 and held == 9
+expect_ok
