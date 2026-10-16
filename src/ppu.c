@@ -457,14 +457,16 @@ static void line(lines *L, int y, uint16_t *out) {
         L->win ? (F.track ? layers_win_track : layers_win) : (F.track ? layers_track : layers_plain);
     for (int p = 3; p >= 0; p--) layers(L, p, y);
 
-    /* No effect can touch this line (nothing of the first target on it, no blending sprite): the top pixels are it */
-    if (!L->drew_blend && (PPU.fx.mode == FX_NONE || !(L->drew & PPU.fx.first))) {
-        for (int x = 0; x < PPU_W; x++) out[x] = (uint16_t)L->top[x];
-        return;
-    }
     int ea = PPU.fx.eva, eb = PPU.fx.evb, ey = PPU.fx.evy;
     if (PPU.line.fx_ev) ea = ey = PPU.line.fx_ev[y], eb = 16 - ea;
     const int mode = PPU.fx.mode, first = PPU.fx.first, second = PPU.fx.second; /* out may alias PPU: read once */
+    /* No effect can touch this line (nothing of the first target on it, no blending sprite; or a fade of 0, as a
+     * flash leaves it when it ends): the top pixels are it */
+    if (!L->drew_blend &&
+        (mode == FX_NONE || !(L->drew & first) || ((mode == FX_LIGHTEN || mode == FX_DARKEN) && ey == 0))) {
+        for (int x = 0; x < PPU_W; x++) out[x] = (uint16_t)L->top[x];
+        return;
+    }
     const bool win = L->win;
     if (mode == FX_LIGHTEN || mode == FX_DARKEN) {
         fade_tables(&L->fade, ey, mode == FX_LIGHTEN);
