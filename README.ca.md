@@ -253,6 +253,28 @@ seu nom.
 
 Pins i perifèrics, cadascun amb la seva font: [docs/hardware.md](docs/hardware.md).
 
+## Cirera al teu ordinador: Mac, Windows i Linux
+
+La consola feta aplicació: el seu menú, els exemples a dins, i el .zip de qualsevol joc que deixis anar sobre la seva
+finestra, instal·lat. Es descarrega de la [release «cirera»](https://github.com/ipaud/pinyol/releases/tag/cirera) o del [web](https://ipaud.github.io/pinyol/consola/#escritorio), que explica com
+obrir-la la primera vegada (encara no està signada per Apple ni per Microsoft). Els seus jocs i partides van a
+`~/Library/Application Support/pinyol/Cirera` al Mac, a `%APPDATA%\pinyol\Cirera` al Windows i a
+`~/.local/share/pinyol/Cirera` a Linux (x86_64 o aarch64, glibc 2.35 o posterior; un joc deixat anar es descomprimeix
+amb unzip).
+
+És `pinyol_sim` compilat com a aplicació, i `tools/make_app.py` l'empaqueta:
+
+```sh
+cmake -B build-app -DCMAKE_BUILD_TYPE=Release -DPINYOL_APP=ON
+cmake --build build-app --target pinyol_sim             # -> build-app/Cirera (Cirera.exe al Windows)
+python3 tools/make_app.py build-app/Cirera -o dist/     # -> dist/Cirera-mac.zip (Cirera-linux-*.tar.gz a Linux)
+```
+
+La de Windows es compila des d'un Mac o un Linux amb MinGW-w64 (`cmake/mingw-w64-x86_64.cmake`).
+[.github/workflows/desktop.yml](.github/workflows/desktop.yml) les compila totes amb SDL a dins, així que no necessiten
+res instal·lat, i obre cadascuna al seu sistema abans de publicar-la. El simulador també juga a la consola:
+`pinyol_sim --console examples --menu firmware/cirera`.
+
 ## Juga-hi a RetroArch: RetroPie, Batocera, Lakka
 
 El motor també és un core [libretro](https://www.libretro.com), que juga el zip d'un joc a RetroArch i a tot el
@@ -271,7 +293,8 @@ Com instal·lar-lo, els controls i el que encara no fa: [docs/libretro.md](docs/
 src/             el motor, C11 portable: sense capçaleres de SDL ni d'ESP-IDF (hal.h és tot el contracte amb la plataforma)
   ppu.c          el processador d'imatge virtual (capes, sprites, efectes) amb què dibuixen els jocs en Lua
   lua_game.c     pinyol@2: la sandbox de Lua i la seva API
-platform/sdl/    simulador d'escriptori, i els reproductors web quan es compila amb Emscripten
+platform/sdl/    simulador d'escriptori, l'aplicació Cirera (-DPINYOL_APP=ON), i els reproductors web quan es compila amb Emscripten
+platform/desktop/ les icones de l'aplicació
 platform/null/   pinyol_headless: validador i executor de proves sense finestra
 platform/libretro/ el core libretro, per a RetroArch i RetroPie
 platform/web/    les pàgines web al voltant dels reproductors
@@ -303,7 +326,7 @@ pinyol es va escriure primer per a dues aventures de dades, i després es va obr
 
 ## Llicència
 
-pinyol té llicència MIT ([LICENSE](LICENSE)). Inclou [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT), [puff](third_party/puff/puff.h) (zlib), el [libretro.h](third_party/libretro/libretro.h) de libretro (MIT), la font [Pixelify Sans](third_party/pixelify/OFL.txt) i les fonts de píxel de [third_party/fonts](third_party/fonts/README.md) (totes SIL Open Font License 1.1). L'editor inclou [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0). El web serveix [ESP Web Tools](site/vendor/esp-web-tools/LICENSE) (Apache 2.0) per instal·lar el firmware, i el count.js de [GoatCounter](site/vendor/goatcounter/README.pinyol) (ISC) per comptar les visites; el firmware es construeix amb [ESP-IDF](https://github.com/espressif/esp-idf) (Apache 2.0, amb parts sota llicències MIT i BSD) i el reproductor web amb Emscripten i SDL2. Tots els avisos que demanen són a [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), que també va amb cada release.
+pinyol té llicència MIT ([LICENSE](LICENSE)). Inclou [cJSON](third_party/cjson/LICENSE) (MIT), [Lua 5.4](third_party/lua/LICENSE) (MIT), [pocketmod](third_party/pocketmod/LICENSE) (MIT), [puff](third_party/puff/puff.h) (zlib), el [libretro.h](third_party/libretro/libretro.h) de libretro (MIT), la font [Pixelify Sans](third_party/pixelify/OFL.txt) i les fonts de píxel de [third_party/fonts](third_party/fonts/README.md) (totes SIL Open Font License 1.1). L'editor inclou [Blockly](editor/vendor/blockly/LICENSE) (Apache 2.0). El web serveix [ESP Web Tools](site/vendor/esp-web-tools/LICENSE) (Apache 2.0) per instal·lar el firmware, i el count.js de [GoatCounter](site/vendor/goatcounter/README.pinyol) (ISC) per comptar les visites; el firmware es construeix amb [ESP-IDF](https://github.com/espressif/esp-idf) (Apache 2.0, amb parts sota llicències MIT i BSD) i el reproductor web amb Emscripten i SDL2. L'aplicació d'escriptori porta SDL2 (zlib) i, al Windows, el runtime de MinGW-w64 ([ZPL 2.1 i MIT](third_party/mingw-w64/COPYING)). Tots els avisos que demanen són a [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), que també va amb cada release.
 
 Les imatges, sons, música i vídeo dels exemples, la plantilla i les proves es van fer per a pinyol, generats amb un
 model d'imatge o dibuixats i sintetitzats amb codi (l'`art.py` i `art/` de cada joc): es dediquen al domini públic

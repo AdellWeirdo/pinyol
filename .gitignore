@@ -1,6 +1,5 @@
 build/
-build-web/
-build-release/
+build-*/
 .DS_Store
 __pycache__/
 examples/*/saves/

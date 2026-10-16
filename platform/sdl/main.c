@@ -1,7 +1,11 @@
 /* pinyol_sim: desktop simulator. Same core, same game folder as the console's microSD.
  *   pinyol_sim [--game DIR] [--saves DIR] [--scale N] [--mute] [--script FILE]
+ *   pinyol_sim --console GAMES --menu firmware/cirera    the console: Cirera's menu, the game chosen, the menu again
  * Keys: arrows/WASD move, Enter/E/Z = A, Esc/Backspace/X = B, Tab/C = C, I = MENU (bag), J = notebook, P = START.
- * Mouse = touch. F5 restarts the game, and so does saving any of its files (hot reload, to make games quickly).
+ * Mouse = touch. A gamepad: d-pad or stick, A, B, X or Y = C, START, BACK/SELECT = MENU. F11 or Alt+Enter: full
+ * screen. F5 restarts the game, and so does saving any of its files (hot reload, to make games quickly).
+ * Built with -DPINYOL_APP=ON it is the Cirera desktop app: the console, with its menu and games where desktop.c puts
+ * them; a game's .zip dropped on the window is installed.
  * Built with Emscripten it is the web player: the game folder is at /game (packed in, or unzipped
  * there by player.html), and the page's on-screen buttons press through web_button(). */
 #include <SDL.h>
@@ -11,6 +15,9 @@
 #include <string.h>
 
 #include "bp.h"
+#ifndef __EMSCRIPTEN__
+#include "desktop.h"
+#endif
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -28,6 +35,12 @@ static SDL_Texture *tex;
 static uint16_t fb[SCREEN_W * SCREEN_H];
 static int scale = 2;
 static bool closed;
+#ifndef __EMSCRIPTEN__
+/* The console (--console, the app): its menu runs, then the game it launched, until MENU is held 2 s (switch_req) */
+static bool console_mode, switch_req, relist;
+static char games_root[1024], launch_id[64], last_id[64], dropped[1024];
+static SDL_GameController *pad;
+#endif
 
 void hal_log(const char *fmt, ...) {
     va_list ap;
@@ -280,6 +293,18 @@ static hal_input poll_input(void) {
         if (e.type == SDL_QUIT) closed = true;
 #ifndef __EMSCRIPTEN__
         if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F5) reload_req = true;
+        if (e.type == SDL_KEYDOWN && (e.key.keysym.sym == SDLK_F11 ||
+                                      (e.key.keysym.sym == SDLK_RETURN && (e.key.keysym.mod & KMOD_ALT))))
+            SDL_SetWindowFullscreen(win, SDL_GetWindowFlags(win) & SDL_WINDOW_FULLSCREEN_DESKTOP ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP);
+        if (e.type == SDL_DROPFILE) { /* installed after this frame; the next one waits in the queue for the next */
+            if (strlen(e.drop.file) < sizeof dropped) snprintf(dropped, sizeof dropped, "%s", e.drop.file);
+            SDL_free(e.drop.file);
+            break;
+        }
+        if (e.type == SDL_CONTROLLERDEVICEADDED && !pad) pad = SDL_GameControllerOpen(e.cdevice.which);
+        if (e.type == SDL_CONTROLLERDEVICEREMOVED && pad &&
+            e.cdevice.which == SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(pad)))
+            SDL_GameControllerClose(pad), pad = NULL;
 #endif
         if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F3) v2_meter_toggle();
     }
@@ -298,12 +323,34 @@ static hal_input poll_input(void) {
     if (closed) in.held |= ACT_QUIT;
 #ifdef __EMSCRIPTEN__
     in.held |= web_held;
+#else
+    if (pad) {
+        static const struct { SDL_GameControllerButton b; uint16_t act; } map[] = {
+            {SDL_CONTROLLER_BUTTON_DPAD_UP, ACT_UP}, {SDL_CONTROLLER_BUTTON_DPAD_DOWN, ACT_DOWN},
+            {SDL_CONTROLLER_BUTTON_DPAD_LEFT, ACT_LEFT}, {SDL_CONTROLLER_BUTTON_DPAD_RIGHT, ACT_RIGHT},
+            {SDL_CONTROLLER_BUTTON_A, ACT_OK}, {SDL_CONTROLLER_BUTTON_B, ACT_BACK}, {SDL_CONTROLLER_BUTTON_X, ACT_NEXT},
+            {SDL_CONTROLLER_BUTTON_Y, ACT_NEXT}, {SDL_CONTROLLER_BUTTON_START, ACT_PAUSE}, {SDL_CONTROLLER_BUTTON_BACK, ACT_INV}};
+        for (size_t i = 0; i < sizeof map / sizeof map[0]; i++)
+            if (SDL_GameControllerGetButton(pad, map[i].b)) in.held |= map[i].act;
+        int ax = SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_LEFTX), ay = SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_LEFTY);
+        if (ax < -16000) in.held |= ACT_LEFT;
+        if (ax > 16000) in.held |= ACT_RIGHT;
+        if (ay < -16000) in.held |= ACT_UP;
+        if (ay > 16000) in.held |= ACT_DOWN;
+    }
 #endif
     int mx, my;
     Uint32 b = SDL_GetMouseState(&mx, &my);
     in.touch = (b & SDL_BUTTON_LMASK) != 0;
+#ifdef __EMSCRIPTEN__
     in.px = (int16_t)(mx / scale);
     in.py = (int16_t)(my / scale);
+#else /* the window can be any size: its picture is the screen at a whole scale, centred */
+    float lx, ly;
+    SDL_RenderWindowToLogical(ren, mx, my, &lx, &ly);
+    in.px = (int16_t)lx;
+    in.py = (int16_t)ly;
+#endif
     return in;
 }
 
@@ -328,7 +375,7 @@ static double acc;
 
 static void frame(void) {
 #ifndef __EMSCRIPTEN__
-    hot_reload();
+    if (!console_mode) hot_reload();
 #endif
     Uint64 now = SDL_GetPerformanceCounter();
     acc += (double)(now - last) * 1000.0 / freq;
@@ -355,30 +402,141 @@ static void frame(void) {
     present();
 }
 
+#ifndef __EMSCRIPTEN__
+/* The app's words in the system's language: Spanish, Catalan, or else English */
+static const char *say(const char *es, const char *ca, const char *en) {
+    static int lang = -1;
+    if (lang < 0) {
+        SDL_Locale *loc = SDL_GetPreferredLocales();
+        const char *l = loc && loc[0].language ? loc[0].language : "";
+        lang = !strcmp(l, "es") ? 0 : !strcmp(l, "ca") ? 1 : 2;
+        SDL_free(loc);
+    }
+    return lang == 0 ? es : lang == 1 ? ca : en;
+}
+
+static void console_frame(void) { /* a frame of the console, and a game's .zip dropped on the window installed */
+    frame();
+    if (!dropped[0]) return;
+    char name[128], msg[1300];
+    bool ok = desktop_install(dropped, games_root, name, sizeof name);
+    const char *file = dropped;
+    for (const char *c = dropped; *c; c++)
+        if (*c == '/' || *c == '\\') file = c + 1;
+    if (ok)
+        snprintf(msg, sizeof msg, say("Instalado: %s. Ya sale en el menú.", "Instal·lat: %s. Ja surt al menú.",
+                                      "Installed: %s. It is in the menu now."), name);
+    else
+        snprintf(msg, sizeof msg,
+                 say("No se ha podido instalar %s: tiene que ser el .zip de un juego de Pinyol.",
+                     "No s'ha pogut instal·lar %s: ha de ser el .zip d'un joc de Pinyol.",
+                     "Could not install %s: it has to be the .zip of a Pinyol game."), file);
+    hal_log("app: %s", msg);
+    SDL_ShowSimpleMessageBox(ok ? SDL_MESSAGEBOX_INFORMATION : SDL_MESSAGEBOX_WARNING, "Cirera", msg, win);
+    relist = ok; /* the menu starts again, with it in the list */
+    dropped[0] = 0;
+    last = SDL_GetPerformanceCounter(); /* the box held the clock: no ticks to catch up */
+}
+
+/* The console, as the firmware runs it: its menu until it launches a game (console_launch) or switches off, then
+ * that game until it ends or MENU is held 2 s, then the menu again. */
+static int run_console(const char *menu_dir) {
+    for (;;) {
+        bp_config menu = {menu_dir, NULL};
+        launch_id[0] = 0, relist = false;
+        if (!game_init(&menu)) {
+            fprintf(stderr, "menu incomplete: %s\n", menu_dir);
+            return 1;
+        }
+        while (!game_quit_requested() && !relist && !closed) console_frame();
+        game_shutdown();
+        if (closed) return 0;
+        if (!launch_id[0]) continue; /* it ended without choosing (a game was installed): again */
+        char dir[1100];
+        snprintf(dir, sizeof dir, "%s/%s", games_root, launch_id);
+        bp_config game = {dir, NULL};
+        switch_req = false;
+        if (!game_init(&game)) hal_log("%s: incomplete, back to the menu", launch_id);
+        else
+            while (!game_quit_requested() && !switch_req && !closed) console_frame();
+        game_shutdown();
+        if (closed) return 0;
+    }
+}
+#endif
+
 int main(int argc, char **argv) {
     bp_config cfg = {DEFAULT_GAME, NULL};
     const char *script = NULL;
-    bool mute = false;
+    bool mute = false, given = false; /* given: a game named (--game), played as it is */
+#ifndef __EMSCRIPTEN__
+    const char *menu = NULL;
+    char menu_dir[1024];
+#ifdef PINYOL_APP
+    bool app = true; /* the app opens as the console, unless it is given a game */
+#else
+    bool app = false;
+#endif
+#endif
     for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "--game") && i + 1 < argc) cfg.game_dir = argv[++i];
+        if (!strcmp(argv[i], "--game") && i + 1 < argc) cfg.game_dir = argv[++i], given = true;
         else if (!strcmp(argv[i], "--saves") && i + 1 < argc) cfg.save_dir = argv[++i];
         else if (!strcmp(argv[i], "--scale") && i + 1 < argc) scale = atoi(argv[++i]) > 0 ? atoi(argv[i]) : 2;
         else if (!strcmp(argv[i], "--script") && i + 1 < argc) script = argv[++i];
         else if (!strcmp(argv[i], "--mute")) mute = true;
+#ifndef __EMSCRIPTEN__
+        else if (!strcmp(argv[i], "--console") && i + 1 < argc) snprintf(games_root, sizeof games_root, "%s", argv[++i]), console_mode = true;
+        else if (!strcmp(argv[i], "--menu") && i + 1 < argc) menu = argv[++i];
+#endif
     }
-    if (SDL_Init(SDL_INIT_VIDEO | (mute ? 0 : SDL_INIT_AUDIO)) != 0) {
+#ifndef __EMSCRIPTEN__
+    if (given) app = false;
+#else
+    (void)given;
+#endif
+    if (SDL_Init(SDL_INIT_VIDEO | (mute ? 0 : SDL_INIT_AUDIO)
+#ifndef __EMSCRIPTEN__
+                 | SDL_INIT_GAMECONTROLLER
+#endif
+                 ) != 0) {
         fprintf(stderr, "SDL: %s\n", SDL_GetError());
         return 1;
     }
+#ifndef __EMSCRIPTEN__
+    if (app && !console_mode) {
+        if (!desktop_paths(menu_dir, games_root, sizeof menu_dir)) {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Cirera",
+                                     say("Falta el menú de la consola: tiene que estar junto a la aplicación.",
+                                         "Falta el menú de la consola: ha d'estar al costat de l'aplicació.",
+                                         "The console's menu is missing: it has to be next to the app."), NULL);
+            return 1;
+        }
+        console_mode = true, menu = menu_dir;
+    }
+    if (console_mode && !menu) menu = "firmware/cirera";
+    win = SDL_CreateWindow(console_mode ? "Cirera" : "pinyol", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                           SCREEN_W * scale, SCREEN_H * scale, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+#else
     win = SDL_CreateWindow("pinyol", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_W * scale,
                            SCREEN_H * scale, 0);
+#endif
     ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_PRESENTVSYNC);
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
     tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, SCREEN_W, SCREEN_H);
 #ifndef __EMSCRIPTEN__
+    SDL_RenderSetLogicalSize(ren, SCREEN_W, SCREEN_H); /* any window size: the screen at a whole scale, centred */
+    SDL_RenderSetIntegerScale(ren, SDL_TRUE);
+    if (app) { /* the window's icon, beside the app's menu */
+        char icon[1100];
+        snprintf(icon, sizeof icon, "%s/../icon.bmp", menu);
+        SDL_Surface *ic = SDL_LoadBMP(icon);
+        if (ic) SDL_SetWindowIcon(win, ic), SDL_FreeSurface(ic);
+    }
     game_cfg = cfg;
-#endif
+    if (!console_mode && !game_init(&cfg)) {
+#else
     if (!game_init(&cfg)) {
+#endif
         fprintf(stderr, "game folder incomplete: %s\n", cfg.game_dir);
         SDL_Quit();
         return 1;
@@ -399,6 +557,15 @@ int main(int argc, char **argv) {
     int rc = 0;
     if (script) {
         rc = script_run(script, script_frame);
+#ifndef __EMSCRIPTEN__
+    } else if (console_mode) {
+        freq = SDL_GetPerformanceFrequency();
+        last = SDL_GetPerformanceCounter();
+        rc = run_console(menu);
+        if (audio_dev) SDL_CloseAudioDevice(audio_dev);
+        SDL_Quit();
+        return rc;
+#endif
     } else {
         freq = SDL_GetPerformanceFrequency();
         last = SDL_GetPerformanceCounter();
@@ -414,24 +581,42 @@ int main(int argc, char **argv) {
     return rc;
 }
 
+/* The console's games, for its menu (src/lua_console.c): the folders in the console's games (--console, the app),
+ * or else in $PINYOL_GAMES (a menu run as a plain game, to work on it: a launch ends the run). */
+#ifndef __EMSCRIPTEN__
+bool hal_can_switch_game(void) { return console_mode; }
+void hal_switch_game(void) { switch_req = true; }
+static const char *games_dir(void) { return console_mode ? games_root : getenv("PINYOL_GAMES"); }
+void hal_launch(const char *id) {
+    snprintf(launch_id, sizeof launch_id, "%s", id);
+    snprintf(last_id, sizeof last_id, "%s", id);
+}
+void hal_power_off(void) {
+    if (console_mode) closed = true; /* the menu's "turn off": the app closes */
+    else hal_log("console: off");
+}
+#else
+static const char last_id[1] = "";
 bool hal_can_switch_game(void) { return false; }
 void hal_switch_game(void) {}
-
-/* The console's games, for its menu (src/lua_console.c): here the folders in $PINYOL_GAMES; a launch ends the run. */
-static int last_game = -1;
+static const char *games_dir(void) { return getenv("PINYOL_GAMES"); }
+void hal_launch(const char *id) { hal_log("console: launch %s", id); }
+void hal_power_off(void) { hal_log("console: off"); }
+#endif
 int hal_games(hal_game *g, int max, int *last, bool *cold) {
     static bool woke = true;
-    *last = last_game, *cold = woke;
+    int n = console_dir_games(games_dir(), g, max);
+    *last = -1, *cold = woke;
     woke = false;
-    return console_dir_games(getenv("PINYOL_GAMES"), g, max);
+    for (int i = 0; i < n; i++)
+        if (!strcmp(g[i].id, last_id)) *last = i;
+    return n;
 }
 bool hal_game_cover(const char *id, uint16_t *px, int w, int h) {
-    const char *root = getenv("PINYOL_GAMES");
-    char dir[512];
+    const char *root = games_dir();
+    char dir[1100];
     if (!root) return false;
     snprintf(dir, sizeof dir, "%s/%s", root, id);
     return console_dir_cover(dir, px, w, h);
 }
-void hal_launch(const char *id) { hal_log("console: launch %s", id); }
-void hal_power_off(void) { hal_log("console: off"); }
 const char *hal_firmware(void) { return "escritorio"; }

@@ -1,9 +1,9 @@
 /* Flags (every persistent fact is a named int), save slots with CRC and A/B files, settings. */
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "bp.h"
+#include "compat.h"
 
 #define FLAG_SLOTS 2048 /* ponytail: fixed open-addressing table; grow if a chapter needs >1500 names */
 

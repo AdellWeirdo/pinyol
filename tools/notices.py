@@ -1,6 +1,7 @@
 """THIRD_PARTY_NOTICES.md: the notices and licences of everything pinyol carries that others wrote, gathered from
-their own files: the engine's third_party/, the editor's and the site's vendored code, the parts of ESP-IDF and its
-toolchain that end up in the console's firmware, and what Emscripten puts in the web player.
+their own files: the engine's third_party/, the editor's and the site's vendored code, what the desktop app carries,
+the parts of ESP-IDF and its toolchain that end up in the console's firmware, and what Emscripten puts in the web
+player.
 
     python3 tools/notices.py        # needs ESP-IDF (IDF_PATH, or ~/esp/esp-idf-v5.4.2) and Emscripten (em-config)
 
@@ -114,6 +115,14 @@ def main() -> None:
         block("SDL 2", "zlib licence.", read(sdl)),
         block("Emscripten's runtime and libraries (musl, and others)", "MIT / University of Illinois NCSA, as below; "
               "musl's own notice follows.", read(next(d / "LICENSE" for d in (EM, EM.parent) if (d / "LICENSE").exists())) + "\n\n" + read(EM / "system/lib/libc/musl/COPYRIGHT")),
+        "## In the desktop app (Cirera for Mac and Windows)\n",
+        block("SDL 2", "zlib licence, the notice above: the app carries SDL 2.32 inside it."),
+        block("mingw-w64 runtime (the Windows app)", "Zope Public License 2.1. `third_party/mingw-w64`",
+              read(ROOT / "third_party/mingw-w64/COPYING")),
+        block("winpthreads (the Windows app)", "MIT, with parts under a BSD licence. `third_party/mingw-w64`",
+              read(ROOT / "third_party/mingw-w64/COPYING.winpthreads")),
+        block("GCC runtime (libgcc, the Windows app)", "GPL-3.0 with the GCC Runtime Library Exception, which puts no "
+              "conditions on the programs built with it."),
         "## In the editor and the site\n",
         block("Blockly", "Apache License 2.0. Copyright Google LLC. `editor/vendor/blockly`"),
         block("GoatCounter's count.js", "ISC licence (https://opensource.org/licenses/ISC), as the file says. "
