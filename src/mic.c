@@ -27,19 +27,33 @@
 #define LOW_K 0.069f     /* a one-pole low-pass at ~250 Hz: 1 - exp(-2 pi 250 / 22050) */
 /* Measured on the Cirera 2026-10-16 (42 dB of gain): a room 0.08-0.16 (and mostly low), a voice at arm's length
  * 0.2-0.35 with a pitch and 0.3-0.6 of it low, a breath on the console 0.25-0.4 and 0.95 of it low. */
-#define BLOW_LOW 0.8f    /* of the energy below it: wind on the microphone (white noise: ~0.04, a voice ~0.5) */
+#define BLOW_LOW 0.62f   /* of the energy below it: wind on the microphone (measured on the Cirera: a breath 0.62-0.97,
+                          * 0.80 its median; a voice 0.18-0.64, a shout 0.10-0.50) */
 #define BLOW_LEVEL 0.2f  /* to start: above any room */
 #define BLOW_HOLD 0.15f  /* to go on: a breath wavers */
-#define BLOW_TICKS 3     /* that long, without a pitch: a breath, not a knock */
+#define BLOW_TICKS 5     /* that long, without a pitch: a breath, not a knock (a clap's thump on the console is short) */
 #define WHISTLE_HZ 500.0f
 #define WHISTLE_CLARITY 0.85f
+/* A whistle above 1 kHz has no pitch for the detector above (its lags stop there), and on the Cirera it comes with
+ * the wind of the breath that makes it, louder (measured: ~0.87 of a whistle's energy is below 250 Hz). It is known
+ * by its zero crossings in the signal's second difference, which lifts 1.5 kHz ~40 dB over 150 Hz: near-pure, they
+ * come at the same distance; a voice under it (a pitch below WHISTLE_HZ) means a shout's harmonics, not a whistle */
+#define WHISTLE_MAX_HZ 4000.0f
+#define WHISTLE_CV 0.15f        /* how much the crossings' distance may vary (its standard deviation over its mean) */
+#define WHISTLE_TICKS 4         /* that long (67 ms): a clap's ring is not a whistle (measured: 293 whistling ticks of
+                                 * Pau's kept, 5 of his claps' left, none of a breath, a voice or a shout) */
+#define VOICED_TICKS 12         /* after a voice's pitch, no breath for this long: its consonants are not a blow */
 
 static struct {
     bool on, real, tried;       /* on: listening; real: through the platform's microphone; tried: asked for one */
     int16_t win[WIN];
     float level, pitch, avg_db, clarity, low_state;
+    float hp_part, zc_hz, zc_cv, zc_h, v1, v2;          /* the crossings of the second difference, for a whistle */
+    bool zc_armed;
+    long zc_t, zc_last;
+    int whistle_n;
     bool hit;
-    int rest, blow_n, ticks;
+    int rest, blow_n, ticks, voiced;
     const char *kind;
     char rec_id[32];
     int16_t *rec;
@@ -155,8 +169,8 @@ void mic_tick(void) {
     if (M.rest) M.rest--;
     if (!M.on) return;
     static int16_t buf[1024];
-    float sum = 0, low_sum = 0, low = M.low_state;
-    int got = 0;
+    float sum = 0, low_sum = 0, low = M.low_state, hp_sum = 0, d2_sum = 0, iv_sum = 0, iv_sum2 = 0;
+    int got = 0, ivs = 0;
     for (int k = 0; k < 8; k++) { /* what came in since the last tick (a late tick finds more) */
         int n = M.real ? hal_mic_read(buf, 1024) : k ? 0 : inject(buf, AUDIO_HZ / TICK_HZ);
         if (n <= 0) break;
@@ -166,7 +180,22 @@ void mic_tick(void) {
             sum += v * v;
             low += LOW_K * (v - low);
             low_sum += low * low;
+            float hp = v - low;                          /* above ~250 Hz */
+            hp_sum += hp * hp;
+            float d2 = v - 2 * M.v1 + M.v2;              /* the second difference: the highs lifted over the wind */
+            M.v2 = M.v1, M.v1 = v;
+            d2_sum += d2 * d2;
+            if (!M.zc_armed) M.zc_armed = d2 < -M.zc_h; /* a rising crossing, past a little hysteresis */
+            else if (d2 > M.zc_h) {
+                M.zc_armed = false;
+                if (M.zc_last) {
+                    float iv = (float)(M.zc_t + i - M.zc_last);
+                    iv_sum += iv, iv_sum2 += iv * iv, ivs++;
+                }
+                M.zc_last = M.zc_t + i;
+            }
         }
+        M.zc_t += n;
         got += n;
         int keep = WIN - n; /* the window slides */
         memmove(M.win, M.win + n, sizeof(int16_t) * (size_t)keep);
@@ -181,6 +210,13 @@ void mic_tick(void) {
     M.low_state = low;
     if (!got) return; /* nothing new (a platform may hand over blocks bigger than a tick): the last numbers stand */
     float rms = sqrtf(sum / got);
+    M.hp_part = sum > 0 ? hp_sum / sum : 0;
+    M.zc_h = 0.3f * sqrtf(d2_sum / got);               /* next tick's hysteresis: a third of this one's level */
+    M.zc_hz = 0, M.zc_cv = 1;
+    if (ivs >= 4) {
+        float mean = iv_sum / ivs, var = iv_sum2 / ivs - mean * mean;
+        M.zc_hz = (float)AUDIO_HZ / mean, M.zc_cv = sqrtf(var > 0 ? var : 0) / mean;
+    }
     float db = rms > 1e-6f ? 20 * log10f(rms) : -120;
     float was = M.level;
     M.level = level_of(db);
@@ -193,12 +229,28 @@ void mic_tick(void) {
     else M.avg_db += (db - M.avg_db) * 0.1f; /* ~10 ticks to settle; a hit is the new loudness at once */
     /* what kind of sound */
     float low_part = sum > 0 ? low_sum / sum : 0;
+    bool zc_tone = M.level > PITCH_LEVEL && M.zc_cv <= WHISTLE_CV && M.zc_hz >= WHISTLE_HZ && M.zc_hz <= WHISTLE_MAX_HZ &&
+                   (M.pitch == 0 || M.pitch >= 0.9f * WHISTLE_HZ);
+    bool lag_tone = M.pitch >= WHISTLE_HZ && M.clarity >= WHISTLE_CLARITY; /* a whistle under 1 kHz, by its period */
+    M.whistle_n = (zc_tone || lag_tone) ? M.whistle_n + 1 : 0;
+    bool whistle = M.whistle_n >= WHISTLE_TICKS;
+    if (zc_tone) M.pitch = M.zc_hz, M.clarity = 1 - M.zc_cv; /* regular crossings: exact (the lags may find half or a quarter) */
+    if (M.pitch > 0 && !whistle) M.voiced = VOICED_TICKS;
+    else if (M.voiced) M.voiced--;
     float need = M.blow_n >= BLOW_TICKS ? BLOW_HOLD : BLOW_LEVEL; /* once blowing, it goes on through a waver */
-    M.blow_n = (M.pitch == 0 && M.level >= need && low_part >= (M.blow_n >= BLOW_TICKS ? 0.7f : BLOW_LOW)) ? M.blow_n + 1 : 0;
-    if (M.pitch > 0) M.kind = M.pitch >= WHISTLE_HZ && M.clarity >= WHISTLE_CLARITY ? "whistle" : "voice";
+    M.blow_n = (M.pitch == 0 && !M.voiced && M.level >= need &&
+                low_part >= (M.blow_n >= BLOW_TICKS ? 0.7f : BLOW_LOW)) ? M.blow_n + 1 : 0;
+    if (whistle) M.kind = "whistle";
+    else if (zc_tone || lag_tone) M.kind = NULL;         /* a whistle maybe, not yet long enough to say */
+    else if (M.pitch > 0) M.kind = "voice";
     else if (M.blow_n >= BLOW_TICKS) M.kind = "blow";
     else if (M.hit) M.kind = "clap";
     else M.kind = NULL;
+#ifdef BP_MICDBG /* a calibration build (#define it above): what each tick heard, to tune the numbers on top */
+    if (M.level > 0.1f)
+        hal_log("micdbg %.2f lp %.2f hp %.2f zf %.0f cv %.2f p %.0f c %.2f %s", M.level, low_part, M.hp_part, M.zc_hz,
+                M.zc_cv, M.pitch, M.clarity, M.kind ? M.kind : "-");
+#endif
 }
 
 bool mic_read(float *level, float *pitch, bool *hit, bool *recording, const char **kind) {

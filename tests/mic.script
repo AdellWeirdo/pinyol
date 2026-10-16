@@ -53,8 +53,14 @@ mic 0.5 220
 tick 4
 expect_lua heard.kind == "voice"
 mic 0.6 880
-tick 4
+tick 2
+expect_lua heard.kind ~= "whistle"
+tick 6
 expect_lua heard.kind == "whistle"
+# a whistle has to last (4 ticks: a clap's ring does not); above 1 kHz it is known by its crossings, its pitch exact
+mic 0.6 2000
+tick 8
+expect_lua heard.kind == "whistle" and math.abs(heard.pitch - 2000) < 30
 mic 0
 tick 2
 expect_lua heard.kind == nil
