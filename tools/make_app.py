@@ -1,9 +1,10 @@
-"""The Cirera desktop app, zipped to download: Cirera.app for macOS, or a Cirera folder for Windows, each with the
-console's menu (firmware/cirera) and the examples inside.
+"""The Cirera desktop app, packed to download: Cirera.app for macOS, or a Cirera folder for Windows or Linux, each with
+the console's menu (firmware/cirera) and the examples inside.
 
     cmake -B build-app -DCMAKE_BUILD_TYPE=Release -DPINYOL_APP=ON && cmake --build build-app --target pinyol_sim
     python3 tools/make_app.py build-app/Cirera -o dist/             # on a Mac: dist/Cirera-mac.zip
     python3 tools/make_app.py build-win-app/Cirera.exe -o dist/     # dist/Cirera-windows.zip (cross-built, README)
+    python3 tools/make_app.py build-app/Cirera -o dist/             # on Linux: dist/Cirera-linux-x86_64.tar.gz
 
 The games go in as tools/pack_game.py packs them: what the console reads, no art sources, no saves. games/.stamp
 says which games they are, so the app copies them again to the player's folder when a newer app brings others
@@ -14,10 +15,12 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import platform
 import plistlib
 import shutil
 import subprocess
 import sys
+import tarfile
 import zipfile
 from pathlib import Path
 
@@ -42,7 +45,7 @@ def copy_game(folder: Path, to: Path) -> list[Path]:
 
 def fill(res: Path, games: list[Path]) -> None:
     """What the app reads beside itself: the menu, the games with their stamp, the window's icon, the licences."""
-    copy_game(ROOT / "firmware/cirera", res / "cirera")
+    copy_game(ROOT / "firmware/cirera", res / "menu")
     stamp = hashlib.sha256()
     for g in games:
         gid = pack_game.game_id(g)
@@ -92,6 +95,19 @@ def windows(binary: Path, out: Path, games: list[Path]) -> Path:
     return zip_path
 
 
+def linux(binary: Path, out: Path, games: list[Path]) -> Path:
+    folder = out / "Cirera"
+    shutil.rmtree(folder, ignore_errors=True)
+    folder.mkdir(parents=True)
+    shutil.copy2(binary, folder / "Cirera")
+    (folder / "Cirera").chmod(0o755)
+    fill(folder, games)
+    tar_path = out / f"Cirera-linux-{platform.machine()}.tar.gz"
+    with tarfile.open(tar_path, "w:gz") as t:  # (it keeps Cirera runnable, as a zip would not)
+        t.add(folder, arcname="Cirera")
+    return tar_path
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("binary", type=Path, help="the app built with -DPINYOL_APP=ON: Cirera (macOS) or Cirera.exe")
@@ -105,8 +121,10 @@ def main() -> None:
         z = windows(a.binary, a.out, games)
     elif sys.platform == "darwin":
         z = mac(a.binary, a.out, games, a.version)
+    elif sys.platform.startswith("linux"):
+        z = linux(a.binary, a.out, games)
     else:
-        sys.exit("the Mac app is made on a Mac (codesign, ditto)")
+        sys.exit("the Mac app is made on a Mac (codesign, ditto), the Linux one on Linux")
     print(f"{z}: {len(games)} games, {z.stat().st_size / 1e6:.1f} MB")
 
 

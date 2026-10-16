@@ -253,23 +253,25 @@ seu nom.
 
 Pins i perifèrics, cadascun amb la seva font: [docs/hardware.md](docs/hardware.md).
 
-## Cirera al teu ordinador: Mac i Windows
+## Cirera al teu ordinador: Mac, Windows i Linux
 
 La consola feta aplicació: el seu menú, els exemples a dins, i el .zip de qualsevol joc que deixis anar sobre la seva
-finestra, instal·lat. Es descarrega de la [release «cirera»](https://github.com/ipaud/pinyol/releases/tag/cirera) o del [web](https://ipaud.github.io/pinyol/#escritorio), que explica com
+finestra, instal·lat. Es descarrega de la [release «cirera»](https://github.com/ipaud/pinyol/releases/tag/cirera) o del [web](https://ipaud.github.io/pinyol/consola/#escritorio), que explica com
 obrir-la la primera vegada (encara no està signada per Apple ni per Microsoft). Els seus jocs i partides van a
-`~/Library/Application Support/pinyol/Cirera` al Mac i a `%APPDATA%\pinyol\Cirera` al Windows.
+`~/Library/Application Support/pinyol/Cirera` al Mac, a `%APPDATA%\pinyol\Cirera` al Windows i a
+`~/.local/share/pinyol/Cirera` a Linux (x86_64 o aarch64, glibc 2.35 o posterior; un joc deixat anar es descomprimeix
+amb unzip).
 
 És `pinyol_sim` compilat com a aplicació, i `tools/make_app.py` l'empaqueta:
 
 ```sh
 cmake -B build-app -DCMAKE_BUILD_TYPE=Release -DPINYOL_APP=ON
 cmake --build build-app --target pinyol_sim             # -> build-app/Cirera (Cirera.exe al Windows)
-python3 tools/make_app.py build-app/Cirera -o dist/     # -> dist/Cirera-mac.zip
+python3 tools/make_app.py build-app/Cirera -o dist/     # -> dist/Cirera-mac.zip (Cirera-linux-*.tar.gz a Linux)
 ```
 
 La de Windows es compila des d'un Mac o un Linux amb MinGW-w64 (`cmake/mingw-w64-x86_64.cmake`).
-[.github/workflows/desktop.yml](.github/workflows/desktop.yml) compila les dues amb SDL a dins, així que no necessiten
+[.github/workflows/desktop.yml](.github/workflows/desktop.yml) les compila totes amb SDL a dins, així que no necessiten
 res instal·lat, i obre cadascuna al seu sistema abans de publicar-la. El simulador també juga a la consola:
 `pinyol_sim --console examples --menu firmware/cirera`.
 

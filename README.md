@@ -250,23 +250,24 @@ d-pad and A (B asks before turning the console off). A game's cover is its `cove
 
 Pins and peripherals, each with its source: [docs/hardware.md](docs/hardware.md).
 
-## Cirera on your computer: Mac and Windows
+## Cirera on your computer: Mac, Windows and Linux
 
 The console as an app: its menu, the examples inside, and any game's .zip dropped on its window, installed. Download it
-from the [release "cirera"](https://github.com/ipaud/pinyol/releases/tag/cirera) or the [site](https://ipaud.github.io/pinyol/#escritorio), which says how to open it the first time (Apple
+from the [release "cirera"](https://github.com/ipaud/pinyol/releases/tag/cirera) or the [site](https://ipaud.github.io/pinyol/consola/#escritorio), which says how to open it the first time (Apple
 and Microsoft have not signed it yet). Its games and saves go to `~/Library/Application Support/pinyol/Cirera` on a
-Mac, `%APPDATA%\pinyol\Cirera` on Windows.
+Mac, `%APPDATA%\pinyol\Cirera` on Windows, `~/.local/share/pinyol/Cirera` on Linux (x86_64 or aarch64, glibc 2.35 and
+up; a dropped game is unpacked with unzip).
 
 It is `pinyol_sim` built as the app, and `tools/make_app.py` packs it:
 
 ```sh
 cmake -B build-app -DCMAKE_BUILD_TYPE=Release -DPINYOL_APP=ON
 cmake --build build-app --target pinyol_sim             # -> build-app/Cirera (Cirera.exe on Windows)
-python3 tools/make_app.py build-app/Cirera -o dist/     # -> dist/Cirera-mac.zip
+python3 tools/make_app.py build-app/Cirera -o dist/     # -> dist/Cirera-mac.zip (Cirera-linux-*.tar.gz on Linux)
 ```
 
 The Windows app is built from a Mac or Linux with MinGW-w64 (`cmake/mingw-w64-x86_64.cmake`).
-[.github/workflows/desktop.yml](.github/workflows/desktop.yml) builds both with SDL inside, so they need nothing
+[.github/workflows/desktop.yml](.github/workflows/desktop.yml) builds them all with SDL inside, so they need nothing
 installed, and opens each one on its own system before publishing it. The simulator plays the console too:
 `pinyol_sim --console examples --menu firmware/cirera`.
 

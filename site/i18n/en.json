@@ -495,5 +495,14 @@
  "vidas, cuenta atrás, diálogos, girarse hacia alguien, récords que se guardan y persianas entre niveles": "lives, countdowns, dialogue, turning towards someone, saved high scores and blinds between levels",
  "16 oct.": "Oct 16",
  "El studio de sonido, un secuenciador con sintetizador y efectos. La web, en pestañas, con la pestaña Juega y una página y un ranking para cada juego.": "The sound studio, a sequencer with a synth and effects. The site in tabs, with the Play tab and a page and a ranking for each game.",
- "Seis días en el repositorio": "Six days in the repository"
+ "Seis días en el repositorio": "Six days in the repository",
+ "La Cirera, su firmware y la aplicación para jugar en tu ordenador, con Mac, Windows o Linux.": "The Cirera, its firmware and the app to play on your computer, with Mac, Windows or Linux.",
+ "Descargar para Linux": "Download for Linux",
+ "Descárgala para ARM": "Download it for ARM",
+ "En Linux, descomprime el .tar.gz y abre Cirera, dentro de su carpeta. Para instalar juegos soltándolos en la ventana hace falta unzip, que casi todas las distribuciones ya traen.": "On Linux, unpack the .tar.gz and open Cirera, inside its folder. Installing games by dropping them on the window needs unzip, which nearly every distribution already has.",
+ "La Cirera, su firmware para instalar desde el navegador, la misma consola como aplicación para tu ordenador y RetroArch.": "The Cirera, its firmware to install from the browser, the same console as an app for your computer, and RetroArch.",
+ "La consola Cirera, su firmware para instalar desde el navegador, la Cirera como aplicación para Mac, Windows y Linux, y pinyol en RetroArch y RetroPie.": "The Cirera console, its firmware to install from the browser, the Cirera as an app for Mac, Windows and Linux, and pinyol in RetroArch and RetroPie.",
+ "La consola, hecha aplicación para Mac, Windows y Linux: su menú, los juegos de ejemplo dentro y cualquier juego de la Biblioteca. Es el mismo motor, así que el juego es el mismo, con teclado o con mando.": "The console as an app for Mac, Windows and Linux: its menu, the example games inside, and any game from the Library. It is the same engine, so the game is the same, with a keyboard or a gamepad.",
+ "Mac: macOS 11 o posterior, con Apple Silicon o Intel · Windows 10 o posterior, de 64 bits · Linux: Ubuntu 22.04, Debian 12 o posteriores, de 64 bits · unos 9 MB": "Mac: macOS 11 or later, Apple Silicon or Intel · Windows 10 or later, 64-bit · Linux: Ubuntu 22.04, Debian 12 or later, 64-bit · about 9 MB",
+ "¿Linux en ARM, como una Raspberry Pi con el sistema de 64 bits?": "Linux on ARM, like a Raspberry Pi with its 64-bit system?"
 }

@@ -252,23 +252,25 @@ carta con su nombre.
 
 Pines y periféricos, cada uno con su fuente: [docs/hardware.md](docs/hardware.md).
 
-## Cirera en tu ordenador: Mac y Windows
+## Cirera en tu ordenador: Mac, Windows y Linux
 
 La consola hecha aplicación: su menú, los ejemplos dentro, y el .zip de cualquier juego que sueltes sobre su ventana,
-instalado. Se descarga de la [release «cirera»](https://github.com/ipaud/pinyol/releases/tag/cirera) o de la [web](https://ipaud.github.io/pinyol/#escritorio), que explica cómo abrirla la
-primera vez (aún no está firmada por Apple ni por Microsoft). Sus juegos y partidas van a
-`~/Library/Application Support/pinyol/Cirera` en el Mac y a `%APPDATA%\pinyol\Cirera` en Windows.
+instalado. Se descarga de la [release «cirera»](https://github.com/ipaud/pinyol/releases/tag/cirera) o de la [web](https://ipaud.github.io/pinyol/consola/#escritorio), que explica cómo
+abrirla la primera vez (aún no está firmada por Apple ni por Microsoft). Sus juegos y partidas van a
+`~/Library/Application Support/pinyol/Cirera` en el Mac, a `%APPDATA%\pinyol\Cirera` en Windows y a
+`~/.local/share/pinyol/Cirera` en Linux (x86_64 o aarch64, glibc 2.35 o posterior; un juego soltado se descomprime con
+unzip).
 
 Es `pinyol_sim` compilado como aplicación, y `tools/make_app.py` la empaqueta:
 
 ```sh
 cmake -B build-app -DCMAKE_BUILD_TYPE=Release -DPINYOL_APP=ON
 cmake --build build-app --target pinyol_sim             # -> build-app/Cirera (Cirera.exe en Windows)
-python3 tools/make_app.py build-app/Cirera -o dist/     # -> dist/Cirera-mac.zip
+python3 tools/make_app.py build-app/Cirera -o dist/     # -> dist/Cirera-mac.zip (Cirera-linux-*.tar.gz en Linux)
 ```
 
 La de Windows se compila desde un Mac o un Linux con MinGW-w64 (`cmake/mingw-w64-x86_64.cmake`).
-[.github/workflows/desktop.yml](.github/workflows/desktop.yml) compila las dos con SDL dentro, así que no necesitan
+[.github/workflows/desktop.yml](.github/workflows/desktop.yml) las compila todas con SDL dentro, así que no necesitan
 nada instalado, y abre cada una en su sistema antes de publicarla. El simulador también juega a la consola:
 `pinyol_sim --console examples --menu firmware/cirera`.
 

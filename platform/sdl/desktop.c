@@ -1,6 +1,6 @@
 /* The Cirera desktop app's files (platform/sdl/main.c, --console or PINYOL_APP): where its menu and games are, the
  * games it comes with copied where they can be played and saved, and a game's .zip dropped on the window installed.
- *   menu:   <app>/cirera            (the console's menu, firmware/cirera: a pinyol game)
+ *   menu:   <app>/menu              (the console's menu, firmware/cirera: a pinyol game)
  *   games:  <user data>/games/<id>  (macOS: ~/Library/Application Support/pinyol/Cirera, Windows: %APPDATA%\pinyol\Cirera)
  * The games that come with the app (<app>/games) are copied there, so their saves live beside them, and copied again
  * by a newer app (its games/.stamp changed). */
@@ -121,7 +121,7 @@ bool desktop_paths(char *menu, char *games, size_t n) {
     char *base = SDL_GetBasePath(), *pref = SDL_GetPrefPath("pinyol", "Cirera"); /* (both end in a separator) */
     bool ok = base && pref;
     if (ok) {
-        snprintf(menu, n, "%scirera", base);
+        snprintf(menu, n, "%smenu", base); /* (not "cirera": beside a binary "Cirera" it would clash where case does not count) */
         snprintf(games, n, "%sgames", pref);
         mkdir(games, 0755);
         char bundled[1024], stamp[1100], mine[1100];
@@ -147,8 +147,17 @@ bool desktop_paths(char *menu, char *games, size_t n) {
     return ok;
 }
 
+#ifndef _WIN32
+static bool run(char **argv) { /* a program, waited for: true if it ran and said all went well */
+    pid_t pid;
+    int st;
+    return posix_spawnp(&pid, argv[0], NULL, NULL, argv, environ) == 0 && waitpid(pid, &st, 0) == pid && WIFEXITED(st) &&
+           WEXITSTATUS(st) == 0;
+}
+#endif
+
 /* tar -xf ZIP -C DIR: macOS's and Windows 10's tar (bsdtar) both read zips, and both refuse a name with ".." or an
- * absolute path, so nothing lands outside DIR */
+ * absolute path, so nothing lands outside DIR (Linux: unzip) */
 static bool untar(const char *zip, const char *dir) {
 #ifdef _WIN32
     char tar[MAX_PATH + 16], qz[1100], qd[1100]; /* Windows' own tar, not one on the PATH (Git's GNU tar reads no zip) */
@@ -159,12 +168,15 @@ static bool untar(const char *zip, const char *dir) {
     snprintf(qd, sizeof qd, "\"%s\"", dir);
     const char *argv[] = {"tar", "-xf", qz, "-C", qd, NULL};
     return _spawnv(_P_WAIT, tar, argv) == 0;
+#elif defined __linux__
+    /* Linux's tar (GNU) reads no zip: unzip, or else bsdtar. A name with ".." or from the root makes either warn and
+     * fail (unzip's warnings are its exit 1), so it is refused as on the other systems */
+    char *uz[] = {"unzip", "-qq", "-o", (char *)zip, "-d", (char *)dir, NULL};
+    char *bt[] = {"bsdtar", "-xf", (char *)zip, "-C", (char *)dir, NULL};
+    return run(uz) || run(bt);
 #else
     char *argv[] = {"tar", "-xf", (char *)zip, "-C", (char *)dir, NULL};
-    pid_t pid;
-    int st;
-    return posix_spawnp(&pid, "tar", NULL, NULL, argv, environ) == 0 && waitpid(pid, &st, 0) == pid &&
-           WIFEXITED(st) && WEXITSTATUS(st) == 0;
+    return run(argv);
 #endif
 }
 

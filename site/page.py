@@ -322,7 +322,7 @@ def doors() -> str:
     items = [("juega/", "img/looks/neogeo.png", "Juega", "El reproductor con todos los juegos: elige uno o abre el tuyo."),
              ("biblioteca/", "img/covers/ilustres.png", "Biblioteca", "Los juegos que hace la gente con pinyol, y el ranking de los más votados."),
              ("crear/", "video/linea0.jpg", "Crea", "Doce aspectos de consola para empezar, tu agente de código o el editor, sin programar."),
-             ("consola/", "img/console/cirera_frente.webp", "La consola", "La Cirera, su firmware y otras formas de jugar, como RetroArch.")]
+             ("consola/", "img/console/cirera_frente.webp", "La consola", "La Cirera, su firmware y la aplicación para jugar en tu ordenador, con Mac, Windows o Linux.")]
     li = "".join(f"""<li class="door"><img src="{img}" alt="" width="480" height="320" loading="lazy" decoding="async">
 <div><h3><a class="stretch" href="{HOME}{t}">{escape(name)}</a> <span class="arrow" aria-hidden="true">→</span></h3><p>{escape(text)}</p></div></li>""" for t, img, name, text in items)
     return f"""<section class="doors-sec" aria-labelledby="doors-t"><div class="wrap"><h2 id="doors-t" class="sr">Las secciones</h2><ul class="doors">{li}</ul></div></section>"""
@@ -377,17 +377,19 @@ def console(fw: dict | None) -> str:
 
 
 def desktop() -> str:
-    """The console as a Mac and Windows app (tools/make_app.py), from the release the desktop workflow keeps."""
+    """The console as an app for Mac, Windows and Linux (tools/make_app.py), from the release the desktop workflow keeps."""
     dl = f"{REPO}/releases/download/cirera"
     return f"""<section id="escritorio" aria-labelledby="escritorio-t"><div class="wrap">
 <h2 id="escritorio-t">Cirera en tu ordenador</h2>
-<p class="intro">La consola, hecha aplicación para Mac y Windows: su menú, los juegos de ejemplo dentro y cualquier juego de la Biblioteca. Es el mismo motor, así que el juego es el mismo, con teclado o con mando.</p>
-<div class="actions"><a class="btn btn-primary" href="{dl}/Cirera-mac.zip" data-goatcounter-click="cirera-mac">Descargar para Mac</a><a class="btn btn-primary" href="{dl}/Cirera-windows.zip" data-goatcounter-click="cirera-windows">Descargar para Windows</a></div>
-<p class="meta">Mac: macOS 11 o posterior, con Apple Silicon o Intel · Windows 10 o posterior, de 64 bits · unos 9 MB</p>
+<p class="intro">La consola, hecha aplicación para Mac, Windows y Linux: su menú, los juegos de ejemplo dentro y cualquier juego de la Biblioteca. Es el mismo motor, así que el juego es el mismo, con teclado o con mando.</p>
+<div class="actions"><a class="btn btn-primary" href="{dl}/Cirera-mac.zip" data-goatcounter-click="cirera-mac">Descargar para Mac</a><a class="btn btn-primary" href="{dl}/Cirera-windows.zip" data-goatcounter-click="cirera-windows">Descargar para Windows</a><a class="btn btn-primary" href="{dl}/Cirera-linux-x86_64.tar.gz" data-goatcounter-click="cirera-linux">Descargar para Linux</a></div>
+<p class="meta">Mac: macOS 11 o posterior, con Apple Silicon o Intel · Windows 10 o posterior, de 64 bits · Linux: Ubuntu 22.04, Debian 12 o posteriores, de 64 bits · unos 9 MB</p>
+<p class="meta">¿Linux en ARM, como una Raspberry Pi con el sistema de 64 bits? <a href="{dl}/Cirera-linux-aarch64.tar.gz" data-goatcounter-click="cirera-linux-arm">Descárgala para ARM</a>.</p>
 <ol class="steps">
 <li><h3>Ábrela la primera vez</h3><p>Aún no está firmada por Apple ni por Microsoft, así que el sistema te avisa la primera vez.</p>
 <p>En el Mac, descomprime el .zip, arrastra Cirera a Aplicaciones y ábrela. Cuando avise, ve a Ajustes del Sistema → Privacidad y seguridad y pulsa «Abrir igualmente».</p>
-<p>En Windows, descomprime el .zip y abre Cirera.exe. Si sale «Windows protegió su PC», pulsa «Más información» y «Ejecutar de todas formas».</p></li>
+<p>En Windows, descomprime el .zip y abre Cirera.exe. Si sale «Windows protegió su PC», pulsa «Más información» y «Ejecutar de todas formas».</p>
+<p>En Linux, descomprime el .tar.gz y abre Cirera, dentro de su carpeta. Para instalar juegos soltándolos en la ventana hace falta unzip, que casi todas las distribuciones ya traen.</p></li>
 <li><h3>Añade juegos</h3><p>Descarga el .zip de cualquier juego de esta página o de la Biblioteca y suéltalo sobre la ventana de Cirera: se instala y sale en el menú.</p></li>
 <li><h3>Juega</h3><p>Flechas para moverte; Z o Intro es A, X o Esc es B, C es C y P es START. Mantén la I (MENU) dos segundos para volver al menú, y F11 para la pantalla completa. En el mando, X o Y hacen de C, y SELECT de MENU. Las partidas se guardan en tu ordenador.</p></li>
 </ol>
@@ -574,9 +576,9 @@ def site(board: dict, stats: dict, fw: dict | None, catalog: str = "[]", pages: 
         "crear/": layout("crear/", "Crear · pinyol", "Hazte un juego con pinyol: con tu agente de código, a partir de doce aspectos de consola, o con el editor web, sin programar, y súbelo a la Biblioteca.",
                          page_head("Con tu agente o sin programar", "Crear", "Elige un aspecto de consola y pídeselo a tu agente de código, o dibújalo y ponle reglas en el editor. Cuando esté listo, súbelo a la Biblioteca.")
                          + f"\n{make_one()}\n{engine()}\n{looks(shelf)}\n{editor()}\n{codex()}\n{share()}"),
-        "consola/": layout("consola/", "Consola · pinyol", "La consola Cirera, su firmware para instalar desde el navegador, y pinyol en RetroArch y RetroPie.",
-                           page_head("ESP32-S3 · 480×320 · 60 fps", "Consola", "La Cirera, su firmware para instalar desde el navegador y otras formas de jugar a lo mismo, como RetroArch.")
-                           + f"\n{console(fw)}\n{retroarch()}", fw),
+        "consola/": layout("consola/", "Consola · pinyol", "La consola Cirera, su firmware para instalar desde el navegador, la Cirera como aplicación para Mac, Windows y Linux, y pinyol en RetroArch y RetroPie.",
+                           page_head("ESP32-S3 · 480×320 · 60 fps", "Consola", "La Cirera, su firmware para instalar desde el navegador, la misma consola como aplicación para tu ordenador y RetroArch.")
+                           + f"\n{console(fw)}\n{desktop()}\n{retroarch()}", fw),
         "como-se-hizo/": layout("como-se-hizo/", "Cómo se hizo · pinyol", "Cómo se hicieron pinyol y su web con Claude, y su rendimiento medido en la consola.",
                                 page_head("Una persona y Claude", "Cómo se hizo", "El motor, los juegos y esta web, hechos hablando con Claude Code y medidos en la placa de verdad.")
                                 + f"\n{making(stats)}\n{performance(board, stats['tests'], shelf)}"),

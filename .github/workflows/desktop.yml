@@ -1,6 +1,7 @@
 # The Cirera desktop app (pinyol_sim built with -DPINYOL_APP=ON, packed by tools/make_app.py): Cirera-mac.zip, one app
-# for Apple Silicon and Intel Macs (macOS 11 and up), and Cirera-windows.zip (Windows 10 and up, 64-bit), each with SDL
-# inside, the console's menu and the examples. Each one is opened on its system before it is published as the release
+# for Apple Silicon and Intel Macs (macOS 11 and up), Cirera-windows.zip (Windows 10 and up, 64-bit) and
+# Cirera-linux-x86_64.tar.gz / -aarch64.tar.gz (built on Ubuntu 22.04: glibc 2.35 and up, a Raspberry Pi's 64-bit
+# system too), each with SDL inside, the console's menu and the examples. Each one is opened on its system before it is published as the release
 # "cirera", which always holds the app of the last commit on main that changed it: the site's download buttons point
 # there.
 name: desktop
@@ -59,6 +60,52 @@ jobs:
         with:
           name: Cirera-mac
           path: dist/Cirera-mac.zip
+          if-no-files-found: error
+  linux:
+    strategy:
+      matrix:
+        runner: [ubuntu-22.04, ubuntu-22.04-arm] # x86_64, aarch64
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: SDL 2, static, with what it loads when it runs (X11, Wayland, ALSA, PulseAudio)
+        run: |
+          sudo apt-get update && sudo apt-get install -y cmake unzip libx11-dev libxext-dev libxrandr-dev libxcursor-dev \
+            libxi-dev libxss-dev libxinerama-dev libxkbcommon-dev libwayland-dev libegl1-mesa-dev libasound2-dev \
+            libpulse-dev libdbus-1-dev libudev-dev
+          curl -fsSL -o sdl.tar.gz "https://github.com/libsdl-org/SDL/releases/download/release-$SDL/SDL2-$SDL.tar.gz"
+          echo "5f5993c530f084535c65a6879e9b26ad441169b3e25d789d83287040a9ca5165  sdl.tar.gz" | sha256sum -c
+          tar -xzf sdl.tar.gz
+          cmake -S "SDL2-$SDL" -B sdl-build -DCMAKE_BUILD_TYPE=Release -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST=OFF \
+            -DCMAKE_INSTALL_PREFIX="$PWD/sdl"
+          cmake --build sdl-build -j4 && cmake --install sdl-build
+      - name: The app
+        run: |
+          cmake -B build-app -DCMAKE_BUILD_TYPE=Release -DPINYOL_APP=ON -DCMAKE_PREFIX_PATH="$PWD/sdl"
+          cmake --build build-app --target pinyol_sim -j4
+          ldd build-app/Cirera
+          if ldd build-app/Cirera | grep -i sdl; then exit 1; fi # (SDL inside: nothing to install)
+          python3 tools/make_app.py build-app/Cirera -o dist
+      - name: The install of a dropped zip, with unzip
+        run: |
+          cmake -B build -DCMAKE_PREFIX_PATH="$PWD/sdl" && cmake --build build --target desktop_test -j4
+          python3 tests/desktop_test.py build/desktop_test
+      - name: It opens
+        run: |
+          cd dist && mkdir open-test && tar -xzf Cirera-linux-*.tar.gz -C open-test
+          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy open-test/Cirera/Cirera & pid=$!
+          sleep 10
+          kill -0 $pid # still running: the menu
+          kill $pid
+          test "$(ls ~/.local/share/pinyol/Cirera/games | wc -l)" -eq "$(ls open-test/Cirera/games | wc -l)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cirera-linux-${{ matrix.runner }}
+          path: dist/Cirera-linux-*.tar.gz
           if-no-files-found: error
   windows:
     runs-on: ubuntu-latest
@@ -123,7 +170,7 @@ jobs:
           $brought = (Get-ChildItem "Jocs d'Àvila\Cirera\games" -Directory).Count
           if ($mine -ne $brought) { throw "$mine of $brought games copied" }
   publish:
-    needs: [mac, windows-opens]
+    needs: [mac, windows-opens, linux]
     if: github.ref == 'refs/heads/main' # (a manual run on another branch builds and checks, and publishes nothing)
     runs-on: ubuntu-latest
     permissions:
@@ -138,11 +185,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          notes="Cirera for Mac and Windows: the console on your computer, with its menu and Pinyol's examples, from ${GITHUB_SHA::7}. Cirera-mac.zip: macOS 11 and up, Apple Silicon and Intel. Cirera-windows.zip: Windows 10 and up, 64-bit. Drop any game's .zip on its window to install it. Not signed by Apple or Microsoft yet: how to open it the first time is on https://ipaud.github.io/pinyol/ . Each zip holds LICENSE and THIRD_PARTY_NOTICES.md."
+          notes="Cirera for Mac, Windows and Linux: the console on your computer, with its menu and Pinyol's examples, from ${GITHUB_SHA::7}. Cirera-mac.zip: macOS 11 and up, Apple Silicon and Intel. Cirera-windows.zip: Windows 10 and up, 64-bit. Cirera-linux-x86_64.tar.gz and Cirera-linux-aarch64.tar.gz: Linux with glibc 2.35 and up (Ubuntu 22.04, Debian 12, a Raspberry Pi's 64-bit system...); installing a dropped game needs unzip. Drop any game's .zip on its window to install it. Not signed by Apple or Microsoft yet: how to open it the first time is on https://ipaud.github.io/pinyol/consola/#escritorio . Each holds LICENSE and THIRD_PARTY_NOTICES.md."
           if gh release view cirera >/dev/null 2>&1; then
             gh api -X PATCH "repos/$GH_REPO/git/refs/tags/cirera" -f sha="$GITHUB_SHA" -F force=true >/dev/null
             gh release edit cirera --notes "$notes"
           else
-            gh release create cirera --target "$GITHUB_SHA" --title "Cirera for Mac and Windows" --notes "$notes" --latest=false
+            gh release create cirera --target "$GITHUB_SHA" --title "Cirera for Mac, Windows and Linux" --notes "$notes" --latest=false
           fi
-          gh release upload cirera dist/*.zip --clobber
+          gh release upload cirera dist/*.zip dist/*.tar.gz --clobber
