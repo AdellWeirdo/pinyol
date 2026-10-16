@@ -25,8 +25,11 @@
 #define REC_MAX_S 10
 /* What kind of sound: the knobs to tune on a real microphone */
 #define LOW_K 0.069f     /* a one-pole low-pass at ~250 Hz: 1 - exp(-2 pi 250 / 22050) */
-#define BLOW_LOW 0.45f   /* of the energy below it: wind on the microphone, not a voice (white noise: ~0.04) */
-#define BLOW_LEVEL 0.2f
+/* Measured on the Cirera 2026-10-16 (42 dB of gain): a room 0.08-0.16 (and mostly low), a voice at arm's length
+ * 0.2-0.35 with a pitch and 0.3-0.6 of it low, a breath on the console 0.25-0.4 and 0.95 of it low. */
+#define BLOW_LOW 0.8f    /* of the energy below it: wind on the microphone (white noise: ~0.04, a voice ~0.5) */
+#define BLOW_LEVEL 0.2f  /* to start: above any room */
+#define BLOW_HOLD 0.15f  /* to go on: a breath wavers */
 #define BLOW_TICKS 3     /* that long, without a pitch: a breath, not a knock */
 #define WHISTLE_HZ 500.0f
 #define WHISTLE_CLARITY 0.85f
@@ -44,8 +47,8 @@ static struct {
 } M;
 
 static struct { /* tests: a made-up microphone, which stays from one game to the next */
-    bool on, breath;            /* breath: noise low-passed at ~150 Hz, as wind on a microphone sounds */
-    float amp, hz, phase, low;
+    bool on, breath;            /* breath: noise low-passed twice at ~80 Hz, as wind on the Cirera's microphone measured */
+    float amp, hz, phase, low, low2;
     uint32_t seed;
 } I;
 
@@ -104,10 +107,11 @@ static float find_pitch(float *clarity) {
 static int inject(int16_t *p, int n) {
     for (int i = 0; i < n; i++) {
         float v;
-        if (I.breath) { /* white noise through a ~150 Hz low-pass, brought back to the same loudness */
+        if (I.breath) { /* white noise through two ~80 Hz low-passes (0.95 of it below 250 Hz), as loud as before */
             I.seed = I.seed * 1664525u + 1013904223u;
-            I.low += 0.0418f * (((int32_t)I.seed >> 8) / 8388608.0f * 1.7320508f - I.low);
-            v = I.low * 6.84f;
+            I.low += 0.0225f * (((int32_t)I.seed >> 8) / 8388608.0f * 1.7320508f - I.low);
+            I.low2 += 0.0225f * (I.low - I.low2);
+            v = I.low2 * 13.08f;
         } else if (I.hz > 0) {
             v = sinf(I.phase);
             I.phase += 6.2831853f * I.hz / AUDIO_HZ;
@@ -189,7 +193,8 @@ void mic_tick(void) {
     else M.avg_db += (db - M.avg_db) * 0.1f; /* ~10 ticks to settle; a hit is the new loudness at once */
     /* what kind of sound */
     float low_part = sum > 0 ? low_sum / sum : 0;
-    M.blow_n = (M.pitch == 0 && M.level >= BLOW_LEVEL && low_part >= BLOW_LOW) ? M.blow_n + 1 : 0;
+    float need = M.blow_n >= BLOW_TICKS ? BLOW_HOLD : BLOW_LEVEL; /* once blowing, it goes on through a waver */
+    M.blow_n = (M.pitch == 0 && M.level >= need && low_part >= (M.blow_n >= BLOW_TICKS ? 0.7f : BLOW_LOW)) ? M.blow_n + 1 : 0;
     if (M.pitch > 0) M.kind = M.pitch >= WHISTLE_HZ && M.clarity >= WHISTLE_CLARITY ? "whistle" : "voice";
     else if (M.blow_n >= BLOW_TICKS) M.kind = "blow";
     else if (M.hit) M.kind = "clap";
