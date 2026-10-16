@@ -96,6 +96,12 @@ static int l_sfx_stop(lua_State *L) {
     return 0;
 }
 
+static int l_volume(lua_State *L) { /* volume(v): everything the game sounds, 0 (silent) to 1; each game starts at 1 */
+    float v = fin(luaL_checknumber(L, 1));
+    audio_master(v < 0 ? 0 : v > 1 ? 1 : v, 60);
+    return 0;
+}
+
 static int l_sfx_on(lua_State *L) { /* sfx_on(handle) -> is that sound still playing? */
     lua_pushboolean(L, audio_sfx_playing((int)luaL_checkinteger(L, 1)));
     return 1;
@@ -216,7 +222,7 @@ void sound_register(lua_State *L) {
                                  {"sfx_on", l_sfx_on}, {"music", l_music}, {"music_layer", l_music_layer},
                                  {"music_time", l_music_time},
                                  {"tone", l_tone}, {"note", l_note}, {"mic", l_mic},
-                                 {"mic_record", l_mic_record}, {NULL, NULL}};
+                                 {"mic_record", l_mic_record}, {"volume", l_volume}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);
     lua_pop(L, 1);

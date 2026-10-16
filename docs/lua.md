@@ -416,6 +416,7 @@ order, so consoles that get the same messages can compute the same thing.
 | `sfx(id [, gain [, {pitch, loop}]])` | plays `audio/<id>.wav` (or a sound made with `sound`) once, or looping; `pitch` 1 as recorded, 2 an octave up, 0.5 down. Returns a handle |
 | `sfx_set(handle, {gain, pitch})` | changes a sound while it plays: an engine that follows the speed, a theremin |
 | `sfx_stop(handle)`, `sfx_on(handle)` | stops it; is it still playing? |
+| `volume(v)` | everything the game sounds (effects, music, tones, the studio), from 0 (silent) to 1; each game starts at 1 |
 | `sound(id, recipe [, seed])` | makes a sound from a recipe: `"coin"`, `"laser"`, `"explosion"`, `"powerup"`, `"hit"`, `"jump"`, `"blip"` or `"random"`; each seed gives another. Returns its numbers |
 | `sound(id, {numbers})` | makes a sound from its numbers (below), played with `sfx(id)`. Returns them, completed |
 | `music(id)` / `music()` | loops `audio/<id>.mod` (a tracker module) or else `audio/<id>.wav`; no id stops it |
