@@ -60,6 +60,7 @@ with tempfile.TemporaryDirectory() as t:
     rel = "https://github.com/ana/mi-juego/releases/download/v1.0/juego.zip"  # past the 25 MB GitHub attaches
     assert library.ATTACHMENT.findall(f"[descarga]({rel})") == [rel]
     assert not library.ATTACHMENT.findall("https://github.com/ana/mi-juego/blob/main/juego.zip")
+    assert library.said("Un juego.\n\n[j.zip](https://github.com/user-attachments/files/123/j.zip)") == "Un juego."
     r = library.check(good, t / "form", headless, f)
     assert r["ok"] and r["license"] == "CC0" and r["form_title"] == "Mi juego", r
     f["Permisos"] = "- [X] Es mío\n- [X] Acepto\n- [ ] Tengo 14 años"  # the age box left empty

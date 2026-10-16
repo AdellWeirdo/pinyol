@@ -47,6 +47,11 @@ ATTACHMENT = re.compile(r"https://github\.com/(?:user-attachments/files/\d+|[A-Z
 LICENSES = ("CC0", "CC BY 4.0", "MIT")
 
 
+def said(text: str) -> str:
+    """A description as the site shows it: without the game's .zip, when it was dropped there too."""
+    return re.sub(r"\[[^\]]*\]\(\s*\)", "", ATTACHMENT.sub("", text)).strip()
+
+
 def form_fields(body: str) -> dict[str, str]:
     """An issue form's answers: '### Label' then its value, as GitHub writes them."""
     fields, label = {}, None
@@ -145,7 +150,7 @@ def check(zip_path: Path, out: Path, headless: Path, fields: dict | None = None)
         if fields.get("Permisos", "").count("[X]") + fields.get("Permisos", "").count("[x]") < 3:
             result["errors"].append("Marca las tres casillas de permisos.")
         result.update(license=lic, form_title=fields.get("Título", "")[:48],
-                      form_description=fields.get("Descripción", "")[:300])
+                      form_description=said(fields.get("Descripción", ""))[:300])
         result["ok"] = not result["errors"]
     (out / "result.json").write_text(json.dumps(result, ensure_ascii=False, indent=1))
     return result
