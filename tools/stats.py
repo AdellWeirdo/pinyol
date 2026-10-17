@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REPO = os.environ.get("GITHUB_REPOSITORY", "ipaud/pinyol")
 CATEGORY = "Juegos"
 COUNTER = "https://pinyol.goatcounter.com"
-SITE_PATH = "/pinyol/"
+SITE_PATHS = ("/", "/pinyol/")  # pinyol.ipaud.dev, and ipaud.github.io/pinyol/ before it (2026-10-17)
 MILESTONES = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90, 120]  # platform/web/player.html sends the same
 NOT_LIKES = {"THUMBS_DOWN", "CONFUSED"}
 FRESH = 8  # weeks a game waits before it can be the random cover again
@@ -126,7 +126,7 @@ def minutes(reached: dict[int, int]) -> int:
 
 
 def counts(hits: dict[str, int], gid: str) -> dict:
-    visits = sum(hits.get(f"{SITE_PATH}{lang}juegos/{gid}/", 0) for lang in ("", "ca/", "en/"))
+    visits = sum(hits.get(f"{site}{lang}juegos/{gid}/", 0) for site in SITE_PATHS for lang in ("", "ca/", "en/"))
     reached = {m: hits.get(f"tiempo/{gid}/{m}", 0) for m in MILESTONES}
     return {"visits": visits, "plays": hits.get(f"partida/{gid}", 0), "minutes": minutes(reached)}
 
@@ -179,8 +179,8 @@ def build(ids: list[str], talk: dict, hits: dict | None, prev: dict, today: dt.d
 def test() -> None:
     assert minutes({1: 10, 2: 6, 3: 5, 5: 2}) == 10 * 1 + 6 * 1 + 5 * 1 + 2 * 2
     assert minutes({}) == 0
-    hits = {"/pinyol/juegos/a/": 3, "/pinyol/ca/juegos/a/": 2, "partida/a": 4, "tiempo/a/1": 4, "tiempo/a/2": 1}
-    assert counts(hits, "a") == {"visits": 5, "plays": 4, "minutes": 5}
+    hits = {"/pinyol/juegos/a/": 3, "/pinyol/ca/juegos/a/": 2, "/en/juegos/a/": 1, "partida/a": 4, "tiempo/a/1": 4, "tiempo/a/2": 1}
+    assert counts(hits, "a") == {"visits": 6, "plays": 4, "minutes": 5}
     ids = ["a", "b", "c"]
     day = dt.date(2026, 10, 19)  # a Monday: week 43
     first = build(ids, {}, None, {}, day, "now")

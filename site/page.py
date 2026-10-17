@@ -10,7 +10,7 @@ import i18n
 
 REPO = "https://github.com/ipaud/pinyol"
 RAW = "https://raw.githubusercontent.com/ipaud/pinyol/main"  # the Library's games, read when the page opens
-SITE = "https://ipaud.github.io/pinyol/"
+SITE = "https://pinyol.ipaud.dev/"
 STATS = "https://raw.githubusercontent.com/ipaud/pinyol/stats/stats.json"  # each game's numbers and the ranking: tools/stats.py, daily
 COUNTER = "https://pinyol.goatcounter.com"  # GoatCounter: visits and plays, no cookies, nothing personal (vendor/goatcounter)  # where it will be published (GitHub Pages); only og:image needs it
 

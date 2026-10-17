@@ -185,7 +185,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          notes="Cirera for Mac, Windows and Linux: the console on your computer, with its menu and Pinyol's examples, from ${GITHUB_SHA::7}. Cirera-mac.zip: macOS 11 and up, Apple Silicon and Intel. Cirera-windows.zip: Windows 10 and up, 64-bit. Cirera-linux-x86_64.tar.gz and Cirera-linux-aarch64.tar.gz: Linux with glibc 2.35 and up (Ubuntu 22.04, Debian 12, a Raspberry Pi's 64-bit system...); installing a dropped game needs unzip. Drop any game's .zip on its window to install it. Not signed by Apple or Microsoft yet: how to open it the first time is on https://ipaud.github.io/pinyol/consola/#escritorio . Each holds LICENSE and THIRD_PARTY_NOTICES.md."
+          notes="Cirera for Mac, Windows and Linux: the console on your computer, with its menu and Pinyol's examples, from ${GITHUB_SHA::7}. Cirera-mac.zip: macOS 11 and up, Apple Silicon and Intel. Cirera-windows.zip: Windows 10 and up, 64-bit. Cirera-linux-x86_64.tar.gz and Cirera-linux-aarch64.tar.gz: Linux with glibc 2.35 and up (Ubuntu 22.04, Debian 12, a Raspberry Pi's 64-bit system...); installing a dropped game needs unzip. Drop any game's .zip on its window to install it. Not signed by Apple or Microsoft yet: how to open it the first time is on https://pinyol.ipaud.dev/consola/#escritorio . Each holds LICENSE and THIRD_PARTY_NOTICES.md."
           if gh release view cirera >/dev/null 2>&1; then
             gh api -X PATCH "repos/$GH_REPO/git/refs/tags/cirera" -f sha="$GITHUB_SHA" -F force=true >/dev/null
             gh release edit cirera --notes "$notes"

@@ -4,7 +4,7 @@
 
 English · [Español](README.es.md) · [Català](README.ca.md)
 
-**[Play every example in your browser](https://ipaud.github.io/pinyol/)**, with the engine's measures on the console.
+**[Play every example in your browser](https://pinyol.ipaud.dev/)**, with the engine's measures on the console.
 
 <p align="center"><img src="docs/media/logo.webp" alt="pinyol" width="480"></p>
 
@@ -68,13 +68,13 @@ Codex: `brew install codex`, then `codex login` with a ChatGPT account. Clone th
 folder (`codex`) and ask for the game you want, in any language. It reads [AGENTS.md](AGENTS.md), installs what is
 missing (approve it when it asks: installing runs outside its sandbox), builds the engine, makes the game in
 `games/<id>/` and plays it with a test to check it. `./build/pinyol_sim --game games/<id>` plays it on your screen.
-The site's [ladder](https://ipaud.github.io/pinyol/crear/#codex) shows five games Codex made this way, from a paddle game to a
+The site's [ladder](https://pinyol.ipaud.dev/crear/#codex) shows five games Codex made this way, from a paddle game to a
 Mega Drive speed platformer, each with its request, its time and tokens, and its frame rate on the console.
 
 ### Without code: the editor
 
-<p align="center"><a href="https://ipaud.github.io/pinyol/video/linea0.mp4"><img src="docs/media/editor.webp" alt="LÍNEA 0 being made in the editor: drawings, maps, rules and play" width="640"></a><br>
-<sub>LÍNEA 0, a Game Boy Advance game made entirely with the editor, live, here sped up: <a href="https://ipaud.github.io/pinyol/video/linea0.mp4">the whole video</a>.</sub></p>
+<p align="center"><a href="https://pinyol.ipaud.dev/video/linea0.mp4"><img src="docs/media/editor.webp" alt="LÍNEA 0 being made in the editor: drawings, maps, rules and play" width="640"></a><br>
+<sub>LÍNEA 0, a Game Boy Advance game made entirely with the editor, live, here sped up: <a href="https://pinyol.ipaud.dev/video/linea0.mp4">the whole video</a>.</sub></p>
 
 `editor/` is a web page for making a game without programming: draw the pictures pixel by pixel (with frames for
 animation) or bring them in from image files (PNG with transparency, JPG, a row of frames; dropped or pasted), in
@@ -215,14 +215,14 @@ python3 tools/make_gallery.py gallery/ --player build-web --headless build/pinyo
 python3 -m http.server -d gallery       # open http://localhost:8000
 ```
 
-A finished game can go in the site's [Library](https://ipaud.github.io/pinyol/biblioteca/), to be played there and downloaded for the console: [send it with a form](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), a robot opens it, plays it for ten seconds and, once we review it, it shows up there.
+A finished game can go in the site's [Library](https://pinyol.ipaud.dev/biblioteca/), to be played there and downloaded for the console: [send it with a form](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), a robot opens it, plays it for ten seconds and, once we review it, it shows up there.
 
-<p align="center"><a href="https://ipaud.github.io/pinyol/video/subir.mp4"><img src="docs/media/library.webp" alt="From the editor's .zip to the Library: the form, the robot's check, the approval and the game playing on the site" width="640"></a><br>
-<sub>From your game to the Library, sped up: <a href="https://ipaud.github.io/pinyol/video/subir.mp4">the whole tutorial</a>.</sub></p>
+<p align="center"><a href="https://pinyol.ipaud.dev/video/subir.mp4"><img src="docs/media/library.webp" alt="From the editor's .zip to the Library: the form, the robot's check, the approval and the game playing on the site" width="640"></a><br>
+<sub>From your game to the Library, sped up: <a href="https://pinyol.ipaud.dev/video/subir.mp4">the whole tutorial</a>.</sub></p>
 
 ## Run it on the console
 
-The quickest way: the site [installs the latest release](https://ipaud.github.io/pinyol/consola/#consola) on a board over
+The quickest way: the site [installs the latest release](https://pinyol.ipaud.dev/consola/#consola) on a board over
 USB, from Chrome or Edge, with fifteen games in its flash.
 
 The firmware in [firmware/](firmware/) is the console's platform: screen, touch, buttons, audio, microSD, battery and updates over the card. It needs [ESP-IDF 5.4](https://docs.espressif.com/projects/esp-idf/en/v5.4.2/esp32s3/get-started/).
@@ -253,7 +253,7 @@ Pins and peripherals, each with its source: [docs/hardware.md](docs/hardware.md)
 ## Cirera on your computer: Mac, Windows and Linux
 
 The console as an app: its menu, the examples inside, and any game's .zip dropped on its window, installed. Download it
-from the [release "cirera"](https://github.com/ipaud/pinyol/releases/tag/cirera) or the [site](https://ipaud.github.io/pinyol/consola/#escritorio), which says how to open it the first time (Apple
+from the [release "cirera"](https://github.com/ipaud/pinyol/releases/tag/cirera) or the [site](https://pinyol.ipaud.dev/consola/#escritorio), which says how to open it the first time (Apple
 and Microsoft have not signed it yet). Its games and saves go to `~/Library/Application Support/pinyol/Cirera` on a
 Mac, `%APPDATA%\pinyol\Cirera` on Windows, `~/.local/share/pinyol/Cirera` on Linux (x86_64 or aarch64, glibc 2.35 and
 up; a dropped game is unpacked with unzip).
@@ -294,7 +294,7 @@ platform/desktop/ the app's icons
 platform/null/   pinyol_headless: validator and test runner without a window
 platform/libretro/ the libretro core, for RetroArch and RetroPie
 platform/web/    the web pages around the players
-site/            the site (https://ipaud.github.io/pinyol/), built by site/build.py in Spanish, Catalan and English
+site/            the site (https://pinyol.ipaud.dev/), built by site/build.py in Spanish, Catalan and English
 firmware/        the console: ESP-IDF project, builds src/ unchanged; cirera/ is its menu, a pinyol game
 examples/        games as they go on the microSD: thirty-two in Lua, hola as data
 templates/lua/   the game new_game.py --lua starts from
