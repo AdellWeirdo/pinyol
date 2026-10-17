@@ -289,3 +289,78 @@ void gfx_grad(surface *s, int x, int y, int w, int h, const uint8_t c1[3], const
         }
     }
 }
+
+/* ------------------------------------------------------------------ light: a glow that adds to, or takes from, what is there */
+
+/* A packed RGB565 into the 32-bit form with each channel apart from the next (blue at 0, red at 11, green at 21), room above
+ * each for a carry, as mix565 does: one add or subtract then does all three. */
+#define SPREAD 0x07E0F81Fu
+#define CARRY_RB 0x00010020u /* the bit above blue (5) and above red (16) */
+#define CARRY_G 0x08000000u  /* and above green (27) */
+
+static inline uint16_t unspread(uint32_t v) { return (uint16_t)(v | v >> 16); }
+
+static inline uint16_t add565_sat(uint16_t d, uint32_t add_spread) {
+    uint32_t sum = ((d | (uint32_t)d << 16) & SPREAD) + add_spread;
+    const uint32_t rb = sum & CARRY_RB, g = sum & CARRY_G;
+    sum |= (rb - (rb >> 5)) | (g - (g >> 6)); /* a channel that carried is full */
+    return unspread(sum & SPREAD);
+}
+
+static inline uint16_t sub565_sat(uint16_t d, uint32_t sub_spread) {
+    const uint32_t guards = CARRY_RB | CARRY_G;
+    uint32_t diff = (((d | (uint32_t)d << 16) & SPREAD) | guards) - sub_spread; /* a guard bit that is left: no borrow */
+    const uint32_t rb = diff & CARRY_RB, g = diff & CARRY_G;
+    diff &= (rb - (rb >> 5)) | (g - (g >> 6)); /* a channel that borrowed is empty */
+    return unspread(diff & SPREAD);
+}
+
+/* A light at (cx, cy) reaching r pixels: each pixel gets the colour times (1 - d^2 / r^2)^2, which is a soft round glow with
+ * no edge, times intensity (0..256). With a cone (ux, uy: the direction, unit, 14 bits; cosine of its half angle, 14
+ * bits): only inside it; `soft` (a larger cosine inside) is full, between the two half. Nothing is read from a picture: the
+ * cost is the pixels in the circle, about 100 ns each on the console. */
+void gfx_light(surface *s, int cx, int cy, int r, const uint8_t rgb[3], unsigned intensity, bool sub, bool cone, int ux,
+               int uy, int cos_outer, int cos_inner) {
+    if (r < 1 || intensity == 0) return;
+    if (cone && r > 150) r = 150; /* (the cone's squares stay in 32 bits) */
+    /* the colour at each of 64 steps from the middle to the edge, packed apart; 64 more at half for a cone's rim */
+    uint32_t tab[128];
+    for (int i = 0; i < 64; i++) {
+        const float u = (float)i / 63.0f, f = (1 - u) * (1 - u) * (float)intensity / 256.0f;
+        const int cr = (int)((rgb[0] >> 3) * f + 0.5f), cg = (int)((rgb[1] >> 2) * f + 0.5f), cb = (int)((rgb[2] >> 3) * f + 0.5f);
+        tab[i] = (uint32_t)cb | (uint32_t)cr << 11 | (uint32_t)cg << 21;
+        const int hr = cr >> 1, hg = cg >> 1, hb = cb >> 1;
+        tab[64 + i] = (uint32_t)hb | (uint32_t)hr << 11 | (uint32_t)hg << 21;
+    }
+    const int ys = step_y(s), top = s->y0, bottom = s->y0 + s->h - 1;
+    int x0 = cx - r, x1 = cx + r;
+    if (x0 < s->x0) x0 = s->x0;
+    if (x1 > s->x0 + s->w - 1) x1 = s->x0 + s->w - 1;
+    const int inv = (int)((63u << 16) / (unsigned)(r * r)); /* d2 -> a step of 0..63 */
+    const int co2 = (int)(((int64_t)cos_outer * cos_outer) >> 12), ci2 = (int)(((int64_t)cos_inner * cos_inner) >> 12); /* 16 bits */
+    for (int x = x0; x <= x1; x++) {
+        const int dx = x - cx;
+        const int dymax = (int)sqrtf((float)(r * r - dx * dx));
+        int y0 = cy - dymax, y1 = cy + dymax;
+        if (y0 < top) y0 = top;
+        if (y1 > bottom) y1 = bottom;
+        if (y0 > y1) continue;
+        int dy = y0 - cy, d2 = dx * dx + dy * dy;
+        int dot = dx * ux + dy * uy; /* 14 bits */
+        uint16_t *dst = at(s, x, y0);
+        for (int y = y0; y <= y1; y++, dst += ys, d2 += 2 * dy + 1, dy++, dot += uy) {
+            int idx = (d2 * inv) >> 16; /* (below 2^23: the radius squared times 63 << 16 over it) */
+            if (idx > 63) idx = 63;
+            if (cone) {
+                if (dot <= 0) continue;
+                const int p = dot >> 6; /* 8 bits of fraction, up to 150 * 256 */
+                const int p2 = p * p;   /* 16 bits of fraction, below 2^31: dot^2 against cos^2 * d^2, both in 16 bits */
+                if (p2 < co2 * d2) continue;  /* outside the cone */
+                if (p2 < ci2 * d2) idx += 64; /* its rim: half */
+            }
+            const uint16_t d = s->swap ? bswap16(*dst) : *dst;
+            const uint16_t v = sub ? sub565_sat(d, tab[idx]) : add565_sat(d, tab[idx]);
+            *dst = s->swap ? bswap16(v) : v;
+        }
+    }
+}

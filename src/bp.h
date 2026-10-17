@@ -222,6 +222,11 @@ void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, 
  * for gfx_quad; mode and alpha (0..256) as gfx_blit_mixed. */
 void gfx_grad(surface *s, int x, int y, int w, int h, const uint8_t c1[3], const uint8_t c2[3], bool across, bool dither,
               int mode, unsigned alpha);
+/* A light: a soft round glow of colour rgb reaching r pixels from (cx, cy), added to what is there (or taken from it, `sub`:
+ * a shadow), times intensity (0..256). cone: only within the angle of the direction (ux, uy, a unit vector in 14 bits) whose
+ * cosine (14 bits) is cos_outer, full inside cos_inner's, half between. Reads no picture: only the pixels in the circle cost. */
+void gfx_light(surface *s, int cx, int cy, int r, const uint8_t rgb[3], unsigned intensity, bool sub, bool cone, int ux,
+               int uy, int cos_outer, int cos_inner);
 /* A frame of the picture on any four corners, in order: top-left, top-right, bottom-right, bottom-left of the picture
  * (xy8: x, y of each, in eighths of a pixel; at most +-16000). lights: each corner's colour to light it by (0..255 a
  * channel, 128 as it is), blending across the quad; mode and alpha (0..256) as gfx_blit_mixed; dither: the PlayStation's

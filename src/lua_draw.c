@@ -21,7 +21,7 @@
 
 /* ------------------------------------------------------------------ the overlay: text and shapes at 480x320 */
 
-enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS, OV_QUAD, OV_GRAD };
+enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS, OV_QUAD, OV_GRAD, OV_LIGHT };
 
 typedef struct {
     uint8_t op, font, scale, ext; /* ext: 1 + its entry in ov_style (text) or ov_xf (img); 0: none */
@@ -167,6 +167,12 @@ static void draw_one(surface *s, const ov_cmd *c) {
         gfx_grad(s, c->x, c->y, c->w, c->h, q->light[0], q->light[1], q->lights, q->dither, q->mode, q->alpha + (q->alpha >> 7));
         break;
     }
+    case OV_LIGHT: {
+        const typeof(ov_quad[0]) *q = &ov_quad[c->ext - 1];
+        gfx_light(s, c->x, c->y, c->w, q->light[0], q->alpha + (q->alpha >> 7), q->mode == BLEND_SUB, q->lights, q->xy[0], q->xy[1],
+                  q->xy[2], q->xy[3]);
+        break;
+    }
     case OV_POINTS: /* a swarm: its picture at each point (its top-left corner, already worked out) */
         for (int i = 0; i < c->len; i++) {
             int x = ov_pts[c->str + 2 * i], y = ov_pts[c->str + 2 * i + 1];
@@ -260,6 +266,7 @@ static void bounds(const ov_cmd *c, int *x0, int *y0, int *x1, int *y1) { /* wha
         }
         break;
     }
+    case OV_LIGHT: *x0 = c->x - c->w, *y0 = c->y - c->w, *x1 = c->x + c->w + 1, *y1 = c->y + c->w + 1; break;
     case OV_QUAD: { /* its corners, a pixel wider each way for the rounding */
         const int16_t *xy = ov_quad[c->ext - 1].xy;
         *x0 = *y0 = 32767, *x1 = *y1 = -32768;
@@ -279,7 +286,7 @@ static void bounds(const ov_cmd *c, int *x0, int *y0, int *x1, int *y1) { /* wha
 
 static void forget(const ov_cmd *c, int text_bytes, int corners) { /* the last command, off the list with its data */
     nov--, ntext -= text_bytes, npts -= 2 * corners;
-    if (c->op == OV_QUAD || c->op == OV_GRAD) nquad--;
+    if (c->op == OV_QUAD || c->op == OV_GRAD || c->op == OV_LIGHT) nquad--;
     else if (c->ext && c->op == OV_TEXT_OP) nstyle--;
     else if (c->ext) nxf--;
     if (c->op == OV_IMG && c->font) nlook--;
@@ -606,7 +613,9 @@ static int l_plate(lua_State *L) { return shape(L, OV_PLATE, true); }
 typedef struct {
     lua_Integer frame, tint;
     float scale, sx, sy, deg;
-    bool has_sx, has_sy, flip_x, flip_y, tinted;
+    bool has_sx, has_sy, flip_x, flip_y, tinted, dimmed;
+    float dim;  /* dim: a picture's colours times this (a night); mul: times each channel of 0xRRGGBB (0xFF as it is) */
+    int mul;
     uint8_t mode; /* BLEND_*: add, sub or quarter, the last one asked for */
     float alpha;
     const char *pal; /* (a string the table keeps alive) */
@@ -617,13 +626,15 @@ static float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ?
 /* img's options, read in one walk over the table: only the keys it has (most calls give two or three of the nine),
  * where looking each one up was most of an img's cost on the console */
 static void img_options(lua_State *L, int t, img_opts *o) {
-    *o = (img_opts){.scale = 1, .alpha = 1};
+    *o = (img_opts){.scale = 1, .alpha = 1, .dim = 1, .mul = 0xFFFFFF};
     lua_pushnil(L);
     while (lua_next(L, t)) {
         const char *k = lua_type(L, -2) == LUA_TSTRING ? lua_tostring(L, -2) : "";
         if (!strcmp(k, "frame")) o->frame = luaL_checkinteger(L, -1);
         else if (!strcmp(k, "flip_x")) o->flip_x = lua_toboolean(L, -1);
         else if (!strcmp(k, "tint")) o->tint = luaL_checkinteger(L, -1), o->tinted = true;
+        else if (!strcmp(k, "dim")) o->dim = clampf(fin(luaL_checknumber(L, -1)), 0, 1), o->dimmed = true;
+        else if (!strcmp(k, "mul")) o->mul = (int)(luaL_checkinteger(L, -1) & 0xFFFFFF), o->dimmed = true, o->dim = 1;
         else if (!strcmp(k, "scale")) o->scale = fin(luaL_checknumber(L, -1));
         else if (!strcmp(k, "angle")) o->deg = fin(luaL_checknumber(L, -1));
         else if (!strcmp(k, "scale_x")) o->sx = fin(luaL_checknumber(L, -1)), o->has_sx = true;
@@ -669,11 +680,15 @@ static int l_img(lua_State *L) {
     const char *pal = o.pal;
     bool tinted = o.tinted;
     lua_Integer tint = o.tint;
-    bool colours = (pal || tinted) && (c->ext ? straight(c) : c->scale == 1 || a->pk); /* a variant's, or one */
+    bool colours = (pal || tinted || o.dimmed) && (c->ext ? straight(c) : c->scale == 1 || a->pk); /* a variant's, one, or dimmed */
     if ((colours || o.alpha < 1 || o.mode) && nlook < OV_EXT) {
         asset *pa = colours && pal && safe_name(pal) ? gfx_asset_opt(pal) : NULL;
         ov_look[nlook].pal = pa && !pa->missing ? pa : NULL;
         ov_look[nlook].tint = colours && tinted ? to565(tint) : -1;
+        if (colours && !tinted && o.dimmed) { /* a multiplier, as the palette is to be multiplied (gfx.c, mul565) */
+            const int r = (int)((o.mul >> 16 & 255) * o.dim), g = (int)((o.mul >> 8 & 255) * o.dim), b = (int)((o.mul & 255) * o.dim);
+            ov_look[nlook].tint = -2 - (r << 16 | g << 8 | b);
+        }
         ov_look[nlook].alpha = (uint8_t)(o.alpha * 255 + 0.5f), ov_look[nlook].mode = o.mode;
         c->font = (uint8_t)(++nlook);
     }
@@ -681,6 +696,48 @@ static int l_img(lua_State *L) {
         forget(c, 0, 0);
         return 0;
     }
+    commit(c, 0, 0);
+    return 0;
+}
+
+/* light(x, y, r, colour [, {intensity, sub, cone}]): a soft round glow of that colour reaching r pixels, added to what is under
+ * it (a candle, a lamp, a flame, a window's light); sub = true takes it away instead (a pool of shadow). intensity 0..2 (1:
+ * as the colour). cone = {angle = degrees (0: to the right, 90: down), width = degrees across} makes it a beam (a flashlight,
+ * a guard's sight): full inside two thirds of it, half at the rim. It reads no picture: only the pixels it reaches cost. */
+static int l_light(lua_State *L) {
+    int x = num(L, 1), y = num(L, 2), r = num(L, 3);
+    lua_Integer col = luaL_checkinteger(L, 4);
+    if (r < 1 || nquad == OV_EXT) return 0;
+    if (r > 400) r = 400;
+    float intensity = 1;
+    bool sub = false, cone = false;
+    float angle = 0, width = 360;
+    if (lua_istable(L, 5)) {
+        lua_getfield(L, 5, "intensity"), intensity = clampf(fin(luaL_optnumber(L, -1, 1)), 0, 2), lua_pop(L, 1);
+        lua_getfield(L, 5, "sub"), sub = lua_toboolean(L, -1), lua_pop(L, 1);
+        lua_getfield(L, 5, "cone");
+        if (lua_istable(L, -1)) {
+            cone = true;
+            lua_getfield(L, -1, "angle"), angle = fin(luaL_optnumber(L, -1, 0)), lua_pop(L, 1);
+            lua_getfield(L, -1, "width"), width = clampf(fin(luaL_optnumber(L, -1, 60)), 2, 340), lua_pop(L, 1);
+        }
+        lua_pop(L, 1);
+    }
+    ov_cmd *c = ov_add(OV_LIGHT);
+    if (!c) return 0;
+    c->x = i16(x), c->y = i16(y), c->w = i16(r);
+    ov_quad[nquad].light[0][0] = (uint8_t)(col >> 16), ov_quad[nquad].light[0][1] = (uint8_t)(col >> 8), ov_quad[nquad].light[0][2] = (uint8_t)col;
+    ov_quad[nquad].mode = sub ? BLEND_SUB : BLEND_ADD;
+    ov_quad[nquad].alpha = (uint8_t)(clampf(intensity, 0, 1) * 255 + 0.5f); /* (above 1: the colour itself brighter, see below) */
+    ov_quad[nquad].lights = cone;
+    if (intensity > 1) { /* brighter than the colour: its channels scaled up, held to full */
+        for (int i = 0; i < 3; i++) ov_quad[nquad].light[0][i] = (uint8_t)clampf(ov_quad[nquad].light[0][i] * intensity, 0, 255);
+        ov_quad[nquad].alpha = 255;
+    }
+    const float rad = angle * 3.14159265f / 180.0f, half = width * 3.14159265f / 360.0f;
+    ov_quad[nquad].xy[0] = (int16_t)(cosf(rad) * 16384), ov_quad[nquad].xy[1] = (int16_t)(sinf(rad) * 16384);
+    ov_quad[nquad].xy[2] = (int16_t)(cosf(half) * 16384), ov_quad[nquad].xy[3] = (int16_t)(cosf(half * 0.66f) * 16384);
+    c->ext = (uint8_t)(++nquad);
     commit(c, 0, 0);
     return 0;
 }
@@ -1001,7 +1058,7 @@ bool draw_covers_screen(void) {
 void draw_register(lua_State *L) {
     static const luaL_Reg F[] = {
         {"text", l_text}, {"textw", l_textw}, {"rect", l_rect}, {"box", l_box}, {"shade", l_shade}, {"panel", l_panel},
-        {"plate", l_plate}, {"img", l_img}, {"quad", l_quad}, {"grad", l_grad}, {"frame", l_frame}, {"pset", l_pset}, {"pget", l_pget}, {"line", l_line},
+        {"plate", l_plate}, {"img", l_img}, {"quad", l_quad}, {"grad", l_grad}, {"light", l_light}, {"frame", l_frame}, {"pset", l_pset}, {"pget", l_pget}, {"line", l_line},
         {"circ", l_circ}, {"tri", l_tri}, {"poly", l_poly}, {"cls", l_cls}, {"canvas", l_canvas}, {"target", l_target},
         {"camera", l_camera}, {"clip", l_clip}, {"imgsize", l_imgsize}, {"preload", l_preload}, {NULL, NULL}};
     lua_pushglobaltable(L);

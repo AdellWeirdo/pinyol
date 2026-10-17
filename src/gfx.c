@@ -401,6 +401,12 @@ static uint16_t dusk(uint16_t c) { /* gfx_tint_dusk's per-channel scale, on one 
 /* light: LIGHT_DUSK and a number of times halved (gfx_shade), applied to the palette: the same pixels as shading and
  * tinting the picture once drawn, without going over them again */
 #define LIGHT_DUSK 0x10
+/* A tint of -2 or less is not a colour but a multiplier: -2 - (r << 16 | g << 8 | b), each 0..255 (255 as it is). The
+ * picture's palette is multiplied once, so a whole packed picture is made darker, or warmer, at no cost for each pixel. */
+static inline uint16_t mul565(uint16_t c, int code) {
+    const int m = -2 - code, mr = (m >> 16 & 255) + 1, mg = (m >> 8 & 255) + 1, mb = (m & 255) + 1;
+    return (uint16_t)(((c >> 11) * mr >> 8) << 11 | ((c >> 5 & 63) * mg >> 8) << 5 | ((c & 31) * mb >> 8));
+}
 static int warm_level; /* gfx_light_warm: every packed picture's palette pulled towards amber */
 void gfx_light_warm(int level) { warm_level = level; }
 
@@ -408,6 +414,7 @@ static void look_pal(const surface *s, const asset *a, const asset *alt, int tin
     const int ncol = (int)rd16(a->pk + 6), nalt = alt && alt->pk ? (int)rd16(alt->pk + 6) : 0;
     for (int i = 0; i < ncol; i++) {
         uint16_t c = tint >= 0 ? (uint16_t)tint : i < nalt ? alt->pal[i] : a->pal[i];
+        if (tint <= -2) c = mul565(c, tint);
         for (int k = light & 0xF; k > 0; k--) c = (uint16_t)((c & 0xF7DE) >> 1);
         if (light & LIGHT_DUSK) c = dusk(c);
         if (warm_level) { /* (as arena.c's warm, on one colour) */
@@ -452,7 +459,7 @@ void gfx_blit_mixed(surface *s, const asset *a, int frame, int x, int y, bool fl
     if (n <= 0 || m <= 0) return;
     const int ys = step_y(s), lo = v0, hi = v0 + m, bpp = a->bpp, ncol = (int)rd16(a->pk + 6);
     uint16_t pal[256];
-    for (int i = 0; i < ncol; i++) pal[i] = tint >= 0 ? (uint16_t)tint : a->pal[i];
+    for (int i = 0; i < ncol; i++) pal[i] = tint >= 0 ? (uint16_t)tint : tint <= -2 ? mul565(a->pal[i], tint) : a->pal[i];
     for (int k = 0; k < n; k++) {
         int u = u0 + k;
         EACH_RUN(a, frame, flip ? a->w - 1 - u : u, ry, rn, ids, {

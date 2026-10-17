@@ -1,0 +1,40 @@
+# light(): a soft round glow that adds to what is there (or takes from it), reaching its radius and no further, holding at full,
+# keeping its colour, in a beam; and what is outside the picture is clipped
+new
+tick 2
+# the middle is full, a third of the way is most of it, the edge and past it nothing
+expect_lua red("GLOW", 80, 80) > 235 and grn("GLOW", 80, 80) > 235 and blu("GLOW", 80, 80) > 235
+expect_lua red("GLOW", 110, 80) > 110 and red("GLOW", 110, 80) < 180
+expect_lua red("GLOW", 80, 80 + 59) < 8 and red("GLOW", 80, 80 + 61) == 0 and red("GLOW", 80 + 61, 80) == 0
+# the same all round (a circle): left, right, up and down at the same distance agree
+expect_lua math.abs(red("GLOW", 80 + 30, 80) - red("GLOW", 80 - 30, 80)) <= 2 and math.abs(red("GLOW", 80, 80 + 30) - red("GLOW", 80, 80 - 30)) <= 2
+expect_lua math.abs(red("GLOW", 80 + 21, 80 + 21) - red("GLOW", 80 + 30, 80)) <= 8
+# a colour stays itself
+expect_lua red("RED", 80, 80) > 235 and grn("RED", 80, 80) == 0 and blu("RED", 80, 80) == 0
+# half the intensity, half the light
+expect_lua math.abs(red("HALF", 80, 80) - red("GLOW", 80, 80) / 2) <= 6
+# adding to white stays white; adding to grey reaches full; taking from white empties the middle and leaves the rim; taking from black stays black
+expect_lua red("FULL", 80, 80) == 255 and red("FULL", 80, 80 + 40) == 255
+expect_lua red("SUM", 80, 80) > 250 and red("SUM", 80, 80 + 59) < 140
+expect_lua red("SHADOW", 80, 80) < 20 and red("SHADOW", 80 + 70, 80) == 255 and red("SHADOW", 80, 80 + 59) > 240
+expect_lua red("DARK", 80, 80) == 0
+# a beam to the right: lit ahead, dark behind and to the side, and nearer the axis is brighter than near the edge of the beam
+expect_lua red("BEAM", 80 + 40, 80) > 60 and red("BEAM", 80 - 40, 80) == 0 and red("BEAM", 80, 80 + 40) == 0 and red("BEAM", 80, 80 - 40) == 0
+expect_lua red("BEAM", 80 + 40, 80) >= red("BEAM", 80 + 40, 80 + 18) and red("BEAM", 80 + 40, 80 + 18) > 0
+expect_lua red("BEAM", 80 + 40, 80 + 40) == 0
+# at a corner it is clipped by the picture and nothing else: the pixel in the middle of it is lit, the far one not
+expect_lua red("EDGE", 10, 10) > 240 and red("EDGE", 100, 100) == 0x10
+# two coloured lights meeting add: where both reach, red and blue together
+expect_lua red("TWO", 80, 80) > 40 and blu("TWO", 80, 80) > 40 and grn("TWO", 80, 80) == 0 and red("TWO", 20, 80) > 0 and blu("TWO", 20, 80) == 0
+# the list: a flickering lamp wavers over the ticks, a light that follows moves with its target, off draws nothing, ambient is a mul
+lua lights.clear() hero = {x = 100, y = 100, dir = 1} lamp = lights.add({x = 80, y = 80, r = 60, color = 0xFFFFFF, flicker = 0.4}) torch = lights.add({follow = hero, ox = 5, oy = 5, r = 40, color = 0xFF0000, cone = {angle = 0, width = 60}, aim = true})
+expect_lua lights.count() == 2 and lights.mul() == 0xFFFFFF
+lua lights.ambient(0.5, 0.25, 1)
+expect_lua lights.mul() == 0x8040FF
+lua vals = {} for i = 1, 30 do lights.update() vals[#vals + 1] = lamp.intensity end
+expect_lua lights.count() == 2
+lua lights.remove(torch)
+expect_lua lights.count() == 1
+lua lamp.on = false
+shot luces
+expect_ok

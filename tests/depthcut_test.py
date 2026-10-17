@@ -84,6 +84,10 @@ expect_lua pget(0, 0, "BG_TEST") ~= nil and imgsize("BG_TEST_2") == 120
 lua player.y = 180 behind = rooms.order(function() end, player.y + player.h)
 lua player.y = 250 front = rooms.order(function() end, player.y + player.h)
 expect_lua pos(behind, "player") < pos(behind, "BG_TEST_2") and pos(front, "player") > pos(front, "BG_TEST_2")
+# dim and mul darken a packed picture through its palette: half, and a colour at a time (red whole, green half, blue none)
+lua canvas("D", 40, 40) target("D") img("BG_TEST", 0, 0, {dim = 0.5}) target() canvas("M", 40, 40) target("M") img("BG_TEST", 0, 0, {mul = 0xFF8000}) target() base = pget(5, 5, "BG_TEST")
+expect_lua near(pget(5, 5, "D"), (base >> 16) // 2, (base >> 8 & 255) // 2, (base & 255) // 2)
+expect_lua near(pget(5, 5, "M"), base >> 16, (base >> 8 & 255) // 2, 0)
 lua player.x, player.y = 120, 190
 tick 2
 shot depth
