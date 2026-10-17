@@ -167,6 +167,8 @@ add_executable(audio_test tests/audio_test.c platform/null/hal_null.c platform/l
 target_compile_options(audio_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(audio_test pinyol_core)
 add_test(NAME audio COMMAND audio_test)
+add_executable(audio_bench EXCLUDE_FROM_ALL tests/audio_bench.c platform/null/hal_null.c platform/link_udp.c) # not a test: make audio_bench
+target_link_libraries(audio_bench pinyol_core)
 add_executable(files_test tests/files_test.c platform/null/hal_null.c platform/link_udp.c)
 target_compile_options(files_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(files_test pinyol_core)

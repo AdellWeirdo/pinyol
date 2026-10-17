@@ -67,6 +67,7 @@ static int n, at;           /* its size and where it has got to */
 static int cur = -1;        /* the room in use, -1: none */
 static int16_t v[NREGS];    /* its registers as signed volumes */
 static int32_t off[NREGS];  /* and as places in the ring, in samples */
+static int32_t apf_at[2][2]; /* where each all-pass filter (1, 2; left, right) reads what it wrote a delay ago */
 
 int reverb_find(const char *name) {
     for (int i = 0; name && i < NROOMS; i++)
@@ -86,12 +87,24 @@ void reverb_set(int room_index) { /* -1: off. A room fresh from silence */
     n = r->size * 4;
     if (!(ring = calloc((size_t)n, sizeof *ring))) return n = 0, (void)0;
     for (int i = 0; i < NREGS; i++) v[i] = (int16_t)r->reg[i], off[i] = r->reg[i] * 4 % n;
+    for (int k = 0; k < 2; k++) /* (the place minus the delay, round the ring: worked out once, not for each sample) */
+        for (int side = 0; side < 2; side++) {
+            const int place = off[side ? (k ? R_mRAPF2 : R_mRAPF1) : (k ? R_mLAPF2 : R_mLAPF1)], delay = r->reg[k ? R_dAPF2 : R_dAPF1] * 4;
+            apf_at[k][side] = ((place - delay) % n + n) % n;
+        }
     cur = room_index;
 }
 
 static inline int16_t sat(int x) { return (int16_t)(x < -32768 ? -32768 : x > 32767 ? 32767 : x); }
-static inline int16_t *cell(int place) { return &ring[(at + place) % n]; } /* a place, from where the ring has got to */
-static inline int16_t *before(int place) { return &ring[(at + place + n - 1) % n]; } /* the sample written a turn before */
+/* (at and a place are both inside the ring, so their sum wraps at most once) */
+static inline int16_t *cell(int place) { /* a place, from where the ring has got to */
+    int i = at + place;
+    return &ring[i >= n ? i - n : i];
+}
+static inline int16_t *before(int place) { /* the sample written a turn before */
+    int i = at + place - 1;
+    return &ring[i < 0 ? i + n : i >= n ? i - n : i];
+}
 static inline int mul(int volume, int sample) { return volume * sample >> 15; }
 
 /* One turn for the input `in` on both sides: the left and right it gives back (16-bit scale, not yet at the wet level) */
@@ -110,18 +123,17 @@ static void turn(int in, int *left, int *right) {
              mul(v[R_vCOMB3], *cell(off[R_mRCOMB3])) + mul(v[R_vCOMB4], *cell(off[R_mRCOMB4]));
     lo = sat(lo), ro = sat(ro);
     /* two all-pass filters in a row, each reading what it wrote a delay ago */
-    const int dapf1 = v[R_dAPF1] * 4, dapf2 = v[R_dAPF2] * 4;
     for (int k = 0; k < 2; k++) {
-        const int dv = k ? dapf2 : dapf1, vol = v[k ? R_vAPF2 : R_vAPF1];
+        const int vol = v[k ? R_vAPF2 : R_vAPF1];
         const int pl = off[k ? R_mLAPF2 : R_mLAPF1], pr = off[k ? R_mRAPF2 : R_mRAPF1];
-        int16_t *rl = cell(((pl - dv) % n + n) % n), *rr = cell(((pr - dv) % n + n) % n);
+        int16_t *rl = cell(apf_at[k][0]), *rr = cell(apf_at[k][1]);
         int ol = *rl, orr = *rr;
         lo = sat(lo - mul(vol, ol)), ro = sat(ro - mul(vol, orr));
         *cell(pl) = (int16_t)lo, *cell(pr) = (int16_t)ro;
         lo = sat(mul(vol, lo) + ol), ro = sat(mul(vol, ro) + orr);
     }
     *left = lo, *right = ro;
-    at = (at + 1) % n;
+    if (++at == n) at = 0;
 }
 
 /* m samples of the send `in` (the AUDIO_HZ mix's scale) go through the room; what comes back, times wet, is added to

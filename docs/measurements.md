@@ -312,3 +312,25 @@ Same board, autotest builds, the frame rate in each 5 s window of the test, the 
 
 veloz is not at 60 yet: its tick (1.2 ms) and picture (5.9 ms, of which the PPU is most) plus 7.4 ms of strips still
 come to about 17 ms. A third strip buffer would give another half millisecond, but internal RAM has 44 KB free.
+
+## The mixer's newer voices (pan, envelope, ADPCM, the game's reverb)
+
+Measured on a desktop (an optimized build, `make audio_bench`; not on the console, where nothing of this has been timed
+yet), which gives the order and the ratios, not the console's milliseconds. Milliseconds of mixing for one second of
+sound, twelve voices of one looping clip:
+
+| Scene | ms per second |
+|---|---|
+| nothing playing | 0.15 |
+| 12 plain voices | 0.13 |
+| 12 voices at pitch 1.3 (between two samples) | 1.37 |
+| 12 voices with pan, envelope and a reverb send, no room | 1.07 |
+| 12 plain voices through the Room reverb | 0.55 |
+| 12 voices with pan, envelope and sends through Hall | 1.26 |
+| the same through Space Echo | 1.17 |
+
+The reverb costs about 0.4 ms a second whatever the room (its work is the same turn for each sample; only the memory it
+touches differs: from 10 KB for Room to 63 KB for Space Echo), about as much as three voices at a pitch. A voice with an
+envelope or an ADPCM clip takes the between-two-samples path, the dearest. On the console expect tens of times the
+desktop's figures: the reverb's ring wants internal memory (the studio's reverb stuttered in PSRAM, `studio_fx.c`), and
+`reverb()` allocates with `calloc`, which does not choose; time it on the board before a game leans on Hall or Space Echo.
