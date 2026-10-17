@@ -17,6 +17,13 @@ assets/  what the engine reads (.pk / .tiles / .map / .pal + .meta.json)
 
 `examples/duelo/art/make_art.py` is the shortest whole example of the middle step: read it next to this page.
 
+For most games the middle and last steps need no script of their own: list the pictures in `art.json` and run
+`uv run tools/build_art.py games/<id>` (a sheet cut into frames, its white or checkerboard background removed, each frame scaled so
+the body is the height you want and stood on its foot; a background covered and cut to the screen, with its depth pieces; an icon as
+it is; all packed). It builds again only what changed, prints each picture's size and memory, and `--sheet out.png` draws them all to
+check by eye. The list's format is at the top of [tools/build_art.py](../tools/build_art.py); `make_art.py` stays for what a list
+cannot say (a pocket of background to fill, a region to protect).
+
 ## 0. Choose a look
 
 A game looks like the console it is made for. Pick one with whoever the game is for (ask, if they have not said),
