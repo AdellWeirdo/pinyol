@@ -1,0 +1,25 @@
+{
+  "asset": "IC_BAR_HEALTH",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 2,
+  "w": 10,
+  "h": 10,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    5,
+    9
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 142,
+    "as_rgb565": 200
+  }
+}

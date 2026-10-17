@@ -1,0 +1,25 @@
+{
+  "asset": "A_CRITICAL",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 84,
+  "h": 69,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    42,
+    68
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 2165,
+    "as_rgb565": 11592
+  }
+}

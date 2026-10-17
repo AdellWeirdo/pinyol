@@ -1,0 +1,25 @@
+{
+  "asset": "BG_NACE_0",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 240,
+  "h": 144,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    120,
+    143
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 19704,
+    "as_rgb565": 69120
+  }
+}

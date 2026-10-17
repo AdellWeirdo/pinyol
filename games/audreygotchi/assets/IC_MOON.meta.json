@@ -1,0 +1,25 @@
+{
+  "asset": "IC_MOON",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 2,
+  "w": 12,
+  "h": 12,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    6,
+    11
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 199,
+    "as_rgb565": 288
+  }
+}

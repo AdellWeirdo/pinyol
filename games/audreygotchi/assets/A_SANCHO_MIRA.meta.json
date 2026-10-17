@@ -1,0 +1,29 @@
+{
+  "asset": "A_SANCHO_MIRA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 38,
+  "h": 32,
+  "frames": 3,
+  "frame_ms": [
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2
+  ],
+  "anchor": [
+    19,
+    31
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 2207,
+    "as_rgb565": 7296
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "asset": "IC_MENU_FIESTA_SANT_JOAN",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 14,
+  "h": 16,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    7,
+    15
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 246,
+    "as_rgb565": 448
+  }
+}

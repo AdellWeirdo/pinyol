@@ -1,0 +1,33 @@
+{
+  "asset": "A_ROCKET_DOOR_OPEN",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 107,
+  "h": 103,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    53,
+    102
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 18590,
+    "as_rgb565": 110210
+  }
+}

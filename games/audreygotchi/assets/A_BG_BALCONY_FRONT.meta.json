@@ -1,0 +1,25 @@
+{
+  "asset": "A_BG_BALCONY_FRONT",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 160,
+  "h": 147,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    80,
+    146
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 9534,
+    "as_rgb565": 47040
+  }
+}

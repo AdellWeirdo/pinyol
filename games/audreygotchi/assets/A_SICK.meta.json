@@ -1,0 +1,25 @@
+{
+  "asset": "A_SICK",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 77,
+  "h": 59,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    38,
+    58
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 1839,
+    "as_rgb565": 9086
+  }
+}

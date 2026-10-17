@@ -1,0 +1,10 @@
+{
+  "id": "audreygotchi",
+  "title": "Audreygotchi",
+  "subtitle": "Game Boy",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "Pau Avila",
+  "description": "Audrey, una gata persa gruñona, vive contigo: dale de comer, báñala, mímala, juega con ella y cuídala de cachorro a senior. Toda la mecánica del Audreygotchi de la placa, en cuatro verdes de Game Boy.",
+  "lua_memory_kb": 6144
+}

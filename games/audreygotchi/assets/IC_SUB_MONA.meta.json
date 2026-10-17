@@ -1,0 +1,25 @@
+{
+  "asset": "IC_SUB_MONA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 18,
+  "h": 16,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    9,
+    15
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 314,
+    "as_rgb565": 576
+  }
+}

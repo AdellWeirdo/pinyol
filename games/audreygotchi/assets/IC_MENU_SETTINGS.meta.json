@@ -1,0 +1,25 @@
+{
+  "asset": "IC_MENU_SETTINGS",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 3,
+  "w": 16,
+  "h": 16,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    8,
+    15
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 260,
+    "as_rgb565": 512
+  }
+}

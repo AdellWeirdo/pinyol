@@ -1,0 +1,25 @@
+{
+  "asset": "IC_DECO_ARBOL",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 25,
+  "h": 32,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    12,
+    31
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 519,
+    "as_rgb565": 1600
+  }
+}

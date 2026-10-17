@@ -1,0 +1,25 @@
+{
+  "asset": "A_CACHORRO_HUNGRY",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 40,
+  "h": 34,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    20,
+    33
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 775,
+    "as_rgb565": 2720
+  }
+}

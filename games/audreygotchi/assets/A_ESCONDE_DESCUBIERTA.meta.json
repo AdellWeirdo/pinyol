@@ -1,0 +1,33 @@
+{
+  "asset": "A_ESCONDE_DESCUBIERTA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 58,
+  "h": 47,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    29,
+    46
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 5050,
+    "as_rgb565": 27260
+  }
+}

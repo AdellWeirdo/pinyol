@@ -1,0 +1,29 @@
+{
+  "asset": "A_ENCONTRADA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 77,
+  "h": 60,
+  "frames": 3,
+  "frame_ms": [
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2
+  ],
+  "anchor": [
+    38,
+    59
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 6705,
+    "as_rgb565": 27720
+  }
+}

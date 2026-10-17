@@ -1,0 +1,25 @@
+{
+  "asset": "A_NUDO_PELO",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 2,
+  "w": 7,
+  "h": 6,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    3,
+    5
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 109,
+    "as_rgb565": 84
+  }
+}

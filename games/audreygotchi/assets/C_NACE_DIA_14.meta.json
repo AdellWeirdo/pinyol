@@ -1,0 +1,25 @@
+{
+  "asset": "C_NACE_DIA_14",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 160,
+  "h": 160,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    80,
+    159
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 14424,
+    "as_rgb565": 51200
+  }
+}

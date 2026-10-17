@@ -1,0 +1,33 @@
+{
+  "asset": "A_AUDREY_LOOK_HOME",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 120,
+  "h": 83,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    60,
+    82
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 12250,
+    "as_rgb565": 99600
+  }
+}

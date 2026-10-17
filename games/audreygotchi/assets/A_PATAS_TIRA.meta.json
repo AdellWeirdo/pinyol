@@ -1,0 +1,27 @@
+{
+  "asset": "A_PATAS_TIRA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 84,
+  "h": 62,
+  "frames": 2,
+  "frame_ms": [
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1
+  ],
+  "anchor": [
+    42,
+    61
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 4748,
+    "as_rgb565": 20832
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "asset": "A_CACHORRO_ANDA_IZQ",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 73,
+  "h": 55,
+  "frames": 4,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "anchor": [
+    36,
+    54
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 4672,
+    "as_rgb565": 32120
+  }
+}

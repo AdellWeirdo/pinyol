@@ -1,0 +1,29 @@
+{
+  "asset": "A_SANCHO_LAME",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 42,
+  "h": 35,
+  "frames": 3,
+  "frame_ms": [
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2
+  ],
+  "anchor": [
+    21,
+    34
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 2396,
+    "as_rgb565": 8820
+  }
+}

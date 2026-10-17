@@ -1,0 +1,25 @@
+{
+  "asset": "IC_ROOM_STUDIO",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 3,
+  "w": 21,
+  "h": 18,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    10,
+    17
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 423,
+    "as_rgb565": 756
+  }
+}

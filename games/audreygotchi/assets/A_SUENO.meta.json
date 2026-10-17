@@ -1,0 +1,25 @@
+{
+  "asset": "A_SUENO",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 32,
+  "h": 26,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    16,
+    25
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 571,
+    "as_rgb565": 1664
+  }
+}

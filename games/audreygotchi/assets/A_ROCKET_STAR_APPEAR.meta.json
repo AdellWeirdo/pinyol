@@ -1,0 +1,33 @@
+{
+  "asset": "A_ROCKET_STAR_APPEAR",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 32,
+  "h": 33,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    16,
+    32
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 1932,
+    "as_rgb565": 10560
+  }
+}

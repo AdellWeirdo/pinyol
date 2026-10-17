@@ -1,0 +1,25 @@
+{
+  "asset": "A_VARITA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 51,
+  "h": 56,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    25,
+    55
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 798,
+    "as_rgb565": 5712
+  }
+}
