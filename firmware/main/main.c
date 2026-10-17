@@ -14,6 +14,7 @@
 #include "bp.h"
 #include "display.h"
 #include "esp_app_desc.h"
+#include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -146,7 +147,7 @@ bool hal_can_switch_game(void) { return true; }
 void hal_switch_game(void) { switch_req = true; }
 
 /* The console's menu is a pinyol game (firmware/cirera, CONSOLE_MENU_ID): these give it the list (src/lua_console.c). */
-static launcher_game games[LAUNCHER_MAX];
+static EXT_RAM_BSS_ATTR launcher_game games[LAUNCHER_MAX]; /* in PSRAM: 64 entries are 16 KB of the internal RAM games need */
 static int ngames, played = -1;     /* the list, and the one played last (-1: none yet) */
 static bool woke = true;            /* the menu's first run since power-on: it plays its intro */
 static char launch_id[32];          /* what the menu chose */
