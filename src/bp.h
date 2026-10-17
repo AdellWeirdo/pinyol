@@ -57,6 +57,7 @@ void game_render(uint16_t *native); /* SCREEN_W x SCREEN_H RGB565 */
 bool game_quit_requested(void);
 bool save_file_atomic(const char *path, const char *txt); /* a game's saves, never half-written (hal_save's work) */
 void audio_mix(int16_t *out, int n); /* AUDIO_HZ mono; caller holds the audio lock */
+void audio_mix_stereo(int16_t *out, int n); /* the same as left, right, left, right...: 2 n samples; panned sounds are placed */
 int script_run(const char *path, void (*frame)(void)); /* 0 = all expectations passed */
 int content_validate(void);                            /* number of errors, each logged */
 
@@ -373,6 +374,8 @@ void audio_voice(const char *id); /* listening clips and spoken lines */
 void audio_voice_stop(int fade_ms);
 void audio_sfx(const char *id, float gain);
 int audio_sfx_play(const char *id, float gain, float pitch, bool loop); /* a handle, or 0 */
+int audio_sfx_play_pan(const char *id, float gain, float pitch, bool loop, float pan); /* pan -1 left .. 1 right */
+void audio_sfx_pan(int handle, float pan);
 void audio_sfx_adjust(int handle, float gain, float pitch); /* negative: unchanged */
 void audio_sfx_stop(int handle);
 bool audio_sfx_playing(int handle);

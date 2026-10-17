@@ -58,6 +58,7 @@ typedef struct {
     uint16_t gen;      /* counts the sounds this voice has started: a handle names one of them */
     int wait;          /* samples of the next block before it starts: a studio step lands on its sample */
     float send_d, send_r; /* a studio track's sends to its echo and reverb (0 for the game's own sounds) */
+    float side_l, side_r; /* pan: how far each ear's gain is below 1 (both 0: centred, as a voice without pan) */
 } sfx_voice;
 
 enum { S_AMB0, S_MUS = S_AMB0 + NAMB, S_VOICE0, S_VOICE1, NSTREAMS };
@@ -386,9 +387,26 @@ void audio_preload(const char *id) {
     if (id) clip_get(id);
 }
 
+static sfx_voice *by_handle(int h) { /* under the lock: the voice still playing that sound, or NULL */
+    int v = (h & 15) - 1;
+    if (v < 0 || v >= SFX_VOICES || !sfx[v].pcm || (sfx[v].gen & 0x7FFF) != (h >> 4)) return NULL;
+    return &sfx[v];
+}
+
 /* From RAM, a variant different from the last one, so repeats never sound identical; at a pitch (1 as recorded),
  * looping or once. Returns a handle for audio_sfx_adjust / audio_sfx_stop, 0 if nothing plays. */
 int audio_sfx_play(const char *id, float gain, float pitch, bool loop) {
+    return audio_sfx_play_pan(id, gain, pitch, loop, 0);
+}
+
+/* The same placed between the ears: pan -1 (all left) to 1 (all right). Each ear's gain is 1 at the centre and falls to
+ * 0 on the far side, so a centred sound is what a mono one always was. */
+static void set_pan(sfx_voice *x, float pan) {
+    pan = pan > 1 ? 1 : pan < -1 ? -1 : pan == pan ? pan : 0; /* (NaN: the centre) */
+    x->side_l = pan > 0 ? -pan : 0, x->side_r = pan < 0 ? pan : 0;
+}
+
+int audio_sfx_play_pan(const char *id, float gain, float pitch, bool loop, float pan) {
     if (!id) return 0;
     clip *c = clip_get(id);
     if (!c) return 0;
@@ -397,6 +415,8 @@ int audio_sfx_play(const char *id, float gain, float pitch, bool loop) {
     c->last = k;
     hal_audio_lock();
     int h = audio_voice_start_locked(c->pcm[k], c->n[k], gain, pitch, loop, 0, 0, 0);
+    sfx_voice *x = by_handle(h);
+    if (x) set_pan(x, pan);
     hal_audio_unlock();
     return h;
 }
@@ -414,16 +434,17 @@ int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch,
     if (v < 0) v = 0;
     uint16_t gen = (uint16_t)(sfx[v].gen + 1);
     sfx[v] = (sfx_voice){pcm, n, 0, 0, gain < 0 ? 0 : gain > 1 ? 1 : gain, pitch, loop, gen, wait < 0 ? 0 : wait,
-                         send_d, send_r};
+                         send_d, send_r, 0, 0};
     return (gen & 0x7FFF) << 4 | (v + 1); /* never 0 */
 }
 
 void audio_sfx(const char *id, float gain) { audio_sfx_play(id, gain, 1, false); }
 
-static sfx_voice *by_handle(int h) { /* under the lock: the voice still playing that sound, or NULL */
-    int v = (h & 15) - 1;
-    if (v < 0 || v >= SFX_VOICES || !sfx[v].pcm || (sfx[v].gen & 0x7FFF) != (h >> 4)) return NULL;
-    return &sfx[v];
+void audio_sfx_pan(int h, float pan) {
+    hal_audio_lock();
+    sfx_voice *x = by_handle(h);
+    if (x) set_pan(x, pan);
+    hal_audio_unlock();
 }
 
 void audio_sfx_adjust(int h, float gain, float pitch) { /* a negative value leaves that one as it is */
@@ -589,10 +610,12 @@ static inline int16_t limit(float x) {
     return (int16_t)(x < 0 ? -a : a);
 }
 
-/* Called by the platform's audio callback/task with the audio lock held. */
-void audio_mix(int16_t *out, int n) {
+/* The mix, mono (every platform's audio_mix) or stereo, left and right alternating (audio_mix_stereo). Everything is
+ * mixed once into acc; a panned voice adds to dl and dr how far below that each ear is, which is nothing for all else. */
+static void mix_core(int16_t *out, int n, bool stereo) {
     static float acc[CHUNK], amb[CHUNK]; /* single caller (audio callback/task): keep them off its small stack */
     static float sd[CHUNK], sr[CHUNK];   /* what the studio's tracks send to its echo and its reverb */
+    static float dl[CHUNK], dr[CHUNK];   /* the panned voices' difference from acc, left and right (both <= 0) */
     static int16_t buf[CHUNK * MAX_STEMS];
     for (int off = 0; off < n; off += CHUNK) {
         int m = n - off < CHUNK ? n - off : CHUNK;
@@ -600,6 +623,8 @@ void audio_mix(int16_t *out, int n) {
         memset(amb, 0, sizeof amb);
         memset(sd, 0, sizeof sd);
         memset(sr, 0, sizeof sr);
+        memset(dl, 0, sizeof dl);
+        memset(dr, 0, sizeof dr);
         for (int c = 0; c < NSTREAMS && !paused; c++) { /* pause freezes the world; menu clicks still play */
             stream *s = &st[c];
             if (!s->f) continue;
@@ -636,6 +661,11 @@ void audio_mix(int16_t *out, int n) {
                             float y = x->pcm[x->pos + j] * x->gain;
                             sd[i + j] += y * x->send_d, sr[i + j] += y * x->send_r;
                         }
+                    if (x->side_l != 0 || x->side_r != 0)
+                        for (int j = 0; j < k; j++) {
+                            float y = x->pcm[x->pos + j] * x->gain;
+                            dl[i + j] += y * x->side_l, dr[i + j] += y * x->side_r;
+                        }
                     x->pos += k, i += k;
                     if (x->pos >= x->n) x->pos = 0, x->pcm = x->loop ? x->pcm : NULL;
                 }
@@ -645,6 +675,7 @@ void audio_mix(int16_t *out, int n) {
                     int a = x->pos, b = a + 1 < x->n ? a + 1 : (x->loop ? 0 : a);
                     float y = (x->pcm[a] + (float)(x->pcm[b] - x->pcm[a]) * (float)x->frac / 65536.0f) * x->gain;
                     acc[i] += y, sd[i] += y * x->send_d, sr[i] += y * x->send_r;
+                    dl[i] += y * x->side_l, dr[i] += y * x->side_r;
                     x->frac += step;
                     x->pos += (int)(x->frac >> 16), x->frac &= 0xFFFF;
                     if (x->pos >= x->n) {
@@ -659,8 +690,16 @@ void audio_mix(int16_t *out, int n) {
         if (!paused && music_sounds()) mus_clock += m; /* (before a module may end) */
         if (!paused) mod_mix(acc, m);
         if (!paused) studio_fx(acc, sd, sr, m); /* its echo and reverb, then Lo-fi GBA over everything */
-        for (int i = 0; i < m; i++) out[off + i] = limit(acc[i] * ramp_next(&master));
+        for (int i = 0; i < m; i++) {
+            const float g = ramp_next(&master);
+            if (stereo) out[2 * (off + i)] = limit((acc[i] + dl[i]) * g), out[2 * (off + i) + 1] = limit((acc[i] + dr[i]) * g);
+            else out[off + i] = limit((acc[i] + 0.5f * (dl[i] + dr[i])) * g); /* (mono: panned sounds at half the gap) */
+        }
     }
     mark_clock = mus_clock, mark_us = hal_micros(), mark_n = n;
     studio_mark(n);
 }
+
+/* Called by the platform's audio callback/task with the audio lock held. */
+void audio_mix(int16_t *out, int n) { mix_core(out, n, false); }
+void audio_mix_stereo(int16_t *out, int n) { mix_core(out, n, true); }

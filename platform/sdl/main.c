@@ -222,7 +222,7 @@ static bool muted; /* the web page's mute button: the game plays on, silent (its
 
 static void audio_cb(void *user, Uint8 *stream, int len) {
     (void)user;
-    audio_mix((int16_t *)stream, len / 2); /* SDL holds the device lock during the callback */
+    audio_mix_stereo((int16_t *)stream, len / 4); /* two ears: 4 bytes a frame. SDL holds the device lock here */
     if (muted) memset(stream, 0, (size_t)len);
 }
 
@@ -542,7 +542,7 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (!mute) {
-        SDL_AudioSpec want = {.freq = AUDIO_HZ, .format = AUDIO_S16LSB, .channels = 1, .callback = audio_cb};
+        SDL_AudioSpec want = {.freq = AUDIO_HZ, .format = AUDIO_S16LSB, .channels = 2, .callback = audio_cb};
 #ifdef __EMSCRIPTEN__
         want.samples = 2048; /* the browser mixes on its main thread, next to the game: a longer buffer, no gaps */
 #else

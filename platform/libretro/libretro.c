@@ -370,9 +370,8 @@ RETRO_API void retro_run(void) {
     video_cb(fb, SCREEN_W, SCREEN_H, SCREEN_W * sizeof fb[0]);
     /* 22050 / 60 = 367.5 samples a frame: 367 and 368 in turn */
     int n = (int)((frames + 1) * AUDIO_HZ / TICK_HZ - frames * AUDIO_HZ / TICK_HZ);
-    int16_t mono[AUDIO_HZ / TICK_HZ + 1], stereo[2 * (AUDIO_HZ / TICK_HZ + 1)];
-    audio_mix(mono, n);
-    for (int i = 0; i < n; i++) stereo[2 * i] = stereo[2 * i + 1] = mono[i];
+    int16_t stereo[2 * (AUDIO_HZ / TICK_HZ + 1)];
+    audio_mix_stereo(stereo, n);
     audio_cb(stereo, (size_t)n);
     frames++;
     if (game_quit_requested()) env_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);

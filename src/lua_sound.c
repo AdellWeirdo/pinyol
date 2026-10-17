@@ -70,23 +70,27 @@ static int l_sound(lua_State *L) {
     return 1;
 }
 
-/* sfx(id [, gain [, {pitch, loop}]]) -> a handle for sfx_set and sfx_stop (0 if it could not play) */
+/* sfx(id [, gain [, {pitch, loop, pan}]]) -> a handle for sfx_set and sfx_stop (0 if it could not play) */
 static int l_sfx(lua_State *L) {
     const char *id = luaL_checkstring(L, 1);
-    float gain = fin(luaL_optnumber(L, 2, 1)), pitch = 1;
+    float gain = fin(luaL_optnumber(L, 2, 1)), pitch = 1, pan = 0;
     bool loop = false;
     if (!lua_isnoneornil(L, 3)) {
         luaL_checktype(L, 3, LUA_TTABLE);
         pitch = opt_float(L, 3, "pitch", 1, 0.0625f, 16), loop = opt_bool(L, 3, "loop", false);
+        pan = opt_float(L, 3, "pan", 0, -1, 1);
     }
-    lua_pushinteger(L, safe_name(id) ? audio_sfx_play(id, gain, pitch, loop) : 0); /* it keeps gain in 0..1 */
+    lua_pushinteger(L, safe_name(id) ? audio_sfx_play_pan(id, gain, pitch, loop, pan) : 0); /* it keeps gain in 0..1 */
     return 1;
 }
 
-static int l_sfx_set(lua_State *L) { /* sfx_set(handle, {gain, pitch}): a sound that is playing, changed */
+static int l_sfx_set(lua_State *L) { /* sfx_set(handle, {gain, pitch, pan}): a sound that is playing, changed */
     int h = (int)luaL_checkinteger(L, 1);
     luaL_checktype(L, 2, LUA_TTABLE);
     audio_sfx_adjust(h, opt_float(L, 2, "gain", -1, -1, 1), opt_float(L, 2, "pitch", -1, -1, 16));
+    lua_getfield(L, 2, "pan");
+    if (!lua_isnil(L, -1)) audio_sfx_pan(h, opt_float(L, 2, "pan", 0, -1, 1));
+    lua_pop(L, 1);
     return 0;
 }
 

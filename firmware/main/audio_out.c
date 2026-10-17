@@ -1,4 +1,4 @@
-/* Sound out and in (docs/hardware.md). The engine's mixer (audio_mix, mono at AUDIO_HZ) feeds an I2S stream, 16-bit
+/* Sound out and in (docs/hardware.md). The engine's mixer (audio_mix_stereo, at AUDIO_HZ) feeds an I2S stream, 16-bit
  * stereo at 22050 Hz, into the ES8311 codec on the shared I2C bus (0x18), which clocks itself from BCLK: its
  * registers are set as Espressif's esp_codec_dev es8311 driver (Apache 2.0) and the ES8311 datasheet set them. The
  * 8002 amplifier is switched on once (IO1 low) and left on until power-off, as it swallows its first ~100 ms.
@@ -96,15 +96,14 @@ static bool IRAM_ATTR on_underrun(i2s_chan_handle_t h, i2s_event_data_t *e, void
 
 static void mix_task(void *arg) {
     (void)arg;
-    static int16_t mono[BLOCK], stereo[2 * BLOCK];
+    static int16_t stereo[2 * BLOCK];
     for (;;) {
         int64_t t = esp_timer_get_time();
         hal_audio_lock();
-        audio_mix(mono, BLOCK);
+        audio_mix_stereo(stereo, BLOCK);
         hal_audio_unlock();
         audio_out_mix_us += esp_timer_get_time() - t;
         audio_out_blocks++;
-        for (int i = 0; i < BLOCK; i++) stereo[2 * i] = stereo[2 * i + 1] = mono[i];
         size_t sent;
         i2s_channel_write(tx, stereo, sizeof stereo, &sent, portMAX_DELAY); /* blocks: this paces the mixer */
         for (int k = 0; k < 3; k++) { /* what came in meanwhile, as one block goes out one comes in */
