@@ -70,17 +70,24 @@ static int l_sound(lua_State *L) {
     return 1;
 }
 
-/* sfx(id [, gain [, {pitch, loop, pan}]]) -> a handle for sfx_set and sfx_stop (0 if it could not play) */
+/* sfx(id [, gain [, {pitch, loop, pan, attack, decay, sustain, release, loop_start, loop_end}]]) -> a handle for sfx_set and sfx_stop (0 if it could not play) */
 static int l_sfx(lua_State *L) {
     const char *id = luaL_checkstring(L, 1);
-    float gain = fin(luaL_optnumber(L, 2, 1)), pitch = 1, pan = 0;
-    bool loop = false;
+    sfx_opts o = {.gain = fin(luaL_optnumber(L, 2, 1)), .pitch = 1};
     if (!lua_isnoneornil(L, 3)) {
         luaL_checktype(L, 3, LUA_TTABLE);
-        pitch = opt_float(L, 3, "pitch", 1, 0.0625f, 16), loop = opt_bool(L, 3, "loop", false);
-        pan = opt_float(L, 3, "pan", 0, -1, 1);
+        o.pitch = opt_float(L, 3, "pitch", 1, 0.0625f, 16), o.loop = opt_bool(L, 3, "loop", false);
+        o.pan = opt_float(L, 3, "pan", 0, -1, 1);
+        /* the envelope: any of its four asked for makes one (the rest: no attack, no decay, full sustain, no release) */
+        const float a = opt_float(L, 3, "attack", -1, -1, 30), d = opt_float(L, 3, "decay", -1, -1, 30);
+        const float su = opt_float(L, 3, "sustain", -1, -1, 1), r = opt_float(L, 3, "release", -1, -1, 30);
+        o.env = a >= 0 || d >= 0 || su >= 0 || r >= 0;
+        o.attack = a < 0 ? 0 : a, o.decay = d < 0 ? 0 : d, o.sustain = su < 0 ? 1 : su, o.release = r < 0 ? 0 : r;
+        /* a loop's two points, in seconds into the clip */
+        const float ls = opt_float(L, 3, "loop_start", -1, -1, 1e4f), le = opt_float(L, 3, "loop_end", -1, -1, 1e4f);
+        if (ls >= 0 && le > ls) o.loop_start = (int)(ls * AUDIO_HZ), o.loop_end = (int)(le * AUDIO_HZ);
     }
-    lua_pushinteger(L, safe_name(id) ? audio_sfx_play_pan(id, gain, pitch, loop, pan) : 0); /* it keeps gain in 0..1 */
+    lua_pushinteger(L, safe_name(id) ? audio_sfx_play_opts(id, &o) : 0); /* it keeps gain in 0..1 */
     return 1;
 }
 

@@ -29,6 +29,21 @@ static void beep(void) { /* a steady square wave, "BEEP", looped by every test *
     audio_sfx_set("BEEP", clip, 1000);
 }
 
+static int16_t big[AUDIO_HZ];
+
+static void clip_of(const char *id, int n, int a, int b) { /* a clip of n samples, the first half a, the second b */
+    int16_t *c = malloc(sizeof(int16_t) * (size_t)n);
+    for (int i = 0; i < n; i++) c[i] = (int16_t)(i < n / 2 ? a : b);
+    audio_reset();
+    audio_sfx_set(id, c, n);
+}
+
+static int all_sign(const int16_t *p, int n, int sign) { /* every sample of p of that sign (1 or -1) */
+    for (int i = 0; i < n; i++)
+        if (p[i] * sign <= 0) return 0;
+    return 1;
+}
+
 int main(void) {
     /* no pan: both ears the same, and the same as the mono mix, sample for sample */
     beep();
@@ -82,6 +97,54 @@ int main(void) {
     int worst = 0;
     for (int i = 0; i < N; i++) worst = abs((two[2 * i] + two[2 * i + 1]) / 2 - mono[i]) > worst ? abs((two[2 * i] + two[2 * i + 1]) / 2 - mono[i]) : worst;
     CHECK(worst <= 1);
+
+    /* an envelope: a steady clip of 8000 climbs over the attack, falls to the sustain, and lets go on a stop */
+    clip_of("DC", AUDIO_HZ, 8000, 8000);
+    sfx_opts o = {.gain = 1, .pitch = 1, .loop = true, .env = true, .attack = 0.05f, .decay = 0.02f, .sustain = 0.5f, .release = 0.05f};
+    int h2 = audio_sfx_play_opts("DC", &o);
+    audio_mix(big, 4000);
+    CHECK(big[0] < 200 && abs(big[550] - 4000) < 600 && big[1100] > 7800); /* up over 1102 samples */
+    CHECK(abs(big[3500] - 4000) < 150);                                     /* then down to half, and held */
+    CHECK(audio_sfx_playing(h2));
+    audio_sfx_stop(h2); /* let go: not at once, then to nothing */
+    CHECK(audio_sfx_playing(h2));
+    audio_mix(big, 100);
+    CHECK(big[0] > 2500 && big[0] < 4100 && big[99] < big[0]); /* still sounding, falling */
+    audio_mix(big, 2000);
+    CHECK(big[1099] < 100);                /* about -60 dB after the release time */
+    audio_mix(big, 2000);
+    CHECK(!audio_sfx_playing(h2));
+
+    /* no attack and no decay: full from the first sample, and a stop with no release is a stop */
+    clip_of("DC", AUDIO_HZ, 8000, 8000);
+    o = (sfx_opts){.gain = 1, .pitch = 1, .loop = true, .env = true, .sustain = 1};
+    h2 = audio_sfx_play_opts("DC", &o);
+    audio_mix(big, 100);
+    CHECK(abs(big[0] - 8000) < 5 && abs(big[99] - 8000) < 5);
+    audio_sfx_stop(h2);
+    CHECK(!audio_sfx_playing(h2));
+
+    /* loop points: the first half is positive, the second negative; a loop of the second half stays there */
+    clip_of("HALVES", 1000, 8000, -8000);
+    o = (sfx_opts){.gain = 1, .pitch = 1, .loop = true, .loop_start = 500, .loop_end = 1000};
+    audio_sfx_play_opts("HALVES", &o);
+    audio_mix(big, 3000);
+    CHECK(big[100] > 0 && all_sign(big + 500, 2500, -1)); /* the head once, then only the loop */
+    clip_of("HALVES", 1000, 8000, -8000);
+    o.loop_start = 0, o.loop_end = 500;
+    audio_sfx_play_opts("HALVES", &o);
+    audio_mix(big, 3000);
+    CHECK(all_sign(big, 3000, 1));                        /* the first half for ever: the second is never heard */
+    clip_of("HALVES", 1000, 8000, -8000);
+    o.loop_start = 500, o.loop_end = 1000, o.pitch = 2;   /* the same at pitch 2, between two samples */
+    audio_sfx_play_opts("HALVES", &o);
+    audio_mix(big, 3000);
+    CHECK(all_sign(big + 400, 2600, -1));
+    clip_of("HALVES", 1000, 8000, -8000);
+    o.loop_start = 700, o.loop_end = 600;                  /* points out of order: the whole clip, as before */
+    audio_sfx_play_opts("HALVES", &o);
+    audio_mix(big, 3000);
+    CHECK(big[100] > 0 && big[1500] > 0 && big[2400] < 0);
 
     audio_reset();
     printf("audio: %d checks, %d failed\n", checks, failures);

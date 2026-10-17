@@ -59,7 +59,35 @@ typedef struct {
     int wait;          /* samples of the next block before it starts: a studio step lands on its sample */
     float send_d, send_r; /* a studio track's sends to its echo and reverb (0 for the game's own sounds) */
     float side_l, side_r; /* pan: how far each ear's gain is below 1 (both 0: centred, as a voice without pan) */
+    int loop_from, end; /* a loop goes back to loop_from at end (the clip's n unless a loop point says less) */
+    bool env;           /* a volume envelope shapes it: attack, decay to sustain, then release when stopped */
+    uint8_t stage;      /* ENV_* */
+    float level, sustain, rise, fall_d, fall_r; /* rise: a sample's step up; fall_*: a sample's factor down */
 } sfx_voice;
+
+enum { ENV_ATTACK, ENV_DECAY, ENV_SUSTAIN, ENV_RELEASE };
+
+/* The envelope's next level, one sample on: the attack climbs evenly, the decay and the release fall by a constant
+ * factor a sample (as the PlayStation's sound chip's exponential ones do), and a release that is all but silent ends
+ * the voice. */
+static inline float env_next(sfx_voice *x) {
+    switch (x->stage) {
+    case ENV_ATTACK:
+        x->level += x->rise;
+        if (x->level >= 1) x->level = 1, x->stage = x->sustain < 1 ? ENV_DECAY : ENV_SUSTAIN;
+        break;
+    case ENV_DECAY:
+        x->level = x->sustain + (x->level - x->sustain) * x->fall_d;
+        if (x->level - x->sustain < 1e-4f) x->level = x->sustain, x->stage = ENV_SUSTAIN;
+        break;
+    case ENV_RELEASE:
+        x->level *= x->fall_r;
+        if (x->level < 1e-4f) x->pcm = NULL;
+        break;
+    default: break;
+    }
+    return x->level;
+}
 
 enum { S_AMB0, S_MUS = S_AMB0 + NAMB, S_VOICE0, S_VOICE1, NSTREAMS };
 
@@ -407,6 +435,13 @@ static void set_pan(sfx_voice *x, float pan) {
 }
 
 int audio_sfx_play_pan(const char *id, float gain, float pitch, bool loop, float pan) {
+    return audio_sfx_play_opts(id, &(sfx_opts){.gain = gain, .pitch = pitch, .loop = loop, .pan = pan});
+}
+
+/* A time in seconds, as the samples a sample-by-sample step of the envelope takes (at least one) */
+static float per_sample(float seconds) { return seconds * AUDIO_HZ < 1 ? 1 : seconds * AUDIO_HZ; }
+
+int audio_sfx_play_opts(const char *id, const sfx_opts *o) {
     if (!id) return 0;
     clip *c = clip_get(id);
     if (!c) return 0;
@@ -414,9 +449,22 @@ int audio_sfx_play_pan(const char *id, float gain, float pitch, bool loop, float
     if (c->count > 1 && k >= c->last) k++;
     c->last = k;
     hal_audio_lock();
-    int h = audio_voice_start_locked(c->pcm[k], c->n[k], gain, pitch, loop, 0, 0, 0);
+    int h = audio_voice_start_locked(c->pcm[k], c->n[k], o->gain, o->pitch, o->loop, 0, 0, 0);
     sfx_voice *x = by_handle(h);
-    if (x) set_pan(x, pan);
+    if (x) {
+        set_pan(x, o->pan);
+        /* a loop between two points of the clip: both given, inside it, in order */
+        if (o->loop && o->loop_end > o->loop_start && o->loop_start >= 0 && o->loop_end <= c->n[k])
+            x->loop_from = o->loop_start, x->end = o->loop_end;
+        if (o->env) {
+            const float sustain = o->sustain < 0 ? 0 : o->sustain > 1 ? 1 : o->sustain == o->sustain ? o->sustain : 1;
+            x->env = true, x->stage = o->attack > 0 ? ENV_ATTACK : ENV_DECAY, x->level = o->attack > 0 ? 0 : 1;
+            x->sustain = sustain, x->rise = 1 / per_sample(o->attack);
+            x->fall_d = powf(0.001f, 1 / per_sample(o->decay)), x->fall_r = powf(0.001f, 1 / per_sample(o->release));
+            if (o->decay <= 0) x->fall_d = 0; /* no decay: straight to the sustain level */
+            if (o->release <= 0) x->fall_r = 0; /* no release: a stop is a stop */
+        }
+    }
     hal_audio_unlock();
     return h;
 }
@@ -433,8 +481,8 @@ int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch,
             if (!sfx[i].loop && (v < 0 || sfx[i].n - sfx[i].pos < sfx[v].n - sfx[v].pos)) v = i;
     if (v < 0) v = 0;
     uint16_t gen = (uint16_t)(sfx[v].gen + 1);
-    sfx[v] = (sfx_voice){pcm, n, 0, 0, gain < 0 ? 0 : gain > 1 ? 1 : gain, pitch, loop, gen, wait < 0 ? 0 : wait,
-                         send_d, send_r, 0, 0};
+    sfx[v] = (sfx_voice){.pcm = pcm, .n = n, .end = n, .gain = gain < 0 ? 0 : gain > 1 ? 1 : gain, .pitch = pitch,
+                         .loop = loop, .gen = gen, .wait = wait < 0 ? 0 : wait, .send_d = send_d, .send_r = send_r};
     return (gen & 0x7FFF) << 4 | (v + 1); /* never 0 */
 }
 
@@ -460,9 +508,11 @@ void audio_voice_stop_locked(int h) {
     if (x) x->pcm = NULL;
 }
 
-void audio_sfx_stop(int h) {
+void audio_sfx_stop(int h) { /* a voice with an envelope lets go: its release, then it ends; any other stops at once */
     hal_audio_lock();
-    audio_voice_stop_locked(h);
+    sfx_voice *x = by_handle(h);
+    if (x && x->env && x->fall_r > 0) x->stage = ENV_RELEASE;
+    else audio_voice_stop_locked(h);
     hal_audio_unlock();
 }
 
@@ -652,9 +702,9 @@ static void mix_core(int16_t *out, int n, bool stereo) {
             sfx_voice *x = &sfx[v];
             int i0 = x->wait < m ? x->wait : m;
             x->wait -= i0;
-            if (x->pitch == 1) /* as recorded: sample after sample, round again if it loops */
+            if (x->pitch == 1 && !x->env) /* as recorded: sample after sample, round again if it loops */
                 for (int i = i0; i < m && x->pcm;) {
-                    int k = x->n - x->pos < m - i ? x->n - x->pos : m - i;
+                    int k = x->end - x->pos < m - i ? x->end - x->pos : m - i;
                     for (int j = 0; j < k; j++) acc[i + j] += x->pcm[x->pos + j] * x->gain;
                     if (x->send_d > 0 || x->send_r > 0)
                         for (int j = 0; j < k; j++) {
@@ -667,19 +717,20 @@ static void mix_core(int16_t *out, int n, bool stereo) {
                             dl[i + j] += y * x->side_l, dr[i + j] += y * x->side_r;
                         }
                     x->pos += k, i += k;
-                    if (x->pos >= x->n) x->pos = 0, x->pcm = x->loop ? x->pcm : NULL;
+                    if (x->pos >= x->end) x->pos = x->loop ? x->loop_from : 0, x->pcm = x->loop ? x->pcm : NULL;
                 }
             else { /* faster or slower: between two samples, by the fraction */
                 uint32_t step = (uint32_t)(x->pitch * 65536.0f);
                 for (int i = i0; i < m && x->pcm; i++) {
-                    int a = x->pos, b = a + 1 < x->n ? a + 1 : (x->loop ? 0 : a);
+                    int a = x->pos, b = a + 1 < x->end ? a + 1 : (x->loop ? x->loop_from : a);
                     float y = (x->pcm[a] + (float)(x->pcm[b] - x->pcm[a]) * (float)x->frac / 65536.0f) * x->gain;
+                    if (x->env) y *= env_next(x); /* (a release that ends the voice leaves this sample its last) */
                     acc[i] += y, sd[i] += y * x->send_d, sr[i] += y * x->send_r;
                     dl[i] += y * x->side_l, dr[i] += y * x->side_r;
                     x->frac += step;
                     x->pos += (int)(x->frac >> 16), x->frac &= 0xFFFF;
-                    if (x->pos >= x->n) {
-                        if (x->loop) x->pos %= x->n;
+                    if (x->pos >= x->end) {
+                        if (x->loop) x->pos = x->loop_from + (x->pos - x->end) % (x->end - x->loop_from);
                         else x->pcm = NULL;
                     }
                 }

@@ -415,9 +415,9 @@ order, so consoles that get the same messages can compute the same thing.
 
 | Call | Does |
 |---|---|
-| `sfx(id [, gain [, {pitch, loop, pan}]])` | plays `audio/<id>.wav` (or a sound made with `sound`) once, or looping; `pitch` 1 as recorded, 2 an octave up, 0.5 down; `pan` -1 (left ear) to 1 (right), 0 the middle: the far ear fades to nothing as it goes, the near one stays full, so an unpanned sound is as it always was. Platforms with one speaker hear it at half. Returns a handle |
+| `sfx(id [, gain [, {pitch, loop, pan, attack, decay, sustain, release, loop_start, loop_end}]])` | plays `audio/<id>.wav` (or a sound made with `sound`) once, or looping; `pitch` 1 as recorded, 2 an octave up, 0.5 down; `pan` -1 (left ear) to 1 (right), 0 the middle: the far ear fades to nothing as it goes, the near one stays full, so an unpanned sound is as it always was. Platforms with one speaker hear it at half. `attack`, `decay` (seconds), `sustain` (0 to 1, the level it settles at) and `release` (seconds) shape its volume like a PlayStation voice: it climbs, falls to the sustain level, and when you `sfx_stop` it, lets go over the release instead of cutting (any of the four makes an envelope; the others default to no attack, no decay, full sustain, no release). `loop_start` and `loop_end` (seconds into the clip, with `loop = true`) loop only that part: a held organ note, an engine's steady hum after its start-up. Returns a handle |
 | `sfx_set(handle, {gain, pitch, pan})` | changes a sound while it plays: an engine that follows the speed, a theremin, a car crossing the screen |
-| `sfx_stop(handle)`, `sfx_on(handle)` | stops it; is it still playing? |
+| `sfx_stop(handle)`, `sfx_on(handle)` | stops it (a sound with a `release` fades over it); is it still playing? |
 | `volume(v)` | everything the game sounds (effects, music, tones, the studio), from 0 (silent) to 1; each game starts at 1 |
 | `sound(id, recipe [, seed])` | makes a sound from a recipe: `"coin"`, `"laser"`, `"explosion"`, `"powerup"`, `"hit"`, `"jump"`, `"blip"` or `"random"`; each seed gives another. Returns its numbers |
 | `sound(id, {numbers})` | makes a sound from its numbers (below), played with `sfx(id)`. Returns them, completed |

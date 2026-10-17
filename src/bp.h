@@ -376,6 +376,16 @@ void audio_sfx(const char *id, float gain);
 int audio_sfx_play(const char *id, float gain, float pitch, bool loop); /* a handle, or 0 */
 int audio_sfx_play_pan(const char *id, float gain, float pitch, bool loop, float pan); /* pan -1 left .. 1 right */
 void audio_sfx_pan(int handle, float pan);
+/* Everything a sound can be asked: gain 0..1, pitch, loop (between loop_start and loop_end samples if both are given),
+ * pan -1..1, and, if env, a volume envelope in seconds (attack up, decay down to sustain 0..1, release after a stop). */
+typedef struct {
+    float gain, pitch, pan;
+    bool loop;
+    int loop_start, loop_end;
+    bool env;
+    float attack, decay, sustain, release;
+} sfx_opts;
+int audio_sfx_play_opts(const char *id, const sfx_opts *o);
 void audio_sfx_adjust(int handle, float gain, float pitch); /* negative: unchanged */
 void audio_sfx_stop(int handle);
 bool audio_sfx_playing(int handle);
