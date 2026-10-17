@@ -494,6 +494,9 @@ esp-web-install-button:not(:defined) [slot="unsupported"], esp-web-install-butto
 .js .talk[data-ready] .talk-ask { display: block; }
 .talk[data-ready] .talk-note { display: block; color: var(--text-3); font-size: var(--t-small); margin-top: var(--s3); }
 .talk-soon { color: var(--text-2); }
+/* giscus's own stylesheet (giscus.app/default.css) is not loaded: the page's policy only allows its own, so the widget gets its two rules here */
+.talk .giscus, .talk .giscus-frame { width: 100%; }
+.talk .giscus-frame { border: 0; color-scheme: light dark; }
 .game-more .cart h3 { font-size: 1.3rem; }
 .stretch { text-decoration: none; }
 .stretch::after { content: ""; position: absolute; inset: 0; } /* the whole card opens the game */
