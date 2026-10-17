@@ -145,6 +145,7 @@ static int l_sfx_on(lua_State *L) { /* sfx_on(handle) -> is that sound still pla
 static int l_music_pan(lua_State *L) {
     float p = fin(luaL_checknumber(L, 1));
     audio_music_pan(p < -1 ? -1 : p > 1 ? 1 : p, (int)luaL_optinteger(L, 2, 300));
+    midi_pan(p);
     return 0;
 }
 
@@ -177,6 +178,7 @@ static int l_music(lua_State *L) {
     if (lua_isnoneornil(L, 1)) {
         audio_music_stop(fade);
         mod_stop(fade);
+        midi_stop(fade);
         audio_music_clock(0);
         return 0;
     }
@@ -187,10 +189,30 @@ static int l_music(lua_State *L) {
     if (f) { /* a module: it replaces any music */
         fclose(f);
         audio_music_stop(fade);
+        midi_stop(fade);
         if (!mod_play(path, 1)) audio_music_clock(0);
         return 0;
     }
+    snprintf(path, sizeof path, "%s/audio/%s.mid", G.game_dir, id);
+    f = safe_name(id) ? fopen(path, "rb") : NULL;
+    if (f) { /* a MIDI file, played by a bank of samples: music("SONG", 300, {bank = "KIT", loop = true, volume = 1}) */
+        fclose(f);
+        audio_music_stop(fade);
+        mod_stop(fade);
+        char bank[48] = "BANK";
+        bool loop = true;
+        float volume = 1;
+        if (lua_istable(L, 3)) {
+            lua_getfield(L, 3, "bank");
+            if (lua_isstring(L, -1) && safe_name(lua_tostring(L, -1))) snprintf(bank, sizeof bank, "%s", lua_tostring(L, -1));
+            lua_pop(L, 1);
+            loop = opt_bool(L, 3, "loop", true), volume = opt_float(L, 3, "volume", 1, 0, 1);
+        }
+        if (!midi_play(id, bank, loop, volume, fade)) audio_music_clock(0);
+        return 0;
+    }
     static const float all[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+    midi_stop(fade);
     mod_stop(fade);
     if (safe_name(id)) audio_music_start(id, 0, 0, all, fade);
     return 0;

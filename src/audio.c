@@ -17,6 +17,8 @@
 
 #define CHUNK 256
 #define SFX_VOICES 12 /* a drum machine's tails overlap (handles keep 4 bits for it) */
+#define MIDI_VOICES 16 /* the sequencer's own, after those: a song's notes never take a sound effect's voice */
+#define NVOICES (SFX_VOICES + MIDI_VOICES)
 #define SFX_CACHE 48
 /* ponytail: one byte budget, least recently played out first; on the card the ambience events alone are 3.3 MB */
 #define SFX_CACHE_BYTES (1536 * 1024)
@@ -156,7 +158,7 @@ static ramp rv_wet = {0, 0, 0};               /* how much of the game's reverb c
 static float rv_music, rv_amb;                 /* what the music and the ambience send into it */
 static bool rv_closing;                        /* fading out: the room goes when it is silent */
 static float lp_state, lp_l, lp_r; /* the ambience's lowpass, and the same for what a panned bed adds to each ear */
-static sfx_voice sfx[SFX_VOICES];
+static sfx_voice sfx[NVOICES];
 static clip cache[SFX_CACHE];
 static int ncache;
 static long cache_bytes;
@@ -622,6 +624,16 @@ int audio_sfx_play_pan(const char *id, float gain, float pitch, bool loop, float
 /* A time in seconds, as the samples a sample-by-sample step of the envelope takes (at least one) */
 static float per_sample(float seconds) { return seconds * AUDIO_HZ < 1 ? 1 : seconds * AUDIO_HZ; }
 
+/* An envelope on a voice: seconds of attack, decay to the sustain level (0..1), and release after a stop */
+static void set_envelope(sfx_voice *x, float attack, float decay, float sustain_level, float release) {
+    const float sustain = sustain_level < 0 ? 0 : sustain_level > 1 ? 1 : sustain_level == sustain_level ? sustain_level : 1;
+    x->env = true, x->stage = attack > 0 ? ENV_ATTACK : ENV_DECAY, x->level = attack > 0 ? 0 : 1;
+    x->sustain = sustain, x->rise = 1 / per_sample(attack);
+    x->fall_d = powf(0.001f, 1 / per_sample(decay)), x->fall_r = powf(0.001f, 1 / per_sample(release));
+    if (decay <= 0) x->fall_d = 0; /* no decay: straight to the sustain level */
+    if (release <= 0) x->fall_r = 0; /* no release: a stop is a stop */
+}
+
 int audio_sfx_play_opts(const char *id, const sfx_opts *o) {
     if (!id) return 0;
     clip *c = clip_get(id);
@@ -642,14 +654,7 @@ int audio_sfx_play_opts(const char *id, const sfx_opts *o) {
         if (!(to > from && from >= 0 && to <= c->n[k])) from = c->loop_a[k], to = c->loop_b[k];
         if (c->vag[k]) from = from / VAG_SAMPLES * VAG_SAMPLES; /* a jump lands on a block's start */
         if (o->loop && to > from && from >= 0 && to <= c->n[k]) x->loop_from = from, x->end = to;
-        if (o->env) {
-            const float sustain = o->sustain < 0 ? 0 : o->sustain > 1 ? 1 : o->sustain == o->sustain ? o->sustain : 1;
-            x->env = true, x->stage = o->attack > 0 ? ENV_ATTACK : ENV_DECAY, x->level = o->attack > 0 ? 0 : 1;
-            x->sustain = sustain, x->rise = 1 / per_sample(o->attack);
-            x->fall_d = powf(0.001f, 1 / per_sample(o->decay)), x->fall_r = powf(0.001f, 1 / per_sample(o->release));
-            if (o->decay <= 0) x->fall_d = 0; /* no decay: straight to the sustain level */
-            if (o->release <= 0) x->fall_r = 0; /* no release: a stop is a stop */
-        }
+        if (o->env) set_envelope(x, o->attack, o->decay, o->sustain, o->release);
     }
     hal_audio_unlock();
     return h;
@@ -700,6 +705,53 @@ void audio_sfx_stop(int h) { /* a voice with an envelope lets go: its release, t
     if (x && x->env && x->fall_r > 0) x->stage = ENV_RELEASE;
     else audio_voice_stop_locked(h);
     hal_audio_unlock();
+}
+
+/* ------------------------------------------------------------------ the sequencer's voices (midi.c) */
+/* A note of a song: a sample's ADPCM blocks played at a pitch (1: as recorded) with its own envelope and place, in one of the
+ * voices kept for songs. Called by the sequencer from inside audio_mix (the audio lock is held). Returns the voice, or -1. */
+int audio_midi_start(const midi_note *n, uint16_t *gen_out) {
+    int v = -1, oldest = -1;
+    for (int i = SFX_VOICES; i < NVOICES && v < 0; i++)
+        if (!sfx[i].pcm) v = i;
+    if (v < 0) { /* the one that has been going longest, a released one first */
+        for (int i = SFX_VOICES; i < NVOICES; i++) {
+            if (oldest < 0 || (sfx[i].stage == ENV_RELEASE) > (sfx[oldest].stage == ENV_RELEASE) ||
+                ((sfx[i].stage == ENV_RELEASE) == (sfx[oldest].stage == ENV_RELEASE) && sfx[i].level < sfx[oldest].level))
+                oldest = i;
+        }
+        v = oldest;
+    }
+    const uint16_t gen = (uint16_t)(sfx[v].gen + 1);
+    sfx[v] = (sfx_voice){.pcm = (const int16_t *)n->vag, .n = n->samples, .end = n->samples, .gain = n->gain > 1 ? 1 : n->gain,
+                         .pitch = n->pitch > 16 ? 16 : n->pitch < 0.0625f ? 0.0625f : n->pitch, .loop = n->loop_to > n->loop_from,
+                         .gen = gen, .wait = n->wait < 0 ? 0 : n->wait};
+    sfx_voice *x = &sfx[v];
+    x->vag = n->vag, x->pcm = x->blk, x->vbase = -VAG_SAMPLES * 4;
+    if (x->loop) x->loop_from = n->loop_from / VAG_SAMPLES * VAG_SAMPLES, x->end = n->loop_to;
+    set_pan(x, n->pan);
+    x->rev = n->reverb;
+    set_envelope(x, n->attack, n->decay, n->sustain, n->release > 0.004f ? n->release : 0.004f);
+    if (gen_out) *gen_out = gen;
+    return v;
+}
+
+static sfx_voice *midi_voice(int v, uint16_t gen) { return v >= SFX_VOICES && v < NVOICES && sfx[v].pcm && sfx[v].gen == gen ? &sfx[v] : NULL; }
+bool audio_midi_alive(int v, uint16_t gen) { return midi_voice(v, gen) != NULL; }
+void audio_midi_release(int v, uint16_t gen) {
+    sfx_voice *x = midi_voice(v, gen);
+    if (x && x->stage != ENV_RELEASE) x->stage = ENV_RELEASE;
+}
+void audio_midi_stop(int v, uint16_t gen) {
+    sfx_voice *x = midi_voice(v, gen);
+    if (x) x->pcm = NULL;
+}
+void audio_midi_stop_all(void) { for (int i = SFX_VOICES; i < NVOICES; i++) sfx[i].pcm = NULL; }
+void audio_midi_set(int v, uint16_t gen, float pitch, float gain) {
+    sfx_voice *x = midi_voice(v, gen);
+    if (!x) return;
+    if (pitch > 0) x->pitch = pitch > 16 ? 16 : pitch < 0.0625f ? 0.0625f : pitch;
+    if (gain >= 0) x->gain = gain > 1 ? 1 : gain;
 }
 
 /* A clip a studio track plays: loaded now (the game's thread) and never evicted while pinned. Its first variant
@@ -769,7 +821,7 @@ void audio_music_clock(int src) {
     hal_audio_unlock();
 }
 
-static bool music_sounds(void) { return mus_src == 1 ? st[S_MUS].f != NULL : mus_src == 2 && mod_playing(); }
+static bool music_sounds(void) { return mus_src == 1 ? st[S_MUS].f != NULL : mus_src == 2 ? mod_playing() : mus_src == 3 && midi_playing(); }
 
 bool audio_music_time(double *seconds) {
     hal_audio_lock();
@@ -804,6 +856,7 @@ void audio_reset(void) {
     hal_audio_unlock();
     psg_reset();
     mod_reset();
+    midi_reset();
     for (int i = 0; i < ncache; i++)
         for (int k = 0; k < cache[i].count; k++) free(cache[i].pcm[k]), free(cache[i].vag[k]);
     ncache = 0;
@@ -941,7 +994,8 @@ static void mix_core(int16_t *out, int n, bool stereo) {
             ramp_next(&bus_mus);
         }
         if (!paused) studio_tick(m); /* the steps falling in this block start their voices, to the sample */
-        for (int v = 0; v < SFX_VOICES; v++) {
+        if (!paused) midi_tick(m);   /* the song's notes falling in it, the same */
+        for (int v = 0; v < NVOICES; v++) {
             sfx_voice *x = &sfx[v];
             int i0 = x->wait < m ? x->wait : m;
             x->wait -= i0;

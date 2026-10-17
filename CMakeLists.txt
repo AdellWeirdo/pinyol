@@ -186,6 +186,8 @@ endforeach()
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_FOUND) # the site's numbers: the minutes played, the ranking, the cover of the week (tools/stats.py)
   add_test(NAME stats COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/stats.py --test)
+  add_test(NAME midi_songs COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/midi_test.py
+           $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/midi) # a MIDI file played by a bank of samples, and one from a SoundFont
   add_test(NAME vag_sounds COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/vag_test.py
            $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/vag)
 endif()

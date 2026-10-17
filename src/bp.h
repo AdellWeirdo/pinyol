@@ -379,6 +379,24 @@ const char *drill_phase(void); /* lead, demo, input, result: for scripts */
 void audio_ambient(const char *id, int fade_ms); /* crossfade the zone bed; NULL fades out */
 void audio_ambient_pan(const char *id, int fade_ms, float pan); /* the same placed between the ears (-1 left .. 1 right) */
 void audio_music_pan(float pan, int fade_ms);
+/* ------------------------------------------------------------------ midi.c: a song as notes, played by a bank of ADPCM samples */
+typedef struct { /* a note of a song, for the voices kept for songs (audio.c) */
+    const uint8_t *vag; /* the sample's blocks */
+    int samples, loop_from, loop_to, wait;
+    float gain, pitch, pan, reverb, attack, decay, sustain, release;
+} midi_note;
+int audio_midi_start(const midi_note *n, uint16_t *gen_out); /* inside audio_mix: the voice used, or -1 */
+bool audio_midi_alive(int voice, uint16_t gen);
+void audio_midi_release(int voice, uint16_t gen);
+void audio_midi_stop(int voice, uint16_t gen);
+void audio_midi_stop_all(void);
+void audio_midi_set(int voice, uint16_t gen, float pitch, float gain); /* a negative value: unchanged */
+bool midi_play(const char *mid, const char *bank, bool loop, float gain, int fade_ms); /* files in audio/; false: not played */
+void midi_stop(int fade_ms);
+void midi_pan(float pan);
+bool midi_playing(void);
+void midi_tick(int m); /* in audio_mix: the m samples of the song that follow */
+void midi_reset(void);
 int audio_music_start(const char *cue, float loop_at_s, float bar_s, const float *gains, int fade_ms);
 void audio_music_layer(int stem, float gain, int fade_ms);
 void audio_music_stop(int fade_ms);
