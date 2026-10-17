@@ -17,7 +17,7 @@ static const int8_t PSX_DITHER[16] = {-4, 0, -3, 1, 2, -2, 3, -1, -3, 1, -4, 0, 
 
 typedef struct {
     int32_t x, y; /* eighths of a pixel */
-    float at[5];  /* the picture's column and row, then the light's red, green and blue */
+    float at[6];  /* the picture's column and row, the light's red, green and blue, and 1/w (perspective; 1 when flat) */
 } vertex;
 
 typedef struct {
@@ -49,7 +49,88 @@ typedef struct {
     int mode;
     unsigned alpha; /* 0..256 */
     bool plain;     /* opaque: no look at what is under it */
+    bool persp;     /* at[0], at[1] are the picture's column and row over w, at[5] is 1/w: divided again every few pixels */
 } quad_ctx;
+
+/* A column of a quad's triangle, in functions of their own and not inlined: inside the triangle's big loop the compiler ran out
+ * of registers and read the column's numbers back from memory for each pixel (about 150 ns a pixel on the console). */
+typedef struct { int32_t u, v, lr, lg, lb, du, dv, dlr, dlg, dlb; } col_step;
+
+static __attribute__((noinline)) void col_plain(uint16_t *dst, int ys, int n, int32_t u, int32_t v, int32_t du, int32_t dv,
+                                                const quad_ctx *q, bool swap) {
+    const uint16_t *src = q->src;
+    const int W = q->w, wmax = q->w - 1, hmax = q->h - 1;
+    if (swap)
+        for (int i = 0; i < n; i++, dst += ys, u += du, v += dv) {
+            int iu = u >> 16, iv = v >> 16;
+            iu = iu < 0 ? 0 : iu > wmax ? wmax : iu, iv = iv < 0 ? 0 : iv > hmax ? hmax : iv;
+            *dst = bswap16(src[iv * W + iu]);
+        }
+    else
+        for (int i = 0; i < n; i++, dst += ys, u += du, v += dv) {
+            int iu = u >> 16, iv = v >> 16;
+            iu = iu < 0 ? 0 : iu > wmax ? wmax : iu, iv = iv < 0 ? 0 : iv > hmax ? hmax : iv;
+            *dst = src[iv * W + iu];
+        }
+}
+
+static __attribute__((noinline)) void col_general(const surface *s, uint16_t *dst, int ys, int n, int y, int x, const col_step *st,
+                                                  const quad_ctx *q) {
+    int32_t u = st->u, v = st->v, lr = st->lr, lg = st->lg, lb = st->lb;
+    const int32_t du = st->du, dv = st->dv, dlr = st->dlr, dlg = st->dlg, dlb = st->dlb;
+    const int W = q->w, H = q->h;
+    const uint16_t *src = q->src;
+    const uint8_t *mask = q->mask;
+    const bool swap = s->swap, plain = q->plain, isLit = q->lit;
+    const int8_t *dith = q->dither ? &PSX_DITHER[x & 3] : NULL; /* this column's offsets, 4 apart down the rows */
+    for (int i = 0; i < n; i++, y++, dst += ys, u += du, v += dv, lr += dlr, lg += dlg, lb += dlb) {
+        int iu = u >> 16, iv = v >> 16;
+        if ((unsigned)iu >= (unsigned)W) iu = iu < 0 ? 0 : W - 1;
+        if ((unsigned)iv >= (unsigned)H) iv = iv < 0 ? 0 : H - 1;
+        if (mask && !(mask[iv * q->stride + (iu >> 3)] & (0x80 >> (iu & 7)))) continue;
+        uint16_t c = src[iv * W + iu];
+        if (isLit) {
+            int r = lr >> 16, g = lg >> 16, b = lb >> 16;
+            if ((unsigned)r > 255) r = r < 0 ? 0 : 255;
+            if ((unsigned)g > 255) g = g < 0 ? 0 : 255;
+            if ((unsigned)b > 255) b = b < 0 ? 0 : 255;
+            c = lit(c, r, g, b, dith ? dith[(y & 3) * 4] : 0);
+        }
+        if (plain) {
+            *dst = swap ? bswap16(c) : c;
+            continue;
+        }
+        const uint16_t under = swap ? bswap16(*dst) : *dst;
+        *dst = under == CANVAS_KEY ? stored(s, c) : stored(s, mix565(under, c, q->alpha, q->mode));
+    }
+}
+
+/* A column of a quad in perspective: U/w, V/w and 1/w change evenly down it (they are what is flat on the screen); every 8 pixels the
+ * picture's own column and row are worked out from them by a division, and between those they are stepped evenly, as Quake drew its
+ * walls (Abrash). The column, a span at a time, goes to col_plain or col_general. */
+static __attribute__((noinline)) void col_persp(const surface *s, uint16_t *dst, int ys, int n, int y, int x, const col_step *st,
+                                                int32_t iw, int32_t diw, const quad_ctx *q) {
+    int32_t uw = st->u, vw = st->v, lr = st->lr, lg = st->lg, lb = st->lb;
+    const int32_t duw = st->du, dvw = st->dv;
+    const bool fast = q->plain && !q->lit && !q->mask;
+    float fi = (float)(iw > 16 ? iw : 16);
+    int32_t u0 = (int32_t)((float)uw / fi * 65536.0f), v0 = (int32_t)((float)vw / fi * 65536.0f);
+    while (n > 0) {
+        const int span = n < 8 ? n : 8;
+        uw += duw * span, vw += dvw * span, iw += diw * span;
+        fi = (float)(iw > 16 ? iw : 16);
+        const int32_t u1 = (int32_t)((float)uw / fi * 65536.0f), v1 = (int32_t)((float)vw / fi * 65536.0f);
+        const int32_t du = span == 8 ? (u1 - u0) / 8 : (u1 - u0) / span, dv = span == 8 ? (v1 - v0) / 8 : (v1 - v0) / span;
+        if (fast) {
+            col_plain(dst, ys, span, u0, v0, du, dv, q, s->swap);
+        } else {
+            const col_step c = {u0, v0, lr, lg, lb, du, dv, st->dlr, st->dlg, st->dlb};
+            col_general(s, dst, ys, span, y, x, &c, q);
+            lr += st->dlr * span, lg += st->dlg * span, lb += st->dlb * span;
+        }
+        dst += ys * span, y += span, n -= span, u0 = u1, v0 = v1;
+    }
+}
 
 static void triangle(surface *s, const quad_ctx *q, vertex p[3]) {
     int64_t area = (int64_t)(p[1].x - p[0].x) * (p[2].y - p[0].y) - (int64_t)(p[1].y - p[0].y) * (p[2].x - p[0].x);
@@ -66,9 +147,9 @@ static void triangle(surface *s, const quad_ctx *q, vertex p[3]) {
         e[i].bias = (B->y < A->y || (B->y == A->y && B->x > A->x)) ? 0 : 1; /* left edge: going up; top: going right */
     }
     /* how the picture's coordinates and the light change with a step of one eighth right or down, then per pixel */
-    float gx[5], gy[5];
+    float gx[6], gy[6];
     const float d = (float)area;
-    for (int k = 0; k < 5; k++) {
+    for (int k = 0; k < 6; k++) {
         float a1 = p[1].at[k] - p[0].at[k], a2 = p[2].at[k] - p[0].at[k];
         gx[k] = (a1 * (float)(p[2].y - p[0].y) - a2 * (float)(p[1].y - p[0].y)) / d;
         gy[k] = (a2 * (float)(p[1].x - p[0].x) - a1 * (float)(p[2].x - p[0].x)) / d;
@@ -97,8 +178,8 @@ static void triangle(surface *s, const quad_ctx *q, vertex p[3]) {
             ed[i].dF = floor_div32(ed[i].dM, ed[i].B), ed[i].dR = ed[i].dM - ed[i].dF * ed[i].B;
         }
     }
-    uint32_t col0[5], dcol[5], drow[5];
-    for (int k = 0; k < 5; k++) { /* worked out at column 0 and row 0 whatever the strip starts at, so every strip gets
+    uint32_t col0[6], dcol[6], drow[6];
+    for (int k = 0; k < 6; k++) { /* worked out at column 0 and row 0 whatever the strip starts at, so every strip gets
                                    * the very same numbers for a pixel: the value at column x is that plus x steps */
         const double at0 = (double)p[0].at[k] + (double)gx[k] * (double)(4 - p[0].x) + (double)gy[k] * (double)(4 - p[0].y);
         dcol[k] = (uint32_t)(int32_t)(gx[k] * 8.0f * 65536.0f);
@@ -120,7 +201,7 @@ static void triangle(surface *s, const quad_ctx *q, vertex p[3]) {
             }
         }
         /* the next column's state, whether this one draws or not */
-        const uint32_t c0[5] = {col0[0], col0[1], col0[2], col0[3], col0[4]};
+        const uint32_t c0[6] = {col0[0], col0[1], col0[2], col0[3], col0[4], col0[5]};
         for (int i = 0; i < 3; i++) {
             ed[i].M += ed[i].dM;
             if (ed[i].B) {
@@ -128,7 +209,7 @@ static void triangle(surface *s, const quad_ctx *q, vertex p[3]) {
                 if (ed[i].R >= ed[i].B) ed[i].R -= ed[i].B, ed[i].F++;
             }
         }
-        for (int k = 0; k < 5; k++) col0[k] += dcol[k];
+        for (int k = 0; k < 6; k++) col0[k] += dcol[k];
         if (none || lo > hi) continue;
         const int32_t at5[5] = {(int32_t)(c0[0] + (uint32_t)lo * drow[0]), (int32_t)(c0[1] + (uint32_t)lo * drow[1]),
                                 (int32_t)(c0[2] + (uint32_t)lo * drow[2]), (int32_t)(c0[3] + (uint32_t)lo * drow[3]),
@@ -136,47 +217,15 @@ static void triangle(surface *s, const quad_ctx *q, vertex p[3]) {
         const int32_t dv5[5] = {(int32_t)drow[0], (int32_t)drow[1], (int32_t)drow[2], (int32_t)drow[3], (int32_t)drow[4]};
         int32_t u = at5[0], v = at5[1], lr = at5[2], lg = at5[3], lb = at5[4];
         const int32_t du = dv5[0], dv = dv5[1], dlr = dv5[2], dlg = dv5[3], dlb = dv5[4];
-        const int W = q->w, H = q->h;
-        const uint16_t *src = q->src;
-        const uint8_t *mask = q->mask;
-        const bool swap = s->swap, plain = q->plain, isLit = q->lit;
-        const int8_t *dith = q->dither ? &PSX_DITHER[x & 3] : NULL; /* this column's offsets, 4 apart down the rows */
         uint16_t *dst = at(s, x, lo);
-        if (plain && !isLit && !mask) { /* the commonest: an opaque picture as it is. Two numbers stepped, nothing tested */
-            const int wmax = W - 1, hmax = H - 1;
-            if (swap)
-                for (int y = lo; y <= hi; y++, dst += ys, u += du, v += dv) {
-                    int iu = u >> 16, iv = v >> 16;
-                    iu = iu < 0 ? 0 : iu > wmax ? wmax : iu, iv = iv < 0 ? 0 : iv > hmax ? hmax : iv;
-                    *dst = bswap16(src[iv * W + iu]);
-                }
-            else
-                for (int y = lo; y <= hi; y++, dst += ys, u += du, v += dv) {
-                    int iu = u >> 16, iv = v >> 16;
-                    iu = iu < 0 ? 0 : iu > wmax ? wmax : iu, iv = iv < 0 ? 0 : iv > hmax ? hmax : iv;
-                    *dst = src[iv * W + iu];
-                }
-            continue;
-        }
-        for (int y = lo; y <= hi; y++, dst += ys, u += du, v += dv, lr += dlr, lg += dlg, lb += dlb) {
-            int iu = u >> 16, iv = v >> 16;
-            if ((unsigned)iu >= (unsigned)W) iu = iu < 0 ? 0 : W - 1;
-            if ((unsigned)iv >= (unsigned)H) iv = iv < 0 ? 0 : H - 1;
-            if (mask && !(mask[iv * q->stride + (iu >> 3)] & (0x80 >> (iu & 7)))) continue;
-            uint16_t c = src[iv * W + iu];
-            if (isLit) {
-                int r = lr >> 16, g = lg >> 16, b = lb >> 16;
-                if ((unsigned)r > 255) r = r < 0 ? 0 : 255;
-                if ((unsigned)g > 255) g = g < 0 ? 0 : 255;
-                if ((unsigned)b > 255) b = b < 0 ? 0 : 255;
-                c = lit(c, r, g, b, dith ? dith[(y & 3) * 4] : 0);
-            }
-            if (plain) {
-                *dst = swap ? bswap16(c) : c;
-                continue;
-            }
-            const uint16_t under = swap ? bswap16(*dst) : *dst;
-            *dst = under == CANVAS_KEY ? stored(s, c) : stored(s, mix565(under, c, q->alpha, q->mode));
+        const int n = hi - lo + 1;
+        if (q->persp) {
+            const col_step st = {u, v, lr, lg, lb, du, dv, dlr, dlg, dlb};
+            col_persp(s, dst, ys, n, lo, x, &st, (int32_t)(c0[5] + (uint32_t)lo * drow[5]), (int32_t)drow[5], q);
+        } else if (q->plain && !q->lit && !q->mask) col_plain(dst, ys, n, u, v, du, dv, q, s->swap);
+        else {
+            const col_step st = {u, v, lr, lg, lb, du, dv, dlr, dlg, dlb};
+            col_general(s, dst, ys, n, lo, x, &st, q);
         }
     }
 }
@@ -200,20 +249,6 @@ static bool make_homography(const int16_t xy8[8], homography *H) {
     return true;
 }
 
-static void project(const homography *H, double u, double v, int *x8, int *y8) {
-    const double w = H->g * u + H->h * v + 1.0;
-    double X = (H->a * u + H->b * v + H->c) / w, Y = (H->d * u + H->e * v + H->f) / w;
-    X = X < -2000 ? -2000 : X > 2000 ? 2000 : X, Y = Y < -2000 ? -2000 : Y > 2000 ? 2000 : Y; /* (what the rasterizer's whole numbers allow) */
-    *x8 = (int)floor(X * 8 + 0.5), *y8 = (int)floor(Y * 8 + 0.5);
-}
-
-/* How many cells to cut a side into: the more the opposite edges differ in length (the nearer one is much bigger than the
- * far one), the more the picture is stretched unevenly along that side, and the more cells it takes to look right. */
-static int cells_for(double len_a, double len_b) {
-    const double lo = fmin(len_a, len_b) < 1e-3 ? 1e-3 : fmin(len_a, len_b), r = fmax(len_a, len_b) / lo;
-    return r < 1.12 ? 1 : r < 1.4 ? 2 : r < 2.0 ? 4 : r < 3.0 ? 6 : r < 5.0 ? 8 : 12;
-}
-
 void gfx_quad(surface *s, const asset *a, int frame, const int16_t xy8[8], const uint8_t light[4][3], bool lights,
               int mode, unsigned alpha, bool dither, int persp) {
     if (!a->pixels || frame < 0 || frame >= a->frames) return;
@@ -232,52 +267,83 @@ void gfx_quad(surface *s, const asset *a, int frame, const int16_t xy8[8], const
     }
     q.plain = mode == BLEND_ALPHA && alpha >= 256;
     homography H;
-    int nu = 1, nv = 1; /* cells across (along the top and bottom edges) and down (along the left and right) */
+    /* perspective: the four corners as the picture's square seen in perspective (Heckbert's homography). Each corner carries the
+     * picture's column and row over its w, and 1/w, the w scaled so the nearest corner's is 1 (so none of them overflows) */
+    float iw[4] = {1, 1, 1, 1};
     if (persp && make_homography(xy8, &H)) {
-        const double top = hypot(xy8[2] - xy8[0], xy8[3] - xy8[1]), bottom = hypot(xy8[4] - xy8[6], xy8[5] - xy8[7]);
-        const double left = hypot(xy8[6] - xy8[0], xy8[7] - xy8[1]), right = hypot(xy8[4] - xy8[2], xy8[5] - xy8[3]);
-        /* cut along v where top and bottom differ (the picture runs away from the eye down the quad), along u where left and right do */
-        nv = persp > 1 ? persp : cells_for(top, bottom), nu = persp > 1 ? persp : cells_for(left, right);
-        if (nu > 16) nu = 16;
-        if (nv > 16) nv = 16;
-    } else {
-        persp = 0;
-    }
-    if (!persp || (nu == 1 && nv == 1)) {
-        /* the corners and what each carries: the picture's own corners, so the frame fills the quad */
-        const float tu[4] = {0, (float)a->w, (float)a->w, 0}, tv[4] = {0, 0, (float)a->h, (float)a->h};
-        vertex v[4];
-        for (int i = 0; i < 4; i++) {
-            v[i].x = xy8[2 * i], v[i].y = xy8[2 * i + 1];
-            v[i].at[0] = tu[i], v[i].at[1] = tv[i];
-            for (int k = 0; k < 3; k++) v[i].at[2 + k] = lights ? (float)light[i][k] : 128.0f;
+        const double w[4] = {1, H.g + 1, H.g + H.h + 1, H.h + 1};
+        const double wmin = fmin(fmin(w[0], w[1]), fmin(w[2], w[3]));
+        if (wmin > 1e-6) { /* (a quad that folds over itself has no such map: drawn flat) */
+            for (int i = 0; i < 4; i++) iw[i] = (float)(wmin / w[i]);
+            q.persp = true;
         }
-        vertex t1[3] = {v[0], v[1], v[2]}, t2[3] = {v[0], v[2], v[3]};
-        triangle(s, &q, t1);
-        triangle(s, &q, t2);
-        return;
     }
-    /* cells: each corner of each is the picture's point (u, v) taken through the homography, so its edges are straight where
-     * the picture's lines are, and inside a cell the picture is spread evenly (close enough to right when it is small) */
-    for (int j = 0; j < nv; j++) {
-        for (int i = 0; i < nu; i++) {
-            vertex c[4];
-            const double us[4] = {(double)i / nu, (double)(i + 1) / nu, (double)(i + 1) / nu, (double)i / nu};
-            const double vs[4] = {(double)j / nv, (double)j / nv, (double)(j + 1) / nv, (double)(j + 1) / nv};
-            for (int k = 0; k < 4; k++) {
-                int x8, y8;
-                project(&H, us[k], vs[k], &x8, &y8);
-                c[k].x = x8, c[k].y = y8;
-                c[k].at[0] = (float)(us[k] * a->w), c[k].at[1] = (float)(vs[k] * a->h);
-                for (int ch = 0; ch < 3; ch++) { /* the corners' lights, mixed the way the corners are */
-                    const double top = light[0][ch] + (light[1][ch] - light[0][ch]) * us[k];
-                    const double bot = light[3][ch] + (light[2][ch] - light[3][ch]) * us[k];
-                    c[k].at[2 + ch] = lights ? (float)(top + (bot - top) * vs[k]) : 128.0f;
-                }
-            }
-            vertex t1[3] = {c[0], c[1], c[2]}, t2[3] = {c[0], c[2], c[3]};
-            triangle(s, &q, t1);
-            triangle(s, &q, t2);
+    /* the corners and what each carries: the picture's own corners, so the frame fills the quad */
+    const float tu[4] = {0, (float)a->w, (float)a->w, 0}, tv[4] = {0, 0, (float)a->h, (float)a->h};
+    vertex v[4];
+    for (int i = 0; i < 4; i++) {
+        v[i].x = xy8[2 * i], v[i].y = xy8[2 * i + 1];
+        v[i].at[0] = tu[i] * iw[i], v[i].at[1] = tv[i] * iw[i], v[i].at[5] = iw[i];
+        for (int k = 0; k < 3; k++) v[i].at[2 + k] = lights ? (float)light[i][k] : 128.0f;
+    }
+    vertex t1[3] = {v[0], v[1], v[2]}, t2[3] = {v[0], v[2], v[3]};
+    triangle(s, &q, t1);
+    triangle(s, &q, t2);
+}
+
+/* A packed RGB565 into the 32-bit form with each channel apart from the next (blue at 0, red at 11, green at 21), room above
+ * each for a carry, as mix565 does: one add or subtract then does all three. */
+#define SPREAD 0x07E0F81Fu
+#define CARRY_RB 0x00010020u /* the bit above blue (5) and above red (16) */
+#define CARRY_G 0x08000000u  /* and above green (27) */
+
+static inline uint16_t unspread(uint32_t v) { return (uint16_t)(v | v >> 16); }
+
+static inline uint16_t add565_sat(uint16_t d, uint32_t add_spread) {
+    uint32_t sum = ((d | (uint32_t)d << 16) & SPREAD) + add_spread;
+    const uint32_t rb = sum & CARRY_RB, g = sum & CARRY_G;
+    sum |= (rb - (rb >> 5)) | (g - (g >> 6)); /* a channel that carried is full */
+    return unspread(sum & SPREAD);
+}
+
+static inline uint16_t not_key(uint16_t v) { return v == CANVAS_KEY ? v ^ 1 : v; } /* (a canvas's see-through colour) */
+
+static inline uint16_t sub565_sat(uint16_t d, uint32_t sub_spread) {
+    const uint32_t guards = CARRY_RB | CARRY_G;
+    uint32_t diff = (((d | (uint32_t)d << 16) & SPREAD) | guards) - sub_spread; /* a guard bit that is left: no borrow */
+    const uint32_t rb = diff & CARRY_RB, g = diff & CARRY_G;
+    diff &= (rb - (rb >> 5)) | (g - (g >> 6)); /* a channel that borrowed is empty */
+    return unspread(diff & SPREAD);
+}
+
+/* A colour made ready to be mixed: for an add, a take or a quarter, its channels apart and scaled (add565_sat, sub565_sat); for an
+ * alpha mix, as it is. */
+static inline uint32_t ready(uint16_t c, int mode, unsigned alpha) {
+    if (mode == BLEND_ALPHA) return c;
+    const unsigned sh = mode == BLEND_QUARTER ? 10 : 8;
+    return ((c & 31) * alpha >> sh) | ((c >> 11) * alpha >> sh) << 11 | ((c >> 5 & 63) * alpha >> sh) << 21;
+}
+
+/* n pixels down a column, each mixed with its ready colour; not inlined, so its loop keeps its numbers in registers */
+static __attribute__((noinline)) void mixed_run(const surface *s, uint16_t *dst, int ys, int n, const uint32_t *col, int mode,
+                                                unsigned alpha) {
+    const bool swap = s->swap;
+    if (mode == BLEND_ALPHA) {
+        for (int j = 0; j < n; j++, dst += ys) {
+            const uint16_t under = swap ? bswap16(*dst) : *dst, c = (uint16_t)col[j];
+            *dst = under == CANVAS_KEY ? stored(s, c) : stored(s, mix565(under, c, alpha, BLEND_ALPHA));
+        }
+    } else if (mode == BLEND_SUB) {
+        for (int j = 0; j < n; j++, dst += ys) {
+            const uint16_t under = swap ? bswap16(*dst) : *dst;
+            const uint16_t v = under == CANVAS_KEY ? unspread(col[j]) : not_key(sub565_sat(under, col[j]));
+            *dst = swap ? bswap16(v) : v;
+        }
+    } else {
+        for (int j = 0; j < n; j++, dst += ys) {
+            const uint16_t under = swap ? bswap16(*dst) : *dst;
+            const uint16_t v = under == CANVAS_KEY ? not_key(unspread(col[j])) : not_key(add565_sat(under, col[j]));
+            *dst = swap ? bswap16(v) : v;
         }
     }
 }
@@ -343,65 +409,76 @@ void gfx_grad(surface *s, int x, int y, int w, int h, const uint8_t c1[3], const
         }
         return;
     }
-    for (int k = 0; k < n; k++) {
-        const int px = x + u0 + k;
-        const int t0 = across ? u0 + k : v0; /* the first pixel of this column along the ramp */
-        int32_t ch[3];
-        for (int i = 0; i < 3; i++) ch[i] = first[i] + step[i] * t0;
-        uint16_t *dst = at(s, px, y + v0);
-        for (int j = 0; j < m; j++, dst += ys) {
-            const int py = y + v0 + j;
-            const int d = dither ? PSX_DITHER[(py & 3) * 4 + (px & 3)] : 0;
-            const uint16_t c = ramp565_at(ch, d);
-            if (!across)
-                for (int i = 0; i < 3; i++) ch[i] += step[i];
-            const uint16_t under = s->swap ? bswap16(*dst) : *dst;
-            *dst = under == CANVAS_KEY ? stored(s, c) : stored(s, mix565(under, c, alpha, mode));
+    /* mixed with what is there: each row's colour (and its 4 dither phases) made ready once a chunk of rows, as gfx_lines does
+     * (a strip of haze over the sky was 300 ns a pixel on the console when each pixel worked out its colour and unpacked it) */
+    static uint32_t tabs_of_part[2][4][64];
+    uint32_t (*tab)[64] = tabs_of_part[s->part & 1];
+    const int phases = dither ? 4 : 1;
+    for (int j0 = 0; j0 < m; j0 += 64) {
+        const int cm = m - j0 < 64 ? m - j0 : 64, row0 = y + v0 + j0;
+        if (!across)
+            for (int ph = 0; ph < phases; ph++) /* ph: the column's phase in the dither */
+                for (int j = 0; j < cm; j++)
+                    tab[ph][j] = ready(ramp565(first, step, v0 + j0 + j, dither ? PSX_DITHER[((row0 + j) & 3) * 4 + ph] : 0), mode, alpha);
+        for (int k = 0; k < n; k++) {
+            const int px = x + u0 + k;
+            const uint32_t *col = tab[dither ? px & 3 : 0];
+            if (across) { /* the colour is the column's: the same down it but for the dither's 4 rows */
+                uint32_t four[4];
+                for (int ph = 0; ph < phases; ph++)
+                    four[ph] = ready(ramp565(first, step, u0 + k, dither ? PSX_DITHER[ph * 4 + (px & 3)] : 0), mode, alpha);
+                for (int j = 0; j < cm; j++) tab[0][j] = four[dither ? (row0 + j) & 3 : 0];
+                col = tab[0];
+            }
+            mixed_run(s, at(s, px, row0), ys, cm, col, mode, alpha);
         }
     }
 }
 
 /* ------------------------------------------------------------------ light: a glow that adds to, or takes from, what is there */
 
-/* A packed RGB565 into the 32-bit form with each channel apart from the next (blue at 0, red at 11, green at 21), room above
- * each for a carry, as mix565 does: one add or subtract then does all three. */
-#define SPREAD 0x07E0F81Fu
-#define CARRY_RB 0x00010020u /* the bit above blue (5) and above red (16) */
-#define CARRY_G 0x08000000u  /* and above green (27) */
-
-static inline uint16_t unspread(uint32_t v) { return (uint16_t)(v | v >> 16); }
-
-static inline uint16_t add565_sat(uint16_t d, uint32_t add_spread) {
-    uint32_t sum = ((d | (uint32_t)d << 16) & SPREAD) + add_spread;
-    const uint32_t rb = sum & CARRY_RB, g = sum & CARRY_G;
-    sum |= (rb - (rb >> 5)) | (g - (g >> 6)); /* a channel that carried is full */
-    return unspread(sum & SPREAD);
-}
-
-static inline uint16_t sub565_sat(uint16_t d, uint32_t sub_spread) {
-    const uint32_t guards = CARRY_RB | CARRY_G;
-    uint32_t diff = (((d | (uint32_t)d << 16) & SPREAD) | guards) - sub_spread; /* a guard bit that is left: no borrow */
-    const uint32_t rb = diff & CARRY_RB, g = diff & CARRY_G;
-    diff &= (rb - (rb >> 5)) | (g - (g >> 6)); /* a channel that borrowed is empty */
-    return unspread(diff & SPREAD);
+/* A light at (cx, cy) reaching r pixels: each pixel gets the colour times (1 - d^2 / r^2)^2, which is a soft round glow with
+ * no edge, times intensity (0..256). With a cone (ux, uy: the direction, unit, 14 bits; cosine of its half angle, 14
+ * bits): only inside it; `soft` (a larger cosine inside) is full, between the two half. Nothing is read from a picture: the
+ * cost is the pixels in the circle, about 100 ns each on the console. */
+/* One column of a light, from row y0 to y1: specialised (always inlined with constant flags) so each kind of light is a plain loop
+ * with its numbers in registers. */
+static inline __attribute__((always_inline)) void light_column(uint16_t *dst, int ys, int n, int d2, int dy, int dot, int uy, int inv,
+                                                               int co2, int ci2, const uint32_t *tab, bool sub, bool cone, bool swap) {
+    for (int i = 0; i < n; i++, dst += ys, d2 += 2 * dy + 1, dy++, dot += uy) {
+        int idx = (d2 * inv) >> 16; /* (below 2^23: the radius squared times 63 << 16 over it) */
+        if (idx > 63) idx = 63;
+        if (cone) {
+            if (dot <= 0) continue;
+            const int p = dot >> 6; /* 8 bits of fraction, up to 150 * 256 */
+            const int p2 = p * p;   /* 16 bits of fraction, below 2^31: dot^2 against cos^2 * d^2, both in 16 bits */
+            if (p2 < co2 * d2) continue;  /* outside the cone */
+            if (p2 < ci2 * d2) idx += 64; /* its rim: half */
+        }
+        const uint16_t d = swap ? bswap16(*dst) : *dst;
+        const uint16_t v = sub ? sub565_sat(d, tab[idx]) : add565_sat(d, tab[idx]);
+        *dst = swap ? bswap16(v) : v;
+    }
 }
 
 /* A light at (cx, cy) reaching r pixels: each pixel gets the colour times (1 - d^2 / r^2)^2, which is a soft round glow with
  * no edge, times intensity (0..256). With a cone (ux, uy: the direction, unit, 14 bits; cosine of its half angle, 14
  * bits): only inside it; `soft` (a larger cosine inside) is full, between the two half. Nothing is read from a picture: the
- * cost is the pixels in the circle, about 100 ns each on the console. */
+ * cost is the pixels in the circle. */
 void gfx_light(surface *s, int cx, int cy, int r, const uint8_t rgb[3], unsigned intensity, bool sub, bool cone, int ux,
                int uy, int cos_outer, int cos_inner) {
     if (r < 1 || intensity == 0) return;
     if (cone && r > 150) r = 150; /* (the cone's squares stay in 32 bits) */
-    /* the colour at each of 64 steps from the middle to the edge, packed apart; 64 more at half for a cone's rim */
-    uint32_t tab[128];
+    /* the colour at each of 64 steps from the middle to the edge, packed apart; 64 more at half for a cone's rim. Not on the
+     * stack (a big array there pushed the loop's numbers out of the registers); one for each part that draws (both cores draw
+     * strips at once: surface.part) */
+    static uint32_t tab_of_part[2][128];
+    uint32_t *const tab = tab_of_part[s->part & 1];
     for (int i = 0; i < 64; i++) {
         const float u = (float)i / 63.0f, f = (1 - u) * (1 - u) * (float)intensity / 256.0f;
         const int cr = (int)((rgb[0] >> 3) * f + 0.5f), cg = (int)((rgb[1] >> 2) * f + 0.5f), cb = (int)((rgb[2] >> 3) * f + 0.5f);
         tab[i] = (uint32_t)cb | (uint32_t)cr << 11 | (uint32_t)cg << 21;
-        const int hr = cr >> 1, hg = cg >> 1, hb = cb >> 1;
-        tab[64 + i] = (uint32_t)hb | (uint32_t)hr << 11 | (uint32_t)hg << 21;
+        tab[64 + i] = (uint32_t)(cb >> 1) | (uint32_t)(cr >> 1) << 11 | (uint32_t)(cg >> 1) << 21;
     }
     const int ys = step_y(s), top = s->y0, bottom = s->y0 + s->h - 1;
     int x0 = cx - r, x1 = cx + r;
@@ -409,6 +486,7 @@ void gfx_light(surface *s, int cx, int cy, int r, const uint8_t rgb[3], unsigned
     if (x1 > s->x0 + s->w - 1) x1 = s->x0 + s->w - 1;
     const int inv = (int)((63u << 16) / (unsigned)(r * r)); /* d2 -> a step of 0..63 */
     const int co2 = (int)(((int64_t)cos_outer * cos_outer) >> 12), ci2 = (int)(((int64_t)cos_inner * cos_inner) >> 12); /* 16 bits */
+    const bool swap = s->swap;
     for (int x = x0; x <= x1; x++) {
         const int dx = x - cx;
         const int dymax = (int)sqrtf((float)(r * r - dx * dx));
@@ -416,22 +494,17 @@ void gfx_light(surface *s, int cx, int cy, int r, const uint8_t rgb[3], unsigned
         if (y0 < top) y0 = top;
         if (y1 > bottom) y1 = bottom;
         if (y0 > y1) continue;
-        int dy = y0 - cy, d2 = dx * dx + dy * dy;
-        int dot = dx * ux + dy * uy; /* 14 bits */
+        const int dy = y0 - cy, d2 = dx * dx + dy * dy, dot = dx * ux + dy * uy, n = y1 - y0 + 1;
         uint16_t *dst = at(s, x, y0);
-        for (int y = y0; y <= y1; y++, dst += ys, d2 += 2 * dy + 1, dy++, dot += uy) {
-            int idx = (d2 * inv) >> 16; /* (below 2^23: the radius squared times 63 << 16 over it) */
-            if (idx > 63) idx = 63;
-            if (cone) {
-                if (dot <= 0) continue;
-                const int p = dot >> 6; /* 8 bits of fraction, up to 150 * 256 */
-                const int p2 = p * p;   /* 16 bits of fraction, below 2^31: dot^2 against cos^2 * d^2, both in 16 bits */
-                if (p2 < co2 * d2) continue;  /* outside the cone */
-                if (p2 < ci2 * d2) idx += 64; /* its rim: half */
-            }
-            const uint16_t d = s->swap ? bswap16(*dst) : *dst;
-            const uint16_t v = sub ? sub565_sat(d, tab[idx]) : add565_sat(d, tab[idx]);
-            *dst = s->swap ? bswap16(v) : v;
+        if (cone) {
+            if (sub) light_column(dst, ys, n, d2, dy, dot, uy, inv, co2, ci2, tab, true, true, swap);
+            else light_column(dst, ys, n, d2, dy, dot, uy, inv, co2, ci2, tab, false, true, swap);
+        } else if (swap) {
+            if (sub) light_column(dst, ys, n, d2, dy, 0, 0, inv, 0, 0, tab, true, false, true);
+            else light_column(dst, ys, n, d2, dy, 0, 0, inv, 0, 0, tab, false, false, true);
+        } else {
+            if (sub) light_column(dst, ys, n, d2, dy, 0, 0, inv, 0, 0, tab, true, false, false);
+            else light_column(dst, ys, n, d2, dy, 0, 0, inv, 0, 0, tab, false, false, false);
         }
     }
 }
@@ -486,37 +559,24 @@ void gfx_lines(surface *s, int x, int y, int w, int h, const uint16_t *rowcol, i
     int u0, v0, n = CLIP_X(s, x, w, &u0), m = CLIP_Y(s, y, h, &v0);
     if (n <= 0 || m <= 0) return;
     const int ys = step_y(s);
-    /* each visible row's colour made ready once (as stored, or spread apart and scaled for a saturating add or subtract), so a
-     * pixel is a load, an add and a store: the whole screen was 33 ms on the console when each pixel unpacked its colour */
-    uint32_t row[1024];
-    if (m > 1024) m = 1024;
-    const bool held = !lay && mode != BLEND_ALPHA;
-    for (int j = 0; j < m; j++) {
-        const uint16_t c = rowcol[v0 + j];
-        if (lay) row[j] = stored(s, c);
-        else if (held) {
-            const unsigned sh = mode == BLEND_QUARTER ? 10 : 8;
-            const uint32_t r = (c >> 11) * alpha >> sh, g = (c >> 5 & 63) * alpha >> sh, b = (c & 31) * alpha >> sh;
-            row[j] = b | r << 11 | g << 21;
-        } else row[j] = c;
-    }
-    for (int k = 0; k < n; k++) {
-        uint16_t *dst = at(s, x + u0 + k, y + v0);
-        if (lay) {
-            for (int j = 0; j < m; j++, dst += ys) *dst = (uint16_t)row[j];
-        } else if (held) {
-            const bool sub = mode == BLEND_SUB;
-            for (int j = 0; j < m; j++, dst += ys) {
-                const uint16_t under = s->swap ? bswap16(*dst) : *dst;
-                uint16_t v = sub ? sub565_sat(under, row[j]) : add565_sat(under, row[j]);
-                if (v == CANVAS_KEY) v ^= 1; /* (that colour is a canvas's see-through) */
-                *dst = s->swap ? bswap16(v) : v;
-            }
-        } else {
-            for (int j = 0; j < m; j++, dst += ys) {
-                const uint16_t under = s->swap ? bswap16(*dst) : *dst;
-                *dst = stored(s, mix565(under, (uint16_t)row[j], alpha, BLEND_ALPHA));
-            }
+    /* each row's colour made ready once a chunk of rows (as stored, or apart and scaled for a saturating add or take), so a pixel is
+     * a load, an add and a store: the whole screen was 33 ms on the console when each pixel unpacked its colour. Not on the stack
+     * (a big array there pushed the loop's numbers out of the registers) and not _Thread_local (ESP-IDF puts that in every task's
+     * stack, and the small ones overflowed at boot): one for each part that draws (surface.part), as both cores draw strips. */
+    static uint32_t rows_of_part[2][128];
+    uint32_t *const row = rows_of_part[s->part & 1];
+    for (int j0 = 0; j0 < m; j0 += 128) {
+        const int cm = m - j0 < 128 ? m - j0 : 128;
+        for (int j = 0; j < cm; j++) {
+            const uint16_t c = rowcol[v0 + j0 + j];
+            row[j] = lay ? stored(s, c) : ready(c, mode, alpha);
+        }
+        for (int k = 0; k < n; k++) {
+            uint16_t *dst = at(s, x + u0 + k, y + v0 + j0);
+            if (lay)
+                for (int j = 0; j < cm; j++, dst += ys) *dst = (uint16_t)row[j];
+            else
+                mixed_run(s, dst, ys, cm, row, mode, alpha);
         }
     }
 }
