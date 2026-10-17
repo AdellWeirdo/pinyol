@@ -1,0 +1,30 @@
+# The PS1 / Saturn demo hall: it draws (quads, grad, light and shadow), A walks the reverb's rooms, B holds a chime that
+# lets go slowly, C clicks, the lantern moves and takes its sound's pan with it
+new
+tick 30
+shot sala
+expect_lua room == 1
+press A
+tick 20
+expect_lua room == 2
+shot sala_room
+press A
+press A
+tick 10
+expect_lua room == 4
+hold RIGHT 40
+expect_lua lantern_x > 340
+hold B 30
+expect_lua held == nil
+tick 20
+press C
+tick 5
+hold LEFT 80
+expect_lua lantern_x < 150
+shot linterna
+press A
+press A
+tick 10
+expect_lua room == 1
+tick 60
+expect_ok

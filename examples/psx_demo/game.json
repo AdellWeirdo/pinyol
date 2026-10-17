@@ -1,0 +1,9 @@
+{
+  "id": "psx_demo",
+  "title": "PS1 / Saturn",
+  "subtitle": "Quads, luz, reverb",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Una sala a la manera de los 32 bits, para ver lo que el motor sabe hacer: suelo en perspectiva y cartel que se balancea con quad(), cielo con degradado y dither, luz que se suma y sombra que se resta, y sonido ADPCM con envolvente, pan y las salas de reverb de la PlayStation."
+}
