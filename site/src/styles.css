@@ -507,6 +507,10 @@ esp-web-install-button:not(:defined) [slot="unsupported"], esp-web-install-butto
 .pick-zip:focus-within { outline: 3px solid var(--gold); outline-offset: 3px; }
 .stage { width: min(100% - 2rem, 1320px); margin-inline: auto; }
 .stage iframe { display: block; width: 100%; aspect-ratio: 3 / 2; border: 0; background: transparent; }
+/* A phone or tablet: the console fits the screen (never taller than it) and the header scrolls away */
+.touch-play .top { position: static; }
+.touch-play .stage { width: 100%; }
+.touch-play .stage iframe { height: 100dvh; max-height: 100dvh; aspect-ratio: auto; }
 .dropping .stage { outline: 3px dashed var(--cherry); outline-offset: 6px; border-radius: var(--radius); }
 .picker-sec { padding-top: var(--s5); }
 .picker-sec h3 { font-size: 1.35rem; margin: var(--s6) 0 var(--s3); }

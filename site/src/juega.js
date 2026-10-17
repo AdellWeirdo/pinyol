@@ -9,12 +9,17 @@
   const GAMES = Object.fromEntries(JSON.parse(document.getElementById('catalog').textContent).map(g => [g.id, g]));
   const PLAYER = new URL(frame.dataset.player, location.href);
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // A phone or tablet (or ?touch=1, to try it on a computer): the console is never taller than the screen, so it all
+  // shows without scrolling, and the games list is below it.
+  const TOUCH = matchMedia('(pointer: coarse)').matches || /[?&]touch=1/.test(location.search);
+  if (TOUCH) document.documentElement.classList.add('touch-play');
   let ready = Promise.resolve(), isReady = () => {};
 
   function show(id) {
     const url = new URL(PLAYER);
     url.searchParams.set('frame', '1');
     if (LANG === 'ca' || LANG === 'en') url.searchParams.set('lang', LANG);
+    if (/[?&]touch=1/.test(location.search)) url.searchParams.set('touch', '1');
     if (id) url.searchParams.set('game', GAMES[id].zip);
     ready = new Promise(r => { isReady = r; });
     frame.src = url.href;
@@ -35,7 +40,7 @@
 
   addEventListener('message', e => {
     if (e.origin !== location.origin || e.source !== frame.contentWindow || !e.data) return;
-    if (e.data.pinyol === 'size' && e.data.h > 0) { frame.style.aspectRatio = 'auto'; frame.style.height = e.data.h + 'px'; }
+    if (e.data.pinyol === 'size' && e.data.h > 0) { frame.style.aspectRatio = 'auto'; frame.style.height = Math.min(e.data.h, TOUCH ? innerHeight : Infinity) + 'px'; }
     if (e.data.pinyol === 'ready') isReady();
     if (e.data.pinyol === 'dropped' && e.data.zip instanceof ArrayBuffer) open(e.data.zip);
   });
