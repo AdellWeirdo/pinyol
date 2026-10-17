@@ -225,6 +225,8 @@ if(NOT NO_PIL)
            $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/packed)
   add_test(NAME font_packs COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/fonts_test.py
            $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/fontpacks) # the catalog, every pack, the engine drawing each
+  add_test(NAME depthcut COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/depthcut_test.py
+           $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/depthcut) # a background cut into pieces at their depth
   add_test(NAME library COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/library_test.py
            $<TARGET_FILE:pinyol_headless>) # what tools/library.py takes and refuses from the Library's form
 endif()

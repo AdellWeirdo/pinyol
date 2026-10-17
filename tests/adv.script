@@ -20,6 +20,15 @@ expect_lua rooms.thing_near(player, 20) == nil
 # taking the key: into the inventory, gone from the room for good
 lua t = rooms.thing("key") ok, how = inv:add(t.take) rooms.remove("key")
 expect_lua ok and inv:has("llave") and rooms.thing("key") == nil
+# depth: the player walks among the things and the pieces of the backdrop by his feet's line (y + h), so he is behind the
+# counter (z 280) while his feet are above it and in front once they are below
+lua function pos(l, n) for i, v in ipairs(l) do if v == n then return i end end end
+lua player.y = 200 behind = rooms.order(function() end, player.y + player.h)
+lua player.y = 250 front = rooms.order(function() end, player.y + player.h)
+expect_lua pos(behind, "player") < pos(behind, "COUNTER") and pos(behind, "player") < pos(behind, "STOOL")
+expect_lua pos(front, "player") > pos(front, "COUNTER") and pos(front, "player") > pos(front, "STOOL")
+lua player.y = 230 mid = rooms.order(function() end, player.y + player.h)
+expect_lua pos(mid, "player") > pos(mid, "STOOL") and pos(mid, "player") < pos(mid, "COUNTER")
 # the variant: miseria high shows its look (and a thing that waits for it), after a refresh
 expect_lua rooms.current().look == nil and rooms.thing("ghost") == nil
 lua mis = 80 rooms.refresh()

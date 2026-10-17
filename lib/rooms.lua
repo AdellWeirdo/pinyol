@@ -8,6 +8,8 @@
 --     id = "bar", district = "bar", w = 640, h = 320,           -- the room's size: wider than the screen scrolls
 --     layers = {{pic = "BG_BAR_FAR", parallax = 0.5}, {pic = "BG_BAR"}},   -- behind everyone, in order
 --     front = {{pic = "FG_STOOLS"}},                            -- in front of everyone (a pillar they pass behind)
+--     occluders = require("bg_bar_depth"),                      -- pieces of the backdrop at their own depth (tools/depthcut.py):
+--                                                               -- the counter hides the player behind it, not in front of it
 --     solids = {{x = 0, y = 290, w = 640, h = 30}},             -- boxes nobody walks into
 --     spawns = {door = {x = 40, y = 230}, default = {x = 300, y = 230}},
 --     exits = {{x = 0, y = 150, w = 12, h = 140, to = "street", spawn = "from_bar"}},   -- a door: walking into it
@@ -216,6 +218,26 @@ function M.load(data)
 end
 
 -- ------------------------------------------------------------------ the curtain, the tick, the drawing
+-- What is drawn between the back layers and the front ones, nearest the horizon first: the things, the pieces of the
+-- backdrop that stand in front of what is behind them (occluders: {pic, x, y, z}) and, if there is one, the player.
+local function drawing_order(between, z)
+  local list = M.things()
+  for _, o in ipairs(cur.occluders or {}) do
+    if not o.when or o.when(cur) then list[#list + 1] = o end
+  end
+  if between then list[#list + 1] = {z = z or 1e9, draw = between, player = true} end
+  table.sort(list, function(a, b) return (a.z or a.y + (a.h or 0)) < (b.z or b.y + (b.h or 0)) end)
+  return list
+end
+
+function M.order(between, z) -- who is drawn in what order: their ids ("player" for the one between), for tests and tools
+  local out = {}
+  if cur then
+    for _, th in ipairs(drawing_order(between, z)) do out[#out + 1] = th.player and "player" or th.id or th.pic end
+  end
+  return out
+end
+
 function M.update()
   if phase == "out" then
     t = t + 1
@@ -265,10 +287,7 @@ function M.draw(between, z)
   if M.cam then M.cam:apply() end
   layer_draw(cur.layers)
   if cur.draw_back then cur.draw_back(cur) end
-  local list = M.things()
-  if between then list[#list + 1] = {z = z or 1e9, draw = between} end
-  table.sort(list, function(a, b) return (a.z or a.y + (a.h or 0)) < (b.z or b.y + (b.h or 0)) end)
-  for _, th in ipairs(list) do
+  for _, th in ipairs(drawing_order(between, z)) do
     if th.draw then th.draw(th, th.x, th.y)
     elseif th.pic then img(th.pic, th.x, th.y, {frame = th.frame or 0, flip_x = th.flip}) end
   end

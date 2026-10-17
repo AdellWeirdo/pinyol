@@ -23,7 +23,7 @@ function _init()
   show(0)
   pic("ICO", 20, 20, 0xC0A030)
   pic("BG_A", 480, 320, 0x203040) pic("BG_A_RED", 480, 320, 0x501820) pic("BG_B", 480, 320, 0x304020)
-  pic("NPC", 24, 60, 0x8060A0) pic("KEY", 12, 12, 0xF0D040) pic("PILLAR", 40, 320, 0x101010)
+  pic("COUNTER", 120, 50, 0x603010) pic("STOOL", 20, 30, 0x909090) pic("NPC", 24, 60, 0x8060A0) pic("KEY", 12, 12, 0xF0D040) pic("PILLAR", 40, 320, 0x101010)
   rooms.define({
     id = "a", w = 480, h = 320,
     layers = {{pic = "BG_A"}}, front = {{pic = "PILLAR", x = 300}},
@@ -33,6 +33,7 @@ function _init()
     things = {{id = "npc", x = 100, y = 220, w = 24, h = 60, pic = "NPC", talk = "npc"},
               {id = "key", x = 150, y = 268, w = 12, h = 12, pic = "KEY", take = "llave"},
               {id = "ghost", x = 60, y = 100, w = 10, h = 10, pic = "KEY", when = function() return mis > 50 end}},
+    occluders = {{pic = "COUNTER", x = 250, y = 230, z = 280}, {pic = "STOOL", x = 380, y = 250, z = 262}},
     variant = function() return mis > 70 and "crisis" or nil end,
     variants = {crisis = {layers = {{pic = "BG_A_RED"}}}},
     assets = {images = {"BG_A", "NOPE"}, sounds = {}},
