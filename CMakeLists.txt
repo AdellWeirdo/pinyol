@@ -184,6 +184,8 @@ endforeach()
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_FOUND) # the site's numbers: the minutes played, the ranking, the cover of the week (tools/stats.py)
   add_test(NAME stats COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/stats.py --test)
+  add_test(NAME vag_sounds COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/vag_test.py
+           $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/vag)
 endif()
 # The desktop app's install of a dropped .zip (platform/sdl/desktop.c: the system's tar on macOS and Windows, unzip on
 # Linux)

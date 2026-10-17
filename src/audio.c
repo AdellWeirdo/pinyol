@@ -42,6 +42,8 @@ typedef struct {
 typedef struct {
     char id[32];
     int16_t *pcm[4];
+    uint8_t *vag[4];            /* a variant kept as SPU-ADPCM blocks (audio/<id>.vag) instead: pcm[k] is NULL then */
+    int loop_a[4], loop_b[4];   /* its file's loop points, in samples (b <= a: none) */
     int n[4], count, last;
     long bytes;
     unsigned used; /* use_clock at its last play: the oldest goes first when the budget is full */
@@ -63,7 +65,54 @@ typedef struct {
     bool env;           /* a volume envelope shapes it: attack, decay to sustain, then release when stopped */
     uint8_t stage;      /* ENV_* */
     float level, sustain, rise, fall_d, fall_r; /* rise: a sample's step up; fall_*: a sample's factor down */
+    const uint8_t *vag; /* an ADPCM clip: its blocks, decoded two at a time into blk as the voice reads along */
+    int vbase, vold, volder; /* the clip's sample blk[0] is, and the decoder's last two samples after blk's second half */
+    int16_t blk[56];
 } sfx_voice;
+
+/* The PlayStation sound chip's ADPCM (psx-spx "SPU ADPCM Samples"): blocks of 16 bytes, 28 samples of 4 bits. Byte 0:
+ * the filter (high nibble) and the shift (low); byte 1: flags (the engine takes its loop from the file's header);
+ * then the nibbles, low first. Each sample is its nibble scaled by the shift plus a prediction from the last two. */
+#define VAG_SAMPLES 28
+#define VAG_BYTES 16
+static const int8_t vag_k0[5] = {0, 60, 115, 98, 122}, vag_k1[5] = {0, 0, -52, -55, -60};
+
+static void vag_block(const uint8_t *b, int *old, int *older, int16_t *out) {
+    int shift = b[0] & 15, f = b[0] >> 4;
+    if (shift > 12) shift = 12;
+    if (f > 4) f = 4;
+    for (int i = 0; i < VAG_SAMPLES; i++) {
+        int nib = (b[2 + i / 2] >> (i & 1 ? 4 : 0)) & 15;
+        int v = ((int16_t)(nib << 12) >> shift) + ((*old * vag_k0[f] + *older * vag_k1[f] + 32) >> 6);
+        v = v < -32768 ? -32768 : v > 32767 ? 32767 : v;
+        *older = *old, *old = v;
+        out[i] = (int16_t)v;
+    }
+}
+
+/* Block bi of a clip of n samples decoded into out (silence past its end), the decoder's state carried on. */
+static void vag_decode(const sfx_voice *x, int bi, int16_t *out, int *old, int *older) {
+    if (bi * VAG_SAMPLES < x->n) vag_block(x->vag + (size_t)bi * VAG_BYTES, old, older, out);
+    else memset(out, 0, VAG_SAMPLES * sizeof *out);
+}
+
+/* The voice's sample i (read along, one or two ahead, or jumped to at a loop's start or the start: the first block of
+ * a jump takes the state from nothing, which the encoder allows for by making it a filterless one). */
+static inline int vag_get(sfx_voice *x, int i) {
+    int rel = i - x->vbase;
+    if ((unsigned)rel >= 2 * VAG_SAMPLES) {
+        x->vbase = i / VAG_SAMPLES * VAG_SAMPLES, x->vold = x->volder = 0;
+        vag_decode(x, x->vbase / VAG_SAMPLES, x->blk, &x->vold, &x->volder);
+        vag_decode(x, x->vbase / VAG_SAMPLES + 1, x->blk + VAG_SAMPLES, &x->vold, &x->volder);
+        rel = i - x->vbase;
+    } else if (rel >= VAG_SAMPLES) { /* into the second block: the window moves on by one */
+        memcpy(x->blk, x->blk + VAG_SAMPLES, VAG_SAMPLES * sizeof *x->blk);
+        x->vbase += VAG_SAMPLES;
+        vag_decode(x, x->vbase / VAG_SAMPLES + 1, x->blk + VAG_SAMPLES, &x->vold, &x->volder);
+        rel -= VAG_SAMPLES;
+    }
+    return x->blk[rel];
+}
 
 enum { ENV_ATTACK, ENV_DECAY, ENV_SUSTAIN, ENV_RELEASE };
 
@@ -356,10 +405,49 @@ static int16_t *load_clip(const char *id, int *n, bool quiet) {
     return NULL;
 }
 
+/* audio/<id>.vag: "SPUV", then the clip's sample count and its loop's first and last sample (both 0: none), 32-bit
+ * little endian, then its ADPCM blocks (tools/wav2vag.py makes it from a WAV). The blocks, malloc'd; NULL if it is not one. */
+static uint8_t *load_vag(const char *id, int *n, int *loop_a, int *loop_b) {
+    char path[384], rel[160];
+    snprintf(rel, sizeof rel, "audio/%s.vag", id);
+    if (!game_has(rel)) return NULL;
+    snprintf(path, sizeof path, "%s/%s", G.game_dir, rel);
+    FILE *f = fopen(path, "rb");
+    uint8_t h[16], *blocks = NULL;
+    if (f && fread(h, 1, 16, f) == 16 && !memcmp(h, "SPUV", 4)) {
+        long count = rd32(h + 4);
+        size_t bytes = (size_t)((count + VAG_SAMPLES - 1) / VAG_SAMPLES) * VAG_BYTES;
+        if (count > 0 && count <= SFX_MAX_SAMPLES && (blocks = malloc(bytes)) && fread(blocks, 1, bytes, f) == bytes) {
+            *n = (int)count, *loop_a = (int)rd32(h + 8), *loop_b = (int)rd32(h + 12);
+            if (*loop_b > *n) *loop_b = *n;
+        } else {
+            free(blocks);
+            blocks = NULL;
+        }
+    }
+    if (f) fclose(f);
+    if (!blocks) mark_missing(id);
+    return blocks;
+}
+
+/* Variant k of a clip: audio/<id>.vag if there is one, else the WAV */
+static bool load_variant(const char *id, clip *c, int k, bool quiet) {
+    if (!is_missing(id) && (c->vag[k] = load_vag(id, &c->n[k], &c->loop_a[k], &c->loop_b[k]))) return true;
+    return (c->pcm[k] = load_clip(id, &c->n[k], quiet)) != NULL;
+}
+
+static long variant_bytes(const clip *c, int k) {
+    return c->vag[k] ? (long)((c->n[k] + VAG_SAMPLES - 1) / VAG_SAMPLES) * VAG_BYTES : (long)c->n[k] * (long)sizeof(int16_t);
+}
+
+static bool voice_on(const sfx_voice *x, const clip *c, int k) { /* a voice reading variant k of c */
+    return x->pcm && (c->vag[k] ? x->vag == c->vag[k] : x->pcm == c->pcm[k]);
+}
+
 static bool playing(const clip *c) { /* under the lock: a voice still reading one of its variants */
     for (int v = 0; v < SFX_VOICES; v++)
         for (int k = 0; k < c->count; k++)
-            if (sfx[v].pcm == c->pcm[k]) return true;
+            if (voice_on(&sfx[v], c, k)) return true;
     return false;
 }
 
@@ -372,7 +460,7 @@ static bool evict_one(int keep) {
             (old < 0 || cache[i].used < cache[old].used))
             old = i;
     if (old >= 0) {
-        for (int k = 0; k < cache[old].count; k++) free(cache[old].pcm[k]);
+        for (int k = 0; k < cache[old].count; k++) free(cache[old].pcm[k]), free(cache[old].vag[k]);
         cache_bytes -= cache[old].bytes;
         memmove(&cache[old], &cache[old + 1], sizeof cache[0] * (size_t)(ncache - old - 1)); /* keeps the order */
         ncache--;
@@ -392,15 +480,15 @@ static clip *clip_get(const char *id) {
     memset(c, 0, sizeof *c);
     snprintf(c->id, sizeof c->id, "%s", id);
     c->last = -1;
-    if (!(c->pcm[0] = load_clip(id, &c->n[0], false))) return NULL;
+    if (!load_variant(id, c, 0, false)) return NULL;
     c->count = 1;
     char v[40];
     for (int k = 2; k <= 4; k++) { /* optional variants: SFX_X_2..SFX_X_4 */
         snprintf(v, sizeof v, "%s_%d", id, k);
-        if (!(c->pcm[c->count] = load_clip(v, &c->n[c->count], true))) break;
+        if (!load_variant(v, c, c->count, true)) break;
         c->count++;
     }
-    for (int k = 0; k < c->count; k++) c->bytes += (long)c->n[k] * (long)sizeof(int16_t);
+    for (int k = 0; k < c->count; k++) c->bytes += variant_bytes(c, k);
     c->used = ++use_clock;
     cache_bytes += c->bytes;
     ncache++;
@@ -449,13 +537,17 @@ int audio_sfx_play_opts(const char *id, const sfx_opts *o) {
     if (c->count > 1 && k >= c->last) k++;
     c->last = k;
     hal_audio_lock();
-    int h = audio_voice_start_locked(c->pcm[k], c->n[k], o->gain, o->pitch, o->loop, 0, 0, 0);
+    /* (an ADPCM clip's blocks stand in for pcm: the voice is on while it has some, and reads blk) */
+    int h = audio_voice_start_locked(c->vag[k] ? (const int16_t *)c->vag[k] : c->pcm[k], c->n[k], o->gain, o->pitch, o->loop, 0, 0, 0);
     sfx_voice *x = by_handle(h);
     if (x) {
         set_pan(x, o->pan);
-        /* a loop between two points of the clip: both given, inside it, in order */
-        if (o->loop && o->loop_end > o->loop_start && o->loop_start >= 0 && o->loop_end <= c->n[k])
-            x->loop_from = o->loop_start, x->end = o->loop_end;
+        if (c->vag[k]) x->vag = c->vag[k], x->pcm = x->blk, x->vbase = -VAG_SAMPLES * 4;
+        /* a loop between two points of the clip: both given, inside it, in order (else its file's, if it has them) */
+        int from = o->loop_start, to = o->loop_end;
+        if (!(to > from && from >= 0 && to <= c->n[k])) from = c->loop_a[k], to = c->loop_b[k];
+        if (c->vag[k]) from = from / VAG_SAMPLES * VAG_SAMPLES; /* a jump lands on a block's start */
+        if (o->loop && to > from && from >= 0 && to <= c->n[k]) x->loop_from = from, x->end = to;
         if (o->env) {
             const float sustain = o->sustain < 0 ? 0 : o->sustain > 1 ? 1 : o->sustain == o->sustain ? o->sustain : 1;
             x->env = true, x->stage = o->attack > 0 ? ENV_ATTACK : ENV_DECAY, x->level = o->attack > 0 ? 0 : 1;
@@ -520,7 +612,7 @@ void audio_sfx_stop(int h) { /* a voice with an envelope lets go: its release, t
  * only, so a pattern sounds the same every time round. */
 bool audio_clip_pin(const char *id, const int16_t **pcm, int *n) {
     clip *c = id ? clip_get(id) : NULL;
-    if (!c) return false;
+    if (!c || c->vag[0]) return false; /* (a studio track plays raw samples) */
     c->pins++;
     *pcm = c->pcm[0], *n = c->n[0];
     return true;
@@ -549,10 +641,10 @@ bool audio_sfx_set(const char *id, int16_t *pcm, int n) {
     if (c) { /* the old sound goes: voices playing it stop first, studio tracks move to the new one */
         for (int v = 0; v < SFX_VOICES; v++)
             for (int k = 0; k < c->count; k++)
-                if (sfx[v].pcm == c->pcm[k]) sfx[v].pcm = NULL;
-        studio_replace_locked(c->pcm[0], pcm, n);
+                if (voice_on(&sfx[v], c, k)) sfx[v].pcm = NULL;
+        if (c->pcm[0]) studio_replace_locked(c->pcm[0], pcm, n);
         pins = c->pins;
-        for (int k = 0; k < c->count; k++) free(c->pcm[k]);
+        for (int k = 0; k < c->count; k++) free(c->pcm[k]), free(c->vag[k]);
         cache_bytes -= c->bytes;
     } else {
         c = &cache[ncache++];
@@ -617,7 +709,7 @@ void audio_reset(void) {
     psg_reset();
     mod_reset();
     for (int i = 0; i < ncache; i++)
-        for (int k = 0; k < cache[i].count; k++) free(cache[i].pcm[k]);
+        for (int k = 0; k < cache[i].count; k++) free(cache[i].pcm[k]), free(cache[i].vag[k]);
     ncache = 0;
     cache_bytes = 0;
     paused = false;
@@ -702,7 +794,7 @@ static void mix_core(int16_t *out, int n, bool stereo) {
             sfx_voice *x = &sfx[v];
             int i0 = x->wait < m ? x->wait : m;
             x->wait -= i0;
-            if (x->pitch == 1 && !x->env) /* as recorded: sample after sample, round again if it loops */
+            if (x->pitch == 1 && !x->env && !x->vag) /* as recorded: sample after sample, round again if it loops */
                 for (int i = i0; i < m && x->pcm;) {
                     int k = x->end - x->pos < m - i ? x->end - x->pos : m - i;
                     for (int j = 0; j < k; j++) acc[i + j] += x->pcm[x->pos + j] * x->gain;
@@ -722,8 +814,9 @@ static void mix_core(int16_t *out, int n, bool stereo) {
             else { /* faster or slower: between two samples, by the fraction */
                 uint32_t step = (uint32_t)(x->pitch * 65536.0f);
                 for (int i = i0; i < m && x->pcm; i++) {
-                    int a = x->pos, b = a + 1 < x->end ? a + 1 : (x->loop ? x->loop_from : a);
-                    float y = (x->pcm[a] + (float)(x->pcm[b] - x->pcm[a]) * (float)x->frac / 65536.0f) * x->gain;
+                    int a = x->pos, b = a + 1 < x->end ? a + 1 : (x->loop && !x->vag ? x->loop_from : a);
+                    int sa = x->vag ? vag_get(x, a) : x->pcm[a], sb = x->vag ? (b == a ? sa : vag_get(x, b)) : x->pcm[b];
+                    float y = (sa + (float)(sb - sa) * (float)x->frac / 65536.0f) * x->gain;
                     if (x->env) y *= env_next(x); /* (a release that ends the voice leaves this sample its last) */
                     acc[i] += y, sd[i] += y * x->send_d, sr[i] += y * x->send_r;
                     dl[i] += y * x->side_l, dr[i] += y * x->side_r;
