@@ -132,6 +132,10 @@ Six things pinyol lacked, added on branch `fases` (local commits, all tests gree
 Found on the way, not fixed: the API fuzzer with a different random sequence finds strips that differ from the whole
 frame (455 pixels on main itself) on odd PPU settings; the fuzzer keeps its old sequence and the new functions get a
 storm of their own.
+2026-10-17: not seen again: 92 other sequences of the fuzzer, every strip the same as the whole frame. The fuzzer now
+also storms the PlayStation and Saturn functions (quad, grad, light, warp, linetint, img's new mixes, reverb, the
+sounds' pan and envelope) with arguments in their shape, so most of them draw and the strips are compared; 25
+sequences of that under ASan and UBSan, no findings.
 
 Measured on the console afterwards (autotest builds with the speaker on, `-DBP_LOUD=ON`):
 

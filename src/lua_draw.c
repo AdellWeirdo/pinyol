@@ -847,8 +847,6 @@ static int l_warp(lua_State *L) {
 static int l_linetint(lua_State *L) {
     const int x = num(L, 1), y = num(L, 2), w = num(L, 3), h = num(L, 4);
     if (w <= 0 || h <= 0 || h > 512 || nquad == OV_EXT || npts + ((h + 1) & ~1) > OV_PTS) return 0;
-    int16_t unused[1];
-    (void)unused;
     uint16_t col[512];
     if (lua_isfunction(L, 5)) {
         for (int j = 0; j < h; j++) {

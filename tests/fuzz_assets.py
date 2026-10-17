@@ -3,7 +3,9 @@ plays it for two seconds, and reports any AddressSanitizer or UBSan finding. Use
 
     python3 tests/fuzz_assets.py examples/naves /tmp/fuzzwork build/pinyol_headless 60
 
-Not part of ctest (a minute per game). Last run 2026-10-12: naves, plataformas, puzle, hola, 60 each, no findings.
+Not part of ctest (a minute per game). Last run 2026-10-12: naves, plataformas, puzle, hola, 60 each, no findings;
+2026-10-17: the games midi_test, vag_test and clip_scenes_test leave in the build (a MIDI song and its bank, one from a
+SoundFont, a looped VAG, an SPU-ADPCM stream and an ambience bed, two NPV2 clips), 80 each, no findings.
 """
 import random
 import shutil
