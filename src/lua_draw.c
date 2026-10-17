@@ -944,6 +944,34 @@ static int l_imgsize(lua_State *L) { /* imgsize(picture) -> w, h, frames, or nil
     return 3;
 }
 
+/* preload({images = {"BG_BAR", ...}, sounds = {"SFX_GLASS", ...}}) -> how many of the pictures there are. Reads them now,
+ * so the first time they are drawn or played nothing waits for the card: a room's, behind the curtain that closes. */
+static int l_preload(lua_State *L) {
+    luaL_checktype(L, 1, LUA_TTABLE);
+    int found = 0;
+    lua_getfield(L, 1, "images");
+    if (lua_istable(L, -1))
+        for (int i = 1; i <= (int)lua_rawlen(L, -1) && i <= 256; i++) {
+            lua_rawgeti(L, -1, i);
+            const char *id = lua_isstring(L, -1) ? lua_tostring(L, -1) : NULL;
+            asset *a = id && safe_name(id) ? gfx_asset_opt(id) : NULL;
+            found += a && !a->missing;
+            lua_pop(L, 1);
+        }
+    lua_pop(L, 1);
+    lua_getfield(L, 1, "sounds");
+    if (lua_istable(L, -1))
+        for (int i = 1; i <= (int)lua_rawlen(L, -1) && i <= 256; i++) {
+            lua_rawgeti(L, -1, i);
+            const char *id = lua_isstring(L, -1) ? lua_tostring(L, -1) : NULL;
+            if (id && safe_name(id)) audio_preload(id);
+            lua_pop(L, 1);
+        }
+    lua_pop(L, 1);
+    lua_pushinteger(L, found);
+    return 1;
+}
+
 /* ------------------------------------------------------------------ the list's life */
 
 void draw_frame_begin(void) { /* each _draw starts on the screen, with no camera and no clip */
@@ -975,7 +1003,7 @@ void draw_register(lua_State *L) {
         {"text", l_text}, {"textw", l_textw}, {"rect", l_rect}, {"box", l_box}, {"shade", l_shade}, {"panel", l_panel},
         {"plate", l_plate}, {"img", l_img}, {"quad", l_quad}, {"grad", l_grad}, {"frame", l_frame}, {"pset", l_pset}, {"pget", l_pget}, {"line", l_line},
         {"circ", l_circ}, {"tri", l_tri}, {"poly", l_poly}, {"cls", l_cls}, {"canvas", l_canvas}, {"target", l_target},
-        {"camera", l_camera}, {"clip", l_clip}, {"imgsize", l_imgsize}, {NULL, NULL}};
+        {"camera", l_camera}, {"clip", l_clip}, {"imgsize", l_imgsize}, {"preload", l_preload}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);
     lua_pushinteger(L, CLEAR);

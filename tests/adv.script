@@ -1,0 +1,75 @@
+# The adventure libraries: a room's walls, door, things and memory; the curtain between rooms with its variant looks; the
+# inventory's slots, uses and saving; the hud's gauge and toasts
+new
+tick 3
+expect_lua rooms.id() == "a" and not rooms.busy() and player.x == 40 and player.y == 240
+# walls: walking right along the floor stops at the pillar's solid box (x 200), and the floor stops a fall
+lua player.y = 240 hx = rooms.move(player, 400, 0)
+expect_lua hx == true and player.x + player.w == 200
+lua player.x = 100 player.y = 100 _, hy = rooms.move(player, 0, 300)
+expect_lua hy == true and player.y + player.h == 280
+lua player.x, player.y = 40, 240
+expect_lua rooms.move(player, -100, 0) and player.x == 0
+# things: the key is within reach near it, not far; the npc is nearer when beside it
+lua player.x, player.y = 140, 240
+expect_lua rooms.thing_near(player, 20).id == "key"
+lua player.x, player.y = 70, 240
+expect_lua rooms.thing_near(player, 30).id == "npc"
+lua player.x, player.y = 400, 240
+expect_lua rooms.thing_near(player, 20) == nil
+# taking the key: into the inventory, gone from the room for good
+lua t = rooms.thing("key") ok, how = inv:add(t.take) rooms.remove("key")
+expect_lua ok and inv:has("llave") and rooms.thing("key") == nil
+# the variant: miseria high shows its look (and a thing that waits for it), after a refresh
+expect_lua rooms.current().look == nil and rooms.thing("ghost") == nil
+lua mis = 80 rooms.refresh()
+expect_lua rooms.current().look == "crisis" and rooms.thing("ghost") ~= nil
+shot sala
+# a door: walking into it, the curtain closes, the other room opens at its spawn, the old one was left
+lua player.x, player.y = 460, 200 e = rooms.exit_at(player) rooms.take(e)
+expect_lua e and e.to == "b" and rooms.busy()
+tick 60
+expect_lua rooms.id() == "b" and not rooms.busy() and player.x == 20 and player.y == 240
+expect_lua log[#log] == "enter b" and log[#log - 1] == "leave a"
+# the wider room scrolls: the camera follows the player along it, never past the room
+lua player.x = 700 rooms.move(player, 0, 0)
+tick 60
+expect_lua rooms.cam.x > 300 and rooms.cam.x <= 960 - 480
+shot ancha
+# back: the key is still gone (the room remembers), it is visit 2, and there is a flag
+lua rooms.flag("a", "abierto", true) player.x, player.y = 4, 200 rooms.take(rooms.exit_at(player))
+tick 60
+expect_lua rooms.id() == "a" and rooms.thing("key") == nil and rooms.visits("a") == 2 and rooms.flag("a", "abierto") == true
+expect_lua player.x == 400 and player.y == 240
+# what a room remembers is saved and comes back
+lua store("rooms", rooms.save()) saved = stored("rooms") rooms.load({}) forgot = rooms.thing("key") ~= nil rooms.load(saved)
+expect_lua forgot and rooms.thing("key") == nil and rooms.flag("a", "abierto") == true
+# preload: a picture there is counts, one that is not does not
+expect_lua preload({images = {"BG_A", "NOPE_X"}, sounds = {}}) == 1 and preload({images = {}}) == 0
+# inventory: three slots, a fourth is refused, a second llave too, coins stack; used up, removed; select wraps; saved
+lua inv:remove("llave") a = inv:add("llave") b = inv:add("birra") c = inv:add("pizza") d, why = inv:add("moneda") e2, why2 = inv:add("llave") f, why3 = inv:add("nada")
+expect_lua a and b and c and d == false and why == "full" and e2 == false and why2 == "have" and f == false and why3 == "unknown"
+expect_lua inv:full() and inv:count() == 3 and inv:selected() == "llave"
+lua inv:next() inv:next() inv:next()
+expect_lua inv:selected() == "llave"
+lua inv:prev()
+expect_lua inv:selected() == "pizza"
+lua inv:select(1) used = inv:use_on("botellero")
+expect_lua used and opened == true and not inv:has("llave") and inv:count() == 2
+lua nothing = inv:use_on("botellero")
+expect_lua nothing == false
+lua inv:swap(2, 3) snap = inv:save() inv:remove("birra") inv:remove("pizza") inv:load(snap)
+expect_lua inv:has("birra") and inv:has("pizza") and inv:count() == 2
+lua inv:load({"zzz", false, "pizza", sel = 3})
+expect_lua inv:count() == 1 and inv:selected() == "pizza"
+# hud: the gauge eases to what it is told, hearts and toasts draw, a toast goes by itself
+lua meter:set(0.9) for _ = 1, 40 do meter:update() end
+expect_lua math.abs(meter:value() - 0.9) < 1e-9
+lua hud.toast("Has cogido la llave", 20) hud.toast("Otra cosa", 40)
+expect_lua hud.toasts() == 2
+tick 25
+expect_lua hud.toasts() == 1
+shot hud
+tick 30
+expect_lua hud.toasts() == 0
+expect_ok
