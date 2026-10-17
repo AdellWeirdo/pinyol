@@ -77,7 +77,7 @@ static int l_sfx(lua_State *L) {
     if (!lua_isnoneornil(L, 3)) {
         luaL_checktype(L, 3, LUA_TTABLE);
         o.pitch = opt_float(L, 3, "pitch", 1, 0.0625f, 16), o.loop = opt_bool(L, 3, "loop", false);
-        o.pan = opt_float(L, 3, "pan", 0, -1, 1);
+        o.pan = opt_float(L, 3, "pan", 0, -1, 1), o.reverb = opt_float(L, 3, "reverb", 0, 0, 1);
         /* the envelope: any of its four asked for makes one (the rest: no attack, no decay, full sustain, no release) */
         const float a = opt_float(L, 3, "attack", -1, -1, 30), d = opt_float(L, 3, "decay", -1, -1, 30);
         const float su = opt_float(L, 3, "sustain", -1, -1, 1), r = opt_float(L, 3, "release", -1, -1, 30);
@@ -104,6 +104,27 @@ static int l_sfx_set(lua_State *L) { /* sfx_set(handle, {gain, pitch, pan}): a s
 static int l_sfx_stop(lua_State *L) {
     if (lua_isnoneornil(L, 1)) return 0;
     audio_sfx_stop((int)luaL_checkinteger(L, 1));
+    return 0;
+}
+
+/* reverb(room [, wet [, {music, ambient}]]): a room of the PlayStation's for the game's sounds: "room", "studio_small",
+ * "studio_medium", "studio_large", "hall", "half_echo", "space_echo" or "delay"; wet (default 0.5) how much of it
+ * comes back; music and ambient (default 0) how much of those go into it (sfx sends with its reverb). reverb() or
+ * reverb(false) lets it fade out. */
+static int l_reverb(lua_State *L) {
+    if (lua_isnoneornil(L, 1) || lua_isboolean(L, 1)) {
+        audio_reverb(-1, 0, 0, 0);
+        return 0;
+    }
+    const char *name = luaL_checkstring(L, 1);
+    int room = reverb_find(name);
+    if (room < 0) return luaL_error(L, "reverb: no room \"%s\" (room, studio_small, studio_medium, studio_large, hall, half_echo, space_echo, delay)", name);
+    float wet = fin(luaL_optnumber(L, 2, 0.5)), music = 0, amb = 0;
+    if (!lua_isnoneornil(L, 3)) {
+        luaL_checktype(L, 3, LUA_TTABLE);
+        music = opt_float(L, 3, "music", 0, 0, 1), amb = opt_float(L, 3, "ambient", 0, 0, 1);
+    }
+    audio_reverb(room, wet < 0 ? 0 : wet > 1 ? 1 : wet, music, amb);
     return 0;
 }
 
@@ -233,7 +254,7 @@ void sound_register(lua_State *L) {
                                  {"sfx_on", l_sfx_on}, {"music", l_music}, {"music_layer", l_music_layer},
                                  {"music_time", l_music_time},
                                  {"tone", l_tone}, {"note", l_note}, {"mic", l_mic},
-                                 {"mic_record", l_mic_record}, {"volume", l_volume}, {NULL, NULL}};
+                                 {"mic_record", l_mic_record}, {"volume", l_volume}, {"reverb", l_reverb}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);
     lua_pop(L, 1);

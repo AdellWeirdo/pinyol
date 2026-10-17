@@ -146,6 +146,71 @@ int main(void) {
     audio_mix(big, 3000);
     CHECK(big[100] > 0 && big[1500] > 0 && big[2400] < 0);
 
+    /* the reverb: a click sent through a room comes back as a tail, left and right apart, dying away; with no send, no
+     * wet, or no room, nothing comes back, and the dry sound is what it was */
+    static int16_t room_a[2 * AUDIO_HZ], room_b[2 * AUDIO_HZ];
+    {
+        int16_t *c = calloc(100, sizeof(int16_t));
+        c[0] = 16000;
+        audio_reset();
+        audio_sfx_set("CLICK", c, 100);
+    }
+    sfx_opts rv = {.gain = 1, .pitch = 1, .reverb = 1};
+    audio_sfx_play_opts("CLICK", &rv);
+    audio_mix_stereo(room_a, 20000);
+    int tail = 0;
+    for (int i = 100; i < 20000; i++) tail |= room_a[2 * i] | room_a[2 * i + 1];
+    CHECK(tail == 0); /* no room: the click and silence */
+    int led = reverb_find("room");
+    CHECK(led >= 0 && reverb_find("hall") >= 0 && reverb_find("nothing") == -1);
+    audio_reverb(led, 1, 0, 0);
+    audio_mix_stereo(room_a, 4000); /* the wet level rises over 100 ms; wait it out */
+    audio_sfx_play_opts("CLICK", &rv);
+    audio_mix_stereo(room_a, 16000);
+    int pk = 0, pk_late = 0, differ = 0;
+    for (int i = 100; i < 8000; i++) pk = abs(room_a[2 * i]) > pk ? abs(room_a[2 * i]) : pk;
+    for (int i = 12000; i < 16000; i++) pk_late = abs(room_a[2 * i]) > pk_late ? abs(room_a[2 * i]) : pk_late;
+    for (int i = 100; i < 8000; i++) differ += room_a[2 * i] != room_a[2 * i + 1];
+    CHECK(pk > 200);                 /* a tail */
+    CHECK(differ > 1000);            /* the two ears hear different tails */
+    CHECK(pk_late < pk);             /* dying away */
+    /* the same again from the same start gives the same tail: no state is left over from before */
+    audio_reverb(-1, 0, 0, 0);
+    audio_mix_stereo(room_b, 12000);
+    CHECK(!reverb_on());             /* faded out and freed */
+    audio_reverb(led, 1, 0, 0);
+    audio_mix_stereo(room_b, 4000);
+    audio_sfx_play_opts("CLICK", &rv);
+    audio_mix_stereo(room_b, 16000);
+    CHECK(!memcmp(room_a, room_b, 2 * 16000 * sizeof(int16_t)));
+    /* a sound that sends nothing is not in the room, and at wet 0 nothing comes back: both are the dry sound */
+    beep();
+    audio_sfx_play("BEEP", 1, 1, true);
+    audio_mix_stereo(room_a, 4000);
+    beep();
+    audio_reverb(led, 1, 0, 0);
+    audio_mix_stereo(room_b, 4000);
+    audio_sfx_play("BEEP", 1, 1, true); /* (sends nothing) */
+    audio_mix_stereo(room_b, 4000);
+    beep();
+    audio_sfx_play("BEEP", 1, 1, true);
+    audio_mix_stereo(room_a, 4000);
+    int dry_same = 1;
+    for (int i = 0; i < 4000; i++) dry_same &= room_a[2 * i] == room_b[2 * i] && room_a[2 * i + 1] == room_b[2 * i + 1];
+    CHECK(dry_same);
+    audio_reverb(led, 0, 0, 0);
+    audio_mix_stereo(room_b, 3000);
+    CHECK(peak_ear(room_b, 0, 3000) > 0);
+    /* every room runs: no crash, the signal stays in range (soft-limited), a looped tone through it for a second */
+    for (int r = 0; reverb_name(r); r++) {
+        beep();
+        audio_reverb(r, 0.8f, 0, 0);
+        sfx_opts loud = {.gain = 1, .pitch = 1, .loop = true, .reverb = 1};
+        audio_sfx_play_opts("BEEP", &loud);
+        audio_mix_stereo(room_a, AUDIO_HZ);
+        CHECK(peak_ear(room_a, 0, AUDIO_HZ) > 0 && peak_ear(room_a, 1, AUDIO_HZ) <= 32767);
+    }
+
     audio_reset();
     printf("audio: %d checks, %d failed\n", checks, failures);
     return failures != 0;

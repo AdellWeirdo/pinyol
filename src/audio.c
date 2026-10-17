@@ -65,6 +65,7 @@ typedef struct {
     bool env;           /* a volume envelope shapes it: attack, decay to sustain, then release when stopped */
     uint8_t stage;      /* ENV_* */
     float level, sustain, rise, fall_d, fall_r; /* rise: a sample's step up; fall_*: a sample's factor down */
+    float rev;          /* how much of it goes into the game's reverb */
     const uint8_t *vag; /* an ADPCM clip: its blocks, decoded two at a time into blk as the voice reads along */
     int vbase, vold, volder; /* the clip's sample blk[0] is, and the decoder's last two samples after blk's second half */
     int16_t blk[56];
@@ -142,6 +143,9 @@ enum { S_AMB0, S_MUS = S_AMB0 + NAMB, S_VOICE0, S_VOICE1, NSTREAMS };
 
 static stream st[NSTREAMS];
 static ramp bus_amb = {1, 1, 0}, bus_mus = {1, 1, 0}, amb_lp = {1, 1, 0}, master = {1, 1, 0};
+static ramp rv_wet = {0, 0, 0};               /* how much of the game's reverb comes back */
+static float rv_music, rv_amb;                 /* what the music and the ambience send into it */
+static bool rv_closing;                        /* fading out: the room goes when it is silent */
 static float lp_state;
 static sfx_voice sfx[SFX_VOICES];
 static clip cache[SFX_CACHE];
@@ -379,6 +383,24 @@ void audio_bus(float amb, float mus, float amb_lowpass_hz, int fade_ms) {
     hal_audio_unlock();
 }
 
+void audio_reverb(int room, float wet, float send_music, float send_ambient) {
+    hal_audio_lock();
+    if (room < 0) { /* let it ring out: the return fades, then the room goes */
+        ramp_to(&rv_wet, 0, 200);
+        rv_closing = reverb_on();
+    } else {
+        if (!reverb_on() || rv_closing || room != reverb_current()) { /* a new room starts silent */
+            reverb_set(room);
+            rv_wet = (ramp){0, 0, 0};
+        }
+        rv_closing = false;
+        ramp_to(&rv_wet, wet, 100);
+        rv_music = send_music < 0 ? 0 : send_music > 1 ? 1 : send_music;
+        rv_amb = send_ambient < 0 ? 0 : send_ambient > 1 ? 1 : send_ambient;
+    }
+    hal_audio_unlock();
+}
+
 void audio_master(float gain, int fade_ms) {
     hal_audio_lock();
     ramp_to(&master, gain, fade_ms);
@@ -542,6 +564,7 @@ int audio_sfx_play_opts(const char *id, const sfx_opts *o) {
     sfx_voice *x = by_handle(h);
     if (x) {
         set_pan(x, o->pan);
+        x->rev = o->reverb > 1 ? 1 : o->reverb > 0 ? o->reverb : 0;
         if (c->vag[k]) x->vag = c->vag[k], x->pcm = x->blk, x->vbase = -VAG_SAMPLES * 4;
         /* a loop between two points of the clip: both given, inside it, in order (else its file's, if it has them) */
         int from = o->loop_start, to = o->loop_end;
@@ -704,6 +727,8 @@ void audio_reset(void) {
     for (int i = 0; i < NSTREAMS; i++) close_stream(&st[i]);
     memset(sfx, 0, sizeof sfx);
     bus_amb = bus_mus = amb_lp = master = (ramp){1, 1, 0};
+    rv_wet = (ramp){0, 0, 0}, rv_music = rv_amb = 0, rv_closing = false;
+    reverb_set(-1);
     lp_state = 0;
     hal_audio_unlock();
     psg_reset();
@@ -758,6 +783,7 @@ static void mix_core(int16_t *out, int n, bool stereo) {
     static float acc[CHUNK], amb[CHUNK]; /* single caller (audio callback/task): keep them off its small stack */
     static float sd[CHUNK], sr[CHUNK];   /* what the studio's tracks send to its echo and its reverb */
     static float dl[CHUNK], dr[CHUNK];   /* the panned voices' difference from acc, left and right (both <= 0) */
+    static float gv[CHUNK];              /* what is sent into the game's reverb */
     static int16_t buf[CHUNK * MAX_STEMS];
     for (int off = 0; off < n; off += CHUNK) {
         int m = n - off < CHUNK ? n - off : CHUNK;
@@ -767,6 +793,8 @@ static void mix_core(int16_t *out, int n, bool stereo) {
         memset(sr, 0, sizeof sr);
         memset(dl, 0, sizeof dl);
         memset(dr, 0, sizeof dr);
+        memset(gv, 0, sizeof gv);
+        const bool rv = reverb_on();
         for (int c = 0; c < NSTREAMS && !paused; c++) { /* pause freezes the world; menu clicks still play */
             stream *s = &st[c];
             if (!s->f) continue;
@@ -777,10 +805,13 @@ static void mix_core(int16_t *out, int n, bool stereo) {
             int ch = s->chans; /* read first: stream_read closes (and zeroes) a one-shot that ends */
             int got = stream_read(s, buf, m);
             if (s->armed && bar && (s->pos / bar != p0 / bar || s->pos < p0)) apply_pending(s); /* <= 1 chunk late */
+            const float send = !rv ? 0 : c == S_MUS ? rv_music : c < S_AMB0 + NAMB ? rv_amb : 0;
             for (int i = 0; i < got; i++) {
                 float x = 0;
                 for (int k = 0; k < ch; k++) x += buf[i * ch + k] * ramp_next(&s->g[k]);
-                dst[i] += x * ramp_next(&b);
+                x *= ramp_next(&b);
+                dst[i] += x;
+                if (send > 0) gv[i] += x * send;
             }
         }
         for (int i = 0; i < m && !paused; i++) { /* ambience bus: gain then a ramped one-pole lowpass (1 = open) */
@@ -808,6 +839,8 @@ static void mix_core(int16_t *out, int n, bool stereo) {
                             float y = x->pcm[x->pos + j] * x->gain;
                             dl[i + j] += y * x->side_l, dr[i + j] += y * x->side_r;
                         }
+                    if (rv && x->rev > 0)
+                        for (int j = 0; j < k; j++) gv[i + j] += x->pcm[x->pos + j] * x->gain * x->rev;
                     x->pos += k, i += k;
                     if (x->pos >= x->end) x->pos = x->loop ? x->loop_from : 0, x->pcm = x->loop ? x->pcm : NULL;
                 }
@@ -820,6 +853,7 @@ static void mix_core(int16_t *out, int n, bool stereo) {
                     if (x->env) y *= env_next(x); /* (a release that ends the voice leaves this sample its last) */
                     acc[i] += y, sd[i] += y * x->send_d, sr[i] += y * x->send_r;
                     dl[i] += y * x->side_l, dr[i] += y * x->side_r;
+                    if (rv) gv[i] += y * x->rev;
                     x->frac += step;
                     x->pos += (int)(x->frac >> 16), x->frac &= 0xFFFF;
                     if (x->pos >= x->end) {
@@ -834,6 +868,16 @@ static void mix_core(int16_t *out, int n, bool stereo) {
         if (!paused && music_sounds()) mus_clock += m; /* (before a module may end) */
         if (!paused) mod_mix(acc, m);
         if (!paused) studio_fx(acc, sd, sr, m); /* its echo and reverb, then Lo-fi GBA over everything */
+        if (rv && !paused) { /* the room's return, left and right apart, with the panned voices' difference */
+            static float rl[CHUNK], rr[CHUNK];
+            memset(rl, 0, sizeof rl), memset(rr, 0, sizeof rr);
+            reverb_mix(gv, rl, rr, m, 1);
+            for (int i = 0; i < m; i++) {
+                const float w = ramp_next(&rv_wet);
+                dl[i] += rl[i] * w, dr[i] += rr[i] * w;
+            }
+            if (rv_closing && rv_wet.v == 0) reverb_set(-1), rv_closing = false;
+        }
         for (int i = 0; i < m; i++) {
             const float g = ramp_next(&master);
             if (stereo) out[2 * (off + i)] = limit((acc[i] + dl[i]) * g), out[2 * (off + i) + 1] = limit((acc[i] + dr[i]) * g);

@@ -1,0 +1,20 @@
+# reverb names a room; sfx takes pan, reverb, an envelope and loop points; a room that is not one is an error
+new
+lua reverb("hall", 0.6, {music = 0.3, ambient = 0.2})
+tick 5
+lua h = sfx("COIN", 1, {pan = -0.5, reverb = 0.8, attack = 0.01, decay = 0.05, sustain = 0.6, release = 0.2, loop = true, loop_start = 0.01, loop_end = 0.05})
+tick 20
+expect_lua sfx_on(h)
+lua sfx_set(h, {pan = 1, gain = 0.5})
+tick 5
+lua sfx_stop(h)
+tick 3
+expect_lua sfx_on(h)
+tick 30
+expect_lua not sfx_on(h)
+lua reverb("space_echo")
+tick 5
+lua reverb()
+tick 30
+expect_lua_error reverb("a cathedral")
+expect_ok

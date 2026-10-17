@@ -376,6 +376,9 @@ void audio_sfx(const char *id, float gain);
 int audio_sfx_play(const char *id, float gain, float pitch, bool loop); /* a handle, or 0 */
 int audio_sfx_play_pan(const char *id, float gain, float pitch, bool loop, float pan); /* pan -1 left .. 1 right */
 void audio_sfx_pan(int handle, float pan);
+/* The game's reverb (reverb.c): a room of the PlayStation's, how much of it comes back (wet 0..1) and how much of the music
+ * and of the ambience goes into it (sends 0..1). room -1 lets it fade out. Sounds send with sfx_opts.reverb. */
+void audio_reverb(int room, float wet, float send_music, float send_ambient);
 /* Everything a sound can be asked: gain 0..1, pitch, loop (between loop_start and loop_end samples if both are given),
  * pan -1..1, and, if env, a volume envelope in seconds (attack up, decay down to sustain 0..1, release after a stop). */
 typedef struct {
@@ -384,8 +387,15 @@ typedef struct {
     int loop_start, loop_end;
     bool env;
     float attack, decay, sustain, release;
+    float reverb; /* 0..1: how much of it goes through the reverb */
 } sfx_opts;
 int audio_sfx_play_opts(const char *id, const sfx_opts *o);
+int reverb_find(const char *name);      /* a room by name ("room", "hall", "space_echo"...), -1 if there is none */
+const char *reverb_name(int room);
+bool reverb_on(void);
+int reverb_current(void);
+void reverb_set(int room);             /* the room's memory made (silent), -1: freed. Under the audio lock */
+void reverb_mix(const float *in, float *left, float *right, int m, float wet); /* adds its return to left and right */
 void audio_sfx_adjust(int handle, float gain, float pitch); /* negative: unchanged */
 void audio_sfx_stop(int handle);
 bool audio_sfx_playing(int handle);
