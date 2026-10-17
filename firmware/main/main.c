@@ -371,9 +371,7 @@ static int receive(launcher_game *games, int *n) {
         return -1;
     }
     *n = launcher_scan(games, LAUNCHER_MAX);
-    for (int k = 0; k < *n; k++)
-        if (!strcmp(games[k].id, id)) return k;
-    return -1;
+    return launcher_find(games, n, LAUNCHER_MAX, id);
 }
 
 /* Autotest builds: every game's scripts in turn, each on a fresh game_init; with /flash/autotest/loop (BP_SOAK)

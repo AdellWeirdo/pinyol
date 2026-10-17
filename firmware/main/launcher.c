@@ -75,12 +75,32 @@ static uint16_t *load_thumb(const char *dir) { /* BG_TITLE is 240x160, the world
     return t;
 }
 
+/* One game's row from its folder <root>/games/<name>: false if it is not a game folder. */
+static bool read_game(launcher_game *x, const char *root, const char *name, bool flash) {
+    char path[160];
+    *x = (launcher_game){.no_music = flash};
+    snprintf(x->id, sizeof x->id, "%s", name);
+    snprintf(x->dir, sizeof x->dir, "%s/games/%s", root, name);
+    snprintf(path, sizeof path, "%s/game.json", x->dir);
+    long len;
+    char *txt = read_file(path, &len);
+    cJSON *j = txt ? cJSON_Parse(txt) : NULL;
+    free(txt);
+    if (!j) return false;
+    const cJSON *t = cJSON_GetObjectItem(j, "title"), *s = cJSON_GetObjectItem(j, "subtitle");
+    snprintf(x->title, sizeof x->title, "%s", cJSON_IsString(t) ? t->valuestring : x->id);
+    snprintf(x->subtitle, sizeof x->subtitle, "%s", cJSON_IsString(s) ? s->valuestring : "");
+    cJSON_Delete(j);
+    x->thumb = load_thumb(x->dir);
+    return true;
+}
+
 static void add_games(const char *root, bool flash, launcher_game *g, int *n, int max) {
     char path[160];
     snprintf(path, sizeof path, "%s/games", root);
     DIR *d = opendir(path);
     if (!d) return;
-    for (struct dirent *e; *n < max && (e = readdir(d));) {
+    for (struct dirent *e; (e = readdir(d));) {
         bool dup = e->d_name[0] == '.';
         if (!strcmp(e->d_name, CONSOLE_MENU_ID)) { /* the menu: the card's copy first, as for any game */
             if (!menu_dir[0]) snprintf(menu_dir, sizeof menu_dir, "%s/games/%s", root, e->d_name);
@@ -88,24 +108,27 @@ static void add_games(const char *root, bool flash, launcher_game *g, int *n, in
         }
         for (int i = 0; i < *n && !dup; i++) dup = !strcmp(g[i].id, e->d_name); /* the card's copy has the music */
         if (dup) continue;
-        launcher_game *x = &g[*n];
-        *x = (launcher_game){.no_music = flash};
-        snprintf(x->id, sizeof x->id, "%s", e->d_name);
-        snprintf(x->dir, sizeof x->dir, "%s/games/%s", root, e->d_name);
-        snprintf(path, sizeof path, "%s/game.json", x->dir);
-        long len;
-        char *txt = read_file(path, &len);
-        cJSON *j = txt ? cJSON_Parse(txt) : NULL;
-        free(txt);
-        if (!j) continue; /* not a game folder */
-        const cJSON *t = cJSON_GetObjectItem(j, "title"), *s = cJSON_GetObjectItem(j, "subtitle");
-        snprintf(x->title, sizeof x->title, "%s", cJSON_IsString(t) ? t->valuestring : x->id);
-        snprintf(x->subtitle, sizeof x->subtitle, "%s", cJSON_IsString(s) ? s->valuestring : "");
-        cJSON_Delete(j);
-        x->thumb = load_thumb(x->dir);
-        (*n)++;
+        if (*n == max) { /* (the menu is still looked for: it can come after) */
+            hal_log("launcher: the list is full (%d games), %s/games/%s left out", max, root, e->d_name);
+            continue;
+        }
+        if (read_game(&g[*n], root, e->d_name, flash)) (*n)++;
     }
     closedir(d);
+}
+
+int launcher_find(launcher_game *g, int *n, int max, const char *id) {
+    for (int k = 0; k < *n; k++)
+        if (!strcmp(g[k].id, id)) return k;
+    /* not listed: the list was full and a new folder comes last. The game just sent takes the last row. */
+    const int k = *n < max ? *n : max - 1;
+    if (k < 0) return -1;
+    launcher_game x;
+    if (!read_game(&x, "/sdcard", id, false) && !read_game(&x, "/flash", id, true)) return -1;
+    if (k < *n) free(g[k].thumb);
+    g[k] = x;
+    if (k == *n) (*n)++;
+    return k;
 }
 
 int launcher_scan(launcher_game *g, int max) {

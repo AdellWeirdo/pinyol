@@ -16,6 +16,9 @@ typedef struct {
 
 /* The games on the card (/sdcard/games/<id>/game.json), then those only in the flash image; loads the list's font. */
 int launcher_scan(launcher_game *g, int max);
+/* The game with that id in the list (n of max rows); one not in it (the list was full) is read and takes the last row, so
+ * a game that just came over the cable always starts. Its index, or -1: no such game folder. */
+int launcher_find(launcher_game *g, int *n, int max, const char *id);
 #define LAUNCHER_CABLE -3 /* launcher_choose: a game is coming over the cable (cable.c) */
 /* The console's game list until a row is chosen: its index, -1 for "Apagar" or LAUNCHER_CABLE. Returns once nothing
  * is held. */
