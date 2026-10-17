@@ -1,0 +1,13 @@
+# img's blends beside alpha: sub takes the picture's light from what is under it, quarter adds a quarter of it,
+# add and quarter stop at full, sub stops at black; plain alpha is what it was
+new
+tick 2
+expect_lua px(1) == 0x00FFFF
+expect_lua select(1, ch(px(2))) > 120 and select(1, ch(px(2))) < 145 and select(2, ch(px(2))) == 255
+expect_lua px(3) == 0x000000
+expect_lua px(4) == 0xFFFFFF
+expect_lua select(1, ch(px(5))) > 40 and select(1, ch(px(5))) < 80 and select(2, ch(px(5))) > 40 and select(2, ch(px(5))) < 80 and select(3, ch(px(5))) > 40 and select(3, ch(px(5))) < 80
+expect_lua px(6) == 0xFFFFFF
+expect_lua select(1, ch(px(7))) > 120 and select(1, ch(px(7))) < 140
+shot blend
+expect_ok

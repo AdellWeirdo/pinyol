@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "gfx_px.h"
 #include "lua_api.h"
 
 #define OV_MAX 2048                /* overlay commands per frame: particles, stars, a split screen drawn twice */
@@ -40,7 +41,7 @@ static struct { /* img's pal, tint and how it is seen through: c->font is 1 + it
     const asset *pal;
     int tint;
     uint8_t alpha; /* 255: opaque */
-    bool add;      /* its light added to what is under it */
+    uint8_t mode;  /* BLEND_*: how it meets what is under it (alpha: mixed; add, sub, quarter: its light moved by) */
 } ov_look[OV_EXT];
 static int nlook;
 static int nstyle, nxf;
@@ -111,7 +112,7 @@ static const uint16_t *keep(const surface *r) { /* r's pixels, copied; NULL: non
 
 static inline uint16_t bswap(uint16_t v) { return (uint16_t)(v << 8 | v >> 8); }
 
-static void see_through(const surface *r, const uint16_t *was, unsigned alpha, bool add) {
+static void see_through(const surface *r, const uint16_t *was, unsigned alpha, int mode) {
     unsigned a = alpha + (alpha >> 7); /* 0..256 */
     for (int y = 0; y < r->h; y++)
         for (int x = 0; x < r->w; x++) {
@@ -120,14 +121,14 @@ static void see_through(const surface *r, const uint16_t *was, unsigned alpha, b
             if (n == d) continue; /* not drawn on */
             if (r->swap) d = bswap(d), n = bswap(n);
             if (d == CANVAS_KEY) continue; /* nothing under it on a canvas: the picture as it is */
-            unsigned dr = d >> 11, dg = d >> 5 & 63, db = d & 31, nr = n >> 11, ng = n >> 5 & 63, nb = n & 31, r_, g_, b_;
-            if (add) {
-                nr = nr * a >> 8, ng = ng * a >> 8, nb = nb * a >> 8;
-                r_ = dr + nr > 31 ? 31 : dr + nr, g_ = dg + ng > 63 ? 63 : dg + ng, b_ = db + nb > 31 ? 31 : db + nb;
+            uint16_t v;
+            if (mode != BLEND_ALPHA) {
+                v = blend_held(d, n, a, mode);
             } else {
-                r_ = (dr * (256 - a) + nr * a) >> 8, g_ = (dg * (256 - a) + ng * a) >> 8, b_ = (db * (256 - a) + nb * a) >> 8;
+                unsigned dr = d >> 11, dg = d >> 5 & 63, db = d & 31, nr = n >> 11, ng = n >> 5 & 63, nb = n & 31;
+                v = (uint16_t)(((dr * (256 - a) + nr * a) >> 8) << 11 | ((dg * (256 - a) + ng * a) >> 8) << 5 |
+                               ((db * (256 - a) + nb * a) >> 8));
             }
-            uint16_t v = (uint16_t)(r_ << 11 | g_ << 5 | b_);
             if (v == CANVAS_KEY) v ^= 1; /* that colour is a canvas's see-through: one step from it */
             *p = r->swap ? bswap(v) : v;
         }
@@ -156,11 +157,11 @@ static void draw_one(surface *s, const ov_cmd *c) {
         }
         break;
     case OV_IMG: {
-        const bool see = c->font && (ov_look[c->font - 1].alpha < 255 || ov_look[c->font - 1].add);
+        const bool see = c->font && (ov_look[c->font - 1].alpha < 255 || ov_look[c->font - 1].mode);
         if (see && c->a->pk && !c->ext && c->scale == 1 && !ov_look[c->font - 1].pal) { /* the quick way: mixed as drawn */
             unsigned al = ov_look[c->font - 1].alpha;
             gfx_blit_mixed(s, c->a, c->frame, c->x, c->y, c->flip, ov_look[c->font - 1].tint, al + (al >> 7),
-                           ov_look[c->font - 1].add);
+                           ov_look[c->font - 1].mode);
             break;
         }
         surface under = see ? img_area(s, c) : *s;
@@ -173,7 +174,7 @@ static void draw_one(surface *s, const ov_cmd *c) {
                             c->font ? ov_look[c->font - 1].tint : -1);
         else if (c->font) gfx_blit_flip(s, c->a, c->frame, c->x, c->y, c->flip, ov_look[c->font - 1].pal, ov_look[c->font - 1].tint);
         else gfx_blit_flip(s, c->a, c->frame, c->x, c->y, c->flip, NULL, -1);
-        if (kept) see_through(&under, kept, ov_look[c->font - 1].alpha, ov_look[c->font - 1].add);
+        if (kept) see_through(&under, kept, ov_look[c->font - 1].alpha, ov_look[c->font - 1].mode);
         break;
     }
     }
@@ -344,7 +345,7 @@ static void as_picture(ov_cmd *c) {
     if (fresh) pic_done(a);
     uint8_t look = 0; /* (a text's font field is no look: it becomes a plain picture) */
     if (c->op == OV_IMG && c->font) {
-        if (ov_look[c->font - 1].alpha < 255 || ov_look[c->font - 1].add) look = c->font; /* still seen through */
+        if (ov_look[c->font - 1].alpha < 255 || ov_look[c->font - 1].mode) look = c->font; /* still seen through */
         else nlook--;
     }
     c->op = OV_IMG, c->a = a, c->x = i16(c->x + ox), c->y = i16(c->y + oy), c->scale = 1, c->ext = 0, c->frame = 0;
@@ -574,7 +575,8 @@ static int l_plate(lua_State *L) { return shape(L, OV_PLATE, true); }
 typedef struct {
     lua_Integer frame, tint;
     float scale, sx, sy, deg;
-    bool has_sx, has_sy, flip_x, flip_y, tinted, add;
+    bool has_sx, has_sy, flip_x, flip_y, tinted;
+    uint8_t mode; /* BLEND_*: add, sub or quarter, the last one asked for */
     float alpha;
     const char *pal; /* (a string the table keeps alive) */
 } img_opts;
@@ -598,7 +600,9 @@ static void img_options(lua_State *L, int t, img_opts *o) {
         else if (!strcmp(k, "flip_y")) o->flip_y = lua_toboolean(L, -1);
         else if (!strcmp(k, "pal")) o->pal = lua_type(L, -1) == LUA_TSTRING ? lua_tostring(L, -1) : NULL;
         else if (!strcmp(k, "alpha")) o->alpha = clampf(fin(luaL_checknumber(L, -1)), 0, 1);
-        else if (!strcmp(k, "add")) o->add = lua_toboolean(L, -1);
+        else if (!strcmp(k, "add")) o->mode = lua_toboolean(L, -1) ? BLEND_ADD : o->mode;
+        else if (!strcmp(k, "sub")) o->mode = lua_toboolean(L, -1) ? BLEND_SUB : o->mode;
+        else if (!strcmp(k, "quarter")) o->mode = lua_toboolean(L, -1) ? BLEND_QUARTER : o->mode;
         lua_pop(L, 1);
     }
 }
@@ -635,11 +639,11 @@ static int l_img(lua_State *L) {
     bool tinted = o.tinted;
     lua_Integer tint = o.tint;
     bool colours = (pal || tinted) && (c->ext ? straight(c) : c->scale == 1 || a->pk); /* a variant's, or one */
-    if ((colours || o.alpha < 1 || o.add) && nlook < OV_EXT) {
+    if ((colours || o.alpha < 1 || o.mode) && nlook < OV_EXT) {
         asset *pa = colours && pal && safe_name(pal) ? gfx_asset_opt(pal) : NULL;
         ov_look[nlook].pal = pa && !pa->missing ? pa : NULL;
         ov_look[nlook].tint = colours && tinted ? to565(tint) : -1;
-        ov_look[nlook].alpha = (uint8_t)(o.alpha * 255 + 0.5f), ov_look[nlook].add = o.add;
+        ov_look[nlook].alpha = (uint8_t)(o.alpha * 255 + 0.5f), ov_look[nlook].mode = o.mode;
         c->font = (uint8_t)(++nlook);
     }
     if ((c->ext ? !straight(c) : c->scale == 2 && !a->pk) && !gfx_pixels(a)) { /* turned: unpacked here, once */

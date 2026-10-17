@@ -19,6 +19,19 @@ static inline bool dithered(const surface *s, int x, int y) { /* a pixel the dis
     return BAYER[((y >> 1) & 3) * 4 + ((x >> 1) & 3)] < s->dither;
 }
 
+/* The three blends that move a channel by an amount and hold it to its range (BLEND_ADD, BLEND_SUB, BLEND_QUARTER):
+ * under d plus, minus, or plus a quarter of what c brings, c scaled by a (0..256). RGB565 in and out; the caller keeps
+ * the result off a canvas's see-through colour. */
+static inline uint16_t blend_held(uint16_t d, uint16_t c, unsigned a, int mode) {
+    const unsigned shift = mode == BLEND_QUARTER ? 10 : 8; /* a / 256, or a quarter of that */
+    int dr = d >> 11, dg = d >> 5 & 63, db = d & 31;
+    int cr = (int)((c >> 11) * a >> shift), cg = (int)((c >> 5 & 63) * a >> shift), cb = (int)((c & 31) * a >> shift);
+    if (mode == BLEND_SUB) cr = -cr, cg = -cg, cb = -cb;
+    int r = dr + cr, g = dg + cg, b = db + cb;
+    r = r < 0 ? 0 : r > 31 ? 31 : r, g = g < 0 ? 0 : g > 63 ? 63 : g, b = b < 0 ? 0 : b > 31 ? 31 : b;
+    return (uint16_t)(r << 11 | g << 5 | b);
+}
+
 /* Visible part of a span [x, x+len) on a line [lo, hi): first offset into the span, and how many. */
 static inline int clip(int x, int len, int lo, int hi, int *first) {
     *first = x < lo ? lo - x : 0;
