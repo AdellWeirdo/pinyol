@@ -109,7 +109,17 @@ static const struct {
     {0x35, 1, {0x00}, 20},                  /* tearing-effect output on: one pulse per frame (display_wait_scan) */
 };
 
+static int queued; /* strips handed to the SPI driver and not collected yet (display_present_strips leaves the last two) */
+
+static void drain(void) { /* every queued strip is out: the driver can take a polled register write, or a new frame */
+    for (; queued > 0; queued--) {
+        spi_transaction_t *done;
+        ESP_ERROR_CHECK(spi_device_get_trans_result(dev, &done, portMAX_DELAY));
+    }
+}
+
 static void write_reg(uint8_t cmd, const uint8_t *data, int len) {
+    drain();
     spi_transaction_ext_t t = {0};
     t.base.flags = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR;
     t.base.cmd = 0x02; /* register write, one line */
@@ -203,14 +213,17 @@ static void build_strip(int p0, uint16_t *out, void *ctx) {
     }
 }
 
+/* Returns once the last strip is queued: it and the one before it are still going out by DMA, from the two strip
+ * buffers, which the game's state no longer feeds. The caller can draw its next frame meanwhile (a frame is 8.1 ms
+ * on the wire; drawing the next one used to start only after it). The next present, or a register write, collects them. */
 void display_present_strips(display_strip_fn build, void *ctx) {
     static spi_transaction_ext_t t[2];
-    int inflight = 0;
+    drain();
     for (int s = 0; s < PANEL_H / STRIP; s++) {
         spi_transaction_t *done;
-        if (inflight == 2) { /* the buffer about to be reused is the oldest in flight */
+        if (queued == 2) { /* the buffer about to be reused is the oldest in flight */
             ESP_ERROR_CHECK(spi_device_get_trans_result(dev, &done, portMAX_DELAY));
-            inflight--;
+            queued--;
         }
         uint16_t *buf = strip_buf[s & 1];
         build(s * STRIP, buf, ctx);
@@ -224,11 +237,7 @@ void display_present_strips(display_strip_fn build, void *ctx) {
         x->base.tx_buffer = buf;
         x->base.length = STRIP * PANEL_W * 16;
         ESP_ERROR_CHECK(spi_device_queue_trans(dev, &x->base, portMAX_DELAY));
-        inflight++;
-    }
-    while (inflight--) {
-        spi_transaction_t *done;
-        ESP_ERROR_CHECK(spi_device_get_trans_result(dev, &done, portMAX_DELAY));
+        queued++;
     }
 }
 

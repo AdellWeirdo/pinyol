@@ -108,6 +108,35 @@ int font_draw_styled(surface *sf, const font *f, int x, int y, const char *s, in
 
 /* Each pixel of the window the picture may cover is looked up in the picture (nearest), from its centre: a turned
  * picture has no gaps, at the cost of a little arithmetic per pixel. Fixed point, 16 bits of fraction. */
+/* n pixels along a picture's row: the pixel at u (16.16) goes to d, then u steps by du and d by step. A pixel outside
+ * the row (u not in [0, wf)) or with its mask bit clear is left as it was. swap is a constant at each call, so the
+ * byte swap is a choice made once, not once a pixel. */
+static inline __attribute__((always_inline)) void line_along(uint16_t *d, int step, const uint16_t *srow, const uint8_t *mrow,
+                                                             int32_t u, int32_t du, int n, int32_t wf, bool swap) {
+    for (int k = 0; k < n; k++, u += du, d += step) {
+        if ((uint32_t)u >= (uint32_t)wf) continue;
+        int iu = u >> 16;
+        if (mrow && !(mrow[iu >> 3] & (0x80 >> (iu & 7)))) continue;
+        uint16_t c = srow[iu];
+        *d = swap ? (uint16_t)(c << 8 | c >> 8) : c;
+    }
+}
+
+/* line_along for two destination lines that read the same row (a picture shown twice as big): each source pixel is read,
+ * tested and swapped once and goes to both. */
+static inline __attribute__((always_inline)) void line_along2(uint16_t *d, uint16_t *e, int step, const uint16_t *srow,
+                                                              const uint8_t *mrow, int32_t u, int32_t du, int n, int32_t wf,
+                                                              bool swap) {
+    for (int k = 0; k < n; k++, u += du, d += step, e += step) {
+        if ((uint32_t)u >= (uint32_t)wf) continue;
+        int iu = u >> 16;
+        if (mrow && !(mrow[iu >> 3] & (0x80 >> (iu & 7)))) continue;
+        uint16_t c = srow[iu];
+        if (swap) c = (uint16_t)(c << 8 | c >> 8);
+        *d = *e = c;
+    }
+}
+
 void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, float sy, float degrees, const asset *pal,
                  int tint) {
     if (frame < 0 || frame >= a->frames) frame = 0;
@@ -170,11 +199,30 @@ void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, 
         if (dv == 0 || du == 0) { /* a right-angle turn: along the line one of u, v stays, so its row (or column) and its
                                    * check are worked out once a line, not once a pixel (a turned screen, every frame) */
             if (dv == 0 ? v < 0 || v >= hf : u < 0 || u >= wf) continue;
-            const int iv0 = v >> 16, iu0 = u >> 16;
-            for (int k = k0; k < k1; k++, u += du, v += dv, d += step) {
-                int iu = dv == 0 ? u >> 16 : iu0, iv = dv == 0 ? iv0 : v >> 16;
-                if (dv == 0 ? (uint32_t)u >= (uint32_t)wf : (uint32_t)v >= (uint32_t)hf) continue;
-                if (!mask || mask[iv * stride + (iu >> 3)] & (0x80 >> (iu & 7))) *d = stored(s, src[iv * a->w + iu]);
+            if (dv == 0) { /* a row of the picture: its pixels and mask bits are read along it */
+                const int iv = v >> 16;
+                const uint16_t *srow = src + (size_t)iv * a->w;
+                const uint8_t *mrow = mask ? mask + (size_t)iv * stride : NULL;
+                /* the next line reads this same row when the picture is bigger than 1x across the lines (u the same,
+                 * v still in this row): both are done in one pass, the line after the next picks up from there */
+                const bool two = du_line == 0 && l + 1 < lines && ((v + dv_line) >> 16) == iv;
+                if (two) {
+                    uint16_t *e = by_column ? at(s, bx0 + l + 1, by0 + k0) : at(s, bx0 + k0, by0 + l + 1);
+                    if (s->swap) line_along2(d, e, step, srow, mrow, u, du, k1 - k0, wf, true);
+                    else line_along2(d, e, step, srow, mrow, u, du, k1 - k0, wf, false);
+                    l++, u_line += du_line, v_line += dv_line;
+                } else if (s->swap) line_along(d, step, srow, mrow, u, du, k1 - k0, wf, true);
+                else line_along(d, step, srow, mrow, u, du, k1 - k0, wf, false);
+            } else { /* a column of the picture */
+                const int iu = u >> 16;
+                const uint16_t *scol = src + iu;
+                const uint8_t *mcol = mask ? mask + (iu >> 3) : NULL;
+                const uint8_t bit = (uint8_t)(0x80 >> (iu & 7));
+                for (int k = k0; k < k1; k++, v += dv, d += step) {
+                    if ((uint32_t)v >= (uint32_t)hf) continue;
+                    int iv = v >> 16;
+                    if (!mcol || mcol[iv * stride] & bit) *d = stored(s, scol[iv * a->w]);
+                }
             }
             continue;
         }

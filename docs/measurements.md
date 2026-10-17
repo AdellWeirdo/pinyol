@@ -285,9 +285,30 @@ numbers as written, then after what the board showed was fixed.
 | veloz (16-bit) | 40-59 | 40-59 | its far layers as tiles, not bitmaps; the sea's per-line scroll and the blended pools are what is left |
 | gotico (32-bit) | 31 | 59-61 | a shared buffer raced between the two cores (a heap assertion: fixed); mixing in the packed blit itself, one multiply a pixel; the moonbeams mixed into the background by make_art.py |
 | laberinto (first person) | 20-31 | 38-60 | raycast() draws in bands of 16 columns in internal memory, copied to the canvas a row at a time (the canvas is in PSRAM: a pixel per row was most of it); a 240×144 view |
-| tormenta (vertical) | 20 | 30 | a 160×240 canvas shown twice as big (clearing a 320×480 one was 18 ms a frame); a right-angle turn's row worked out once a line. What is left is the strips reading the turned canvas, 22 ms of CPU: 60 would need the screen drawn upright natively (the panel is 320×480 to begin with) |
+| tormenta (vertical) | 20 | 60-61 | a 160×240 canvas shown twice as big (clearing a 320×480 one was 18 ms a frame); a right-angle turn's row worked out once a line. Then the turn's inner loops split by direction, with the picture's row, its mask row and the byte swap taken out of the per-pixel work (strips 20.4 → 11.8 ms), and two consecutive lines that read the same picture row done in one pass when the picture is shown twice as big (→ 6.4 ms; `gfx_blit_ex`, pixel-identical on every script) |
 
 Costs worth knowing when making a game: a pixel mixed with what is under it (img's alpha or add) costs about three
 drawn plainly, so a few big see-through pictures fill a frame; writing a whole canvas in PSRAM costs about 1 ms per
 10,000 pixels written one at a time; a 240×160 canvas shown twice as big is cheap (15.5 ms a frame including
 everything else, at 60).
+
+## The next frame while the last strips go out (2026-10-17)
+
+`display_present_strips` used to wait for the last strip to leave before returning, so the next frame's tick and
+picture started only after the 8 ms of wire. A frame of 9.5 ms of work and 7.4 ms of strips (veloz) came to 16.9 ms,
+a little over the panel's 16.26 ms, and missed one scan in two. It now returns once the last strip is queued: that
+strip and the one before it still go out by DMA, from the two strip buffers, which nothing in the game feeds any more,
+and the next present (or any register write) collects them. About 1 ms of the wire now overlaps the next frame's work.
+Same board, autotest builds, the frame rate in each 5 s window of the test, the lowest ones:
+
+| Game | Before | After |
+|---|---|---|
+| veloz (playing) | 39.5-45.8 | 49.7-56.2 |
+| plataformas | 27.6, 37.9 | 38.6, 41.4 |
+| laberinto | 37.9-49.3 | 39.5-55.6 |
+| cinta (the tape's colour phase) | 39.3, 47.7 | 41.9, 49.7 |
+| gotico | 52.9 | 56.9 |
+| moto, duelo | 59-61 | 59-61 |
+
+veloz is not at 60 yet: its tick (1.2 ms) and picture (5.9 ms, of which the PPU is most) plus 7.4 ms of strips still
+come to about 17 ms. A third strip buffer would give another half millisecond, but internal RAM has 44 KB free.
