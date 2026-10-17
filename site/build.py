@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = ["pillow>=10", "fonttools>=4", "brotli>=1"]
 # ///
-"""Build pinyol's site (https://ipaud.github.io/pinyol/) into site/dist/: the page, a page for each game (gamepage.py),
+"""Build pinyol's site (https://pinyol.ipaud.dev/) into site/dist/: the page, a page for each game (gamepage.py),
 the web player, every example as a zip, the editor.
 
     uv run site/build.py
@@ -225,6 +225,7 @@ def main() -> None:
     sitemap(list(tabs) + [f"juegos/{g['id']}/" for g in games_list])
     not_found()
     (DIST / ".nojekyll").write_text("")  # GitHub Pages: serve the folders as they are
+    (DIST / "CNAME").write_text(page.SITE.split("/")[2] + "\n")  # GitHub Pages: the site's own domain
     (DIST / ".gitattributes").write_text("".join(f"*.{e} binary\n" for e in ("bin", "wasm", "zip", "png", "woff2", "mp4", "jpg")))
     size = sum(p.stat().st_size for p in DIST.rglob("*") if p.is_file())
     print(f"dist/: {sum(1 for _ in DIST.rglob('*'))} files, {size / 1e6:.1f} MB")

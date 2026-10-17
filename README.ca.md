@@ -4,7 +4,7 @@
 
 [English](README.md) · [Español](README.es.md) · Català
 
-**[Juga tots els exemples al navegador](https://ipaud.github.io/pinyol/ca/)**, amb les mesures del motor a la consola.
+**[Juga tots els exemples al navegador](https://pinyol.ipaud.dev/ca/)**, amb les mesures del motor a la consola.
 
 <p align="center"><img src="docs/media/logo.webp" alt="pinyol" width="480"></p>
 
@@ -68,14 +68,14 @@ Codex: `brew install codex`, i després `codex login` amb un compte de ChatGPT. 
 la seva carpeta (`codex`) i demana-li el joc que vulguis, en qualsevol idioma. Llegeix [AGENTS.md](AGENTS.md),
 instal·la el que falta (aprova-ho quan t'ho demani: la instal·lació es fa fora de la seva sandbox), compila el motor,
 fa el joc a `games/<id>/` i el juga amb una prova per comprovar-lo. `./build/pinyol_sim --game games/<id>` el juga a
-la teva pantalla. L'[escala](https://ipaud.github.io/pinyol/ca/crear/#codex) del web ensenya cinc jocs que Codex va fer així,
+la teva pantalla. L'[escala](https://pinyol.ipaud.dev/ca/crear/#codex) del web ensenya cinc jocs que Codex va fer així,
 d'un joc de pales a un joc de plataformes de velocitat de Mega Drive, cadascun amb el seu encàrrec, el seu temps i els seus
 tokens, i els seus fps a la consola.
 
 ### Sense codi: l'editor
 
-<p align="center"><a href="https://ipaud.github.io/pinyol/video/linea0.mp4"><img src="docs/media/editor.webp" alt="LÍNEA 0 fet a l'editor: dibuixos, mapes, regles i a jugar" width="640"></a><br>
-<sub>LÍNEA 0, un joc de Game Boy Advance fet sencer amb l'editor, en directe, aquí accelerat: <a href="https://ipaud.github.io/pinyol/video/linea0.mp4">el vídeo sencer</a>.</sub></p>
+<p align="center"><a href="https://pinyol.ipaud.dev/video/linea0.mp4"><img src="docs/media/editor.webp" alt="LÍNEA 0 fet a l'editor: dibuixos, mapes, regles i a jugar" width="640"></a><br>
+<sub>LÍNEA 0, un joc de Game Boy Advance fet sencer amb l'editor, en directe, aquí accelerat: <a href="https://pinyol.ipaud.dev/video/linea0.mp4">el vídeo sencer</a>.</sub></p>
 
 `editor/` és una pàgina web per fer un joc sense programar: dibuixa les imatges píxel a píxel (amb fotogrames per
 animar-les) o porta-les de fitxers d'imatge (PNG amb transparència, JPG, una fila de fotogrames; deixats anar o
@@ -217,14 +217,14 @@ python3 tools/make_gallery.py gallery/ --player build-web --headless build/pinyo
 python3 -m http.server -d gallery       # obre http://localhost:8000
 ```
 
-Un joc acabat pot anar a la [Biblioteca](https://ipaud.github.io/pinyol/biblioteca/) del web, per jugar-hi allà i descarregar-lo per a la consola: [puja'l amb un formulari](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), un robot l'obre, el juga deu segons i, quan el revisem, apareix allà.
+Un joc acabat pot anar a la [Biblioteca](https://pinyol.ipaud.dev/biblioteca/) del web, per jugar-hi allà i descarregar-lo per a la consola: [puja'l amb un formulari](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), un robot l'obre, el juga deu segons i, quan el revisem, apareix allà.
 
-<p align="center"><a href="https://ipaud.github.io/pinyol/video/subir.mp4"><img src="docs/media/library.webp" alt="Del .zip de l'editor a la Biblioteca: el formulari, la comprovació del robot, l'aprovació i el joc al web" width="640"></a><br>
-<sub>Del teu joc a la Biblioteca, accelerat: <a href="https://ipaud.github.io/pinyol/video/subir.mp4">el tutorial sencer</a>.</sub></p>
+<p align="center"><a href="https://pinyol.ipaud.dev/video/subir.mp4"><img src="docs/media/library.webp" alt="Del .zip de l'editor a la Biblioteca: el formulari, la comprovació del robot, l'aprovació i el joc al web" width="640"></a><br>
+<sub>Del teu joc a la Biblioteca, accelerat: <a href="https://pinyol.ipaud.dev/video/subir.mp4">el tutorial sencer</a>.</sub></p>
 
 ## Porta'l a la consola
 
-El més ràpid: el web [instal·la l'última versió](https://ipaud.github.io/pinyol/ca/consola/#consola) en una placa per USB,
+El més ràpid: el web [instal·la l'última versió](https://pinyol.ipaud.dev/ca/consola/#consola) en una placa per USB,
 des de Chrome o Edge, amb quinze jocs a la seva memòria flash.
 
 El firmware de [firmware/](firmware/) és la plataforma de la consola: pantalla, tàctil, botons, àudio, microSD, bateria i actualitzacions per la targeta. Necessita [ESP-IDF 5.4](https://docs.espressif.com/projects/esp-idf/en/v5.4.2/esp32s3/get-started/).
@@ -256,7 +256,7 @@ Pins i perifèrics, cadascun amb la seva font: [docs/hardware.md](docs/hardware.
 ## Cirera al teu ordinador: Mac, Windows i Linux
 
 La consola feta aplicació: el seu menú, els exemples a dins, i el .zip de qualsevol joc que deixis anar sobre la seva
-finestra, instal·lat. Es descarrega de la [release «cirera»](https://github.com/ipaud/pinyol/releases/tag/cirera) o del [web](https://ipaud.github.io/pinyol/consola/#escritorio), que explica com
+finestra, instal·lat. Es descarrega de la [release «cirera»](https://github.com/ipaud/pinyol/releases/tag/cirera) o del [web](https://pinyol.ipaud.dev/consola/#escritorio), que explica com
 obrir-la la primera vegada (encara no està signada per Apple ni per Microsoft). Els seus jocs i partides van a
 `~/Library/Application Support/pinyol/Cirera` al Mac, a `%APPDATA%\pinyol\Cirera` al Windows i a
 `~/.local/share/pinyol/Cirera` a Linux (x86_64 o aarch64, glibc 2.35 o posterior; un joc deixat anar es descomprimeix
@@ -298,7 +298,7 @@ platform/desktop/ les icones de l'aplicació
 platform/null/   pinyol_headless: validador i executor de proves sense finestra
 platform/libretro/ el core libretro, per a RetroArch i RetroPie
 platform/web/    les pàgines web al voltant dels reproductors
-site/            el web (https://ipaud.github.io/pinyol/), fet per site/build.py en castellà, català i anglès
+site/            el web (https://pinyol.ipaud.dev/), fet per site/build.py en castellà, català i anglès
 firmware/        la consola: projecte d'ESP-IDF, compila src/ sense canvis; cirera/ és el seu menú, un joc de pinyol
 examples/        jocs tal com van a la microSD: trenta-dos en Lua, hola com a dades
 templates/lua/   el joc des del qual comença new_game.py --lua

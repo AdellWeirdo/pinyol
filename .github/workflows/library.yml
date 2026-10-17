@@ -64,7 +64,7 @@ jobs:
             git add library
             git commit -m "library: $id (#$ISSUE)"
             git push
-            gh issue comment "$ISSUE" --body "Publicado en la Biblioteca: https://ipaud.github.io/pinyol/#biblioteca ¡Gracias!"
+            gh issue comment "$ISSUE" --body "Publicado en la Biblioteca: https://pinyol.ipaud.dev/#biblioteca ¡Gracias!"
             gh issue close "$ISSUE"
           else
             python3 tools/library.py comment checked > answer.md

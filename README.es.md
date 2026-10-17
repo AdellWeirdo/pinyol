@@ -4,7 +4,7 @@
 
 [English](README.md) · Español · [Català](README.ca.md)
 
-**[Juega todos los ejemplos en el navegador](https://ipaud.github.io/pinyol/)**, con las medidas del motor en la consola.
+**[Juega todos los ejemplos en el navegador](https://pinyol.ipaud.dev/)**, con las medidas del motor en la consola.
 
 <p align="center"><img src="docs/media/logo.webp" alt="pinyol" width="480"></p>
 
@@ -68,13 +68,13 @@ Codex: `brew install codex`, y luego `codex login` con una cuenta de ChatGPT. Cl
 su carpeta (`codex`) y pídele el juego que quieras, en cualquier idioma. Lee [AGENTS.md](AGENTS.md), instala lo que
 falta (apruébalo cuando lo pida: instalar se hace fuera de su sandbox), compila el motor, hace el juego en
 `games/<id>/` y lo juega con una prueba para comprobarlo. `./build/pinyol_sim --game games/<id>` lo juega en tu pantalla.
-La [escalera](https://ipaud.github.io/pinyol/crear/#codex) de la web enseña cinco juegos que Codex hizo así, de un juego de palas a
+La [escalera](https://pinyol.ipaud.dev/crear/#codex) de la web enseña cinco juegos que Codex hizo así, de un juego de palas a
 un plataformas de velocidad de Mega Drive, cada uno con su encargo, su tiempo y sus tokens, y sus fps en la consola.
 
 ### Sin código: el editor
 
-<p align="center"><a href="https://ipaud.github.io/pinyol/video/linea0.mp4"><img src="docs/media/editor.webp" alt="LÍNEA 0 hecho en el editor: dibujos, mapas, reglas y a jugar" width="640"></a><br>
-<sub>LÍNEA 0, un juego de Game Boy Advance hecho entero con el editor, en directo, aquí acelerado: <a href="https://ipaud.github.io/pinyol/video/linea0.mp4">el vídeo entero</a>.</sub></p>
+<p align="center"><a href="https://pinyol.ipaud.dev/video/linea0.mp4"><img src="docs/media/editor.webp" alt="LÍNEA 0 hecho en el editor: dibujos, mapas, reglas y a jugar" width="640"></a><br>
+<sub>LÍNEA 0, un juego de Game Boy Advance hecho entero con el editor, en directo, aquí acelerado: <a href="https://pinyol.ipaud.dev/video/linea0.mp4">el vídeo entero</a>.</sub></p>
 
 `editor/` es una página web para hacer un juego sin programar: dibuja las imágenes píxel a píxel (con fotogramas para
 animarlas) o tráelas de archivos de imagen (PNG con transparencia, JPG, una fila de fotogramas; soltados o pegados), en
@@ -216,14 +216,14 @@ python3 tools/make_gallery.py gallery/ --player build-web --headless build/pinyo
 python3 -m http.server -d gallery       # abre http://localhost:8000
 ```
 
-Un juego terminado puede ir a la [Biblioteca](https://ipaud.github.io/pinyol/biblioteca/) de la web, para jugarlo allí y descargarlo para la consola: [súbelo con un formulario](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), un robot lo abre, lo juega diez segundos y, cuando lo revisamos, aparece allí.
+Un juego terminado puede ir a la [Biblioteca](https://pinyol.ipaud.dev/biblioteca/) de la web, para jugarlo allí y descargarlo para la consola: [súbelo con un formulario](https://github.com/ipaud/pinyol/issues/new?template=biblioteca.yml), un robot lo abre, lo juega diez segundos y, cuando lo revisamos, aparece allí.
 
-<p align="center"><a href="https://ipaud.github.io/pinyol/video/subir.mp4"><img src="docs/media/library.webp" alt="Del .zip del editor a la Biblioteca: el formulario, la comprobación del robot, la aprobación y el juego en la web" width="640"></a><br>
-<sub>De tu juego a la Biblioteca, acelerado: <a href="https://ipaud.github.io/pinyol/video/subir.mp4">el tutorial entero</a>.</sub></p>
+<p align="center"><a href="https://pinyol.ipaud.dev/video/subir.mp4"><img src="docs/media/library.webp" alt="Del .zip del editor a la Biblioteca: el formulario, la comprobación del robot, la aprobación y el juego en la web" width="640"></a><br>
+<sub>De tu juego a la Biblioteca, acelerado: <a href="https://pinyol.ipaud.dev/video/subir.mp4">el tutorial entero</a>.</sub></p>
 
 ## Llévalo a la consola
 
-Lo más rápido: la web [instala la última versión](https://ipaud.github.io/pinyol/consola/#consola) en una placa por USB,
+Lo más rápido: la web [instala la última versión](https://pinyol.ipaud.dev/consola/#consola) en una placa por USB,
 desde Chrome o Edge, con quince juegos en su memoria flash.
 
 El firmware de [firmware/](firmware/) es la plataforma de la consola: pantalla, táctil, botones, audio, microSD, batería y actualizaciones por la tarjeta. Necesita [ESP-IDF 5.4](https://docs.espressif.com/projects/esp-idf/en/v5.4.2/esp32s3/get-started/).
@@ -255,7 +255,7 @@ Pines y periféricos, cada uno con su fuente: [docs/hardware.md](docs/hardware.m
 ## Cirera en tu ordenador: Mac, Windows y Linux
 
 La consola hecha aplicación: su menú, los ejemplos dentro, y el .zip de cualquier juego que sueltes sobre su ventana,
-instalado. Se descarga de la [release «cirera»](https://github.com/ipaud/pinyol/releases/tag/cirera) o de la [web](https://ipaud.github.io/pinyol/consola/#escritorio), que explica cómo
+instalado. Se descarga de la [release «cirera»](https://github.com/ipaud/pinyol/releases/tag/cirera) o de la [web](https://pinyol.ipaud.dev/consola/#escritorio), que explica cómo
 abrirla la primera vez (aún no está firmada por Apple ni por Microsoft). Sus juegos y partidas van a
 `~/Library/Application Support/pinyol/Cirera` en el Mac, a `%APPDATA%\pinyol\Cirera` en Windows y a
 `~/.local/share/pinyol/Cirera` en Linux (x86_64 o aarch64, glibc 2.35 o posterior; un juego soltado se descomprime con
@@ -297,7 +297,7 @@ platform/desktop/ los iconos de la aplicación
 platform/null/   pinyol_headless: validador y ejecutor de pruebas sin ventana
 platform/libretro/ el core libretro, para RetroArch y RetroPie
 platform/web/    las páginas web alrededor de los reproductores
-site/            la web (https://ipaud.github.io/pinyol/), hecha por site/build.py en castellano, catalán e inglés
+site/            la web (https://pinyol.ipaud.dev/), hecha por site/build.py en castellano, catalán e inglés
 firmware/        la consola: proyecto de ESP-IDF, compila src/ sin cambios; cirera/ es su menú, un juego de pinyol
 examples/        juegos tal como van en la microSD: treinta y dos en Lua, hola como datos
 templates/lua/   el juego desde el que empieza new_game.py --lua
