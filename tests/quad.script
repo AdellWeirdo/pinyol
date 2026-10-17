@@ -1,0 +1,21 @@
+# quad lays a picture's frame on four corners: straight, it is the picture; its two triangles share a diagonal without
+# a hole or a pixel mixed twice; turned a quarter it is the picture turned; lit, it darkens, brightens and blends
+new
+tick 2
+# straight: every pixel as img draws it
+expect_lua same("FLAT", "PLAIN") == 0
+# a quarter-mix of white over nothing: all 256 pixels, all the same, none outside (no hole, none mixed twice)
+expect_lua count("MIXED") == 256
+expect_lua select(2, count("MIXED")) == select(3, count("MIXED"))
+# turned a quarter: the picture's pixels, moved
+expect_lua turned_wrong() == 0
+# light 0 is black, 0x808080 is the picture, 0xFFFFFF doubles (a grey of 0x42 is about 0x84)
+expect_lua pget(10, 10, "DARK") == 0x000000
+expect_lua same("NEUTRAL", "PLAIN") == 0
+expect_lua red("BRIGHT", 10, 10) > 0x78 and red("BRIGHT", 10, 10) < 0x90
+# lit across: black on the left, as it is on the right, between in the middle
+expect_lua red("RAMP", 4, 10) < 24 and red("RAMP", 19, 10) > 232 and red("RAMP", 12, 10) > 90 and red("RAMP", 12, 10) < 170
+# far off the canvas: clipped, every pixel the picture's, nothing to crash
+expect_lua count("FAR") == 1024
+shot quad
+expect_ok

@@ -21,7 +21,7 @@
 
 /* ------------------------------------------------------------------ the overlay: text and shapes at 480x320 */
 
-enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS };
+enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS, OV_QUAD };
 
 typedef struct {
     uint8_t op, font, scale, ext; /* ext: 1 + its entry in ov_style (text) or ov_xf (img); 0: none */
@@ -44,6 +44,13 @@ static struct { /* img's pal, tint and how it is seen through: c->font is 1 + it
     uint8_t mode;  /* BLEND_*: how it meets what is under it (alpha: mixed; add, sub, quarter: its light moved by) */
 } ov_look[OV_EXT];
 static int nlook;
+static struct { /* quad's corners and how it is drawn: c->ext is 1 + its entry */
+    int16_t xy[8]; /* eighths of a pixel */
+    uint8_t light[4][3];
+    bool lights, dither;
+    uint8_t mode, alpha; /* BLEND_*, 255: opaque */
+} ov_quad[OV_EXT];
+static int nquad;
 static int nstyle, nxf;
 static struct { char name[32]; font f; } vfont[MAX_FONTS]; /* fonts/<name>.fnt, loaded when first used */
 static int nvfont;
@@ -149,6 +156,12 @@ static void draw_one(surface *s, const ov_cmd *c) {
     case OV_LINE: gfx_line(s, c->x, c->y, c->w, c->h, c->color); break;
     case OV_CIRC: gfx_circ(s, c->x, c->y, c->w, c->color, c->h != 0); break;
     case OV_POLY: gfx_poly(s, ov_pts + c->str, c->len, c->color, c->frame != 0); break;
+    case OV_QUAD: {
+        const typeof(ov_quad[0]) *q = &ov_quad[c->ext - 1];
+        const unsigned al = q->alpha + (q->alpha >> 7);
+        gfx_quad(s, c->a, c->frame, q->xy, q->light, q->lights, q->mode, al, q->dither);
+        break;
+    }
     case OV_POINTS: /* a swarm: its picture at each point (its top-left corner, already worked out) */
         for (int i = 0; i < c->len; i++) {
             int x = ov_pts[c->str + 2 * i], y = ov_pts[c->str + 2 * i + 1];
@@ -242,6 +255,15 @@ static void bounds(const ov_cmd *c, int *x0, int *y0, int *x1, int *y1) { /* wha
         }
         break;
     }
+    case OV_QUAD: { /* its corners, a pixel wider each way for the rounding */
+        const int16_t *xy = ov_quad[c->ext - 1].xy;
+        *x0 = *y0 = 32767, *x1 = *y1 = -32768;
+        for (int i = 0; i < 4; i++) {
+            *x0 = xy[2 * i] / 8 - 1 < *x0 ? xy[2 * i] / 8 - 1 : *x0, *x1 = xy[2 * i] / 8 + 2 > *x1 ? xy[2 * i] / 8 + 2 : *x1;
+            *y0 = xy[2 * i + 1] / 8 - 1 < *y0 ? xy[2 * i + 1] / 8 - 1 : *y0, *y1 = xy[2 * i + 1] / 8 + 2 > *y1 ? xy[2 * i + 1] / 8 + 2 : *y1;
+        }
+        break;
+    }
     case OV_TEXT_OP: *x0 -= 64, *y0 -= 64, *x1 += 64, *y1 += 64; break; /* outlines, shadows, waves */
     case OV_IMG:
         if (c->ext) *x0 = *y0 = -32768, *x1 = *y1 = 32767; /* turned: anywhere */
@@ -252,7 +274,8 @@ static void bounds(const ov_cmd *c, int *x0, int *y0, int *x1, int *y1) { /* wha
 
 static void forget(const ov_cmd *c, int text_bytes, int corners) { /* the last command, off the list with its data */
     nov--, ntext -= text_bytes, npts -= 2 * corners;
-    if (c->ext && c->op == OV_TEXT_OP) nstyle--;
+    if (c->op == OV_QUAD) nquad--;
+    else if (c->ext && c->op == OV_TEXT_OP) nstyle--;
     else if (c->ext) nxf--;
     if (c->op == OV_IMG && c->font) nlook--;
 }
@@ -376,6 +399,9 @@ static void commit(ov_cmd *c, int text_bytes, int corners) {
     if (c->op == OV_LINE) c->w = i16(c->w - cam_x), c->h = i16(c->h - cam_y);
     for (int i = 0; c->op == OV_POLY && i < c->len; i++)
         ov_pts[c->str + 2 * i] = i16(ov_pts[c->str + 2 * i] - cam_x), ov_pts[c->str + 2 * i + 1] = i16(ov_pts[c->str + 2 * i + 1] - cam_y);
+    for (int i = 0; c->op == OV_QUAD && i < 4; i++)
+        ov_quad[c->ext - 1].xy[2 * i] = i16(ov_quad[c->ext - 1].xy[2 * i] - cam_x * 8),
+        ov_quad[c->ext - 1].xy[2 * i + 1] = i16(ov_quad[c->ext - 1].xy[2 * i + 1] - cam_y * 8);
     if (!target) {
         as_picture(c); /* the costly ones, once, then copied */
         if (clipping) {
@@ -654,6 +680,55 @@ static int l_img(lua_State *L) {
     return 0;
 }
 
+/* quad(id, x1, y1, x2, y2, x3, y3, x4, y4 [, {frame, alpha, add, sub, quarter, light, lights, dither}]): the picture's
+ * frame on four corners, in the picture's own order (top-left, top-right, bottom-right, bottom-left): a Saturn
+ * distorted sprite, a PlayStation textured quad. light = 0xRRGGBB lights it by that colour (0x808080 as it is, up to
+ * 0xFFFFFF twice as bright); lights = {c1, c2, c3, c4} one per corner, blending across. */
+static int l_quad(lua_State *L) {
+    const char *id = luaL_checkstring(L, 1);
+    asset *a = safe_name(id) ? gfx_asset(id) : NULL;
+    int16_t xy[8];
+    for (int i = 0; i < 8; i++) {
+        float v = clampf(fin(luaL_checknumber(L, 2 + i)), -2000, 2000); /* (the rasterizer's whole numbers stay in range) */
+        xy[i] = (int16_t)floorf(v * 8 + 0.5f);
+    }
+    if (!a || a->missing || nquad == OV_EXT || !gfx_pixels(a)) return 0;
+    img_opts o = {.scale = 1, .alpha = 1};
+    bool lights = false, dither = false;
+    uint8_t light[4][3] = {{0}};
+    if (lua_istable(L, 10)) {
+        img_options(L, 10, &o);
+        lua_getfield(L, 10, "dither"), dither = lua_toboolean(L, -1), lua_pop(L, 1);
+        lua_getfield(L, 10, "light");
+        if (!lua_isnil(L, -1)) {
+            lua_Integer rgb = luaL_checkinteger(L, -1);
+            lights = true;
+            for (int i = 0; i < 4; i++) light[i][0] = (uint8_t)(rgb >> 16), light[i][1] = (uint8_t)(rgb >> 8), light[i][2] = (uint8_t)rgb;
+        }
+        lua_pop(L, 1);
+        lua_getfield(L, 10, "lights");
+        if (lua_istable(L, -1)) {
+            lights = true;
+            for (int i = 0; i < 4; i++) {
+                lua_rawgeti(L, -1, i + 1);
+                lua_Integer rgb = luaL_optinteger(L, -1, 0x808080);
+                lua_pop(L, 1);
+                light[i][0] = (uint8_t)(rgb >> 16), light[i][1] = (uint8_t)(rgb >> 8), light[i][2] = (uint8_t)rgb;
+            }
+        }
+        lua_pop(L, 1);
+    }
+    ov_cmd *c = ov_add(OV_QUAD);
+    if (!c) return 0;
+    c->a = a, c->frame = (int16_t)(o.frame < 0 || o.frame >= a->frames ? 0 : o.frame);
+    memcpy(ov_quad[nquad].xy, xy, sizeof xy), memcpy(ov_quad[nquad].light, light, sizeof light);
+    ov_quad[nquad].lights = lights, ov_quad[nquad].dither = dither && lights;
+    ov_quad[nquad].mode = o.mode, ov_quad[nquad].alpha = (uint8_t)(o.alpha * 255 + 0.5f);
+    c->ext = (uint8_t)(++nquad);
+    commit(c, 0, 0);
+    return 0;
+}
+
 /* frame(id, x, y, w, h [, scale [, frame]]): a box drawn from the picture's thirds: its corners once, its edges and
  * middle repeated (a nine-slice frame, as GB Studio's frame.png or a windowskin) */
 static int l_frame(lua_State *L) {
@@ -845,7 +920,7 @@ void draw_frame_begin(void) { /* each _draw starts on the screen, with no camera
     frame_no++;
     gfx_new_frame(); /* the pictures this frame asks for stay in memory while it is drawn */
     nseen[frame_no & 1] = 0;
-    nov = ntext = nstyle = nxf = npts = nclip = nlook = 0;
+    nov = ntext = nstyle = nxf = npts = nclip = nlook = nquad = 0;
     target = NULL, cam_x = cam_y = 0, clipping = false;
 }
 
@@ -868,7 +943,7 @@ bool draw_covers_screen(void) {
 void draw_register(lua_State *L) {
     static const luaL_Reg F[] = {
         {"text", l_text}, {"textw", l_textw}, {"rect", l_rect}, {"box", l_box}, {"shade", l_shade}, {"panel", l_panel},
-        {"plate", l_plate}, {"img", l_img}, {"frame", l_frame}, {"pset", l_pset}, {"pget", l_pget}, {"line", l_line},
+        {"plate", l_plate}, {"img", l_img}, {"quad", l_quad}, {"frame", l_frame}, {"pset", l_pset}, {"pget", l_pget}, {"line", l_line},
         {"circ", l_circ}, {"tri", l_tri}, {"poly", l_poly}, {"cls", l_cls}, {"canvas", l_canvas}, {"target", l_target},
         {"camera", l_camera}, {"clip", l_clip}, {"imgsize", l_imgsize}, {NULL, NULL}};
     lua_pushglobaltable(L);

@@ -32,6 +32,22 @@ static inline uint16_t blend_held(uint16_t d, uint16_t c, unsigned a, int mode) 
     return (uint16_t)(r << 11 | g << 5 | b);
 }
 
+/* A packed picture seen through or adding its light (img's alpha, add), mixed with what is under it as each pixel is
+ * drawn: one pass, the way the plain one draws (a 32-bit console's half-transparency). alpha 0..256; tint >= 0: one
+ * colour (an afterimage). */
+static inline uint16_t mix565(uint16_t d, uint16_t c, unsigned a, int mode) {
+    if (mode != BLEND_ALPHA) {
+        uint16_t v = blend_held(d, c, a, mode);
+        return v == CANVAS_KEY ? v ^ 1 : v; /* (a canvas's see-through colour: one step from it) */
+    }
+    /* mixed: the three channels spread over 32 bits (green apart from red and blue) and mixed with one multiply each
+     * way, in 32 steps of alpha */
+    uint32_t k = (a + 4) >> 3, dd = (d | (uint32_t)d << 16) & 0x07E0F81Fu, cc = (c | (uint32_t)c << 16) & 0x07E0F81Fu;
+    uint32_t m = ((cc * k + dd * (32 - k)) >> 5) & 0x07E0F81Fu;
+    uint16_t v = (uint16_t)(m | m >> 16);
+    return v == CANVAS_KEY ? v ^ 1 : v;
+}
+
 /* Visible part of a span [x, x+len) on a line [lo, hi): first offset into the span, and how many. */
 static inline int clip(int x, int len, int lo, int hi, int *first) {
     *first = x < lo ? lo - x : 0;

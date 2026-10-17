@@ -447,22 +447,6 @@ static void blit_packed(surface *s, const asset *a, int frame, int x, int y, int
     }
 }
 
-/* A packed picture seen through or adding its light (img's alpha, add), mixed with what is under it as each pixel is
- * drawn: one pass, the way the plain one draws (a 32-bit console's half-transparency). alpha 0..256; tint >= 0: one
- * colour (an afterimage). */
-static inline uint16_t mix565(uint16_t d, uint16_t c, unsigned a, int mode) {
-    if (mode != BLEND_ALPHA) {
-        uint16_t v = blend_held(d, c, a, mode);
-        return v == CANVAS_KEY ? v ^ 1 : v; /* (a canvas's see-through colour: one step from it) */
-    }
-    /* mixed: the three channels spread over 32 bits (green apart from red and blue) and mixed with one multiply each
-     * way, in 32 steps of alpha */
-    uint32_t k = (a + 4) >> 3, dd = (d | (uint32_t)d << 16) & 0x07E0F81Fu, cc = (c | (uint32_t)c << 16) & 0x07E0F81Fu;
-    uint32_t m = ((cc * k + dd * (32 - k)) >> 5) & 0x07E0F81Fu;
-    uint16_t v = (uint16_t)(m | m >> 16);
-    return v == CANVAS_KEY ? v ^ 1 : v;
-}
-
 void gfx_blit_mixed(surface *s, const asset *a, int frame, int x, int y, bool flip, int tint, unsigned alpha, int mode) {
     int u0, v0, n = CLIP_X(s, x, a->w, &u0), m = CLIP_Y(s, y, a->h, &v0);
     if (n <= 0 || m <= 0) return;
