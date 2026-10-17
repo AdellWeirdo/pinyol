@@ -5,6 +5,11 @@
  *   tv:play(); tv:pause(); tv:seek(frame); tv:frame(); tv:frames(); tv:fps(); tv:playing(); tv:close()
  *   tv.speed = 2 (or -1: backwards, a tape rewinding)
  *
+ * Two kinds: NPV1, one palette for the whole clip and a whole frame every `key` frames; NPV2, the same header, but a keyframe
+ * wherever the clip says (bit 31 of its offset in the index: a scene's start, and regularly within it) and each keyframe with
+ * its own palette, so each scene of a cutscene has its 256 colours. A frame of NPV2 starts with a byte: 0, or 1 and a palette
+ * (u16 colours, then each RGB565).
+ *
  * A clip from a downloaded game is untrusted: every offset, run and colour index is checked against the file. */
 #include <stdlib.h>
 
@@ -17,6 +22,8 @@ typedef struct {
     FILE *f;
     asset *canvas;
     int w, h, frames, key, ncol, shown; /* shown: the frame on the canvas (-1: none yet) */
+    bool v2;                            /* NPV2: keyframes marked in the index (keys), palettes in them */
+    uint8_t *keys;                      /* one bit a frame: a keyframe */
     float fps, speed, at;               /* at: the frame it is at, with the fraction */
     bool playing, loop;
     uint16_t pal[256];
@@ -33,8 +40,8 @@ static unsigned rd16(const uint8_t *p) { return p[0] | p[1] << 8; }
 
 static void clip_close(clip *c) {
     if (c->f) fclose(c->f);
-    free(c->index), free(c->buf);
-    c->f = NULL, c->index = NULL, c->buf = NULL;
+    free(c->index), free(c->buf), free(c->keys);
+    c->f = NULL, c->index = NULL, c->buf = NULL, c->keys = NULL;
     for (int i = 0; i < MAX_CLIPS; i++)
         if (open_clips[i] == c) open_clips[i] = NULL;
 }
@@ -45,6 +52,20 @@ static bool decode(clip *c, int k) {
     if (n && (fseek(c->f, (long)a, SEEK_SET) || fread_chunked(c->buf, n, c->f) != n)) return false; /* (PSRAM) */
     uint16_t *px = c->canvas->pixels;
     const uint8_t *p = c->buf, *end = c->buf + n;
+    if (c->v2 && p < end) { /* a palette for the frames from here on */
+        if (*p++ == 1) {
+            if (end - p < 2) return true;
+            const unsigned ncol = rd16(p);
+            p += 2;
+            if (ncol < 1 || ncol > 256 || (size_t)(end - p) < 2 * ncol) return true; /* (a bad one: this frame stops) */
+            for (unsigned j = 0; j < ncol; j++) {
+                const uint16_t v = (uint16_t)rd16(p + 2 * j);
+                c->pal[j] = v == CANVAS_KEY ? v ^ 1 : v;
+            }
+            c->ncol = (int)ncol;
+            p += 2 * ncol;
+        }
+    }
     uint32_t i = 0, total = (uint32_t)c->w * c->h;
     while (p < end && i < total) {
         unsigned op = *p++;
@@ -68,10 +89,17 @@ static bool decode(clip *c, int k) {
     return true;
 }
 
+static bool is_key(const clip *c, int k) { return c->v2 ? (c->keys[k >> 3] >> (k & 7)) & 1 : k % c->key == 0; }
+
+static int key_before(const clip *c, int k) { /* the keyframe at or before frame k (frame 0 is one) */
+    while (k > 0 && !is_key(c, k)) k--;
+    return k;
+}
+
 /* Brings the canvas to frame k: from the keyframe before it unless k follows the one shown. */
 static void show_frame(clip *c, int k) {
     if (k == c->shown) return;
-    int from = k == c->shown + 1 ? k : k - k % c->key;
+    int from = k == c->shown + 1 ? k : key_before(c, k);
     for (int j = from; j <= k; j++)
         if (!decode(c, j)) {
             hal_log("video %s: cannot read frame %d", c->canvas_id, j);
@@ -97,7 +125,7 @@ void clip_tick(void) { /* each tick: the clips playing move on by their speed */
         }
         c->at = at;
         int k = (int)at;
-        if (k > c->shown && k - c->shown > CATCH_UP && k - k % c->key <= c->shown) /* far behind: fewer frames */
+        if (k > c->shown && k - c->shown > CATCH_UP && key_before(c, k) <= c->shown) /* far behind: fewer frames */
             c->at = (float)(k = c->shown + CATCH_UP);
         show_frame(c, k);
     }
@@ -116,7 +144,8 @@ static clip *check(lua_State *L) {
 
 static const char *read_header(clip *c, long size) {
     uint8_t h[20];
-    if (fread(h, 1, 20, c->f) != 20 || memcmp(h, "NPV1", 4)) return "not a clip (tools/clip2npv.py makes them)";
+    if (fread(h, 1, 20, c->f) != 20 || (memcmp(h, "NPV1", 4) && memcmp(h, "NPV2", 4))) return "not a clip (tools/clip2npv.py makes them)";
+    c->v2 = h[3] == '2';
     c->w = (int)rd16(h + 4), c->h = (int)rd16(h + 6), c->fps = (float)rd16(h + 8) / 100;
     c->ncol = (int)rd16(h + 10);
     uint32_t frames = rd32(h + 12), key = rd32(h + 16);
@@ -136,13 +165,19 @@ static const char *read_header(clip *c, long size) {
     if (fread_chunked(raw, bytes, c->f) != bytes) return free(raw), "it is cut short";
     c->index = (uint32_t *)raw; /* in place: each offset read once, little-endian */
     uint32_t most = 0, limit = (uint32_t)c->w * c->h * 2 + 1024, first = 20 + 2 * (uint32_t)c->ncol + (uint32_t)bytes;
+    if (c->v2 && !(c->keys = calloc(((size_t)frames + 8) / 8, 1))) return "no memory for it";
     for (uint32_t i = 0; i <= frames; i++) {
         uint32_t v = rd32(raw + 4 * i);
+        if (c->v2) { /* bit 31: a keyframe */
+            if (v >> 31 && i < frames) c->keys[i >> 3] |= (uint8_t)(1 << (i & 7));
+            v &= 0x7FFFFFFF;
+        }
         c->index[i] = v;
         if (v < first || v > (uint32_t)size || (i && v < c->index[i - 1])) return "its frames are not where it says";
         if (i && v - c->index[i - 1] > most) most = v - c->index[i - 1];
     }
-    if (most > limit) return "a frame is bigger than any frame of its size";
+    if (most > limit + (c->v2 ? 3 + 512 : 0)) return "a frame is bigger than any frame of its size";
+    if (c->v2 && !is_key(c, 0)) return "its first frame is not whole";
     c->buf_cap = most ? most : 1;
     if (!(c->buf = hal_realloc_slow(NULL, c->buf_cap))) return "no memory for it";
     return NULL;

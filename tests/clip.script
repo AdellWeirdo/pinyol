@@ -37,5 +37,5 @@ expect_lua_error video("demo", {canvas = "ONCE2", speed = "x"})
 expect_lua_error tv.colour = 3
 lua opened, failed = try_bad()
 tick 30
-expect_lua failed >= 6 and opened + failed == 22
+expect_lua failed >= 7 and opened + failed == 24
 expect_ok

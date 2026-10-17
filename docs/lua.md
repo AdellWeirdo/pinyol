@@ -287,9 +287,12 @@ a folder of PNGs:
 python3 tools/clip2npv.py news.mp4 mygame NEWS --width 240 --height 160 --fps 15
 ```
 
-It fits the picture inside the size given (240×160 by default: drawn at scale 2 it fills the screen), gives the
-whole clip one palette of up to 256 colours (`--colours`, `--dither` for smoother gradients in a bigger file) and
-keeps each frame as what changed since the one before, with a whole frame every two seconds (`--key N` frames).
+It fits the picture inside the size given (240×160 by default: drawn at scale 2 it fills the screen), cuts the clip into
+scenes where the picture changes (`--cut`, 0 to 1) and gives each scene its own palette of up to 256 colours (`--colours`;
+`--one-palette` for one for all), as the 32-bit consoles' cutscenes did; `--ordered` spreads the colours' rounding in the
+PlayStation's 4x4 pattern, which stays in place from frame to frame and so costs little (`--dither` is finer but its noise
+moves, and the file grows many times). Each frame is kept as what changed since the one before, with a whole frame at each
+scene's start and every two seconds within it (`--key N` frames).
 The sound, if the video has any, goes to `audio/<id>.wav`.
 
 | Call | Does |

@@ -44,7 +44,9 @@ bad = {
     "cut_head": good[:12],
     "cut_index": good[:index_at + 8],
     "cut_frames": good[:len(good) // 2],
-    "magic": b"NPV2" + good[4:],
+    "magic": b"NPVX" + good[4:],
+    "v1_body": b"NPV1" + good[4:],  # the new frames read as the old kind: wrong colours at worst, never a crash
+    "no_first_key": good[:index_at] + struct.pack("<I", struct.unpack_from("<I", good, index_at)[0] & 0x7FFFFFFF) + good[index_at + 4:],
     "huge": good[:4] + struct.pack("<HH", 4000, 4000) + good[8:],
     "no_fps": good[:8] + struct.pack("<H", 0) + good[10:],
     "frames": good[:12] + struct.pack("<I", 0xFFFFFFF0) + good[16:],

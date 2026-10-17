@@ -231,6 +231,8 @@ if(NOT NO_PIL)
            $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/depthcut) # a background cut into pieces at their depth
   add_test(NAME build_art COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/build_art_test.py
            $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/build_art) # raw art to assets from art.json, only what changed
+  add_test(NAME clip_scenes COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/clip_scenes_test.py
+           $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/clip_scenes) # a palette a scene, the ordered dither
   add_test(NAME library COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/library_test.py
            $<TARGET_FILE:pinyol_headless>) # what tools/library.py takes and refuses from the Library's form
 endif()
