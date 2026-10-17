@@ -66,4 +66,23 @@ with tempfile.TemporaryDirectory() as t:
     f["Permisos"] = "- [X] Es mío\n- [X] Acepto\n- [ ] Tengo 14 años"  # the age box left empty
     r = library.check(good, t / "form2", headless, f)
     assert not r["ok"] and any("tres casillas" in e for e in r["errors"]), r
+
+    # a new version of a game already in the Library: same author, title and licence; a game that is not there is refused
+    library.LIBRARY = t / "lib"
+    (t / "lib").mkdir()
+    library.publish(t / "good", 7, "ana")
+    (t / "lib" / "library.json").write_text(json.dumps([{**library.index()[0], "title": "Mi juego", "license": "CC0"}]))
+    note = library.comment(t / "good")
+    assert "sustituirá" in note, note
+    assert library.update(good, headless) == "mi_bolsillo"
+    e = library.index()[0]
+    assert (e["author"], e["issue"], e["title"], e["license"]) == ("ana", 7, "Mi juego", "CC0"), e
+    other = t / "other"
+    shutil.copytree(mine, other)
+    (other / "game.json").write_text(json.dumps({**meta, "id": "otro_bolsillo"}), encoding="utf-8")
+    try:
+        library.update(pack_game.pack(other, t / "zips2", False), headless)
+        raise AssertionError("a game that is not in the Library was updated")
+    except SystemExit as err:
+        assert "not in the Library" in str(err), err
     print(json.dumps({"library": "ok"}))

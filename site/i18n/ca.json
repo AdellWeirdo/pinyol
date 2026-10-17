@@ -509,5 +509,6 @@
  "64 bits": "64 bits",
  "x86_64": "x86_64",
  "Mac: macOS 11 o posterior, una sola aplicación para los Mac con Intel y con Apple Silicon · Windows 10 o posterior · Linux: Ubuntu 22.04, Debian 12 o posteriores · unos 9 MB": "Mac: macOS 11 o posterior, una sola aplicació per als Mac amb Intel i amb Apple Silicon · Windows 10 o posterior · Linux: Ubuntu 22.04, Debian 12 o posteriors · uns 9 MB",
- "Apple, Mac y macOS son marcas de Apple; Windows, de Microsoft, y Linux, de Linus Torvalds.": "Apple, Mac i macOS són marques d'Apple; Windows, de Microsoft, i Linux, de Linus Torvalds."
+ "Apple, Mac y macOS son marcas de Apple; Windows, de Microsoft, y Linux, de Linus Torvalds.": "Apple, Mac i macOS són marques d'Apple; Windows, de Microsoft, i Linux, de Linus Torvalds.",
+ "¿Quieres subir una versión nueva de un juego que ya está en la Biblioteca? Envía el formulario otra vez, desde la misma cuenta de GitHub y con el mismo identificador (el id de tu game.json): al aprobarlo sustituye al anterior, y quien ya jugaba conserva sus partidas guardadas. La ficha del juego puede tardar un poco en mostrar los cambios.": "Vols pujar una versió nova d'un joc que ja és a la Biblioteca? Envia el formulari una altra vegada, des del mateix compte de GitHub i amb el mateix identificador (l'id del teu game.json): en aprovar-la substitueix l'anterior, i qui ja hi jugava conserva les seves partides desades. La fitxa del joc pot trigar una mica a mostrar els canvis."
 }

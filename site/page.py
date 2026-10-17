@@ -302,6 +302,7 @@ def share() -> str:
 <div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="{HOME}biblioteca/">La Biblioteca</a></div>
 <figure class="tutorial"><video src="video/subir.mp4" poster="video/subir.jpg" width="960" height="600" controls preload="none" playsinline aria-describedby="subir-cap"></video>
 <figcaption id="subir-cap">Tutorial, de tu juego a la Biblioteca: descarga el .zip desde el editor, rellena el formulario y adjúntalo. Un robot lo comprueba y, cuando está aprobado, ya se puede jugar aquí. Las esperas van aceleradas.</figcaption></figure>
+<p class="sub">¿Quieres subir una versión nueva de un juego que ya está en la Biblioteca? Envía el formulario otra vez, desde la misma cuenta de GitHub y con el mismo identificador (el id de tu game.json): al aprobarlo sustituye al anterior, y quien ya jugaba conserva sus partidas guardadas. La ficha del juego puede tardar un poco en mostrar los cambios.</p>
 <p class="sub">¿Algo tuyo publicado aquí sin tu permiso, o algo que no debería estar? <a href="{REPO}/issues/new?title=Retirar%3A%20">Pide que lo retiremos</a>.</p>
 </div></section>"""
 
