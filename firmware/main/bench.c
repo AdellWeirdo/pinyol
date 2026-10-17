@@ -249,6 +249,53 @@ static void scene(const char *name, int layers, int sprites, bool affine_on) {
     vTaskDelay(1);
 }
 
+/* PIE (the S3's 128-bit vector unit): n bytes, a multiple of 32, both pointers 16-byte aligned (the vector loads and
+ * stores ignore the low four address bits, so a misaligned pointer would silently copy the wrong bytes). */
+static void pie_copy(void *dst, const void *src, size_t n) {
+    asm volatile("srli %2, %2, 5\n"
+                 "loopnez %2, 1f\n"
+                 "ee.vld.128.ip q0, %1, 16\n"
+                 "ee.vld.128.ip q1, %1, 16\n"
+                 "ee.vst.128.ip q0, %0, 16\n"
+                 "ee.vst.128.ip q1, %0, 16\n"
+                 "1:\n"
+                 : "+r"(dst), "+r"(src), "+r"(n)
+                 :
+                 : "memory");
+}
+
+/* memcpy against the vector copy, on aligned buffers, checking the vector copy's bytes. */
+static void memory_pie(void) {
+    const size_t n = 64 * 1024, big = 1024 * 1024;
+    uint8_t *i1 = heap_caps_aligned_alloc(16, n, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint8_t *i2 = heap_caps_aligned_alloc(16, n, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint8_t *p1 = heap_caps_aligned_alloc(16, big, MALLOC_CAP_SPIRAM), *p2 = heap_caps_aligned_alloc(16, big, MALLOC_CAP_SPIRAM);
+    if (i1 && i2 && p1 && p2) {
+        for (size_t i = 0; i < n; i++) i1[i] = (uint8_t)(i * 7 + 3);
+        for (size_t i = 0; i < big; i++) p1[i] = (uint8_t)(i * 13 + 5);
+        memset(i2, 0, n);
+        pie_copy(i2, i1, n);
+        bool ok = !memcmp(i1, i2, n);
+        memset(p2, 0, big);
+        pie_copy(p2, p1, big);
+        ok = ok && !memcmp(p1, p2, big);
+        LOG("PIE copy bytes %s", ok ? "match memcpy" : "DIFFER: do not use");
+        int64_t t = esp_timer_get_time();
+        for (int r = 0; r < 16; r++) pie_copy(i2, i1, n);
+        LOG("PIE copy SRAM->SRAM    %6.1f MB/s", 16.0 * n / (esp_timer_get_time() - t));
+        t = esp_timer_get_time();
+        for (size_t o = 0; o < big; o += n) pie_copy(p2 + o, i1, n);
+        LOG("PIE copy SRAM->PSRAM   %6.1f MB/s (1 MB)", (double)big / (esp_timer_get_time() - t));
+        t = esp_timer_get_time();
+        for (size_t o = 0; o < big; o += n) pie_copy(i2, p1 + o, n);
+        LOG("PIE copy PSRAM->SRAM   %6.1f MB/s (1 MB)", (double)big / (esp_timer_get_time() - t));
+        t = esp_timer_get_time();
+        pie_copy(p2, p1, big);
+        LOG("PIE copy PSRAM->PSRAM  %6.1f MB/s (1 MB)", (double)big / (esp_timer_get_time() - t));
+    }
+    heap_caps_free(i1); heap_caps_free(i2); heap_caps_free(p1); heap_caps_free(p2);
+}
+
 static void memory(void) {
     const size_t n = 64 * 1024, big = 1024 * 1024; /* PSRAM side 1 MB: far past the 64 KB data cache */
     uint8_t *i1 = ialloc(n), *i2 = ialloc(n);
@@ -270,6 +317,7 @@ static void memory(void) {
         LOG("memcpy PSRAM->PSRAM  %6.1f MB/s (1 MB)", (double)big / (esp_timer_get_time() - t));
     }
     heap_caps_free(i1); heap_caps_free(i2); heap_caps_free(p1); heap_caps_free(p2);
+    memory_pie();
 }
 
 static volatile int te_count;
