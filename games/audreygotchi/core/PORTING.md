@@ -1,6 +1,6 @@
 # Porting the board game's core to Lua
 
-`games/audreygotchi/core/<name>.lua` is a port of `~/Desktop/DEV/AUDREYGOTCHI-main/audreygotchi/core/<name>.py`:
+`games/audreygotchi/core/<name>.lua` is a port of `~/Desktop/DEV/pinyol/AUDREYGOTCHI-main/audreygotchi/core/<name>.py`:
 the same rules, numbers, names, branches and order of checks. A faithful translation, not a redesign: if the Python
 does something odd, the Lua does the same odd thing (add a `-- ported as is:` comment when it looks like a bug).
 Keep the Python's comments that explain a rule (shorten them if you like), in English.
@@ -96,7 +96,7 @@ matters (a number, a threshold, a branch), ending with `print("ok <group>")`. Bu
 (a table with only the fields your module touches, `setmetatable(s, {__index = setmetatable({...stub methods...},
 {__index = require("core.rules")})})`), or, once `core/state.lua` exists, `require("core.state").new(clock)` for a
 whole fresh game. Seed with `math.randomseed(1)` where random matters. Port the matching asserts of the Python
-tests (`~/Desktop/DEV/AUDREYGOTCHI-main/tests/test_rules_v11.py`, `test_v2_gameplay.py`, `test_bible_64.py`,
+tests (`~/Desktop/DEV/pinyol/AUDREYGOTCHI-main/tests/test_rules_v11.py`, `test_v2_gameplay.py`, `test_bible_64.py`,
 `test_core_flows.py`, `test_minigames_v1.py`...) when they test your modules.
 
 ## Saving

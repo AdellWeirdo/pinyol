@@ -2,7 +2,7 @@
 # Generate each job of a jobs file that has no picture yet, four at a time: run_jobs.sh jobs1.tsv
 D=$(cd "$(dirname "$0")" && pwd)
 B=~/.claude/skills/gpt-image-bridge/bin/gpt-image-2
-A=/Users/pauavila/Desktop/DEV/AUDREYGOTCHI-main/audreygotchi/assets/backgrounds
+A=/Users/pauavila/Desktop/DEV/pinyol/AUDREYGOTCHI-main/audreygotchi/assets/backgrounds
 mkdir -p "$D/gen"
 PAL="Strictly four colours only: lightest #E0F8D0, light #88C070, dark #346856, darkest #081820. Real low-resolution Game Boy pixel art: every pixel a crisp square block of the same size, 1-pixel darkest outline, flat shading, no anti-aliasing, no gradients, no dithering noise, no text, no frame borders."
 one() {

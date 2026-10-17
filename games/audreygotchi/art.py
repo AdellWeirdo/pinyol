@@ -6,7 +6,7 @@
 
     uv run games/audreygotchi/art.py [AUDREYGOTCHI_ASSETS]
 
-AUDREYGOTCHI_ASSETS is the board repo's `audreygotchi/assets` (default: ~/Desktop/DEV/AUDREYGOTCHI-main/...).
+AUDREYGOTCHI_ASSETS is the board repo's `audreygotchi/assets` (default: ~/Desktop/DEV/pinyol/AUDREYGOTCHI-main/...).
 Every picture is scaled down and each pixel goes to one of four tones by its brightness, as a Game Boy Camera did:
 no image generation, the owner's drawings as they are. Packed (png2asset --packed), four colours each:
 
@@ -28,7 +28,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 ASSETS = HERE / "assets"
 SRC = Path(sys.argv[1] if len(sys.argv) > 1 else
-           Path.home() / "Desktop/DEV/AUDREYGOTCHI-main/audreygotchi/assets")
+           Path.home() / "Desktop/DEV/pinyol/AUDREYGOTCHI-main/audreygotchi/assets")
 TONES = [(224, 248, 208), (136, 192, 112), (52, 104, 86), (8, 24, 32)]  # BGB's greens, lightest to darkest
 S_CINE = 1 / 3  # the cinematic sets (birth, farewell): the board's scene drawn whole, 240 board px to 160 world
 CINE_SETS = ("rocket_", "audrey_", "nace_", "anda_despedida", "bg_balcony_front")
