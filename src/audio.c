@@ -25,6 +25,8 @@
 #define NAMB 3
 
 typedef struct { float v, target, step; } ramp;
+#define VAG_SAMPLES 28
+#define VAG_BYTES 16
 
 typedef struct {
     FILE *f;
@@ -37,6 +39,15 @@ typedef struct {
     float pend[MAX_STEMS];             /* layer targets waiting for the next bar line */
     int pend_ms[MAX_STEMS];
     bool pend_set[MAX_STEMS], armed, pend_die;
+    ramp cut_l, cut_r;                 /* pan: how much of each ear's gain is taken away (0..1; both 0: the centre) */
+    /* a stream kept as ADPCM (audio/<id>.spum: every stem's block, then the next block, 28 samples a block), decoded as it plays */
+    bool adpcm;
+    long samples;                      /* its length in samples (pos and len stay in the bytes of the PCM it stands for) */
+    int blk_next, blk_at;              /* the next block to read from the file; how far into the decoded one (28: read the next) */
+    int old[MAX_STEMS], older[MAX_STEMS];
+    int16_t blk[MAX_STEMS][VAG_SAMPLES];
+    uint8_t *rb;                       /* a read buffer of several blocks at a time (the card is read in sizeable pieces) */
+    int rb_pos, rb_len;
 } stream;
 
 typedef struct {
@@ -74,8 +85,6 @@ typedef struct {
 /* The PlayStation sound chip's ADPCM (psx-spx "SPU ADPCM Samples"): blocks of 16 bytes, 28 samples of 4 bits. Byte 0:
  * the filter (high nibble) and the shift (low); byte 1: flags (the engine takes its loop from the file's header);
  * then the nibbles, low first. Each sample is its nibble scaled by the shift plus a prediction from the last two. */
-#define VAG_SAMPLES 28
-#define VAG_BYTES 16
 static const int8_t vag_k0[5] = {0, 60, 115, 98, 122}, vag_k1[5] = {0, 0, -52, -55, -60};
 
 static void vag_block(const uint8_t *b, int *old, int *older, int16_t *out) {
@@ -146,7 +155,7 @@ static ramp bus_amb = {1, 1, 0}, bus_mus = {1, 1, 0}, amb_lp = {1, 1, 0}, master
 static ramp rv_wet = {0, 0, 0};               /* how much of the game's reverb comes back */
 static float rv_music, rv_amb;                 /* what the music and the ambience send into it */
 static bool rv_closing;                        /* fading out: the room goes when it is silent */
-static float lp_state;
+static float lp_state, lp_l, lp_r; /* the ambience's lowpass, and the same for what a panned bed adds to each ear */
 static sfx_voice sfx[SFX_VOICES];
 static clip cache[SFX_CACHE];
 static int ncache;
@@ -218,6 +227,44 @@ static FILE *open_wav(const char *id, long *start, long *len, int *chans, bool q
     return NULL;
 }
 
+/* audio/<id>.spum: a stream kept as ADPCM, the music and the beds that were WAVs a third the size. "SPUM", the samples of each
+ * stem, the sample a loop goes back to (a block's start), the stems (1 to MAX_STEMS) and 3 spare bytes, 32-bit little endian;
+ * then, for each 28 samples, one 16-byte block of each stem in turn (tools/wav2vag.py --stream makes it from a WAV). */
+static FILE *open_spum(const char *id, long *start, long *len, int *chans, long *samples, long *loop_sample, bool quiet) {
+    if (!id || !*id || is_missing(id)) return NULL;
+    char rel[160], path[384];
+    snprintf(rel, sizeof rel, "audio/%s.spum", id);
+    if (!game_has(rel)) return NULL;
+    snprintf(path, sizeof path, "%s/%s", G.game_dir, rel);
+    FILE *f = fopen(path, "rb");
+    uint8_t h[16];
+    if (f && fread(h, 1, 16, f) == 16 && !memcmp(h, "SPUM", 4) && h[12] >= 1 && h[12] <= MAX_STEMS) {
+        const long n = (long)rd32(h + 4);
+        const long blocks = (n + VAG_SAMPLES - 1) / VAG_SAMPLES;
+        fseek(f, 0, SEEK_END);
+        if (n > 0 && n < 3600L * AUDIO_HZ && ftell(f) >= 16 + blocks * h[12] * VAG_BYTES) {
+            *chans = h[12], *samples = n, *start = 16, *len = n * 2L * h[12];
+            long loop = (long)rd32(h + 8);
+            *loop_sample = loop < n ? loop / VAG_SAMPLES * VAG_SAMPLES : 0; /* a jump lands on a block's start */
+            fseek(f, 16, SEEK_SET);
+            return f;
+        }
+    }
+    if (f) fclose(f);
+    if (!quiet) hal_log("audio %s is not an ADPCM stream; continuing silent", id);
+    mark_missing(id);
+    return NULL;
+}
+
+/* An ADPCM stream's state, ready to read from its first block */
+static void adpcm_setup(stream *s, long samples, int chans) {
+    s->adpcm = true, s->samples = samples;
+    s->blk_next = 0, s->blk_at = VAG_SAMPLES; /* (nothing decoded yet) */
+    memset(s->old, 0, sizeof s->old), memset(s->older, 0, sizeof s->older);
+    s->rb = malloc((size_t)chans * VAG_BYTES * 16);
+    s->rb_pos = s->rb_len = 0;
+}
+
 static void ramp_to(ramp *r, float target, int ms) {
     r->target = target < 0 ? 0 : target > 1 ? 1 : target;
     float d = fabsf(r->target - r->v), n = (float)ms * AUDIO_HZ / 1000;
@@ -232,6 +279,7 @@ static inline float ramp_next(ramp *r) {
 
 static void close_stream(stream *s) {
     if (s->f) fclose(s->f);
+    free(s->rb);
     *s = (stream){0};
 }
 
@@ -241,10 +289,12 @@ static void fade_out(stream *s, int ms) {
 }
 
 /* Opens a mono id into a slot, rising from silence to gain over ms (file I/O outside the lock, swap inside). */
-static bool open_into(int slot, const char *id, bool loop, float gain, int ms) {
-    long start = 0, len = 0;
+static bool open_into(int slot, const char *id, bool loop, float gain, int ms, float pan) {
+    long start = 0, len = 0, samples = 0, loop_sample = 0;
     int chans = 1;
-    FILE *f = open_wav(id, &start, &len, &chans, false);
+    FILE *f = open_spum(id, &start, &len, &chans, &samples, &loop_sample, false);
+    const bool adpcm = f != NULL;
+    if (!f) f = open_wav(id, &start, &len, &chans, false);
     if (f && chans != 1) {
         hal_log("audio %s must be mono", id);
         fclose(f);
@@ -256,7 +306,9 @@ static bool open_into(int slot, const char *id, bool loop, float gain, int ms) {
     if (f) {
         st[slot] = (stream){.f = f, .start = start, .len = len, .chans = 1, .loop = loop};
         snprintf(st[slot].id, sizeof st[slot].id, "%s", id);
+        if (adpcm) adpcm_setup(&st[slot], samples, 1), st[slot].loop_at = loop_sample * 2;
         ramp_to(&st[slot].g[0], gain, ms);
+        ramp_to(&st[slot].cut_l, pan > 0 ? pan : 0, 1), ramp_to(&st[slot].cut_r, pan < 0 ? -pan : 0, 1);
     }
     hal_audio_unlock();
     return f != NULL;
@@ -273,7 +325,11 @@ static int pick_slot(int first, int n) {
 }
 
 /* ------------------------------------------------------------------ game-thread API */
-void audio_ambient(const char *id, int fade_ms) {
+void audio_ambient(const char *id, int fade_ms) { audio_ambient_pan(id, fade_ms, 0); }
+
+/* The same placed between the ears (pan -1 left .. 1 right); an ambience already playing is moved there too. */
+void audio_ambient_pan(const char *id, int fade_ms, float pan) {
+    pan = pan > 1 ? 1 : pan < -1 ? -1 : pan == pan ? pan : 0;
     hal_audio_lock();
     int keep = -1;
     for (int i = S_AMB0; i < S_AMB0 + NAMB; i++)
@@ -282,11 +338,12 @@ void audio_ambient(const char *id, int fade_ms) {
         if (i != keep) fade_out(&st[i], fade_ms);
     if (keep >= 0) { /* already here (maybe fading out after a quick back-and-forth): bring it back */
         ramp_to(&st[keep].g[0], 1, fade_ms);
+        ramp_to(&st[keep].cut_l, pan > 0 ? pan : 0, fade_ms), ramp_to(&st[keep].cut_r, pan < 0 ? -pan : 0, fade_ms);
         st[keep].dying = false;
     }
     int slot = pick_slot(S_AMB0, NAMB);
     hal_audio_unlock();
-    if (keep < 0 && id) open_into(slot, id, true, 1, fade_ms);
+    if (keep < 0 && id) open_into(slot, id, true, 1, fade_ms, pan);
 }
 
 bool audio_music_playing(void) {
@@ -327,9 +384,11 @@ void audio_music_stop(int fade_ms) {
  * swap (the audio thread never sees it half set up). bar_s > 0 quantises later changes to bar lines.
  * Returns the cue's layer count (its WAV channels). */
 int audio_music_start(const char *cue, float loop_at_s, float bar_s, const float *gains, int fade_ms) {
-    long start = 0, len = 0;
+    long start = 0, len = 0, samples = 0, loop_sample = 0;
     int chans = 1;
-    FILE *f = open_wav(cue, &start, &len, &chans, false);
+    FILE *f = open_spum(cue, &start, &len, &chans, &samples, &loop_sample, false);
+    const bool adpcm = f != NULL;
+    if (!f) f = open_wav(cue, &start, &len, &chans, false);
     if (!(loop_at_s >= 0 && loop_at_s < 3600)) loop_at_s = 0; /* also NaN */
     if (!(bar_s > 0 && bar_s < 60)) bar_s = 0;
     hal_audio_lock();
@@ -341,10 +400,22 @@ int audio_music_start(const char *cue, float loop_at_s, float bar_s, const float
         *s = (stream){.f = f, .start = start, .len = len, .chans = chans, .loop = true,
                       .loop_at = at < len ? at : 0, .bar = (long)(bar_s * AUDIO_HZ) * frame};
         snprintf(s->id, sizeof s->id, "%s", cue);
+        if (adpcm) { /* a loop goes back to a block's start: the file's own if the game gave none */
+            adpcm_setup(s, samples, chans);
+            long at = loop_at_s > 0 ? (long)(loop_at_s * AUDIO_HZ) / VAG_SAMPLES * VAG_SAMPLES : loop_sample;
+            s->loop_at = at < samples ? at * 2L * chans : 0;
+        }
         for (int k = 0; k < chans; k++) ramp_to(&s->g[k], gains ? gains[k] : k == 0, fade_ms);
     }
     hal_audio_unlock();
     return f ? chans : 0;
+}
+
+void audio_music_pan(float pan, int fade_ms) {
+    pan = pan > 1 ? 1 : pan < -1 ? -1 : pan == pan ? pan : 0;
+    hal_audio_lock();
+    ramp_to(&st[S_MUS].cut_l, pan > 0 ? pan : 0, fade_ms), ramp_to(&st[S_MUS].cut_r, pan < 0 ? -pan : 0, fade_ms);
+    hal_audio_unlock();
 }
 
 void audio_music_layer(int i, float gain, int fade_ms) {
@@ -364,7 +435,7 @@ void audio_voice(const char *id) {
     fade_out(&st[S_VOICE1], 120);
     int slot = pick_slot(S_VOICE0, 2);
     hal_audio_unlock();
-    open_into(slot, id, false, 1, 5);
+    open_into(slot, id, false, 1, 5, 0);
 }
 
 void audio_voice_stop(int fade_ms) {
@@ -729,7 +800,7 @@ void audio_reset(void) {
     bus_amb = bus_mus = amb_lp = master = (ramp){1, 1, 0};
     rv_wet = (ramp){0, 0, 0}, rv_music = rv_amb = 0, rv_closing = false;
     reverb_set(-1);
-    lp_state = 0;
+    lp_state = lp_l = lp_r = 0;
     hal_audio_unlock();
     psg_reset();
     mod_reset();
@@ -744,10 +815,50 @@ void audio_reset(void) {
 void audio_force_missing(const char *id) { mark_missing(id); }
 
 /* ------------------------------------------------------------------ audio thread */
+/* The next block of every stem of an ADPCM stream decoded (the file is read a handful of blocks at a time); false at the file's end. */
+static bool adpcm_next(stream *s) {
+    const int bytes = s->chans * VAG_BYTES;
+    if (s->rb_pos + bytes > s->rb_len) {
+        size_t n = fread(s->rb, 1, (size_t)bytes * 16, s->f);
+        s->rb_len = (int)(n / (size_t)bytes * (size_t)bytes), s->rb_pos = 0;
+        if (s->rb_len < bytes) return false;
+    }
+    for (int c = 0; c < s->chans; c++) vag_block(s->rb + s->rb_pos + c * VAG_BYTES, &s->old[c], &s->older[c], s->blk[c]);
+    s->rb_pos += bytes;
+    s->blk_next++, s->blk_at = 0;
+    return true;
+}
+
 /* Reads up to m frames of a stream into buf (looping), returns how many it produced. */
 static int stream_read(stream *s, int16_t *buf, int m) {
     int got = 0;
     long frame = 2L * s->chans;
+    if (s->adpcm) {
+        while (s->f && got < m) {
+            const long left = s->samples - s->pos / frame;
+            if (left <= 0) { /* the end: round again from the loop's block, or finish */
+                if (!s->loop) { close_stream(s); break; }
+                const long at = s->loop_at / frame;
+                if (fseek(s->f, s->start + at / VAG_SAMPLES * s->chans * VAG_BYTES, SEEK_SET)) { close_stream(s); break; }
+                s->pos = s->loop_at, s->blk_next = (int)(at / VAG_SAMPLES), s->blk_at = VAG_SAMPLES, s->rb_pos = s->rb_len = 0;
+                memset(s->old, 0, sizeof s->old), memset(s->older, 0, sizeof s->older); /* (the encoder made that block without prediction) */
+                continue;
+            }
+            if (s->blk_at >= VAG_SAMPLES && !adpcm_next(s)) { /* unreadable: never spin */
+                if (!s->loop) { close_stream(s); break; }
+                s->pos = s->samples * frame;
+                if (s->loop_at >= s->pos) { close_stream(s); break; }
+                continue;
+            }
+            int n = VAG_SAMPLES - s->blk_at;
+            if (n > m - got) n = m - got;
+            if (n > left) n = (int)left;
+            for (int i = 0; i < n; i++)
+                for (int c = 0; c < s->chans; c++) buf[(got + i) * s->chans + c] = s->blk[c][s->blk_at + i];
+            s->blk_at += n, got += n, s->pos += frame * n;
+        }
+        return got;
+    }
     while (s->f && got < m) {
         long left = (s->len - s->pos) / frame;
         int want = m - got < left ? m - got : (int)left;
@@ -783,6 +894,7 @@ static void mix_core(int16_t *out, int n, bool stereo) {
     static float acc[CHUNK], amb[CHUNK]; /* single caller (audio callback/task): keep them off its small stack */
     static float sd[CHUNK], sr[CHUNK];   /* what the studio's tracks send to its echo and its reverb */
     static float dl[CHUNK], dr[CHUNK];   /* the panned voices' difference from acc, left and right (both <= 0) */
+    static float aml[CHUNK], amr[CHUNK]; /* the same for the ambience beds, before their lowpass */
     static float gv[CHUNK];              /* what is sent into the game's reverb */
     static int16_t buf[CHUNK * MAX_STEMS];
     for (int off = 0; off < n; off += CHUNK) {
@@ -792,6 +904,7 @@ static void mix_core(int16_t *out, int n, bool stereo) {
         memset(sd, 0, sizeof sd);
         memset(sr, 0, sizeof sr);
         memset(dl, 0, sizeof dl);
+        memset(aml, 0, sizeof aml), memset(amr, 0, sizeof amr);
         memset(dr, 0, sizeof dr);
         memset(gv, 0, sizeof gv);
         const bool rv = reverb_on();
@@ -806,18 +919,25 @@ static void mix_core(int16_t *out, int n, bool stereo) {
             int got = stream_read(s, buf, m);
             if (s->armed && bar && (s->pos / bar != p0 / bar || s->pos < p0)) apply_pending(s); /* <= 1 chunk late */
             const float send = !rv ? 0 : c == S_MUS ? rv_music : c < S_AMB0 + NAMB ? rv_amb : 0;
+            float *pl = c < S_AMB0 + NAMB ? aml : dl, *pr = c < S_AMB0 + NAMB ? amr : dr;
+            const bool panned = s->cut_l.v != 0 || s->cut_l.target != 0 || s->cut_r.v != 0 || s->cut_r.target != 0;
             for (int i = 0; i < got; i++) {
                 float x = 0;
                 for (int k = 0; k < ch; k++) x += buf[i * ch + k] * ramp_next(&s->g[k]);
                 x *= ramp_next(&b);
                 dst[i] += x;
                 if (send > 0) gv[i] += x * send;
+                if (panned) pl[i] -= x * ramp_next(&s->cut_l), pr[i] -= x * ramp_next(&s->cut_r);
             }
         }
         for (int i = 0; i < m && !paused; i++) { /* ambience bus: gain then a ramped one-pole lowpass (1 = open) */
-            float a = ramp_next(&amb_lp);
-            lp_state += a * (amb[i] * ramp_next(&bus_amb) - lp_state);
+            const float a = ramp_next(&amb_lp), g = ramp_next(&bus_amb);
+            lp_state += a * (amb[i] * g - lp_state);
             acc[i] += lp_state;
+            if (aml[i] != 0 || amr[i] != 0 || lp_l != 0 || lp_r != 0) { /* a panned bed: its difference through the same filter */
+                lp_l += a * (aml[i] * g - lp_l), lp_r += a * (amr[i] * g - lp_r);
+                dl[i] += lp_l, dr[i] += lp_r;
+            }
             ramp_next(&bus_mus);
         }
         if (!paused) studio_tick(m); /* the steps falling in this block start their voices, to the sample */

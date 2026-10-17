@@ -104,5 +104,54 @@ check(first_sound(play(g, 20)) is None, "a short file plays nothing")
 f.write_bytes(b"RIFFnotavagfile" * 10)
 check(first_sound(play(g, 20)) is None, "a file that is not ADPCM plays nothing")
 
+# 5. streams: a two-stem song and a mono bed kept as ADPCM and read from the card as they play (.spum): the engine plays what the
+# decoder says, stem by stem and summed, loops from its block, takes a pan, and a bed plays too
+N2 = 8000
+stems = []
+for tone in (330, 495):
+    stems.append([int(9000 * math.sin(0.4 + 2 * math.pi * tone * i / 22050)) for i in range(N2)])
+wav2 = out / "song.wav"
+with wave.open(str(wav2), "wb") as w:
+    w.setnchannels(2), w.setsampwidth(2), w.setframerate(22050)
+    w.writeframes(b"".join(struct.pack("<hh", a, b) for a, b in zip(*stems)))
+gs = out / "stream"
+shutil.copytree(ROOT / "tests" / "games" / "turned" / "fonts", gs / "fonts")
+(gs / "game.json").write_text('{"id": "stream", "title": "Stream", "engine": "pinyol@2", "main": "main.lua"}')
+(gs / "main.lua").write_text("n = 0\nfunction _init() show(0) end\nfunction _draw() end\nfunction _update()\n  n = n + 1\n  if n == 1 then music(\"SONG\", 1) end\n  if n == 40 then music_pan(1, 1) end\nend\n")
+r = subprocess.run([sys.executable, str(ROOT / "tools" / "wav2vag.py"), str(wav2), str(gs), "SONG", "--stream", "--loop", "2800"], capture_output=True, text=True)
+check(r.returncode == 0, "the stream tool runs: " + r.stderr[-300:])
+blob = (gs / "audio" / "SONG.spum").read_bytes()
+check(blob[:4] == b"SPUM" and struct.unpack("<II", blob[4:12]) == (N2, 2800) and blob[12] == 2, "stream header")
+check(len(blob) == 16 + (N2 + 27) // 28 * 2 * 16, "a block of each stem for each 28 samples")
+dec = [w2v.decode(bytes(blob[16 + 16 * c + 32 * b: 16 + 16 * c + 32 * b + 16] for b in range(0)) if False else b"".join(blob[16 + 32 * b + 16 * c:16 + 32 * b + 16 * c + 16] for b in range((N2 + 27) // 28)), N2) for c in range(2)]
+d = play(gs, 60)
+at = first_sound(d)
+expect = [dec[0][p] + dec[1][p] if p < N2 else dec[0][2800 + (p - N2) % (N2 - 2800)] + dec[1][2800 + (p - N2) % (N2 - 2800)] for p in range(30000)]
+# (the first 40 ticks: no pan: both stems summed, the first of the song, then its loop from its block)
+head = 38 * 367
+check(at is not None and d[at + 100:at + head] == expect[100:head], "the stream's samples are the decoder's, the stems summed, then its loop (its fade-in done)")
+# music_pan(1): hard right on a mono platform is half (the average of the ears): after the pan the level is half of the song's
+rest = d[at + head + 1000:at + head + 5000]
+want = [expect[head + 1000 + i] for i in range(len(rest))]
+close = sum(1 for a2, b2 in zip(rest, want) if abs(a2 - b2 / 2) <= 2)
+check(close > 0.95 * len(rest), "a pan of 1 takes the song to half on a speaker (%d of %d samples)" % (close, len(rest)))
+# a mono bed
+bed = [int(7000 * math.sin(0.3 + 2 * math.pi * 220 * i / 22050)) for i in range(6000)]
+wavb = out / "bed.wav"
+with wave.open(str(wavb), "wb") as w:
+    w.setnchannels(1), w.setsampwidth(2), w.setframerate(22050)
+    w.writeframes(b"".join(struct.pack("<h", x) for x in bed))
+gb = out / "bed"
+shutil.copytree(ROOT / "tests" / "games" / "turned" / "fonts", gb / "fonts")
+(gb / "game.json").write_text('{"id": "bed", "title": "Bed", "engine": "pinyol@2", "main": "main.lua"}')
+(gb / "main.lua").write_text("n = 0\nfunction _init() show(0) end\nfunction _draw() end\nfunction _update()\n  n = n + 1\n  if n == 1 then ambient(\"BED\", 1) end\nend\n")
+subprocess.run([sys.executable, str(ROOT / "tools" / "wav2vag.py"), str(wavb), str(gb), "BED", "--stream", "--loop", "0"], check=True, capture_output=True)
+bb = (gb / "audio" / "BED.spum").read_bytes()
+bdec = w2v.decode(bb[16:], 6000)
+db = play(gb, 60)
+ab = first_sound(db)
+exp_b = [bdec[p % 6000] for p in range(18000)]
+check(ab is not None and db[ab + 300:ab + 18000] == exp_b[300:18000], "an ambient bed from the card plays the decoder's samples, looped")
+
 print("vag: %s" % ("ok" if not failures else "%d failed" % failures))
 sys.exit(1 if failures else 0)

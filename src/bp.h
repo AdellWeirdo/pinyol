@@ -377,6 +377,8 @@ const char *drill_phase(void); /* lead, demo, input, result: for scripts */
 
 /* ------------------------------------------------------------------ audio.c */
 void audio_ambient(const char *id, int fade_ms); /* crossfade the zone bed; NULL fades out */
+void audio_ambient_pan(const char *id, int fade_ms, float pan); /* the same placed between the ears (-1 left .. 1 right) */
+void audio_music_pan(float pan, int fade_ms);
 int audio_music_start(const char *cue, float loop_at_s, float bar_s, const float *gains, int fade_ms);
 void audio_music_layer(int stem, float gain, int fade_ms);
 void audio_music_stop(int fade_ms);

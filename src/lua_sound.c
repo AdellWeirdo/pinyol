@@ -141,6 +141,28 @@ static int l_sfx_on(lua_State *L) { /* sfx_on(handle) -> is that sound still pla
 
 /* music_layer(stem, gain [, fade_ms]): a WAV played by music() has one stem per channel (drums, bass, melody...);
  * each comes in or out, so the music follows the game (a calm part, then the drums when the boss comes) */
+/* music_pan(pan [, fade_ms]): the song placed between the ears, -1 (left) to 1 (right), moving there over the fade */
+static int l_music_pan(lua_State *L) {
+    float p = fin(luaL_checknumber(L, 1));
+    audio_music_pan(p < -1 ? -1 : p > 1 ? 1 : p, (int)luaL_optinteger(L, 2, 300));
+    return 0;
+}
+
+/* ambient(id [, fade_ms [, {pan}]]): a bed of sound under the game (a room's murmur, rain), looping, crossfaded with the one
+ * before it; audio/<id>.wav or .spum; ambient() fades it out. Up to three at once while they cross. */
+static int l_ambient(lua_State *L) {
+    const int fade = (int)luaL_optinteger(L, 2, 1000);
+    if (lua_isnoneornil(L, 1)) {
+        audio_ambient(NULL, fade);
+        return 0;
+    }
+    const char *id = luaL_checkstring(L, 1);
+    float pan = 0;
+    if (lua_istable(L, 3)) pan = opt_float(L, 3, "pan", 0, -1, 1);
+    if (safe_name(id)) audio_ambient_pan(id, fade, pan);
+    return 0;
+}
+
 static int l_music_layer(lua_State *L) {
     int stem = (int)luaL_checkinteger(L, 1);
     if (stem < 0 || stem >= MAX_STEMS) return luaL_error(L, "music_layer: stem %d does not exist (0 to %d)", stem, MAX_STEMS - 1);
@@ -254,7 +276,7 @@ void sound_register(lua_State *L) {
                                  {"sfx_on", l_sfx_on}, {"music", l_music}, {"music_layer", l_music_layer},
                                  {"music_time", l_music_time},
                                  {"tone", l_tone}, {"note", l_note}, {"mic", l_mic},
-                                 {"mic_record", l_mic_record}, {"volume", l_volume}, {"reverb", l_reverb}, {NULL, NULL}};
+                                 {"mic_record", l_mic_record}, {"volume", l_volume}, {"reverb", l_reverb}, {"music_pan", l_music_pan}, {"ambient", l_ambient}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);
     lua_pop(L, 1);

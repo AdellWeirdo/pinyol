@@ -427,7 +427,9 @@ order, so consoles that get the same messages can compute the same thing.
 | `volume(v)` | everything the game sounds (effects, music, tones, the studio), from 0 (silent) to 1; each game starts at 1 |
 | `sound(id, recipe [, seed])` | makes a sound from a recipe: `"coin"`, `"laser"`, `"explosion"`, `"powerup"`, `"hit"`, `"jump"`, `"blip"` or `"random"`; each seed gives another. Returns its numbers |
 | `sound(id, {numbers})` | makes a sound from its numbers (below), played with `sfx(id)`. Returns them, completed |
-| `music(id)` / `music()` | loops `audio/<id>.mod` (a tracker module) or else `audio/<id>.wav`; no id stops it |
+| `music(id)` / `music()` | loops `audio/<id>.mod` (a tracker module), `audio/<id>.spum` (ADPCM, read from the card as it plays: a third of the WAV's size, `uv run tools/wav2vag.py song.wav GAME ID --stream --loop SAMPLE`, whose channels are its layers and whose loop comes from the file) or else `audio/<id>.wav`; no id stops it |
+| `music_pan(pan [, fade_ms])` | the song placed between the ears, -1 (left) to 1 (right), moving there over the fade (a speaker with one ear hears it at half, as a sound's pan) |
+| `ambient(id [, fade_ms [, {pan}]])` / `ambient()` | a bed of sound under the game (a room's murmur, rain, a crowd) from `audio/<id>.wav` or `.spum`, looping, crossfading with the one before it (up to three at once); `ambient()` fades it out. With the world's lowpass (`listen`) and `pan` -1 to 1 |
 | `music_layer(stem, gain [, fade_ms])` | a WAV's channels are layers (drums, bass, melody... up to 3): each comes in or goes out, so the music follows the game |
 | `music_time()` | seconds into the song `music()` started, as the player hears it now, going on across its loops; `nil` when none plays. For notes on the beat |
 | `tone(voice, pitch [, options])` | plays a synthesised note on voice 0-3, replacing what it played |
