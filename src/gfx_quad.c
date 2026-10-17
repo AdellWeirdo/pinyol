@@ -486,13 +486,37 @@ void gfx_lines(surface *s, int x, int y, int w, int h, const uint16_t *rowcol, i
     int u0, v0, n = CLIP_X(s, x, w, &u0), m = CLIP_Y(s, y, h, &v0);
     if (n <= 0 || m <= 0) return;
     const int ys = step_y(s);
+    /* each visible row's colour made ready once (as stored, or spread apart and scaled for a saturating add or subtract), so a
+     * pixel is a load, an add and a store: the whole screen was 33 ms on the console when each pixel unpacked its colour */
+    uint32_t row[1024];
+    if (m > 1024) m = 1024;
+    const bool held = !lay && mode != BLEND_ALPHA;
+    for (int j = 0; j < m; j++) {
+        const uint16_t c = rowcol[v0 + j];
+        if (lay) row[j] = stored(s, c);
+        else if (held) {
+            const unsigned sh = mode == BLEND_QUARTER ? 10 : 8;
+            const uint32_t r = (c >> 11) * alpha >> sh, g = (c >> 5 & 63) * alpha >> sh, b = (c & 31) * alpha >> sh;
+            row[j] = b | r << 11 | g << 21;
+        } else row[j] = c;
+    }
     for (int k = 0; k < n; k++) {
         uint16_t *dst = at(s, x + u0 + k, y + v0);
-        for (int j = 0; j < m; j++, dst += ys) {
-            const uint16_t c = rowcol[v0 + j];
-            if (lay) { *dst = stored(s, c); continue; }
-            const uint16_t under = s->swap ? bswap16(*dst) : *dst;
-            *dst = stored(s, mix565(under, c, alpha, mode));
+        if (lay) {
+            for (int j = 0; j < m; j++, dst += ys) *dst = (uint16_t)row[j];
+        } else if (held) {
+            const bool sub = mode == BLEND_SUB;
+            for (int j = 0; j < m; j++, dst += ys) {
+                const uint16_t under = s->swap ? bswap16(*dst) : *dst;
+                uint16_t v = sub ? sub565_sat(under, row[j]) : add565_sat(under, row[j]);
+                if (v == CANVAS_KEY) v ^= 1; /* (that colour is a canvas's see-through) */
+                *dst = s->swap ? bswap16(v) : v;
+            }
+        } else {
+            for (int j = 0; j < m; j++, dst += ys) {
+                const uint16_t under = s->swap ? bswap16(*dst) : *dst;
+                *dst = stored(s, mix565(under, (uint16_t)row[j], alpha, BLEND_ALPHA));
+            }
         }
     }
 }

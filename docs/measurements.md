@@ -351,6 +351,28 @@ rest of the frame an empty one at 60 fps and no new underruns:
 
 A voice costs about 1.8 %, the reverb about 7 % whatever the room.
 
+## Lights, line effects, perspective, clips (2026-10-17)
+
+The same way (one thing on a black screen; 1.5 ms of strips is the empty frame):
+
+| Scene | Strips |
+|---|---|
+| `light` radius 60 | 3.6 ms (about 200 ns a pixel it reaches) |
+| `light` radius 100 | 7.7 ms |
+| the same as a beam 60° wide | 4.4 ms |
+| the same taking light away (`sub`) | 7.8 ms |
+| four lights of radius 60 | 10.6 ms |
+| a packed background 480x320 | 5.0 ms |
+| the same with `dim = 0.4` or `mul = 0x8090FF` | 5.0 ms: free |
+| `warp` of that background, every row moved | 18.9 ms (about 110 ns a pixel), and 4 ms of Lua for the 320 rows' function |
+| `linetint` over the whole screen, added | 34.5 ms before it made each row's colour ready once (`gfx_lines`) |
+| a quad 480 wide, a floor going away, flat | 8.2 ms |
+| the same with `persp = true` (6 bands) | 17.4 ms |
+| a clip 240x160 scrolling every pixel, drawn at scale 2 | 5.1 ms, 60 fps |
+
+What this says: a light, a warp and a perspective quad are for a part of the screen; a background is darkened through its palette
+for nothing; a clip at 240x160 drawn twice as big plays at 60 fps even when every pixel changes.
+
 ## The same mixer on a desktop
 
 Measured on a desktop (an optimized build, `make audio_bench`): the order and the ratios, not the console's milliseconds (the

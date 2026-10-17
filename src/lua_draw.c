@@ -716,7 +716,7 @@ static int l_img(lua_State *L) {
 /* light(x, y, r, colour [, {intensity, sub, cone}]): a soft round glow of that colour reaching r pixels, added to what is under
  * it (a candle, a lamp, a flame, a window's light); sub = true takes it away instead (a pool of shadow). intensity 0..2 (1:
  * as the colour). cone = {angle = degrees (0: to the right, 90: down), width = degrees across} makes it a beam (a flashlight,
- * a guard's sight): full inside two thirds of it, half at the rim. It reads no picture: only the pixels it reaches cost. */
+ * a guard's sight): full inside two thirds of it, half at the rim. It reads no picture: only the pixels it reaches cost (~200 ns each on the console). */
 static int l_light(lua_State *L) {
     int x = num(L, 1), y = num(L, 2), r = num(L, 3);
     lua_Integer col = luaL_checkinteger(L, 4);
