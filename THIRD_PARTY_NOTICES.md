@@ -87,19 +87,53 @@ SOFTWARE.
 
 ### Fonts
 
-SIL Open Font License 1.1 (its text is at the end). What pinyol makes from them (`.fnt`, `.woff2`) is a Modified Version under that licence, and never carries a Reserved Font Name: Press Start 2P's conversions are called Arcade 8.
+SIL Open Font License 1.1 (its text is at the end). What pinyol makes from them (`.fnt`, `.woff2`) is a Modified Version under that licence, and never carries a Reserved Font Name: Press Start 2P's conversions are called Arcade 8, and the font packs (`tools/font2fnt.py --pack`) name their files by pack, never by font.
 
+- `third_party/fonts/audiowide`: Copyright (c) 2012, Brian J. Bonislawsky DBA Astigmatic (AOETI) (astigma@astigmatic.com), with Reserved Font Names "Audiowide"
+- `third_party/fonts/bangers`: Copyright 2010 The Bangers Project Authors (https://github.com/googlefonts/bangers)
+- `third_party/fonts/bitcountgridsingle`: Copyright 1980 The Bitcount Project Authors (https://github.com/petrvanblokland/TYPETR-Bitcount)
+- `third_party/fonts/bitcountsingle`: Copyright 1980 The Bitcount Project Authors (https://github.com/petrvanblokland/TYPETR-Bitcount)
+- `third_party/fonts/blackopsone`: Copyright 2022 The Black-Ops Project Authors (https://github.com/googlefonts/googlefonts-project-template)
+- `third_party/fonts/bungee`: Copyright 2023 The Bungee Project Authors (https://github.com/djrrb/Bungee)
 - `third_party/fonts/bytesized`: Copyright 2024 The Bytesized Project Authors (https://github.com/balt-dev/bytesized-gf)
+- `third_party/fonts/chakrapetch`: Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch.git)
+- `third_party/fonts/cinzel`: Copyright 2020 The Cinzel Project Authors (https://github.com/NDISCOVER/Cinzel)
+- `third_party/fonts/cinzeldecorative`: Copyright (c) 2012 Natanael Gama (info@ndiscovered.com), with Reserved Font Name 'Cinzel'
+- `third_party/fonts/courierprime`: Copyright 2015 The Courier Prime Project Authors (https://github.com/quoteunquoteapps/CourierPrime).
+- `third_party/fonts/creepster`: Copyright (c) 2011, Font Diner, Inc (diner@fontdiner.com), with Reserved Font Names "Creepster"
+- `third_party/fonts/cutivemono`: Copyright 2012 The Cutive Project Authors (https://github.com/googlefonts/cutivemono)
 - `third_party/fonts/dotgothic16`: Copyright 2020 The DotGothic16 Project Authors (https://github.com/fontworks-fonts/DotGothic16)
+- `third_party/fonts/doto`: Copyright 2024 The Doto Project Authors (https://github.com/oliverlalan/Doto)
+- `third_party/fonts/geo`: Copyright (c) 2000-2010, Ben Weiner (ben@readingtype.org.uk), with Reserved Font Name Geo.
+- `third_party/fonts/handjet`: Copyright 2018 The Handjet Project Authors (https://github.com/rosettatype/Handjet/)
+- `third_party/fonts/ibmplexmono`: Copyright © 2017 IBM Corp. with Reserved Font Name "Plex"
 - `third_party/fonts/jacquard12`: Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jacquard)
+- `third_party/fonts/jacquard24`: Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jacquard)
 - `third_party/fonts/jacquardabastarda9`: Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jacquarda-bastarda)
 - `third_party/fonts/jersey10`: Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jersey)
 - `third_party/fonts/jersey15`: Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jersey)
 - `third_party/fonts/jersey20`: Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jersey)
+- `third_party/fonts/jersey25`: Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jersey)
+- `third_party/fonts/majormonodisplay`: Copyright 2018 The Major Mono Project Authors (https://github.com/googlefonts/majormono)
+- `third_party/fonts/medievalsharp`: Copyright (c) 2011, wmk69 (wmk69@o2.pl), with Reserved Font Name MedievalSharp.
+- `third_party/fonts/metamorphous`: Copyright (c) 2011-2012 by Sorkin Type Co (www.sorkintype.com), with Reserved Font Name "Metamorphous".
 - `third_party/fonts/micro5`: Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-micro)
+- `third_party/fonts/newrocker`: Copyright (c) 2011, Pablo Impallari (www.impallari.com|impallari@gmail.com), Copyright (c) 2011, Brenda Gallo (gbrenda1987@gmail.com), Copyright (c) 2011, Rodrigo Fuenzalida (www.rfuenzalida.com|hello@rfuenzalida.com), with Reserved Font Name 'New Rocker'
+- `third_party/fonts/orbitron`: Copyright 2018 The Orbitron Project Authors (https://github.com/theleagueof/orbitron), with Reserved Font Name: "Orbitron"
+- `third_party/fonts/oxanium`: Copyright 2019 The Oxanium Project Authors (https://github.com/sevmeyer/oxanium)
 - `third_party/fonts/pressstart2p`: Copyright 2012 The Press Start 2P Project Authors (cody@zone38.net), with Reserved Font Name "Press Start 2P".
+- `third_party/fonts/righteous`: Copyright (c) 2011 by Brian J. Bonislawsky DBA Astigmatic (AOETI) (astigma@astigmatic.com), with Reserved Font Names "Righteous"
+- `third_party/fonts/russoone`: Copyright (c) 2011-2012, Jovanny Lemonad (jovanny.ru), with Reserved Font Name "Russo"
+- `third_party/fonts/sharetechmono`: Copyright (c) 2012, Carrois Type Design, Ralph du Carrois (post@carrois.com www.carrois.com), with Reserved Font Name 'Share'
 - `third_party/fonts/silkscreen`: Copyright 2001 The Silkscreen Project Authors (https://github.com/googlefonts/silkscreen)
+- `third_party/fonts/sixtyfour`: Copyright 2021 The Sixtyfour Project Authors (https://github.com/jenskutilek/homecomputer-fonts)
+- `third_party/fonts/tiny5`: Copyright 2022-2024 The Tiny5 Project Authors (https://github.com/Gissio/font_tiny5)
+- `third_party/fonts/unifrakturcook`: Copyright (c) 2010, j. 'mach' wust, with Reserved Font Name UnifrakturCook. Copyright (c) 2009, Peter Wiegel.
+- `third_party/fonts/unifrakturmaguntia`: Copyright (c) 2010, j. 'mach' wust, with Reserved Font Name UnifrakturMaguntia. Copyright (c) 2009, Peter Wiegel.
 - `third_party/fonts/vt323`: Copyright 2011, The VT323 Project Authors (peter.hull@oikoi.com)
+- `third_party/fonts/wallpoet`: Copyright (c) 6 April 2011, Lars Berggren (lars@punktlars.se), with Reserved Font Name Wallpoet.
+- `third_party/fonts/workbench`: Copyright 2021 The Workbench Project Authors (https://github.com/jenskutilek/homecomputer-fonts)
+- `third_party/fonts/zendots`: Copyright 2021 The Dots Project Authors (https://github.com/googlefonts/zen-dots)
 - `third_party/pixelify`: Copyright 2021 The Pixelify Sans Project Authors (https://github.com/eifetx/Pixelify-Sans)
 
 ## In the libretro core (RetroArch, RetroPie)

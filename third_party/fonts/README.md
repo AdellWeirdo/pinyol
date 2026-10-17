@@ -1,5 +1,9 @@
 # Fonts that come with pinyol
 
+**Fifty fonts and 37 ready-made packs, one for each console's look: see [docs/fonts.md](../../docs/fonts.md)**
+(`uv run tools/font2fnt.py --pack snes games/mygame`). `catalog.json` here says which font is which pack's title, body
+and small letters; the table below is the first dozen, the rest are listed in docs/fonts.md.
+
 Pixel fonts a game can use as its own: `uv run tools/font2fnt.py <name> games/mygame/fonts/<name>.fnt`
 (`font2fnt.py --list` shows them with their pixel size). Each is under the SIL Open Font License 1.1 (its `OFL.txt`
 next to it): free to use, change and share, also in games that are sold, as long as the font itself is not sold on

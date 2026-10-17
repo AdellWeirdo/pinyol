@@ -1,0 +1,982 @@
+{
+ "fonts": {
+  "pressstart2p": {
+   "file": "pressstart2p/PressStart2P-Regular.ttf",
+   "name": "Press Start 2P",
+   "feel": "80s arcade and NES-era caps and small letters, 8 px"
+  },
+  "silkscreen": {
+   "file": "silkscreen/Silkscreen-Regular.ttf",
+   "name": "Silkscreen",
+   "feel": "small clean capitals for labels, 8 px"
+  },
+  "silkscreen-bold": {
+   "file": "silkscreen/Silkscreen-Bold.ttf",
+   "name": "Silkscreen Bold",
+   "feel": "the same, heavier"
+  },
+  "tiny5": {
+   "file": "tiny5/Tiny5[BLED,JITT,ROND,wdth,wght].ttf",
+   "name": "Tiny5",
+   "feel": "tiny 5 px pixel text that still reads: PICO-8, ZX Spectrum, small HUDs"
+  },
+  "micro5": {
+   "file": "micro5/Micro5-Regular.ttf",
+   "name": "Micro 5",
+   "feel": "tiny, a little rounder"
+  },
+  "bytesized": {
+   "file": "bytesized/Bytesized-Regular.ttf",
+   "name": "Bytesized",
+   "feel": "the smallest, numbers and credits"
+  },
+  "pixelifysans": {
+   "file": "../pixelify/PixelifySans.ttf",
+   "name": "Pixelify Sans",
+   "feel": "round friendly pixel sans: Game Boy, GBA, handheld RPGs"
+  },
+  "jersey10": {
+   "file": "jersey10/Jersey10-Regular.ttf",
+   "name": "Jersey 10",
+   "feel": "sport and scoreboard, 16-bit"
+  },
+  "jersey15": {
+   "file": "jersey15/Jersey15-Regular.ttf",
+   "name": "Jersey 15",
+   "feel": "sport, a size up"
+  },
+  "jersey20": {
+   "file": "jersey20/Jersey20-Regular.ttf",
+   "name": "Jersey 20",
+   "feel": "bold 16-bit titles"
+  },
+  "jersey25": {
+   "file": "jersey25/Jersey25-Regular.ttf",
+   "name": "Jersey 25",
+   "feel": "big bold arcade titles"
+  },
+  "sixtyfour": {
+   "file": "sixtyfour/Sixtyfour[BLED,SCAN].ttf",
+   "name": "Sixtyfour",
+   "feel": "wide blocky 8-bit home computer (C64, MSX, Atari)"
+  },
+  "workbench": {
+   "file": "workbench/Workbench[BLED,SCAN].ttf",
+   "name": "Workbench",
+   "feel": "an Amiga Workbench-style bitmap face with serifed bits"
+  },
+  "handjet": {
+   "file": "handjet/Handjet[ELGR,ELSH,wght].ttf",
+   "name": "Handjet",
+   "feel": "LED and dot-matrix printer"
+  },
+  "doto": {
+   "file": "doto/Doto[ROND,wght].ttf",
+   "name": "Doto",
+   "feel": "a dot-matrix display, round dots"
+  },
+  "bitcountsingle": {
+   "file": "bitcountsingle/BitcountSingle[CRSV,ELSH,ELXP,slnt,wght].ttf",
+   "name": "Bitcount Single",
+   "feel": "a bitmap text face with a tidy computer feel"
+  },
+  "bitcountgridsingle": {
+   "file": "bitcountgridsingle/BitcountGridSingle[CRSV,ELSH,ELXP,slnt,wght].ttf",
+   "name": "Bitcount Grid Single",
+   "feel": "pixels with a grid between them: pocket LCD games, game and watch"
+  },
+  "dotgothic16": {
+   "file": "dotgothic16/DotGothic16-Regular.ttf",
+   "name": "DotGothic16",
+   "feel": "Japanese dot-matrix, 16 px: JRPG body text"
+  },
+  "vt323": {
+   "file": "vt323/VT323-Regular.ttf",
+   "name": "VT323",
+   "feel": "a computer terminal: DOS, Apple II, hacker screens"
+  },
+  "jacquard12": {
+   "file": "jacquard12/Jacquard12-Regular.ttf",
+   "name": "Jacquard 12",
+   "feel": "blackletter pixels: gothic action games"
+  },
+  "jacquard24": {
+   "file": "jacquard24/Jacquard24-Regular.ttf",
+   "name": "Jacquard 24",
+   "feel": "blackletter pixels, bigger, for titles"
+  },
+  "jacquardabastarda9": {
+   "file": "jacquardabastarda9/JacquardaBastarda9-Regular.ttf",
+   "name": "Jacquarda Bastarda 9",
+   "feel": "a gentler blackletter"
+  },
+  "orbitron": {
+   "file": "orbitron/Orbitron[wght].ttf",
+   "name": "Orbitron",
+   "feel": "geometric sci-fi: PlayStation racers, Dreamcast"
+  },
+  "oxanium": {
+   "file": "oxanium/Oxanium[wght].ttf",
+   "name": "Oxanium",
+   "feel": "squared sci-fi, mecha"
+  },
+  "geo": {
+   "file": "geo/Geo-Regular.ttf",
+   "name": "Geo",
+   "feel": "a narrow technical face"
+  },
+  "majormonodisplay": {
+   "file": "majormonodisplay/MajorMonoDisplay-Regular.ttf",
+   "name": "Major Mono Display",
+   "feel": "outlined strokes: vector arcade, Tron"
+  },
+  "sharetechmono": {
+   "file": "sharetechmono/ShareTechMono-Regular.ttf",
+   "name": "Share Tech Mono",
+   "feel": "a technical monospace: vector arcade, a cockpit"
+  },
+  "audiowide": {
+   "file": "audiowide/Audiowide-Regular.ttf",
+   "name": "Audiowide",
+   "feel": "wide rounded techno titles: Dreamcast, Saturn arcade"
+  },
+  "russoone": {
+   "file": "russoone/RussoOne-Regular.ttf",
+   "name": "Russo One",
+   "feel": "bold squared sans for readable menus"
+  },
+  "blackopsone": {
+   "file": "blackopsone/BlackOpsOne-Regular.ttf",
+   "name": "Black Ops One",
+   "feel": "stencil military arcade titles"
+  },
+  "chakrapetch": {
+   "file": "chakrapetch/ChakraPetch-Regular.ttf",
+   "name": "Chakra Petch",
+   "feel": "clean angular sans: PS1/PS2 menus, sci-fi HUDs"
+  },
+  "chakrapetch-bold": {
+   "file": "chakrapetch/ChakraPetch-Bold.ttf",
+   "name": "Chakra Petch Bold",
+   "feel": "the same, bold"
+  },
+  "zendots": {
+   "file": "zendots/ZenDots-Regular.ttf",
+   "name": "Zen Dots",
+   "feel": "wide futuristic titles"
+  },
+  "wallpoet": {
+   "file": "wallpoet/Wallpoet-Regular.ttf",
+   "name": "Wallpoet",
+   "feel": "stencilled wall lettering"
+  },
+  "cinzel": {
+   "file": "cinzel/Cinzel[wght].ttf",
+   "name": "Cinzel",
+   "feel": "Roman capitals: JRPG and fantasy titles"
+  },
+  "cinzeldecorative": {
+   "file": "cinzeldecorative/CinzelDecorative-Bold.ttf",
+   "name": "Cinzel Decorative Bold",
+   "feel": "fancy Roman capitals for titles"
+  },
+  "medievalsharp": {
+   "file": "medievalsharp/MedievalSharp.ttf",
+   "name": "MedievalSharp",
+   "feel": "a hand-cut medieval face for text"
+  },
+  "metamorphous": {
+   "file": "metamorphous/Metamorphous-Regular.ttf",
+   "name": "Metamorphous",
+   "feel": "fantasy book text"
+  },
+  "unifrakturcook": {
+   "file": "unifrakturcook/UnifrakturCook-Bold.ttf",
+   "name": "UnifrakturCook",
+   "feel": "bold blackletter titles"
+  },
+  "unifrakturmaguntia": {
+   "file": "unifrakturmaguntia/UnifrakturMaguntia-Book.ttf",
+   "name": "UnifrakturMaguntia",
+   "feel": "classic blackletter"
+  },
+  "newrocker": {
+   "file": "newrocker/NewRocker-Regular.ttf",
+   "name": "New Rocker",
+   "feel": "Celtic heavy metal"
+  },
+  "creepster": {
+   "file": "creepster/Creepster-Regular.ttf",
+   "name": "Creepster",
+   "feel": "horror titles: dripping letters"
+  },
+  "bungee": {
+   "file": "bungee/Bungee-Regular.ttf",
+   "name": "Bungee",
+   "feel": "chunky signage capitals: N64 titles, arcade signs"
+  },
+  "bangers": {
+   "file": "bangers/Bangers-Regular.ttf",
+   "name": "Bangers",
+   "feel": "comic book shout: beat'em ups, fighters"
+  },
+  "righteous": {
+   "file": "righteous/Righteous-Regular.ttf",
+   "name": "Righteous",
+   "feel": "rounded retro-futuristic text"
+  },
+  "courierprime": {
+   "file": "courierprime/CourierPrime-Regular.ttf",
+   "name": "Courier Prime",
+   "feel": "typewriter"
+  },
+  "courierprime-bold": {
+   "file": "courierprime/CourierPrime-Bold.ttf",
+   "name": "Courier Prime Bold",
+   "feel": "typewriter, bold"
+  },
+  "cutivemono": {
+   "file": "cutivemono/CutiveMono-Regular.ttf",
+   "name": "Cutive Mono",
+   "feel": "a light typewriter"
+  },
+  "ibmplexmono": {
+   "file": "ibmplexmono/IBMPlexMono-Regular.ttf",
+   "name": "IBM Plex Mono",
+   "feel": "a clear monospace: DOS and terminals"
+  },
+  "ibmplexmono-bold": {
+   "file": "ibmplexmono/IBMPlexMono-Bold.ttf",
+   "name": "IBM Plex Mono Bold",
+   "feel": "the same, bold"
+  }
+ },
+ "packs": {
+  "nes": {
+   "name": "NES / Famicom",
+   "feel": "chunky 8x8 caps, few colours",
+   "roles": {
+    "title": {
+     "font": "pressstart2p",
+     "scale": 3
+    },
+    "body": {
+     "font": "pressstart2p",
+     "scale": 2
+    },
+    "small": {
+     "font": "silkscreen",
+     "scale": 1
+    }
+   }
+  },
+  "master_system": {
+   "name": "Master System / Game Gear",
+   "feel": "squarish 8-bit text",
+   "roles": {
+    "title": {
+     "font": "silkscreen-bold",
+     "scale": 3
+    },
+    "body": {
+     "font": "silkscreen",
+     "scale": 2
+    },
+    "small": {
+     "font": "tiny5",
+     "scale": 1
+    }
+   }
+  },
+  "game_boy": {
+   "name": "Game Boy",
+   "feel": "round plain 8 px text on four greens",
+   "roles": {
+    "title": {
+     "font": "jersey10",
+     "scale": 1
+    },
+    "body": {
+     "font": "pixelifysans",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "tiny5",
+     "scale": 1
+    }
+   }
+  },
+  "game_boy_color": {
+   "name": "Game Boy Color",
+   "feel": "the Game Boy's text, a little livelier",
+   "roles": {
+    "title": {
+     "font": "jersey15",
+     "scale": 1
+    },
+    "body": {
+     "font": "pixelifysans",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "micro5",
+     "scale": 1
+    }
+   }
+  },
+  "gba": {
+   "name": "Game Boy Advance",
+   "feel": "clear 16 px handheld text, a bold title",
+   "roles": {
+    "title": {
+     "font": "jersey15",
+     "scale": 1
+    },
+    "body": {
+     "font": "pixelifysans",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "tiny5",
+     "scale": 1
+    }
+   }
+  },
+  "snes": {
+   "name": "Super Nintendo",
+   "feel": "a bold rounded RPG and platform feel",
+   "roles": {
+    "title": {
+     "font": "jersey20",
+     "scale": 1
+    },
+    "body": {
+     "font": "pixelifysans",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "silkscreen",
+     "scale": 1
+    }
+   }
+  },
+  "mega_drive": {
+   "name": "Mega Drive / Genesis",
+   "feel": "sporty heavy titles and tight body text",
+   "roles": {
+    "title": {
+     "font": "jersey25",
+     "scale": 1
+    },
+    "body": {
+     "font": "jersey10",
+     "scale": 1
+    },
+    "small": {
+     "font": "tiny5",
+     "scale": 1
+    }
+   }
+  },
+  "pc_engine": {
+   "name": "PC Engine / TurboGrafx",
+   "feel": "dotted Japanese-style text",
+   "roles": {
+    "title": {
+     "font": "doto",
+     "axes": [
+      0,
+      700
+     ],
+     "scale": 1
+    },
+    "body": {
+     "font": "dotgothic16",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "micro5",
+     "scale": 1
+    }
+   }
+  },
+  "neo_geo": {
+   "name": "Neo Geo",
+   "feel": "arcade fighting: heavy slanted-looking titles",
+   "roles": {
+    "title": {
+     "font": "bangers",
+     "px": 28,
+     "scale": 1
+    },
+    "body": {
+     "font": "jersey15",
+     "scale": 1
+    },
+    "small": {
+     "font": "silkscreen",
+     "scale": 1
+    }
+   }
+  },
+  "cps2": {
+   "name": "CPS2 arcade",
+   "feel": "stencil title cards, tidy body",
+   "roles": {
+    "title": {
+     "font": "blackopsone",
+     "px": 28,
+     "scale": 1
+    },
+    "body": {
+     "font": "jersey15",
+     "scale": 1
+    },
+    "small": {
+     "font": "micro5",
+     "scale": 1
+    }
+   }
+  },
+  "arcade_80s": {
+   "name": "80s arcade",
+   "feel": "square caps for a high score table",
+   "roles": {
+    "title": {
+     "font": "pressstart2p",
+     "scale": 3
+    },
+    "body": {
+     "font": "pressstart2p",
+     "scale": 2
+    },
+    "small": {
+     "font": "bytesized",
+     "scale": 1
+    }
+   }
+  },
+  "atari_2600": {
+   "name": "Atari 2600",
+   "feel": "very blocky",
+   "roles": {
+    "title": {
+     "font": "sixtyfour",
+     "px": 16,
+     "scale": 1
+    },
+    "body": {
+     "font": "bytesized",
+     "scale": 3
+    },
+    "small": {
+     "font": "bytesized",
+     "scale": 1
+    }
+   }
+  },
+  "atari_st": {
+   "name": "Atari ST",
+   "feel": "a crisp monospace desktop",
+   "roles": {
+    "title": {
+     "font": "workbench",
+     "scale": 1
+    },
+    "body": {
+     "font": "ibmplexmono",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "tiny5",
+     "scale": 1
+    }
+   }
+  },
+  "amiga": {
+   "name": "Amiga",
+   "feel": "the Workbench look",
+   "roles": {
+    "title": {
+     "font": "workbench",
+     "scale": 1
+    },
+    "body": {
+     "font": "workbench",
+     "scale": 1
+    },
+    "small": {
+     "font": "tiny5",
+     "scale": 1
+    }
+   }
+  },
+  "commodore_64": {
+   "name": "Commodore 64",
+   "feel": "wide blocky home computer",
+   "roles": {
+    "title": {
+     "font": "sixtyfour",
+     "scale": 1
+    },
+    "body": {
+     "font": "sixtyfour",
+     "scale": 1
+    },
+    "small": {
+     "font": "tiny5",
+     "scale": 1
+    }
+   }
+  },
+  "zx_spectrum": {
+   "name": "ZX Spectrum",
+   "feel": "narrow thin tape-loading text",
+   "roles": {
+    "title": {
+     "font": "workbench",
+     "scale": 1
+    },
+    "body": {
+     "font": "tiny5",
+     "scale": 3
+    },
+    "small": {
+     "font": "tiny5",
+     "scale": 1
+    }
+   }
+  },
+  "msx": {
+   "name": "MSX",
+   "feel": "a plain 8-bit computer face",
+   "roles": {
+    "title": {
+     "font": "sixtyfour",
+     "scale": 1
+    },
+    "body": {
+     "font": "tiny5",
+     "scale": 3
+    },
+    "small": {
+     "font": "tiny5",
+     "scale": 1
+    }
+   }
+  },
+  "apple_ii": {
+   "name": "Apple II",
+   "feel": "green terminal text",
+   "roles": {
+    "title": {
+     "font": "vt323",
+     "px": 32,
+     "scale": 1
+    },
+    "body": {
+     "font": "vt323",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "vt323",
+     "px": 16,
+     "scale": 1
+    }
+   }
+  },
+  "dos_vga": {
+   "name": "DOS / VGA",
+   "feel": "the 80x25 text screen",
+   "roles": {
+    "title": {
+     "font": "ibmplexmono-bold",
+     "px": 24,
+     "scale": 1
+    },
+    "body": {
+     "font": "vt323",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "micro5",
+     "scale": 1
+    }
+   }
+  },
+  "pico8": {
+   "name": "PICO-8",
+   "feel": "tiny 4x6 text in sixteen colours",
+   "roles": {
+    "title": {
+     "font": "bytesized",
+     "scale": 3
+    },
+    "body": {
+     "font": "micro5",
+     "scale": 1
+    },
+    "small": {
+     "font": "bytesized",
+     "scale": 1
+    }
+   }
+  },
+  "tic80": {
+   "name": "TIC-80",
+   "feel": "tiny readable pixels",
+   "roles": {
+    "title": {
+     "font": "tiny5",
+     "scale": 3
+    },
+    "body": {
+     "font": "tiny5",
+     "scale": 2
+    },
+    "small": {
+     "font": "bytesized",
+     "scale": 1
+    }
+   }
+  },
+  "pocket_lcd": {
+   "name": "Pocket LCD / Game & Watch",
+   "feel": "dots with gaps, segment-display feel",
+   "roles": {
+    "title": {
+     "font": "bitcountgridsingle",
+     "px": 32,
+     "scale": 1
+    },
+    "body": {
+     "font": "doto",
+     "axes": [
+      0,
+      700
+     ],
+     "scale": 1
+    },
+    "small": {
+     "font": "handjet",
+     "scale": 1
+    }
+   }
+  },
+  "vector_arcade": {
+   "name": "Vector arcade",
+   "feel": "thin outlined strokes",
+   "roles": {
+    "title": {
+     "font": "majormonodisplay",
+     "px": 28,
+     "scale": 1
+    },
+    "body": {
+     "font": "sharetechmono",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "geo",
+     "px": 14,
+     "scale": 1
+    }
+   }
+  },
+  "playstation": {
+   "name": "PlayStation (menus and RPGs)",
+   "feel": "clean angular sans, Roman title capitals",
+   "roles": {
+    "title": {
+     "font": "cinzeldecorative",
+     "px": 28,
+     "scale": 1
+    },
+    "body": {
+     "font": "chakrapetch",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "chakrapetch",
+     "px": 12,
+     "scale": 1
+    }
+   }
+  },
+  "playstation_scifi": {
+   "name": "PlayStation (racing, sci-fi)",
+   "feel": "geometric techno",
+   "roles": {
+    "title": {
+     "font": "orbitron",
+     "px": 28,
+     "scale": 1,
+     "weight": 800
+    },
+    "body": {
+     "font": "chakrapetch",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "geo",
+     "px": 14,
+     "scale": 1
+    }
+   }
+  },
+  "saturn": {
+   "name": "Sega Saturn (arcade ports)",
+   "feel": "wide techno and bold labels",
+   "roles": {
+    "title": {
+     "font": "audiowide",
+     "px": 28,
+     "scale": 1
+    },
+    "body": {
+     "font": "russoone",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "chakrapetch",
+     "px": 12,
+     "scale": 1
+    }
+   }
+  },
+  "gothic": {
+   "name": "Gothic action (SotN-style)",
+   "feel": "blackletter titles, fantasy body",
+   "roles": {
+    "title": {
+     "font": "jacquard24",
+     "px": 24,
+     "scale": 1
+    },
+    "body": {
+     "font": "metamorphous",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "jacquardabastarda9",
+     "scale": 1
+    }
+   }
+  },
+  "n64": {
+   "name": "Nintendo 64",
+   "feel": "chunky signage titles, soft body",
+   "roles": {
+    "title": {
+     "font": "bungee",
+     "px": 28,
+     "scale": 1
+    },
+    "body": {
+     "font": "righteous",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "chakrapetch",
+     "px": 12,
+     "scale": 1
+    }
+   }
+  },
+  "dreamcast": {
+   "name": "Dreamcast",
+   "feel": "wide techno titles, bold sans",
+   "roles": {
+    "title": {
+     "font": "audiowide",
+     "px": 28,
+     "scale": 1
+    },
+    "body": {
+     "font": "russoone",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "chakrapetch",
+     "px": 12,
+     "scale": 1
+    }
+   }
+  },
+  "ds_psp": {
+   "name": "Nintendo DS / PSP",
+   "feel": "tidy handheld sans",
+   "roles": {
+    "title": {
+     "font": "jersey20",
+     "scale": 1
+    },
+    "body": {
+     "font": "pixelifysans",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "tiny5",
+     "scale": 1
+    }
+   }
+  },
+  "jrpg": {
+   "name": "Japanese-style RPG",
+   "feel": "dot-matrix body, Roman title",
+   "roles": {
+    "title": {
+     "font": "cinzel",
+     "px": 28,
+     "scale": 1,
+     "weight": 700
+    },
+    "body": {
+     "font": "dotgothic16",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "micro5",
+     "scale": 1
+    }
+   }
+  },
+  "fantasy": {
+   "name": "Medieval fantasy",
+   "feel": "blackletter and hand-cut text",
+   "roles": {
+    "title": {
+     "font": "unifrakturcook",
+     "px": 28,
+     "scale": 1
+    },
+    "body": {
+     "font": "medievalsharp",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "silkscreen",
+     "scale": 1
+    }
+   }
+  },
+  "horror": {
+   "name": "Horror",
+   "feel": "dripping titles, rough text",
+   "roles": {
+    "title": {
+     "font": "creepster",
+     "px": 28,
+     "scale": 1
+    },
+    "body": {
+     "font": "newrocker",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "micro5",
+     "scale": 1
+    }
+   }
+  },
+  "comic_beatemup": {
+   "name": "Comic / beat'em up",
+   "feel": "shouted comic caps",
+   "roles": {
+    "title": {
+     "font": "bangers",
+     "px": 28,
+     "scale": 1
+    },
+    "body": {
+     "font": "righteous",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "tiny5",
+     "scale": 1
+    }
+   }
+  },
+  "sports": {
+   "name": "Sports / scoreboard",
+   "feel": "bold jerseys and digits",
+   "roles": {
+    "title": {
+     "font": "jersey25",
+     "scale": 1
+    },
+    "body": {
+     "font": "jersey15",
+     "scale": 1
+    },
+    "small": {
+     "font": "jersey10",
+     "scale": 1
+    }
+   }
+  },
+  "terminal": {
+   "name": "Hacker terminal",
+   "feel": "a green monitor",
+   "roles": {
+    "title": {
+     "font": "majormonodisplay",
+     "px": 28,
+     "scale": 1
+    },
+    "body": {
+     "font": "vt323",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "courierprime",
+     "px": 12,
+     "scale": 1
+    }
+   }
+  },
+  "typewriter": {
+   "name": "Typewriter / detective",
+   "feel": "typed pages and case files",
+   "roles": {
+    "title": {
+     "font": "courierprime-bold",
+     "px": 24,
+     "scale": 1
+    },
+    "body": {
+     "font": "courierprime",
+     "px": 16,
+     "scale": 1
+    },
+    "small": {
+     "font": "courierprime",
+     "px": 14,
+     "scale": 1
+    }
+   }
+  }
+ }
+}

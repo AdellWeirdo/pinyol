@@ -22,6 +22,9 @@ assets/  what the engine reads (.pk / .tiles / .map / .pal + .meta.json)
 A game looks like the console it is made for. Pick one with whoever the game is for (ask, if they have not said),
 then make every picture by that look's rules and start from its example. The engine moves all of them.
 
+**Letters too**: every look has a font pack, a `title`, a `body` and a `small` font in the spirit of that console's
+text, made with `uv run tools/font2fnt.py --pack <look> games/<id>`: the 37 packs are in [fonts.md](fonts.md).
+
 Not every look needs an image model. The small ones (Game Boy, Spectrum, 16-bit, PICO-8, LCD, vector, first person)
 are best **drawn by code** in the game's `art.py`, from pictures written as text and simple shapes, as their examples
 do: no quota, and pixels exactly where they should be. A game can even draw everything while it runs, with no

@@ -57,6 +57,8 @@ over the box's border or past the screen's edge, readable on what is under it.
 - Pictures: generated images (backgrounds removed, frames cut, scale and feet fitted) are in
   [docs/art.md](docs/art.md): read it before making art. Or draw them by code in the game's `art.py`, as the
   template does.
+- Letters: pick the look's font pack in [docs/fonts.md](docs/fonts.md) and make it with
+  `uv run tools/font2fnt.py --pack <pack> games/<id>` (fonts/<pack>_title.fnt, _body, _small, for `text(..., {font = ...})`).
 - Sounds: `tone()` and the sound factory in docs/lua.md need no files; WAV must be PCM 16-bit mono 22,050 Hz;
   music can be a `.mod`.
 

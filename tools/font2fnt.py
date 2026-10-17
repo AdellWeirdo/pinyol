@@ -6,6 +6,9 @@
 
     uv run tools/font2fnt.py SOURCE out.fnt [--px N] [--scale K] [--spacing S] [--weight W] [--cell WxH] [--first C]
     uv run tools/font2fnt.py --list                     the fonts that come with pinyol (third_party/fonts)
+    uv run tools/font2fnt.py --catalog                  the packs: a title, body and small font for each console's look
+    uv run tools/font2fnt.py --pack NAME GAME           NAME's three fonts made into GAME/fonts/NAME_title.fnt, _body, _small
+    uv run tools/font2fnt.py --sheet out.png [NAME]     a picture of every pack (or one), to choose from
 
 SOURCE is a .ttf/.otf file, a .bdf file, a .png sheet, or the name of a font in the list.
 - TTF/OTF: drawn at --px pixels. Without --px, the font's own pixel size is found (the smallest at which a pixel
@@ -19,6 +22,8 @@ Each pixel then becomes --scale x --scale (default 2: the size of the world's pi
 from __future__ import annotations
 
 import argparse
+import json
+import re
 import sys
 from pathlib import Path
 
@@ -43,7 +48,7 @@ def library() -> dict[str, Path]:
     found = {}
     for d in LIBRARY:
         for f in sorted(d.glob("*.[ot]tf")):
-            found[f.stem.lower().replace("-regular", "").replace("[wght]", "")] = f
+            found[re.sub(r"\[.*\]", "", f.stem).lower().replace("-regular", "")] = f
     return found
 
 
@@ -88,10 +93,12 @@ def native_px(path: str) -> float:
     return 16
 
 
-def from_ttf(ttf: str, px: float, weight: int | None, spacing: int):
+def from_ttf(ttf: str, px: float, weight: int | None, spacing: int, axes: list[float] | None = None):
     font = ImageFont.truetype(ttf, px)
     pixelify = "Pixelify" in ttf  # its C and G nearly close at small sizes; other fonts are left alone
-    if weight is not None:
+    if axes is not None:  # a variable font with several axes: a value for each, in the order the font lists them
+        font.set_variation_by_axes(axes)
+    elif weight is not None:
         font.set_variation_by_axes([weight])
     ascent, descent = font.getmetrics()
     h = ascent + descent
@@ -109,6 +116,7 @@ def from_ttf(ttf: str, px: float, weight: int | None, spacing: int):
             g.paste(0, (x1 - max(2, (x1 - x0) // 3), y0 + (y1 - y0) * 2 // 10, x1, y0 + (y1 - y0) * 45 // 100))
         glyphs.append(g)
         advs.append(round(font.getlength(ch)) + spacing)
+    advs[32] = max(advs[32], round(px * 0.3))  # some display faces set the word space too tight at small sizes
     return glyphs, advs, ascent
 
 
@@ -221,13 +229,13 @@ def pack(glyphs, advs, ascent: int, scale: int, out: str) -> None:
 
 
 def build(src: str, out: str, px: float | None = None, scale: int = 2, weight: int | None = None, spacing: int = 0,
-          cell: tuple[int, int] | None = None, first: int = 32) -> None:
+          cell: tuple[int, int] | None = None, first: int = 32, axes: list[float] | None = None) -> None:
     lib = library()
     if not Path(src).exists() and src.lower() in lib:
         src = str(lib[src.lower()])
     ext = Path(src).suffix.lower()
     if ext in (".ttf", ".otf"):
-        glyphs, advs, ascent = from_ttf(src, px or native_px(src), weight, spacing)
+        glyphs, advs, ascent = from_ttf(src, px or native_px(src), weight, spacing, axes)
     elif ext == ".bdf":
         glyphs, advs, ascent = from_bdf(src, spacing)
     elif ext == ".png":
@@ -237,11 +245,139 @@ def build(src: str, out: str, px: float | None = None, scale: int = 2, weight: i
     pack(glyphs, advs, ascent, scale, out)
 
 
+CATALOG = ROOT / "third_party" / "fonts" / "catalog.json"
+ROLES = ("title", "body", "small")
+
+
+def catalog() -> dict:
+    """third_party/fonts/catalog.json: "fonts" (id: file, name, feel) and "packs" (id: name, feel, roles), each role a
+    font id with optional px, scale, weight, axes, spacing."""
+    return json.loads(CATALOG.read_text(encoding="utf-8"))
+
+
+def role_font(cat: dict, spec: dict) -> tuple[str, dict]:
+    """The font file and the build options of one role of a pack."""
+    f = cat["fonts"][spec["font"]]
+    path = CATALOG.parent / f["file"]
+    return str(path), {"px": spec.get("px"), "scale": spec.get("scale", 2), "weight": spec.get("weight"),
+                       "spacing": spec.get("spacing", 0), "axes": spec.get("axes")}
+
+
+def make_pack(name: str, game: str, prefix: str | None = None) -> list[str]:
+    """Pack `name`'s title, body and small fonts, made into game/fonts/<prefix>_<role>.fnt (the file names are the pack's,
+    not the fonts': several of the fonts keep their names reserved under the licence, and what is made from them may not
+    carry those names). Returns the names to give text()'s font."""
+    cat = catalog()
+    if name not in cat["packs"]:
+        sys.exit(f"no pack \"{name}\": --catalog lists them")
+    out = Path(game) / "fonts"
+    out.mkdir(parents=True, exist_ok=True)
+    made = []
+    for role in ROLES:
+        path, o = role_font(cat, cat["packs"][name]["roles"][role])
+        fnt = f"{prefix or name}_{role}"
+        build(path, str(out / (fnt + ".fnt")), o["px"], o["scale"], o["weight"], o["spacing"], None, 32, o["axes"])
+        made.append(fnt)
+    return made
+
+
+def reserved_name(font_file: str) -> str | None:
+    """The Reserved Font Name in the OFL.txt beside a font file, if its copyright line has one."""
+    ofl = (CATALOG.parent / font_file).parent / "OFL.txt"
+    if not ofl.exists():
+        return None
+    head = ofl.read_text(encoding="utf-8", errors="replace").split("This Font Software is licensed")[0]
+    m = re.search(r"Reserved Font Names?:?\s*(.+?)(?:\)|\.|\n\n|$)", " ".join(head.split()), re.I)
+    return m.group(1).strip(" \"'.,") if m else None
+
+
+def markdown(path: str) -> None:
+    """docs/fonts.md: the packs and the fonts, from catalog.json and the OFL.txt files."""
+    cat = catalog()
+    out = ["<!-- made by `tools/font2fnt.py --markdown docs/fonts.md`: edit third_party/fonts/catalog.json, not this -->",
+           "# Fonts for every look", "",
+           "Each console's games had their own letters, and those are not ours to ship (Nintendo's, Sony's and Sega's fonts "
+           "are theirs). What pinyol carries instead are free fonts, all under the SIL Open Font License, that give the "
+           "same *feel*, grouped into **packs**: a `title`, a `body` and a `small` font for each look. Pick the pack of "
+           "the console your game is made for (docs/art.md, \"Choose a look\") and make its fonts into your game:", "",
+           "```sh", "uv run tools/font2fnt.py --pack snes games/mygame     # fonts/snes_title.fnt, snes_body.fnt, snes_small.fnt",
+           "```", "",
+           "```lua", 'text("PUSH START", 240, 60, {font = "snes_title", align = "center", color = 0xFFFFFF})',
+           'text("Hamburgefonstiv", 20, 140, {font = "snes_body"})', "```", "",
+           "`uv run tools/font2fnt.py --catalog` lists the packs, `--sheet out.png [pack]` draws them. A game can have 16 fonts "
+           "of its own besides the four every game has, so mix packs freely (`--prefix` renames a pack's files). Letters are "
+           "the 256 of Windows-1252: Spanish, Catalan, French, German, Portuguese, Italian and the Nordic languages, not "
+           "Japanese or Cyrillic. Fonts with an `*` keep a Reserved Font Name: what is made from them (your `.fnt`) must not "
+           "be called by it, so the packs name their files by pack (`snes_title`), never by font.", "",
+           "![Every pack](media/fonts.png)", "", "## Packs", "",
+           "| Pack | Look | Title | Body | Small |", "|---|---|---|---|---|"]
+    def nm(role_spec):
+        f = cat["fonts"][role_spec["font"]]
+        return f["name"] + ("*" if reserved_name(f["file"]) else "")
+    for k, pk in cat["packs"].items():
+        out.append(f"| `{k}` | **{pk['name']}**: {pk['feel']} | " + " | ".join(nm(pk["roles"][r]) for r in ROLES) + " |")
+    out += ["", "## The fonts", "", "| Font | Feel | Folder |", "|---|---|---|"]
+    for k, f in cat["fonts"].items():
+        out.append(f"| {f['name']}{'*' if reserved_name(f['file']) else ''} | {f['feel']} | `third_party/fonts/{f['file'].split('/')[0]}` |")
+    out += ["", "Each folder holds the font's `OFL.txt`. The fonts are free to use, change and share, also in games that are "
+            "sold, as long as the font is not sold on its own; `THIRD_PARTY_NOTICES.md` carries their notices.", ""]
+    Path(path).write_text("\n".join(out), encoding="utf-8")
+
+
+def sheet(path: str, only: str | None) -> None:
+    """A picture of the packs: each role's sample text drawn from the very glyphs the .fnt would hold, at the size they
+    have on the 480x320 screen, beside the pack's name."""
+    cat = catalog()
+    names = [only] if only else list(cat["packs"])
+    lines = []
+    for n in names:
+        pk = cat["packs"][n]
+        row = []
+        for role in ROLES:
+            fpath, o = role_font(cat, pk["roles"][role])
+            px = o["px"] or native_px(fpath)
+            glyphs, advs, _ = from_ttf(fpath, px, o["weight"], o["spacing"], o["axes"])
+            text = {"title": "Hamburg 0123", "body": "Hamburgefonstiv ñ¿", "small": "small text 0123 ñ¿"}[role]
+            codes = {ch: i for i, (c, ch) in enumerate(chars())}
+            k = o["scale"]
+            w = sum(advs[codes[c]] for c in text) * k + 4
+            h = max(g.height for g in glyphs) * k + 2
+            img = Image.new("RGB", (w, h), (24, 22, 34))
+            x = 0
+            for c in text:
+                g = glyphs[codes[c]].resize((glyphs[codes[c]].width * k, glyphs[codes[c]].height * k), Image.NEAREST)
+                img.paste((240, 224, 168), (x, 0), g)
+                x += advs[codes[c]] * k
+            row.append(img)
+        lines.append((pk["name"], pk["feel"], row))
+    label_w, gap = 230, 14
+    width = max(label_w + sum(i.width + gap for i in row) for _, _, row in lines) + 8
+    height = sum(max(i.height for i in row) + 16 for _, _, row in lines) + 8
+    pic = Image.new("RGB", (width, height), (24, 22, 34))
+    d = ImageDraw.Draw(pic)
+    y = 4
+    for title, feel, row in lines:
+        d.text((6, y + 2), title, fill=(150, 200, 255))
+        d.text((6, y + 14), feel[:38], fill=(110, 120, 150))
+        x = label_w
+        for img in row:
+            pic.paste(img, (x, y))
+            x += img.width + gap
+        y += max(i.height for i in row) + 16
+    pic.save(path)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("src", nargs="?")
     ap.add_argument("out", nargs="?")
     ap.add_argument("--list", action="store_true")
+    ap.add_argument("--catalog", action="store_true", help="the packs and the fonts in each")
+    ap.add_argument("--pack", metavar="NAME", help="make NAME's three fonts into SRC/fonts (SRC is the game's folder)")
+    ap.add_argument("--prefix", help="--pack: the fonts' file names (default: the pack's)")
+    ap.add_argument("--sheet", metavar="FILE.png", help="draw a picture of the packs (SRC: one pack)")
+    ap.add_argument("--markdown", metavar="FILE.md", help="write the catalog as docs/fonts.md")
+    ap.add_argument("--axes", help="a variable font's axes, comma separated, in the order it lists them")
     ap.add_argument("--px", type=float)
     ap.add_argument("--scale", type=int, default=2)
     ap.add_argument("--weight", type=int)
@@ -253,10 +389,28 @@ def main() -> None:
         for name, path in library().items():
             print(f"{name:24} {native_px(str(path)):6.2f} px   {path.relative_to(ROOT)}")
         return
+    if a.catalog:
+        cat = catalog()
+        for n, pk in cat["packs"].items():
+            fonts = ", ".join(cat["fonts"][pk["roles"][r]["font"]]["name"] for r in ROLES)
+            print(f"{n:18} {pk['name']:34} {fonts}")
+        return
+    if a.sheet:
+        sheet(a.sheet, a.src)
+        return
+    if a.markdown:
+        markdown(a.markdown)
+        return
+    if a.pack:
+        if not a.src:
+            ap.error("--pack NAME GAME")
+        print("made", ", ".join(make_pack(a.pack, a.src, a.prefix)), "in", Path(a.src) / "fonts")
+        return
     if not a.src or not a.out:
-        ap.error("SOURCE and out.fnt, or --list")
+        ap.error("SOURCE and out.fnt, or --list, --catalog, --pack, --sheet")
     cell = tuple(int(v) for v in a.cell.lower().split("x")) if a.cell else None
-    build(a.src, a.out, a.px, a.scale, a.weight, a.spacing, cell, a.first)
+    axes = [float(v) for v in a.axes.split(",")] if a.axes else None
+    build(a.src, a.out, a.px, a.scale, a.weight, a.spacing, cell, a.first, axes)
 
 
 if __name__ == "__main__":

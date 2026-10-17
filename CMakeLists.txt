@@ -223,6 +223,8 @@ if(NOT NO_PIL)
   set_tests_properties(make_clip_game PROPERTIES FIXTURES_SETUP clip_game)
   add_test(NAME packed_pictures COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/packed_test.py
            $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/packed)
+  add_test(NAME font_packs COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/fonts_test.py
+           $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/fontpacks) # the catalog, every pack, the engine drawing each
   add_test(NAME library COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/library_test.py
            $<TARGET_FILE:pinyol_headless>) # what tools/library.py takes and refuses from the Library's form
 endif()

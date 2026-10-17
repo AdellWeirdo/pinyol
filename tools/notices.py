@@ -84,7 +84,7 @@ def main() -> None:
         block("pocketmod", "MIT. `third_party/pocketmod`", read(ROOT / "third_party/pocketmod/LICENSE")),
         block("Fonts", "SIL Open Font License 1.1 (its text is at the end). What pinyol makes from them (`.fnt`, "
               "`.woff2`) is a Modified Version under that licence, and never carries a Reserved Font Name: Press Start "
-              "2P's conversions are called Arcade 8.\n\n" + fonts()),
+              "2P's conversions are called Arcade 8, and the font packs (`tools/font2fnt.py --pack`) name their files by pack, never by font.\n\n" + fonts()),
         "## In the libretro core (RetroArch, RetroPie)\n",
         block("puff", "zlib licence. `third_party/puff`, the zip reader's inflate",
               comment(ROOT / "third_party/puff/puff.h", "Copyright (C)", "madler@alumni")),
