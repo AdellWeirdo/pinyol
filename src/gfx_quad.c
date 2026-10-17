@@ -143,3 +143,34 @@ void gfx_quad(surface *s, const asset *a, int frame, const int16_t xy8[8], const
     triangle(s, &q, t1);
     triangle(s, &q, t2);
 }
+
+/* A box filled from colour c1 at its top (or left) to c2 at its bottom (right), each channel stepping evenly from the
+ * first row's middle to the last's; dither: the PlayStation's 4x4 added before the low bits go, so a slow ramp shows a
+ * fine pattern, not bands. Seen through or added to what is under it like a picture (mode, alpha 0..256). */
+void gfx_grad(surface *s, int x, int y, int w, int h, const uint8_t c1[3], const uint8_t c2[3], bool across, bool dither,
+              int mode, unsigned alpha) {
+    int u0, v0, n = CLIP_X(s, x, w, &u0), m = CLIP_Y(s, y, h, &v0);
+    if (n <= 0 || m <= 0) return;
+    const int ys = step_y(s), len = across ? w : h;
+    const bool plain = mode == BLEND_ALPHA && alpha >= 256;
+    for (int k = 0; k < n; k++) {
+        const int px = x + u0 + k;
+        uint16_t *dst = at(s, px, y + v0);
+        for (int j = 0; j < m; j++, dst += ys) {
+            const int py = y + v0 + j, t = across ? u0 + k : v0 + j;
+            int ch[3];
+            for (int i = 0; i < 3; i++) { /* 8.8: c1 + (c2 - c1) (2 t + 1) / 2 len */
+                ch[i] = (c1[i] << 8) + (int)((int64_t)((c2[i] - c1[i]) * 256) * (2 * t + 1) / (2 * len));
+                if (dither) ch[i] += PSX_DITHER[(py & 3) * 4 + (px & 3)] * (i == 1 ? 128 : 256);
+                ch[i] = ch[i] < 0 ? 0 : ch[i] > 255 * 256 ? 255 * 256 : ch[i];
+            }
+            uint16_t c = (uint16_t)((ch[0] >> 11) << 11 | (ch[1] >> 10) << 5 | (ch[2] >> 11));
+            if (plain) {
+                *dst = stored(s, c);
+                continue;
+            }
+            uint16_t under = s->swap ? bswap16(*dst) : *dst;
+            *dst = under == CANVAS_KEY ? stored(s, c) : stored(s, mix565(under, c, alpha, mode));
+        }
+    }
+}

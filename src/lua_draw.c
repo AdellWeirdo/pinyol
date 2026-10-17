@@ -21,7 +21,7 @@
 
 /* ------------------------------------------------------------------ the overlay: text and shapes at 480x320 */
 
-enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS, OV_QUAD };
+enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS, OV_QUAD, OV_GRAD };
 
 typedef struct {
     uint8_t op, font, scale, ext; /* ext: 1 + its entry in ov_style (text) or ov_xf (img); 0: none */
@@ -44,7 +44,7 @@ static struct { /* img's pal, tint and how it is seen through: c->font is 1 + it
     uint8_t mode;  /* BLEND_*: how it meets what is under it (alpha: mixed; add, sub, quarter: its light moved by) */
 } ov_look[OV_EXT];
 static int nlook;
-static struct { /* quad's corners and how it is drawn: c->ext is 1 + its entry */
+static struct { /* quad's corners and how it is drawn (grad's two colours in light[0], light[1], lights: across): c->ext is 1 + its entry */
     int16_t xy[8]; /* eighths of a pixel */
     uint8_t light[4][3];
     bool lights, dither;
@@ -162,6 +162,11 @@ static void draw_one(surface *s, const ov_cmd *c) {
         gfx_quad(s, c->a, c->frame, q->xy, q->light, q->lights, q->mode, al, q->dither);
         break;
     }
+    case OV_GRAD: {
+        const typeof(ov_quad[0]) *q = &ov_quad[c->ext - 1];
+        gfx_grad(s, c->x, c->y, c->w, c->h, q->light[0], q->light[1], q->lights, q->dither, q->mode, q->alpha + (q->alpha >> 7));
+        break;
+    }
     case OV_POINTS: /* a swarm: its picture at each point (its top-left corner, already worked out) */
         for (int i = 0; i < c->len; i++) {
             int x = ov_pts[c->str + 2 * i], y = ov_pts[c->str + 2 * i + 1];
@@ -274,7 +279,7 @@ static void bounds(const ov_cmd *c, int *x0, int *y0, int *x1, int *y1) { /* wha
 
 static void forget(const ov_cmd *c, int text_bytes, int corners) { /* the last command, off the list with its data */
     nov--, ntext -= text_bytes, npts -= 2 * corners;
-    if (c->op == OV_QUAD) nquad--;
+    if (c->op == OV_QUAD || c->op == OV_GRAD) nquad--;
     else if (c->ext && c->op == OV_TEXT_OP) nstyle--;
     else if (c->ext) nxf--;
     if (c->op == OV_IMG && c->font) nlook--;
@@ -680,6 +685,31 @@ static int l_img(lua_State *L) {
     return 0;
 }
 
+/* grad(x, y, w, h, c1, c2 [, {across, dither, alpha, add, sub, quarter}]): a box shaded from c1 at its top to c2 at its
+ * bottom (across: left to right): a sky, a vignette, a shaft of light (with add), a shadow (with sub) */
+static int l_grad(lua_State *L) {
+    int x = num(L, 1), y = num(L, 2), w = num(L, 3), h = num(L, 4);
+    lua_Integer c1 = luaL_checkinteger(L, 5), c2 = luaL_checkinteger(L, 6);
+    if (w <= 0 || h <= 0 || nquad == OV_EXT) return 0;
+    img_opts o = {.scale = 1, .alpha = 1};
+    bool across = false, dither = false;
+    if (lua_istable(L, 7)) {
+        img_options(L, 7, &o);
+        lua_getfield(L, 7, "across"), across = lua_toboolean(L, -1), lua_pop(L, 1);
+        lua_getfield(L, 7, "dither"), dither = lua_toboolean(L, -1), lua_pop(L, 1);
+    }
+    ov_cmd *c = ov_add(OV_GRAD);
+    if (!c) return 0;
+    c->x = i16(x), c->y = i16(y), c->w = i16(w), c->h = i16(h);
+    ov_quad[nquad].light[0][0] = (uint8_t)(c1 >> 16), ov_quad[nquad].light[0][1] = (uint8_t)(c1 >> 8), ov_quad[nquad].light[0][2] = (uint8_t)c1;
+    ov_quad[nquad].light[1][0] = (uint8_t)(c2 >> 16), ov_quad[nquad].light[1][1] = (uint8_t)(c2 >> 8), ov_quad[nquad].light[1][2] = (uint8_t)c2;
+    ov_quad[nquad].lights = across, ov_quad[nquad].dither = dither;
+    ov_quad[nquad].mode = o.mode, ov_quad[nquad].alpha = (uint8_t)(o.alpha * 255 + 0.5f);
+    c->ext = (uint8_t)(++nquad);
+    commit(c, 0, 0);
+    return 0;
+}
+
 /* quad(id, x1, y1, x2, y2, x3, y3, x4, y4 [, {frame, alpha, add, sub, quarter, light, lights, dither}]): the picture's
  * frame on four corners, in the picture's own order (top-left, top-right, bottom-right, bottom-left): a Saturn
  * distorted sprite, a PlayStation textured quad. light = 0xRRGGBB lights it by that colour (0x808080 as it is, up to
@@ -943,7 +973,7 @@ bool draw_covers_screen(void) {
 void draw_register(lua_State *L) {
     static const luaL_Reg F[] = {
         {"text", l_text}, {"textw", l_textw}, {"rect", l_rect}, {"box", l_box}, {"shade", l_shade}, {"panel", l_panel},
-        {"plate", l_plate}, {"img", l_img}, {"quad", l_quad}, {"frame", l_frame}, {"pset", l_pset}, {"pget", l_pget}, {"line", l_line},
+        {"plate", l_plate}, {"img", l_img}, {"quad", l_quad}, {"grad", l_grad}, {"frame", l_frame}, {"pset", l_pset}, {"pget", l_pget}, {"line", l_line},
         {"circ", l_circ}, {"tri", l_tri}, {"poly", l_poly}, {"cls", l_cls}, {"canvas", l_canvas}, {"target", l_target},
         {"camera", l_camera}, {"clip", l_clip}, {"imgsize", l_imgsize}, {NULL, NULL}};
     lua_pushglobaltable(L);

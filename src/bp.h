@@ -217,6 +217,10 @@ int font_draw_styled(surface *sf, const font *f, int x, int y, const char *s, in
  * corner would be unturned. */
 void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, float sy, float degrees, const asset *pal,
                  int tint); /* pal, tint (-1: none): packed pictures not turned */
+/* A box shaded from colour c1 (RGB888) at its top, or left if `across`, to c2 at its bottom, or right; dither as
+ * for gfx_quad; mode and alpha (0..256) as gfx_blit_mixed. */
+void gfx_grad(surface *s, int x, int y, int w, int h, const uint8_t c1[3], const uint8_t c2[3], bool across, bool dither,
+              int mode, unsigned alpha);
 /* A frame of the picture on any four corners, in order: top-left, top-right, bottom-right, bottom-left of the picture
  * (xy8: x, y of each, in eighths of a pixel; at most +-16000). lights: each corner's colour to light it by (0..255 a
  * channel, 128 as it is), blending across the quad; mode and alpha (0..256) as gfx_blit_mixed; dither: the PlayStation's
