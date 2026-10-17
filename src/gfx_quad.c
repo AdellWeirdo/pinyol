@@ -364,3 +364,64 @@ void gfx_light(surface *s, int cx, int cy, int r, const uint8_t rgb[3], unsigned
         }
     }
 }
+
+/* ------------------------------------------------------------------ warp: a picture with each row, each column, moved */
+
+/* A frame of the picture drawn at (x, y) with row j moved right by rows[j] pixels (a Saturn VDP2's line scroll: water,
+ * heat, a wave) and column i moved down by cols[i] (column scroll: a flag, a ripple). Either may be NULL. wrap: what
+ * moves out of one side comes in at the other (a panorama going round); else the gaps are see-through. */
+void gfx_warp(surface *s, const asset *a, int frame, int x, int y, const int16_t *rows, const int16_t *cols, bool wrap) {
+    if (!a->pixels || frame < 0 || frame >= a->frames) return;
+    const int W = a->w, H = a->h, stride = (W + 7) / 8;
+    const uint16_t *src = a->pixels + (size_t)frame * W * H;
+    const uint8_t *mask = a->mask ? a->mask + (size_t)frame * stride * H : NULL;
+    const int ys = step_y(s);
+    int cmin = 0, cmax = 0, rmin = 0, rmax = 0;
+    for (int j = 0; rows && j < H; j++) rmin = rows[j] < rmin ? rows[j] : rmin, rmax = rows[j] > rmax ? rows[j] : rmax;
+    for (int i = 0; cols && i < W; i++) cmin = cols[i] < cmin ? cols[i] : cmin, cmax = cols[i] > cmax ? cols[i] : cmax;
+    /* the screen columns the picture can touch, and for each the rows */
+    int sx0 = x + rmin, sx1 = x + W + rmax; /* [sx0, sx1) */
+    if (wrap) sx0 = x, sx1 = x + W;
+    if (sx0 < s->x0) sx0 = s->x0;
+    if (sx1 > s->x0 + s->w) sx1 = s->x0 + s->w;
+    int j0 = y + cmin, j1 = y + H + cmax; /* screen rows [j0, j1) */
+    if (j0 < s->y0) j0 = s->y0;
+    if (j1 > s->y0 + s->h) j1 = s->y0 + s->h;
+    /* Each row is moved first, then each column of the result: screen pixel (px, py) shows row j = py - y - cols[px - x] of the
+     * picture, from its column u = px - x - rows[j]. */
+    for (int px = sx0; px < sx1; px++) {
+        const int ci = px - x;
+        const int cdy = cols ? cols[ci < 0 ? 0 : ci >= W ? W - 1 : ci] : 0;
+        uint16_t *dst = at(s, px, j0);
+        for (int py = j0; py < j1; py++, dst += ys) {
+            const int j = py - y - cdy;
+            if ((unsigned)j >= (unsigned)H) continue;
+            int u = px - x - (rows ? rows[j] : 0);
+            if (wrap) u = ((u % W) + W) % W;
+            if ((unsigned)u >= (unsigned)W) continue;
+            if (mask && !(mask[j * stride + (u >> 3)] & (0x80 >> (u & 7)))) continue;
+            const uint16_t c = src[j * W + u];
+            *dst = s->swap ? bswap16(c) : c;
+        }
+    }
+}
+
+/* ------------------------------------------------------------------ lines: a colour for each row, added, taken or laid */
+
+/* The rows of a box each given its own colour (rowcol[j] for row j of h, RGB565): laid as they are, or added to or taken
+ * from what is there (the colour offset of a Saturn's VDP2 for each line: a sunset down a wall, a flash up a floor), or mixed
+ * at alpha (0..256). */
+void gfx_lines(surface *s, int x, int y, int w, int h, const uint16_t *rowcol, int mode, unsigned alpha, bool lay) {
+    int u0, v0, n = CLIP_X(s, x, w, &u0), m = CLIP_Y(s, y, h, &v0);
+    if (n <= 0 || m <= 0) return;
+    const int ys = step_y(s);
+    for (int k = 0; k < n; k++) {
+        uint16_t *dst = at(s, x + u0 + k, y + v0);
+        for (int j = 0; j < m; j++, dst += ys) {
+            const uint16_t c = rowcol[v0 + j];
+            if (lay) { *dst = stored(s, c); continue; }
+            const uint16_t under = s->swap ? bswap16(*dst) : *dst;
+            *dst = stored(s, mix565(under, c, alpha, mode));
+        }
+    }
+}

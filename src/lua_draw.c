@@ -21,7 +21,7 @@
 
 /* ------------------------------------------------------------------ the overlay: text and shapes at 480x320 */
 
-enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS, OV_QUAD, OV_GRAD, OV_LIGHT };
+enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS, OV_QUAD, OV_GRAD, OV_LIGHT, OV_WARP, OV_LINES };
 
 typedef struct {
     uint8_t op, font, scale, ext; /* ext: 1 + its entry in ov_style (text) or ov_xf (img); 0: none */
@@ -173,6 +173,19 @@ static void draw_one(surface *s, const ov_cmd *c) {
                   q->xy[2], q->xy[3]);
         break;
     }
+    case OV_WARP: {
+        const typeof(ov_quad[0]) *q = &ov_quad[c->ext - 1];
+        const int16_t *rows = q->lights ? ov_pts + c->str : NULL; /* (the rows' shifts, then the columns') */
+        const int16_t *cols = q->dither ? ov_pts + c->str + (q->lights ? c->len : 0) : NULL;
+        gfx_warp(s, c->a, c->frame, c->x + q->xy[0], c->y + q->xy[1], rows, cols, q->mode == 1);
+        break;
+    }
+    case OV_LINES: {
+        const typeof(ov_quad[0]) *q = &ov_quad[c->ext - 1];
+        gfx_lines(s, c->x, c->y, c->w, c->h, (const uint16_t *)(ov_pts + c->str), q->mode == 3 ? BLEND_ALPHA : q->mode,
+                  q->alpha + (q->alpha >> 7), q->mode == 4);
+        break;
+    }
     case OV_POINTS: /* a swarm: its picture at each point (its top-left corner, already worked out) */
         for (int i = 0; i < c->len; i++) {
             int x = ov_pts[c->str + 2 * i], y = ov_pts[c->str + 2 * i + 1];
@@ -286,7 +299,7 @@ static void bounds(const ov_cmd *c, int *x0, int *y0, int *x1, int *y1) { /* wha
 
 static void forget(const ov_cmd *c, int text_bytes, int corners) { /* the last command, off the list with its data */
     nov--, ntext -= text_bytes, npts -= 2 * corners;
-    if (c->op == OV_QUAD || c->op == OV_GRAD || c->op == OV_LIGHT) nquad--;
+    if (c->op == OV_QUAD || c->op == OV_GRAD || c->op == OV_LIGHT || c->op == OV_WARP || c->op == OV_LINES) nquad--;
     else if (c->ext && c->op == OV_TEXT_OP) nstyle--;
     else if (c->ext) nxf--;
     if (c->op == OV_IMG && c->font) nlook--;
@@ -767,6 +780,113 @@ static int l_grad(lua_State *L) {
     return 0;
 }
 
+/* A list a game gives as a table, or as a function asked for each place: n numbers into out (held to 16 bits). */
+static bool numbers_arg(lua_State *L, int idx, int n, int16_t *out, float lo, float hi) {
+    if (lua_isfunction(L, idx)) {
+        for (int i = 0; i < n; i++) {
+            lua_pushvalue(L, idx), lua_pushinteger(L, i);
+            lua_call(L, 1, 1);
+            out[i] = (int16_t)clampf(fin(luaL_optnumber(L, -1, 0)), lo, hi);
+            lua_pop(L, 1);
+        }
+        return true;
+    }
+    if (lua_istable(L, idx)) {
+        for (int i = 0; i < n; i++) {
+            lua_rawgeti(L, idx, i + 1);
+            out[i] = (int16_t)clampf(fin(luaL_optnumber(L, -1, 0)), lo, hi);
+            lua_pop(L, 1);
+        }
+        return true;
+    }
+    return false;
+}
+
+/* warp(id, x, y, {frame, rows, cols, wrap}): the picture with each row j moved right by rows[j] pixels and then each column i moved
+ * down by cols[i] (a table, or a function asked for j or i from 0): water that ripples, heat, a flag, a panorama going round
+ * (wrap = true). The Saturn's line and column scroll, at the full screen's resolution. */
+static int l_warp(lua_State *L) {
+    const char *id = luaL_checkstring(L, 1);
+    asset *a = safe_name(id) ? gfx_asset(id) : NULL;
+    const int x = num(L, 2), y = num(L, 3);
+    if (!a || a->missing || nquad == OV_EXT || !gfx_pixels(a) || !lua_istable(L, 4)) return 0;
+    const int W = a->w, H = a->h;
+    int16_t rows[1024], cols[1024];
+    bool have_rows = false, have_cols = false, wrap = false;
+    lua_Integer frame = 0;
+    lua_getfield(L, 4, "frame"), frame = luaL_optinteger(L, -1, 0), lua_pop(L, 1);
+    lua_getfield(L, 4, "wrap"), wrap = lua_toboolean(L, -1), lua_pop(L, 1);
+    lua_getfield(L, 4, "rows"), have_rows = H <= 1024 && numbers_arg(L, lua_gettop(L), H, rows, -2000, 2000), lua_pop(L, 1);
+    lua_getfield(L, 4, "cols"), have_cols = W <= 1024 && numbers_arg(L, lua_gettop(L), W, cols, -2000, 2000), lua_pop(L, 1);
+    const int n16 = ((have_rows ? H : 0) + (have_cols ? W : 0) + 1) & ~1;
+    if (npts + n16 > OV_PTS) return 0;
+    ov_cmd *c = ov_add(OV_WARP);
+    if (!c) return 0;
+    int rmin = 0, rmax = 0, cmin = 0, cmax = 0;
+    for (int j = 0; have_rows && j < H; j++) rmin = rows[j] < rmin ? rows[j] : rmin, rmax = rows[j] > rmax ? rows[j] : rmax;
+    for (int i = 0; have_cols && i < W; i++) cmin = cols[i] < cmin ? cols[i] : cmin, cmax = cols[i] > cmax ? cols[i] : cmax;
+    const int bx = wrap ? 0 : (rmin < 0 ? rmin : 0), by = cmin < 0 ? cmin : 0;
+    c->a = a, c->frame = (int16_t)(frame < 0 || frame >= a->frames ? 0 : frame);
+    c->x = i16(x + bx), c->y = i16(y + by);
+    c->w = i16(W + (wrap ? 0 : (rmax > 0 ? rmax : 0)) - bx), c->h = i16(H + (cmax > 0 ? cmax : 0) - by);
+    c->str = (uint16_t)npts, c->len = (uint16_t)(have_rows ? H : 0);
+    memset(&ov_pts[npts], 0, (size_t)n16 * sizeof(int16_t));
+    if (have_rows) memcpy(&ov_pts[npts], rows, (size_t)H * sizeof(int16_t));
+    if (have_cols) memcpy(&ov_pts[npts + (have_rows ? H : 0)], cols, (size_t)W * sizeof(int16_t));
+    npts += n16;
+    ov_quad[nquad].xy[0] = (int16_t)-bx, ov_quad[nquad].xy[1] = (int16_t)-by;
+    ov_quad[nquad].lights = have_rows, ov_quad[nquad].dither = have_cols, ov_quad[nquad].mode = wrap ? 1 : 0;
+    c->ext = (uint8_t)(++nquad);
+    commit(c, 0, n16 / 2);
+    return 0;
+}
+
+/* linetint(x, y, w, h, colours [, {add, sub, alpha, lay}]): each row of the box with a colour of its own (a table of 0xRRGGBB, or
+ * a function asked for each row from 0), added to what is there (add), taken from it (sub), mixed at alpha, or laid as it is
+ * (lay): a sunset down a wall, a flash up a floor, the Saturn's colour offset for each line. */
+static int l_linetint(lua_State *L) {
+    const int x = num(L, 1), y = num(L, 2), w = num(L, 3), h = num(L, 4);
+    if (w <= 0 || h <= 0 || h > 512 || nquad == OV_EXT || npts + ((h + 1) & ~1) > OV_PTS) return 0;
+    int16_t unused[1];
+    (void)unused;
+    uint16_t col[512];
+    if (lua_isfunction(L, 5)) {
+        for (int j = 0; j < h; j++) {
+            lua_pushvalue(L, 5), lua_pushinteger(L, j);
+            lua_call(L, 1, 1);
+            col[j] = to565(luaL_optinteger(L, -1, 0));
+            lua_pop(L, 1);
+        }
+    } else {
+        luaL_checktype(L, 5, LUA_TTABLE);
+        for (int j = 0; j < h; j++) {
+            lua_rawgeti(L, 5, j + 1);
+            col[j] = to565(luaL_optinteger(L, -1, 0));
+            lua_pop(L, 1);
+        }
+    }
+    int mode = BLEND_ADD;
+    float alpha = 1;
+    if (lua_istable(L, 6)) {
+        lua_getfield(L, 6, "sub"), mode = lua_toboolean(L, -1) ? BLEND_SUB : mode, lua_pop(L, 1);
+        lua_getfield(L, 6, "lay"), mode = lua_toboolean(L, -1) ? 4 : mode, lua_pop(L, 1);
+        lua_getfield(L, 6, "alpha");
+        if (!lua_isnil(L, -1)) alpha = clampf(fin(luaL_checknumber(L, -1)), 0, 1), mode = mode == BLEND_ADD ? 3 : mode;
+        lua_pop(L, 1);
+    }
+    ov_cmd *c = ov_add(OV_LINES);
+    if (!c) return 0;
+    const int n16 = (h + 1) & ~1;
+    c->x = i16(x), c->y = i16(y), c->w = i16(w), c->h = i16(h), c->str = (uint16_t)npts, c->len = (uint16_t)h;
+    memset(&ov_pts[npts], 0, (size_t)n16 * sizeof(int16_t));
+    memcpy(&ov_pts[npts], col, (size_t)h * sizeof(uint16_t));
+    npts += n16;
+    ov_quad[nquad].mode = (uint8_t)mode, ov_quad[nquad].alpha = (uint8_t)(alpha * 255 + 0.5f);
+    c->ext = (uint8_t)(++nquad);
+    commit(c, 0, n16 / 2);
+    return 0;
+}
+
 /* quad(id, x1, y1, x2, y2, x3, y3, x4, y4 [, {frame, alpha, add, sub, quarter, light, lights, dither}]): the picture's
  * frame on four corners, in the picture's own order (top-left, top-right, bottom-right, bottom-left): a Saturn
  * distorted sprite, a PlayStation textured quad. light = 0xRRGGBB lights it by that colour (0x808080 as it is, up to
@@ -1058,7 +1178,7 @@ bool draw_covers_screen(void) {
 void draw_register(lua_State *L) {
     static const luaL_Reg F[] = {
         {"text", l_text}, {"textw", l_textw}, {"rect", l_rect}, {"box", l_box}, {"shade", l_shade}, {"panel", l_panel},
-        {"plate", l_plate}, {"img", l_img}, {"quad", l_quad}, {"grad", l_grad}, {"light", l_light}, {"frame", l_frame}, {"pset", l_pset}, {"pget", l_pget}, {"line", l_line},
+        {"plate", l_plate}, {"img", l_img}, {"quad", l_quad}, {"grad", l_grad}, {"light", l_light}, {"warp", l_warp}, {"linetint", l_linetint}, {"frame", l_frame}, {"pset", l_pset}, {"pget", l_pget}, {"line", l_line},
         {"circ", l_circ}, {"tri", l_tri}, {"poly", l_poly}, {"cls", l_cls}, {"canvas", l_canvas}, {"target", l_target},
         {"camera", l_camera}, {"clip", l_clip}, {"imgsize", l_imgsize}, {"preload", l_preload}, {NULL, NULL}};
     lua_pushglobaltable(L);

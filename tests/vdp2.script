@@ -1,0 +1,30 @@
+# warp: each row of a picture moved by its own amount, each column by its own, round the sides; linetint: a colour for each row,
+# added, taken, laid, mixed
+new
+tick 2
+# rows: dest (x, y) shows the source's (x - y, y): a pixel of the source at (10, 5) lands at (15, 5) and the row's start is moved
+expect_lua px("ROWS", 20 + 15, 20 + 5) == px("SRC", 10, 5) and px("ROWS", 20 + 25, 20 + 20) == px("SRC", 5, 20)
+expect_lua px("ROWS", 20 + 2, 20 + 10) == nil and px("ROWS", 20 + 10, 20 + 10) == px("SRC", 0, 10)
+# columns: dest (x, y) shows the source's (x, y - cols[x]): the columns on the right sit lower
+expect_lua px("COLS", 20 + 3, 20 + 5) == px("SRC", 3, 5) and px("COLS", 20 + 10, 20 + 12) == px("SRC", 10, 10) and px("COLS", 20 + 30, 20 + 16) == px("SRC", 30, 10)
+expect_lua px("COLS", 20 + 30, 20 + 3) == nil
+# both: columns move the result of the rows
+expect_lua px("BOTH", 20 + 8 + 2, 20 + 4 + 1) == px("SRC", 8 + 2 - (4 // 4), 4)
+# wrap: what leaves on the right comes in on the left
+expect_lua px("WRAP", 20 + 2, 20 + 3) == px("SRC", 29, 3) and px("WRAP", 20 + 10, 20 + 3) == px("SRC", 5, 3) and px("WRAP", 20 + 40, 20 + 3) == nil
+# negative moves left; none is the picture
+expect_lua px("NEG", 20 + 3, 20 + 3) == px("SRC", 10, 3) and px("NEG", 20 + 28, 20 + 3) == nil and px("NEG", 20 + 20, 20 + 3) == px("SRC", 27, 3)
+expect_lua px("NONE", 20 + 31, 20 + 31) == px("SRC", 31, 31) and px("NONE", 19, 19) == nil
+# partly off the picture, rows moved: clipped, not wrong
+expect_lua px("EDGE", 6, 5) == px("SRC", 6 + 10 - 4, 5 + 10) and px("EDGE", 0, 0) == px("SRC", 6, 10) or px("EDGE", 0, 0) == nil
+# linetint add: row 10 of the box is 40 more red, the row before 36 (to the 5 bits a 565 colour keeps), saturating nowhere here
+expect_lua red(px("ADD", 15, 10 + 10)) > red(px("ADD", 15, 10 + 5)) and red(px("ADD", 15, 10 + 39)) > 0xC8 and red(px("ADD", 15, 9)) == 0x42
+expect_lua math.abs(red(px("ADD", 15, 10 + 10)) - (0x42 + 40)) <= 10 and green(px("ADD", 15, 10 + 10)) == 0x41
+# sub: green taken row by row from a grey 0x80
+expect_lua green(px("SUB", 15, 10)) >= 0x80 - 4 and green(px("SUB", 15, 10 + 39)) < 0x80 - 100 and red(px("SUB", 15, 10 + 39)) == 0x84
+# lay: the colours as they are, the rows after the table's end black (0), the box's outside as it was
+expect_lua px("LAY", 15, 10) == 0xFF0000 and px("LAY", 15, 11) == 0x00FF00 and px("LAY", 15, 12) == 0x0000FF and px("LAY", 15, 13) == 0 and px("LAY", 5, 5) == 0x424142
+# mix: half of white over black
+expect_lua math.abs(red(px("MIX", 15, 20)) - 128) <= 8 and px("MIX", 5, 5) == 0
+shot vdp2
+expect_ok

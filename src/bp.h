@@ -227,6 +227,11 @@ void gfx_grad(surface *s, int x, int y, int w, int h, const uint8_t c1[3], const
  * cosine (14 bits) is cos_outer, full inside cos_inner's, half between. Reads no picture: only the pixels in the circle cost. */
 void gfx_light(surface *s, int cx, int cy, int r, const uint8_t rgb[3], unsigned intensity, bool sub, bool cone, int ux,
                int uy, int cos_outer, int cos_inner);
+/* A frame drawn at (x, y) with row j moved right by rows[j] and column i moved down by cols[i] (either may be NULL); wrap: round the
+ * sides; the picture must be unpacked (gfx_pixels). */
+void gfx_warp(surface *s, const asset *a, int frame, int x, int y, const int16_t *rows, const int16_t *cols, bool wrap);
+/* Row j of a box (h rows) given the colour rowcol[j]: laid (`lay`), or added, taken or mixed by mode and alpha (0..256). */
+void gfx_lines(surface *s, int x, int y, int w, int h, const uint16_t *rowcol, int mode, unsigned alpha, bool lay);
 /* A frame of the picture on any four corners, in order: top-left, top-right, bottom-right, bottom-left of the picture
  * (xy8: x, y of each, in eighths of a pixel; at most +-16000). lights: each corner's colour to light it by (0..255 a
  * channel, 128 as it is), blending across the quad; mode and alpha (0..256) as gfx_blit_mixed; dither: the PlayStation's
