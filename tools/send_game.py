@@ -4,6 +4,7 @@
     uv run --with pyserial tools/send_game.py games/mygame            # a game folder
     uv run --with pyserial tools/send_game.py dist/mygame.zip         # or the editor's zip
     uv run --with pyserial tools/send_game.py games/mygame --port /dev/cu.usbmodem101
+    uv run --with pyserial tools/send_game.py games/mygame --log 20     # then 20 s of the console's log (perf lines)
     uv run --with pyserial tools/send_game.py games/mygame --only 'assets/*_HD.*'   # some files, into the game there
 
 The console's side is firmware/main/cable.c (the protocol is described there); pinyol's editor does the same from the
@@ -60,6 +61,7 @@ class Cable:
         self.s.dtr = self.s.rts = False  # opening must not reset the console
         self.s.open()
         self.buf = b""
+        self.skipped: list[str] = []  # the console's log lines that came between its answers
 
     def answer(self, timeout: float) -> str:
         """The console's next answer ("@pinyol ..."), skipping its log."""
@@ -71,6 +73,8 @@ class Cable:
                 for tag in ("@pinyol ", "@np2d "):  # np2d: firmware from before the engine's rename
                     if text.startswith(tag):
                         return text[len(tag):]
+                if text:
+                    self.skipped.append(text)
             self.buf += self.s.read(self.s.in_waiting or 1)  # what is there, or a byte: never the whole timeout
         raise SystemExit("the console does not answer (is it on, with firmware that has the cable?)")
 
@@ -88,6 +92,9 @@ def main() -> None:
     ap.add_argument("--port", help="the console's serial port (default: the first /dev/cu.usbmodem*)")
     ap.add_argument("--only", nargs="+", metavar="GLOB",
                     help="send only these files ('assets/*_HD.*'), added to the game already on the console")
+    ap.add_argument("--log", type=float, metavar="SECONDS",
+                    help="after sending, show the console's log for that long (its perf lines: frame rate, "
+                         "milliseconds, audio) on the same open port: opening it again would restart the console")
     a = ap.parse_args()
     gid, files = files_of(a.game)
     if a.only:
@@ -103,6 +110,18 @@ def main() -> None:
     t0 = time.time()
     send(c, gid, files, patch=bool(a.only))
     print(f"\r{gid}: {len(files)} files, {total // 1024} KB in {time.time() - t0:.1f} s; it is starting on the console")
+    if a.log:
+        for text in c.skipped[-40:]:
+            if not text.startswith(("slow frame", "launcher:")):
+                print(text)
+        end = time.time() + a.log
+        while time.time() < end:
+            c.buf += c.s.read(c.s.in_waiting or 1)
+            while b"\n" in c.buf:
+                raw, c.buf = c.buf.split(b"\n", 1)
+                text = raw.decode(errors="replace").strip()
+                if text and not text.startswith(("slow frame", "launcher:")):
+                    print(text)
 
 
 def send(c: Cable, gid: str, files: dict[str, bytes], patch: bool, quiet: bool = False) -> None:

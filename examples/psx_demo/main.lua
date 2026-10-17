@@ -55,18 +55,17 @@ function _init()
   sound("SFX_CLICK", {wave = "square", freq = 900, slide = -2200, sustain = 0.02, decay = 0.09, volume = 0.35})
 end
 
--- the floor: bands from the horizon to the screen's foot, each a quad on the whole texture and lit further down
+-- the carpet: bands from the horizon to the screen's foot, each a quad on the whole texture. A quad costs about 150 ns a
+-- pixel on the console (400 lit), so it is for what is not the whole screen: a carpet, a sign, a banner. A floor that fills
+-- the screen goes on the PPU's affine layer (mode7() in docs/lua.md, examples/carreras), which does it at 60 fps.
 local function floor_bands()
-  local bands = 7
+  local bands = 6
   for i = 0, bands - 1 do
     local a, b = i / bands, (i + 1) / bands
     -- a point's depth, so the bands are narrow far away and tall near: the perspective's own spacing
     local ya, yb = HORIZON + (320 - HORIZON) * a * a, HORIZON + (320 - HORIZON) * b * b
-    local wa, wb = lerp(150, 700, a * a), lerp(150, 700, b * b)
-    local la, lb = lerp(60, 150, a), lerp(60, 150, b)
-    local c1, c2 = rgb(la, la * 0.9, la * 0.8), rgb(lb, lb * 0.9, lb * 0.8)
-    quad("TEX_FLOOR", 240 - wa / 2, ya, 240 + wa / 2, ya, 240 + wb / 2, yb, 240 - wb / 2, yb,
-         {lights = {c1, c1, c2, c2}, dither = true})
+    local wa, wb = lerp(110, 330, a * a), lerp(110, 330, b * b)
+    quad("TEX_FLOOR", 240 - wa / 2, ya, 240 + wa / 2, ya, 240 + wb / 2, yb, 240 - wb / 2, yb)
   end
 end
 

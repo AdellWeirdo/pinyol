@@ -313,10 +313,48 @@ Same board, autotest builds, the frame rate in each 5 s window of the test, the 
 veloz is not at 60 yet: its tick (1.2 ms) and picture (5.9 ms, of which the PPU is most) plus 7.4 ms of strips still
 come to about 17 ms. A third strip buffer would give another half millisecond, but internal RAM has 44 KB free.
 
-## The mixer's newer voices (pan, envelope, ADPCM, the game's reverb)
+## PlayStation / Saturn features on the board (2026-10-17)
 
-Measured on a desktop (an optimized build, `make audio_bench`; not on the console, where nothing of this has been timed
-yet), which gives the order and the ratios, not the console's milliseconds. Milliseconds of mixing for one second of
+On a Cirera, firmware from `psx-saturn-engine`, one scene at a time (`tools/send_game.py game --log 8` prints the perf lines;
+a scene is a black screen plus the one thing). "Strips" is the CPU time to draw the whole 480x320 frame (an empty frame is
+1.5 ms; 60 fps wants the sum under about 12).
+
+| Scene | Pixels | Strips |
+|---|---|---|
+| a gradient, 480x118, dithered | 56k | 3.6 ms (about 37 ns a pixel) |
+| a gradient, 480x202, dithered | 97k | 5.3 ms |
+| the same two before their loops had no division (`grad`) | | 11.2 and 18.0 ms |
+| six quads, a carpet in perspective, plain | 44k | 6-7 ms (about 150 ns a pixel) |
+| the same, lit by a colour a corner | 77k | 33 ms (about 400 ns) |
+| the same, lit and dithered | 77k | 35 ms |
+| the same, see-through (alpha) or added | 77k | 29 / 34 ms |
+| a sign (lit, dithered) and a banner | 8k | 2.7 ms |
+| three glows scaled 2x, added, taken away, a quarter | | 4.4 ms |
+
+What the table says: a plain quad is about 21 instructions a pixel on the LX7 and no more can be taken out; lighting each pixel
+(three multiplies, the dither and the clamps) is about 250 ns more. A quad is for what is not the whole screen: signs, props,
+a carpet, a boss that bends. A floor that fills the screen belongs on the PPU's affine layer (`mode7()`, `examples/carreras`),
+which does it at 60 fps. Two things were found only here: `grad` had a 64-bit division a pixel (software, dozens of cycles:
+now a table of the ramp's colours, 3x faster), and a quad's columns are short in bands, so the work a column takes to set
+up (now stepped with integers, no divisions) counted as much as its pixels.
+
+Sound, eight to twelve looping ADPCM voices (a clip kept as blocks, decoded as it plays) with an envelope and a pan each, the
+rest of the frame an empty one at 60 fps and no new underruns:
+
+| | Share of one core |
+|---|---|
+| nothing playing | 3 % |
+| 8 voices, no reverb | 17 % |
+| 8 voices through the Hall reverb | 24 % |
+| 8 voices through Space Echo (the biggest ring, 63 KB in PSRAM) | 24 % |
+| 12 voices through Space Echo | 31 % |
+
+A voice costs about 1.8 %, the reverb about 7 % whatever the room.
+
+## The same mixer on a desktop
+
+Measured on a desktop (an optimized build, `make audio_bench`): the order and the ratios, not the console's milliseconds (the
+board's own are above). Milliseconds of mixing for one second of
 sound, twelve voices of one looping clip:
 
 | Scene | ms per second |
@@ -331,6 +369,4 @@ sound, twelve voices of one looping clip:
 
 The reverb costs about 0.4 ms a second whatever the room (its work is the same turn for each sample; only the memory it
 touches differs: from 10 KB for Room to 63 KB for Space Echo), about as much as three voices at a pitch. A voice with an
-envelope or an ADPCM clip takes the between-two-samples path, the dearest. On the console expect tens of times the
-desktop's figures: the reverb's ring wants internal memory (the studio's reverb stuttered in PSRAM, `studio_fx.c`), and
-`reverb()` allocates with `calloc`, which does not choose; time it on the board before a game leans on Hall or Space Echo.
+envelope or an ADPCM clip takes the between-two-samples path, the dearest. 
