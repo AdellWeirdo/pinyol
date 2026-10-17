@@ -495,8 +495,20 @@ def thousands(v: int) -> str:
 
 
 def footer() -> str:
-    return f"""<footer><div class="wrap"><img src="img/logo.png" alt="pinyol" width="64" height="42" loading="lazy">
-<span>Código MIT · arte y sonido CC0</span><span>Game Boy, PICO-8, Neo Geo y las demás consolas que se nombran son marcas de sus dueños; pinyol y Cirera no tienen relación con ellos.</span><span>Apple, Mac y macOS son marcas de Apple; Windows, de Microsoft, y Linux, de Linus Torvalds.</span><a href="{REPO}">GitHub</a><a href="{REPO}/blob/main/docs/measurements.md">Mediciones</a><span>Las visitas, las partidas y el tiempo jugado se cuentan con <a href="https://www.goatcounter.com">GoatCounter</a>, sin cookies ni datos personales.</span><span>Los comentarios y los votos de cada juego se guardan en GitHub y se cargan con giscus solo si los pides.</span><span>La Biblioteca, el ranking y las cifras de cada juego se leen de GitHub al abrir la página.</span></div></footer>"""
+    """The logo and the licence, two short columns of links, and the small print folded away (it is all still there)."""
+    tabs = "".join(f'<li><a href="{HOME}{t}">{name}</a></li>' for t, name in TABS)
+    return f"""<footer><div class="wrap foot">
+<div class="foot-brand"><img src="img/logo.png" alt="pinyol" width="64" height="42" loading="lazy"><p>Código MIT · arte y sonido CC0</p></div>
+<div class="foot-col"><p class="foot-h">Explora</p><ul>{tabs}</ul></div>
+<div class="foot-col"><p class="foot-h">El proyecto</p><ul><li><a href="{REPO}">GitHub</a></li><li><a href="{REPO}/blob/main/docs/measurements.md">Mediciones</a></li></ul></div>
+<details class="foot-fine"><summary>Marcas, privacidad y datos</summary><div>
+<p>Game Boy, PICO-8, Neo Geo y las demás consolas que se nombran son marcas de sus dueños; pinyol y Cirera no tienen relación con ellos.</p>
+<p>Apple, Mac y macOS son marcas de Apple; Windows, de Microsoft, y Linux, de Linus Torvalds.</p>
+<p>Las visitas, las partidas y el tiempo jugado se cuentan con <a href="https://www.goatcounter.com">GoatCounter</a>, sin cookies ni datos personales.</p>
+<p>Los comentarios y los votos de cada juego se guardan en GitHub y se cargan con giscus solo si los pides.</p>
+<p>La Biblioteca, el ranking y las cifras de cada juego se leen de GitHub al abrir la página.</p>
+</div></details>
+</div></footer>"""
 
 
 NEW_TAB = " (se abre en una pestaña nueva)"
