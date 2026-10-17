@@ -9,6 +9,7 @@ function _init()
   canvas("SRC", N, N); target("SRC")
   for y = 0, N - 1 do for x = 0, N - 1 do pset(x, y, rgb(x * 16, y * 16, 128)) end end
   canvas("WHITE", N, N); target("WHITE"); cls(0xFFFFFF)
+  canvas("HALVES", N, N); target("HALVES"); rect(0, 0, N, N // 2, 0xFF0000); rect(0, N // 2, N, N // 2, 0x00FF00)
   canvas("GREY", N, N); target("GREY"); cls(0x404040)
   target()
 end
@@ -23,6 +24,13 @@ function _draw()
   out("BRIGHT", function() quad("GREY", 4, 4, 20, 4, 20, 20, 4, 20, {light = 0xFFFFFF}) end)
   out("RAMP", function() quad("WHITE", 4, 4, 20, 4, 20, 20, 4, 20, {lights = {0x000000, 0x808080, 0x808080, 0x000000}}) end)
   out("FAR", function() quad("SRC", -900, -900, 1500, -700, 1400, 1300, -800, 1100) end)
+  -- a floor in perspective: the top edge 100 wide, the bottom 200, a texture red above its middle and green below
+  for _, name in ipairs({"P0", "P1", "P8"}) do
+    canvas(name, 400, 300) target(name)
+    local o = name == "P1" and {persp = true} or name == "P8" and {persp = 8} or nil
+    quad("HALVES", 150, 100, 250, 100, 300, 200, 100, 200, o)
+    target()
+  end
   out("GV", function() grad(0, 0, 32, 32, 0x000000, 0xFFFFFF) end)
   out("GVD", function() grad(0, 0, 32, 32, 0x000000, 0xFFFFFF, {dither = true}) end)
   out("GH", function() grad(0, 0, 32, 32, 0x000000, 0xFFFFFF, {across = true}) end)
@@ -54,6 +62,7 @@ function turned_wrong()
   end end
   return bad
 end
+function grn(name, x, y) return (pget(x, y, name) or 0) >> 8 & 255 end
 function red(name, x, y) return (pget(x, y, name) or 0) >> 16 & 255 end
 function ramp_wrong() -- plain vertical: the same all along a row, never going down a column, from near black to near white
   local bad = 0

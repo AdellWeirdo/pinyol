@@ -48,7 +48,7 @@ static struct { /* quad's corners and how it is drawn (grad's two colours in lig
     int16_t xy[8]; /* eighths of a pixel */
     uint8_t light[4][3];
     bool lights, dither;
-    uint8_t mode, alpha; /* BLEND_*, 255: opaque */
+    uint8_t mode, alpha, persp; /* BLEND_*, 255: opaque; quad's perspective cells (0: none, 1: as many as it needs) */
 } ov_quad[OV_EXT];
 static int nquad;
 static int nstyle, nxf;
@@ -159,7 +159,7 @@ static void draw_one(surface *s, const ov_cmd *c) {
     case OV_QUAD: {
         const typeof(ov_quad[0]) *q = &ov_quad[c->ext - 1];
         const unsigned al = q->alpha + (q->alpha >> 7);
-        gfx_quad(s, c->a, c->frame, q->xy, q->light, q->lights, q->mode, al, q->dither);
+        gfx_quad(s, c->a, c->frame, q->xy, q->light, q->lights, q->mode, al, q->dither, q->persp);
         break;
     }
     case OV_GRAD: {
@@ -902,10 +902,14 @@ static int l_quad(lua_State *L) {
     if (!a || a->missing || nquad == OV_EXT || !gfx_pixels(a)) return 0;
     img_opts o = {.scale = 1, .alpha = 1};
     bool lights = false, dither = false;
+    int persp = 0;
     uint8_t light[4][3] = {{0}};
     if (lua_istable(L, 10)) {
         img_options(L, 10, &o);
         lua_getfield(L, 10, "dither"), dither = lua_toboolean(L, -1), lua_pop(L, 1);
+        lua_getfield(L, 10, "persp");
+        persp = lua_isboolean(L, -1) ? lua_toboolean(L, -1) : (int)clampf(fin(luaL_optnumber(L, -1, 0)), 0, 16);
+        lua_pop(L, 1);
         lua_getfield(L, 10, "light");
         if (!lua_isnil(L, -1)) {
             lua_Integer rgb = luaL_checkinteger(L, -1);
@@ -930,7 +934,7 @@ static int l_quad(lua_State *L) {
     c->a = a, c->frame = (int16_t)(o.frame < 0 || o.frame >= a->frames ? 0 : o.frame);
     memcpy(ov_quad[nquad].xy, xy, sizeof xy), memcpy(ov_quad[nquad].light, light, sizeof light);
     ov_quad[nquad].lights = lights, ov_quad[nquad].dither = dither && lights;
-    ov_quad[nquad].mode = o.mode, ov_quad[nquad].alpha = (uint8_t)(o.alpha * 255 + 0.5f);
+    ov_quad[nquad].mode = o.mode, ov_quad[nquad].alpha = (uint8_t)(o.alpha * 255 + 0.5f), ov_quad[nquad].persp = (uint8_t)persp;
     c->ext = (uint8_t)(++nquad);
     commit(c, 0, 0);
     return 0;

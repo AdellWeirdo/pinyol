@@ -24,5 +24,12 @@ expect_lua red("GH", 0, 5) < 8 and red("GH", 31, 5) > 247 and red("GH", 10, 5) <
 expect_lua spread("GVD", 16) > 1 and far_from_plain() < 12 and math.abs(mean("GVD") - mean("GV")) < 3
 # sub over white: the red taken away from the top (none) to the bottom (all of it)
 expect_lua pget(5, 0, "GSUB") ~= nil and red("GSUB", 5, 31) < 20 and red("GSUB", 5, 0) > 235
+# perspective: the middle of the picture lands a third of the way down the trapezoid (not half), straight edges either way
+# (the affine one splits at y 150, the perspective one at about 133)
+expect_lua red("P0", 200, 125) == 255 and red("P0", 200, 140) == 255 and red("P0", 200, 160) == 0 and grn("P0", 200, 160) == 255
+expect_lua red("P1", 200, 125) == 255 and red("P1", 200, 140) == 0 and grn("P1", 200, 140) == 255 and grn("P1", 200, 160) == 255
+expect_lua red("P8", 200, 140) == 0 and grn("P8", 200, 140) == 255 and red("P8", 200, 125) == 255
+# the sides stay on the quad's edges: at y 150 the width is 125 (from 125 to 275), nothing outside it, all of it inside
+expect_lua red("P1", 121, 150) + grn("P1", 121, 150) == 0 and red("P1", 129, 150) + grn("P1", 129, 150) > 0 and red("P1", 271, 150) + grn("P1", 271, 150) > 0 and red("P1", 279, 150) + grn("P1", 279, 150) == 0
 shot quad
 expect_ok

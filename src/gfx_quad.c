@@ -181,8 +181,41 @@ static void triangle(surface *s, const quad_ctx *q, vertex p[3]) {
     }
 }
 
+/* The projective map of the picture's square (u, v in 0..1) onto the four screen points (Heckbert's "Fundamentals of Texture
+ * Mapping"): x = (a u + b v + c) / (g u + h v + 1), y = (d u + e v + f) / (g u + h v + 1). False when the points make a
+ * parallelogram (or nothing can be done): an affine quad is then already right. */
+typedef struct { double a, b, c, d, e, f, g, h; } homography;
+
+static bool make_homography(const int16_t xy8[8], homography *H) {
+    double x[4], y[4];
+    for (int i = 0; i < 4; i++) x[i] = xy8[2 * i] / 8.0, y[i] = xy8[2 * i + 1] / 8.0;
+    const double sx = x[0] - x[1] + x[2] - x[3], sy = y[0] - y[1] + y[2] - y[3];
+    if (fabs(sx) < 1e-6 && fabs(sy) < 1e-6) return false;
+    const double dx1 = x[1] - x[2], dx2 = x[3] - x[2], dy1 = y[1] - y[2], dy2 = y[3] - y[2];
+    const double den = dx1 * dy2 - dx2 * dy1;
+    if (fabs(den) < 1e-9) return false;
+    H->g = (sx * dy2 - dx2 * sy) / den, H->h = (dx1 * sy - sx * dy1) / den;
+    H->a = x[1] - x[0] + H->g * x[1], H->b = x[3] - x[0] + H->h * x[3], H->c = x[0];
+    H->d = y[1] - y[0] + H->g * y[1], H->e = y[3] - y[0] + H->h * y[3], H->f = y[0];
+    return true;
+}
+
+static void project(const homography *H, double u, double v, int *x8, int *y8) {
+    const double w = H->g * u + H->h * v + 1.0;
+    double X = (H->a * u + H->b * v + H->c) / w, Y = (H->d * u + H->e * v + H->f) / w;
+    X = X < -2000 ? -2000 : X > 2000 ? 2000 : X, Y = Y < -2000 ? -2000 : Y > 2000 ? 2000 : Y; /* (what the rasterizer's whole numbers allow) */
+    *x8 = (int)floor(X * 8 + 0.5), *y8 = (int)floor(Y * 8 + 0.5);
+}
+
+/* How many cells to cut a side into: the more the opposite edges differ in length (the nearer one is much bigger than the
+ * far one), the more the picture is stretched unevenly along that side, and the more cells it takes to look right. */
+static int cells_for(double len_a, double len_b) {
+    const double lo = fmin(len_a, len_b) < 1e-3 ? 1e-3 : fmin(len_a, len_b), r = fmax(len_a, len_b) / lo;
+    return r < 1.12 ? 1 : r < 1.4 ? 2 : r < 2.0 ? 4 : r < 3.0 ? 6 : r < 5.0 ? 8 : 12;
+}
+
 void gfx_quad(surface *s, const asset *a, int frame, const int16_t xy8[8], const uint8_t light[4][3], bool lights,
-              int mode, unsigned alpha, bool dither) {
+              int mode, unsigned alpha, bool dither, int persp) {
     if (!a->pixels || frame < 0 || frame >= a->frames) return;
     quad_ctx q = {.src = a->pixels + (size_t)frame * a->w * a->h, .w = a->w, .h = a->h, .stride = (a->w + 7) / 8,
                   .lit = lights, .dither = dither && lights, .mode = mode, .alpha = alpha};
@@ -198,17 +231,55 @@ void gfx_quad(surface *s, const asset *a, int frame, const int16_t xy8[8], const
         if (all) q.mask = NULL;
     }
     q.plain = mode == BLEND_ALPHA && alpha >= 256;
-    /* the corners and what each carries: the picture's own corners, so the frame fills the quad */
-    const float tu[4] = {0, (float)a->w, (float)a->w, 0}, tv[4] = {0, 0, (float)a->h, (float)a->h};
-    vertex v[4];
-    for (int i = 0; i < 4; i++) {
-        v[i].x = xy8[2 * i], v[i].y = xy8[2 * i + 1];
-        v[i].at[0] = tu[i], v[i].at[1] = tv[i];
-        for (int k = 0; k < 3; k++) v[i].at[2 + k] = lights ? (float)light[i][k] : 128.0f;
+    homography H;
+    int nu = 1, nv = 1; /* cells across (along the top and bottom edges) and down (along the left and right) */
+    if (persp && make_homography(xy8, &H)) {
+        const double top = hypot(xy8[2] - xy8[0], xy8[3] - xy8[1]), bottom = hypot(xy8[4] - xy8[6], xy8[5] - xy8[7]);
+        const double left = hypot(xy8[6] - xy8[0], xy8[7] - xy8[1]), right = hypot(xy8[4] - xy8[2], xy8[5] - xy8[3]);
+        /* cut along v where top and bottom differ (the picture runs away from the eye down the quad), along u where left and right do */
+        nv = persp > 1 ? persp : cells_for(top, bottom), nu = persp > 1 ? persp : cells_for(left, right);
+        if (nu > 16) nu = 16;
+        if (nv > 16) nv = 16;
+    } else {
+        persp = 0;
     }
-    vertex t1[3] = {v[0], v[1], v[2]}, t2[3] = {v[0], v[2], v[3]};
-    triangle(s, &q, t1);
-    triangle(s, &q, t2);
+    if (!persp || (nu == 1 && nv == 1)) {
+        /* the corners and what each carries: the picture's own corners, so the frame fills the quad */
+        const float tu[4] = {0, (float)a->w, (float)a->w, 0}, tv[4] = {0, 0, (float)a->h, (float)a->h};
+        vertex v[4];
+        for (int i = 0; i < 4; i++) {
+            v[i].x = xy8[2 * i], v[i].y = xy8[2 * i + 1];
+            v[i].at[0] = tu[i], v[i].at[1] = tv[i];
+            for (int k = 0; k < 3; k++) v[i].at[2 + k] = lights ? (float)light[i][k] : 128.0f;
+        }
+        vertex t1[3] = {v[0], v[1], v[2]}, t2[3] = {v[0], v[2], v[3]};
+        triangle(s, &q, t1);
+        triangle(s, &q, t2);
+        return;
+    }
+    /* cells: each corner of each is the picture's point (u, v) taken through the homography, so its edges are straight where
+     * the picture's lines are, and inside a cell the picture is spread evenly (close enough to right when it is small) */
+    for (int j = 0; j < nv; j++) {
+        for (int i = 0; i < nu; i++) {
+            vertex c[4];
+            const double us[4] = {(double)i / nu, (double)(i + 1) / nu, (double)(i + 1) / nu, (double)i / nu};
+            const double vs[4] = {(double)j / nv, (double)j / nv, (double)(j + 1) / nv, (double)(j + 1) / nv};
+            for (int k = 0; k < 4; k++) {
+                int x8, y8;
+                project(&H, us[k], vs[k], &x8, &y8);
+                c[k].x = x8, c[k].y = y8;
+                c[k].at[0] = (float)(us[k] * a->w), c[k].at[1] = (float)(vs[k] * a->h);
+                for (int ch = 0; ch < 3; ch++) { /* the corners' lights, mixed the way the corners are */
+                    const double top = light[0][ch] + (light[1][ch] - light[0][ch]) * us[k];
+                    const double bot = light[3][ch] + (light[2][ch] - light[3][ch]) * us[k];
+                    c[k].at[2 + ch] = lights ? (float)(top + (bot - top) * vs[k]) : 128.0f;
+                }
+            }
+            vertex t1[3] = {c[0], c[1], c[2]}, t2[3] = {c[0], c[2], c[3]};
+            triangle(s, &q, t1);
+            triangle(s, &q, t2);
+        }
+    }
 }
 
 /* A ramp's colour at step t, as RGB565, the dither's offset d (8-bit steps) added before the low bits go. */
