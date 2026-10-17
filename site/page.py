@@ -289,7 +289,7 @@ def library(pages: str = "") -> str:
     return f"""<section id="biblioteca" class="library-sec" aria-labelledby="biblioteca-t"><div class="wrap">
 <h2 id="biblioteca-t" class="sr">Los juegos</h2>
 <div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="{HOME}crear/#subir">Cómo se sube</a></div>
-<div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="{HOME}juega/" data-pages="{pages}">
+<div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="{HOME}juega/" data-pages="{pages}" data-stats="{STATS}">
 <p class="lib-state">La Biblioteca necesita JavaScript para cargarse. Sus juegos también están en <a href="{REPO}/tree/main/library">GitHub</a>.</p></div>
 </div></section>"""
 

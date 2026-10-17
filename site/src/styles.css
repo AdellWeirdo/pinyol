@@ -452,6 +452,8 @@ esp-web-install-button:not(:defined) [slot="unsupported"], esp-web-install-butto
 .rank-info .chips { margin: 0; }
 .chip.like { background: rgba(232,52,78,.16); color: #ff8fa0; }
 @media (max-width: 30em) { .rank-row { grid-template-columns: 2rem 5rem minmax(0, 1fr); gap: var(--s3); } }
+.chips.react { margin: 0 0 var(--s2); }
+.chip.quiet { background: transparent; color: var(--text-3); padding-left: 0; }
 .cart .sheet-link { font-size: var(--t-small); color: var(--text-2); margin-left: auto; }
 
 /* ------------------------------------------------------------------ a game's page (site/gamepage.py) */

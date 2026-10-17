@@ -10,19 +10,19 @@ const WORDS = {
         failed: 'No se ha podido cargar el ranking. Comprueba la conexión.', retry: 'Reintentar', likes: 'me gusta',
         talks: 'comentarios', plays: 'partidas', played: 'jugado', numbersLoading: 'Cargando las cifras…',
         numbersNone: 'Todavía no hay cifras: se actualizan una vez al día.', numbersFailed: 'No se han podido cargar las cifras.',
-        numbersAt: d => 'Actualizadas el ' + d + '.', week: 'Semana', sheet: 'Ficha', sheetX: t => 'Ficha de ' + t },
+        numbersAt: d => 'Actualizadas el ' + d + '.', week: 'Semana', sheet: 'Ficha', sheetX: t => 'Ficha de ' + t, noReactions: 'Sin reacciones todavía', reactionsOf: 'Reacciones' },
   ca: { pick: 'El destaquem aquesta setmana', votes: 'El joc més votat de la setmana', comments: 'El joc més comentat de la setmana', random: "Triat a l'atzar aquesta setmana",
         loading: 'Carregant el rànquing…', empty: 'Encara no hi ha vots. Entra a la fitxa d’un joc i vota el primer.',
         failed: "No s'ha pogut carregar el rànquing. Comprova la connexió.", retry: 'Torna-ho a provar', likes: "m'agrada",
         talks: 'comentaris', plays: 'partides', played: 'jugat', numbersLoading: 'Carregant les xifres…',
         numbersNone: 'Encara no hi ha xifres: s’actualitzen un cop al dia.', numbersFailed: "No s'han pogut carregar les xifres.",
-        numbersAt: d => 'Actualitzades el ' + d + '.', week: 'Setmana', sheet: 'Fitxa', sheetX: t => 'Fitxa de ' + t },
+        numbersAt: d => 'Actualitzades el ' + d + '.', week: 'Setmana', sheet: 'Fitxa', sheetX: t => 'Fitxa de ' + t, noReactions: 'Encara sense reaccions', reactionsOf: 'Reaccions' },
   en: { pick: 'Our pick this week', votes: 'The most voted game of the week', comments: 'The most talked-about game of the week', random: 'Picked at random this week',
         loading: 'Loading the ranking…', empty: 'No votes yet. Open a game’s page and be the first to vote.',
         failed: "Couldn't load the ranking. Check the connection.", retry: 'Try again', likes: 'likes',
         talks: 'comments', plays: 'plays', played: 'played', numbersLoading: 'Loading the numbers…',
         numbersNone: 'No numbers yet: they are updated once a day.', numbersFailed: "Couldn't load the numbers.",
-        numbersAt: d => 'Updated on ' + d + '.', week: 'Week', sheet: 'Details', sheetX: t => 'Details: ' + t },
+        numbersAt: d => 'Updated on ' + d + '.', week: 'Week', sheet: 'Details', sheetX: t => 'Details: ' + t, noReactions: 'No reactions yet', reactionsOf: 'Reactions' },
 };
 const W = WORDS[LANG] || WORDS.es;
 const LOCALE = { es: 'es-ES', ca: 'ca-ES', en: 'en-GB' }[LANG] || 'es-ES';
@@ -123,19 +123,41 @@ async function loadRanking() {
 }
 if (document.getElementById('rank')) loadRanking();
 
-// The Library's cards get a link to their page (site.js draws them; the build lists which have one)
+// The Library's cards (site.js draws them; the build lists which games have a page): a link to the page, and the
+// reactions and comments their giscus Discussion has (stats.json; a card without numbers yet says so)
+const EMOJI = { THUMBS_UP: '👍', LAUGH: '😄', HOORAY: '🎉', HEART: '❤️', ROCKET: '🚀', EYES: '👀' }; // (👎 and 😕 are not shown)
 const lib = document.getElementById('library');
-if (lib && lib.dataset.pages) {
-  const pages = new Set(lib.dataset.pages.split(' '));
-  new MutationObserver(() => {
+if (lib) {
+  const pages = new Set((lib.dataset.pages || '').split(' '));
+  let games = null; // stats.json's games, once read
+  const reactionChips = s => {
+    const parts = Object.entries(s.reactions || {}).filter(([k, n]) => EMOJI[k] && n > 0).sort((a, b) => b[1] - a[1])
+      .map(([k, n]) => [EMOJI[k], n]);
+    if (s.comments) parts.push(['💬', s.comments]);
+    return parts;
+  };
+  const decorate = card => {
+    if (!games || card.querySelector('.react')) return;
+    const id = card.dataset.id;
+    const parts = id && games[id] ? reactionChips(games[id]) : [];
+    const list = el('ul', { class: 'chips react', 'aria-label': W.reactionsOf },
+      ...(parts.length ? parts.map(([e, n]) => el('li', { class: 'chip like' }, e + ' ' + num(n)))
+                       : [el('li', { class: 'chip quiet' }, W.noReactions)]));
+    (card.querySelector('.chips') || card.querySelector('.row')).after(list);
+  };
+  const scan = () => {
     for (const card of lib.querySelectorAll('.cart:not([data-sheet])')) {
       card.dataset.sheet = '';
       const zip = card.querySelector('a.zip');
       const id = zip && (zip.getAttribute('href').match(/\/library\/([a-z0-9_-]{1,40})\/game\.zip$/) || [])[1];
       const title = (card.querySelector('h3') || {}).textContent || id;
+      if (id) card.dataset.id = id;
       if (id && pages.has(id)) zip.after(' ', el('a', { class: 'sheet-link', href: sheetUrl(id), 'aria-label': W.sheetX(title) }, W.sheet));
     }
-  }).observe(lib, { childList: true, subtree: true });
+    for (const card of lib.querySelectorAll('.cart[data-id]')) decorate(card);
+  };
+  new MutationObserver(scan).observe(lib, { childList: true, subtree: true });
+  if (lib.dataset.stats) stats(lib.dataset.stats).then(data => { games = (data && data.games) || {}; scan(); }, () => {});
 }
 
 // ---------------------------------------------------------------- a game's page
