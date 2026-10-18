@@ -399,6 +399,10 @@ The clamps of a quad's texture coordinates are skipped when a column's ends are 
 (3), lights 4.8 (2), picture 2.7, the rest nothing; the strips take 25 ms on the clock. A dithered full-height gradient costs 1.4 ms of
 the clock more than a plain one: every strip rebuilds its four dither phases of the ramp (cache them across strips if it matters).
 
+`lib/cam.lua` zoomed and turned (the world drawn on a canvas, then a quad of it): not zoomed, 60 fps and no cost; a 480x320 canvas at zoom 1.3
+turned 10 degrees, 79 ms a frame (36 filling the canvas in the external memory, 33 of the strips); a 240x160 canvas, 31 ms (30 fps). It
+is for a moment (a hit, a reveal), not a whole level.
+
 ## The same mixer on a desktop
 
 Measured on a desktop (an optimized build, `make audio_bench`): the order and the ratios, not the console's milliseconds (the

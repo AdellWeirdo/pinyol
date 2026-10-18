@@ -1,0 +1,59 @@
+# cam: zoom, turn and punch. Not zoomed or turned the world is drawn straight; zoomed it is scaled about the screen's middle; turned
+# clockwise about it; a punch zooms and eases back; zoom_to and rotate_to ease to their goal
+new
+tick 4
+# straight: the white square is 20 wide, the left side blue, the right orange, drawn at once (no canvas of its own)
+expect_lua px(240, 160) == 0xFFFFFF and same(px(255, 160), 0xC06040) and same(px(100, 100), 0x4060C0) and px(240, 5) == 0xFF0000
+# corners: at zoom 1 the screen's own; at zoom 2 twice as far from the middle; turned 90 degrees (clockwise) the top-left goes to the top-right
+expect_lua near(cor()[1], 0) and near(cor()[2], 0) and near(cor()[5], 480) and near(cor()[6], 320)
+lua c:zoom_now(2)
+expect_lua near(cor()[1], -240) and near(cor()[2], -160) and near(cor()[5], 720) and near(cor()[6], 480)
+lua c:zoom_now(1) c:rotate_now(90)
+expect_lua near(cor()[1], 400, 0.01) and near(cor()[2], -80, 0.01)
+lua c:rotate_now(0)
+# zoomed 2: through the canvas; the white square 40 wide about the middle, the halves still meeting at the middle, the red mark gone off the top
+lua c:zoom_now(2)
+tick 4
+expect_lua px(240 + 15, 160) == 0xFFFFFF and px(240 + 25, 160) ~= 0xFFFFFF and px(240 - 15, 160) == 0xFFFFFF
+expect_lua same(px(100, 100), 0x4060C0) and same(px(400, 100), 0xC06040) and px(240, 5) ~= 0xFF0000
+# zoomed out (0.5): the world is half size in the middle, the colour past its edge (bg) all round
+lua c:zoom_now(0.5)
+tick 4
+expect_lua px(240, 160) == 0xFFFFFF and px(10, 10) == 0x000000 and same(px(130, 100), 0x4060C0) and same(px(350, 100), 0xC06040)
+# turned 90 clockwise: the red mark (top middle, 150 above the centre) is now 150 right of the middle
+lua c:zoom_now(1) c:rotate_now(90)
+tick 4
+expect_lua px(390, 160) == 0xFF0000 and px(240, 160) == 0xFFFFFF
+lua c:rotate_now(0)
+# a punch: zoomed in at once, eased back to 1 in its ticks
+lua c:zoom_now(1) c:punch(0.2, 10)
+expect_lua c:scale() > 1.19
+tick 5
+expect_lua c:scale() > 1.04 and c:scale() < 1.1
+tick 6
+expect_lua near(c:scale(), 1, 0.001)
+# zoom_to eases: part of the way, then there
+lua c:zoom_to(2, 0.2)
+tick 5
+expect_lua c.zoom > 1.2 and c.zoom < 1.9
+tick 60
+expect_lua near(c.zoom, 2, 0.01)
+lua c:zoom_to(1) c:rotate_to(30)
+tick 120
+expect_lua near(c.zoom, 1, 0.01) and near(c.rot, 30, 0.1)
+# visible: at zoom 1 the screen; zoomed in, less; zoomed out, more; turned, the corners
+lua c:zoom_now(1) c:rotate_now(0) c.x, c.y = 0, 0
+expect_lua c:visible(100, 100, 10, 10) and not c:visible(500, 100, 10, 10)
+lua c:zoom_now(2)
+expect_lua c:visible(240, 160, 5, 5) and not c:visible(100, 100, 10, 10)
+lua c:zoom_now(0.5)
+expect_lua c:visible(-100, -100, 10, 10) and c:visible(500, 100, 10, 10)
+lua c:zoom_now(1) c:rotate_now(45)
+expect_lua c:visible(-40, -20, 10, 10) and not c:visible(-100, -50, 10, 10) and not c:visible(900, 100, 10, 10)
+lua c:rotate_now(0)
+expect_lua not c:visible(-40, -20, 10, 10)
+# nothing breaks a frame with all of it at once
+lua c:zoom_now(1.5) c:rotate_now(20) c:punch(0.1, 6)
+tick 8
+expect_ok
+shot camz
