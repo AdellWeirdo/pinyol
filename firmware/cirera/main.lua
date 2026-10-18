@@ -7,6 +7,7 @@
 -- A plays it: the cover sinks under the finger, then grows to fill the screen. B asks before switching off (MENU is
 -- START in a game with no bag: game.c). Back from a game the list opens on it, without the intro.
 -- The games and their covers come from the console (console_games, console_cover); a game without one gets a card.
+local load_pictures = preload -- (the list's own preload below loads covers)
 local INK, INK2, INK3, PAPER, DIM, CHERRY, GOLD = 0x0B0E1F, 0x131837, 0x1C2350, 0xEEF0FF, 0x8F97CC, 0xE8344E, 0xFFC94A
 local LOGO = {x = 88, y = 52} -- the intro's logo: its canvas (303 x 197) on the screen
 local SPACING, CY = 214, 132  -- the row: cover centres apart, and their height on the screen
@@ -28,6 +29,8 @@ local function ease_in(k) return k * k end
 
 function _init()
   show(0)
+  -- read now, while nothing is drawn: the first use of a picture reads it from the card, in the middle of a frame (20-40 ms)
+  load_pictures({images = {"SKY", "INTRO_SEED", "SEED", "LEAVES", "INTRO_WORD", "WORD", "CIRERA_LOGO", "SHINE"}})
   sound("TICK", {wave = "square", freq = 1320, sustain = 0.008, decay = 0.04, volume = 0.12})
   sound("OK", {wave = "square", freq = 660, slide = 1400, sustain = 0.03, decay = 0.2, volume = 0.22})
   sound("EDGE", {wave = "square", freq = 220, sustain = 0.01, decay = 0.06, volume = 0.12})
