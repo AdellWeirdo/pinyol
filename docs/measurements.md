@@ -415,6 +415,14 @@ view and a full road polygon in the rear view brought both to about 30.6 fps (ro
 rectangle and twelve-pixel horizontal bands: fixed 59.6–60 fps (4.3–4.6 ms of strips), rear 59.8–60 fps (4.3–6.3 ms). These are
 short samples of shape-only art; they do not establish the budget for packed sprites, prerendered scenery and music together.
 
+## Phase 0: connected board, read-only snapshot (2026-10-18)
+
+Cirera answered `hello 1 card 14964864` on `/dev/cu.usbmodem2101`. Without changing its current game, USB log reported firmware `0f98162-dirty`, menu `54.4 fps`, `tick 2.07 ms`, `render 14.20 ms`, strips `4.11 ms`, audio `10%` of a core and `0 underruns`; free internal RAM was `28 KB`. This is a launcher snapshot, **not** a baseline for `psx_views` or textured 3D. Automatic approval review rejected `send_game.py`: it interpreted the transfer as a possible write to the game partition under the earlier app-only flash instruction. The command was not run. Scene measurement needs explicit authorization for an SD-card transfer or an already installed reference scene.
+
+`psx_demo` was already installed, so opened through the launcher with the test firmware's USB controls, without transferring files. It measured `30.6 fps`, `tick 0.18 ms`, `render 30.79 ms`, strips `28.61 ms`, audio `33%` of a core and `0 underruns`. This is a baseline for that installed game under firmware `0f98162-dirty`; its Lua and assets may differ from the repository copy. At 60 fps this scene needs a major reduction in filled/mixed pixels, not only faster geometry setup.
+
+After building and flashing **only the app** at `0x20000` with `BP_REMOTE=ON`, the installed `psx_demo` still ran at `30.6 fps`, with `render 30.80 ms`, audio `28%` of a core and `0 underruns`. A temporary in-memory `_draw` wrapper drew a textured face crossing the rear camera's near plane through `views.draw3d`; the face appeared in the captured board frame, and the game reported `30.5 fps` with `0 underruns`. No game files were transferred. These runs establish that the new renderer works on Cirera, but do not isolate its cost: the scene already misses 60 fps and frame content differed between samples.
+
 ## The same mixer on a desktop
 
 Measured on a desktop (an optimized build, `make audio_bench`): the order and the ratios, not the console's milliseconds (the

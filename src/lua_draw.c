@@ -167,7 +167,8 @@ static void draw_one(surface *s, const ov_cmd *c) {
     case OV_QUAD: {
         const typeof(ov_quad[0]) *q = &ov_quad[c->ext - 1];
         const unsigned al = q->alpha + (q->alpha >> 7);
-        gfx_quad(s, c->a, c->frame, q->xy, q->light, q->lights, q->mode, al, q->dither, q->mesh, q->persp, q->mip);
+        gfx_quad(s, c->a, c->frame, q->xy, q->light, q->lights, q->mode, al, q->dither, q->mesh, q->persp, q->mip,
+                 c->len ? ov_pts + c->str : NULL);
         break;
     }
     case OV_GRAD: {
@@ -938,7 +939,7 @@ static int l_linetint(lua_State *L) {
     return 0;
 }
 
-/* quad(id, x1, y1, x2, y2, x3, y3, x4, y4 [, {frame, alpha, add, sub, quarter, light, lights, dither, mesh}]): the picture's
+/* quad(id, x1, y1, x2, y2, x3, y3, x4, y4 [, {frame, alpha, add, sub, quarter, light, lights, dither, mesh, uv}]): the picture's
  * frame on four corners, in the picture's own order (top-left, top-right, bottom-right, bottom-left): a Saturn
  * distorted sprite, a PlayStation textured quad. light = 0xRRGGBB lights it by that colour (0x808080 as it is, up to
  * 0xFFFFFF twice as bright); lights = {c1, c2, c3, c4} one per corner, blending across. */
@@ -952,13 +953,25 @@ static int l_quad(lua_State *L) {
     }
     if (!a || a->missing || nquad == OV_EXT || !gfx_pixels(a)) return 0;
     img_opts o = {.scale = 1, .alpha = 1};
-    bool lights = false, dither = false, mesh = false;
+    bool lights = false, dither = false, mesh = false, has_uv = false;
     int persp = 0;
     uint8_t light[4][3] = {{0}};
+    int16_t uv8[8];
     if (lua_istable(L, 10)) {
         img_options(L, 10, &o);
         lua_getfield(L, 10, "dither"), dither = lua_toboolean(L, -1), lua_pop(L, 1);
         lua_getfield(L, 10, "mesh"), mesh = lua_toboolean(L, -1), lua_pop(L, 1);
+        lua_getfield(L, 10, "uv");
+        if (!lua_isnil(L, -1)) {
+            luaL_checktype(L, -1, LUA_TTABLE);
+            has_uv = true;
+            for (int i = 0; i < 8; i++) {
+                lua_rawgeti(L, -1, i + 1);
+                uv8[i] = (int16_t)floorf(clampf(fin(luaL_checknumber(L, -1)), -2000, 2000) * 8 + 0.5f);
+                lua_pop(L, 1);
+            }
+        }
+        lua_pop(L, 1);
         lua_getfield(L, 10, "persp");
         persp = lua_isboolean(L, -1) ? lua_toboolean(L, -1) : (int)clampf(fin(luaL_optnumber(L, -1, 0)), 0, 16);
         lua_pop(L, 1);
@@ -981,15 +994,18 @@ static int l_quad(lua_State *L) {
         }
         lua_pop(L, 1);
     }
+    if (has_uv && npts + 8 > OV_PTS) return 0;
     ov_cmd *c = ov_add(OV_QUAD);
     if (!c) return 0;
     c->a = a, c->frame = (int16_t)(o.frame < 0 || o.frame >= a->frames ? 0 : o.frame);
     memcpy(ov_quad[nquad].xy, xy, sizeof xy), memcpy(ov_quad[nquad].light, light, sizeof light);
     ov_quad[nquad].lights = lights, ov_quad[nquad].dither = dither && lights, ov_quad[nquad].mesh = mesh;
     ov_quad[nquad].mode = o.mode, ov_quad[nquad].alpha = (uint8_t)(o.alpha * 255 + 0.5f), ov_quad[nquad].persp = (uint8_t)persp;
-    ov_quad[nquad].mip = gfx_quad_mip(a, c->frame, xy);
+    /* shortcut: custom UV can cover only part of a picture, so the whole-frame mip ratio would overblur it. */
+    ov_quad[nquad].mip = has_uv ? NULL : gfx_quad_mip(a, c->frame, xy);
+    if (has_uv) c->str = (uint16_t)npts, c->len = 1, memcpy(ov_pts + npts, uv8, sizeof uv8), npts += 8;
     c->ext = (uint8_t)(++nquad);
-    commit(c, 0, 0);
+    commit(c, 0, has_uv ? 4 : 0);
     return 0;
 }
 

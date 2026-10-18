@@ -378,7 +378,7 @@ const quad_mip *gfx_quad_mip(const asset *a, int frame, const int16_t xy8[8]) {
 }
 
 void gfx_quad(surface *s, const asset *a, int frame, const int16_t xy8[8], const uint8_t light[4][3], bool lights,
-              int mode, unsigned alpha, bool dither, bool mesh, int persp, const quad_mip *mip) {
+              int mode, unsigned alpha, bool dither, bool mesh, int persp, const quad_mip *mip, const int16_t *uv8) {
     if (!a->pixels || frame < 0 || frame >= a->frames) return;
     const int tw = mip ? mip->w : a->w, th = mip ? mip->h : a->h; /* the picture, or its smaller copy */
     quad_ctx q = {.src = mip ? mip->px : a->pixels + (size_t)frame * a->w * a->h, .w = tw, .h = th, .stride = (tw + 7) / 8,
@@ -408,7 +408,11 @@ void gfx_quad(surface *s, const asset *a, int frame, const int16_t xy8[8], const
         }
     }
     /* the corners and what each carries: the picture's own corners, so the frame fills the quad */
-    const float tu[4] = {0, (float)tw, (float)tw, 0}, tv[4] = {0, 0, (float)th, (float)th};
+    float tu[4] = {0, (float)tw, (float)tw, 0}, tv[4] = {0, 0, (float)th, (float)th};
+    if (uv8) for (int i = 0; i < 4; i++) {
+        tu[i] = (float)uv8[2 * i] * tw / (8 * a->w);
+        tv[i] = (float)uv8[2 * i + 1] * th / (8 * a->h);
+    }
     vertex v[4];
     for (int i = 0; i < 4; i++) {
         v[i].x = xy8[2 * i], v[i].y = xy8[2 * i + 1];

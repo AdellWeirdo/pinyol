@@ -242,7 +242,7 @@ struct quad_mip;
  * 4x4 on the lit colours. persp: 0 as two flat triangles; 1 the picture put on the four corners as in perspective, cut into as
  * many cells as the quad needs; more: that many cells a side. The picture must be unpacked (gfx_pixels). */
 void gfx_quad(surface *s, const asset *a, int frame, const int16_t xy8[8], const uint8_t light[4][3], bool lights,
-              int mode, unsigned alpha, bool dither, bool mesh, int persp, const struct quad_mip *mip);
+              int mode, unsigned alpha, bool dither, bool mesh, int persp, const struct quad_mip *mip, const int16_t *uv8);
 /* A picture drawn much smaller than it is is sampled from a smaller copy of itself (a mip level: each texel the average of a
  * 2^n square, see-through ones left out): a pixel then reads one texel near the last, not one a whole row away, which keeps
  * the memory cache warm (a 256x256 picture is 6 times the cost of a 128x128), and no longer shimmers. gfx_quad_mip, called when

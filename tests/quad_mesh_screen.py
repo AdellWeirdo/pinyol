@@ -21,3 +21,6 @@ for y in range(81, 113):
         assert pixel(x, y) == expected, (x, y, pixel(x, y), expected)
 assert pixel(30, 81) == background
 assert pixel(63, 81) == background
+assert pixel(30, 120) == background
+assert pixel(31, 120) == pixel(32, 120) == pixel(34, 120)
+assert pixel(35, 120) != pixel(34, 120)  # custom UV advances by one texel every four screen pixels

@@ -3,6 +3,7 @@
 -- lights darken, brighten and blend across; far off the canvas it is clipped. Also drawn on the screen, so the strips
 -- are checked against the whole frame.
 local N = 16
+local views = require("views")
 function rgb(r, g, b) return r << 16 | g << 8 | b end
 function _init()
   show(0)
@@ -12,12 +13,32 @@ function _init()
   canvas("HALVES", N, N); target("HALVES"); rect(0, 0, N, N // 2, 0xFF0000); rect(0, N // 2, N, N // 2, 0x00FF00)
   canvas("GREY", N, N); target("GREY"); cls(0x404040)
   canvas("MASK", N, N); target("MASK"); rect(0, 0, 8, N, 0xFFFFFF)
+  canvas("RED", N, N); target("RED"); cls(0xFF0000)
+  canvas("GREEN", N, N); target("GREEN"); cls(0x00FF00)
   target()
 end
 function out(name, f) canvas(name, 32, 32); target(name); f(); target() end
 function _draw()
   out("FLAT", function() quad("SRC", 4, 4, 20, 4, 20, 20, 4, 20) end)
   out("PLAIN", function() img("SRC", 4, 4) end)
+  out("UV", function() quad("SRC", 4, 4, 20, 4, 20, 20, 4, 20, {uv = {4, 4, 12, 4, 12, 12, 4, 12}}) end)
+  out("DEPTH", function()
+    rect(0, 0, 32, 32, 0x0000FF)
+    local cam = {kind = "rear", ox = 16, horizon = 8, eye = 8, focal = 16, offset = 0, near = 1}
+    local function face(id, z)
+      return {id = id, corners = {
+        {x = -4, z = z, h = 8, u = 0, v = 0}, {x = 4, z = z, h = 8, u = 16, v = 0},
+        {x = 4, z = z, h = 0, u = 16, v = 16}, {x = -4, z = z, h = 0, u = 0, v = 16}}}
+    end
+    views.draw3d(cam, {face("GREEN", 8), face("RED", 16)})
+  end)
+  out("NEAR_CLIP", function()
+    rect(0, 0, 32, 32, 0x0000FF)
+    views.draw3d({kind = "rear", ox = 16, horizon = 8, eye = 8, focal = 16, offset = 0, near = 4}, {{
+      id = "HALVES", corners = {
+        {x = -4, z = 8, h = 8, u = 0, v = 0}, {x = 4, z = 8, h = 8, u = 16, v = 0},
+        {x = 4, z = 2, h = 0, u = 16, v = 16}, {x = -4, z = 2, h = 0, u = 0, v = 16}}}})
+  end)
   out("MIXED", function() quad("WHITE", 4, 4, 20, 4, 20, 20, 4, 20, {quarter = true}) end)
   out("TURNED", function() quad("SRC", 20, 4, 20, 20, 4, 20, 4, 4) end)
   out("DARK", function() quad("WHITE", 4, 4, 20, 4, 20, 20, 4, 20, {light = 0x000000}) end)
@@ -47,6 +68,7 @@ function _draw()
   grad(300, 100, 100, 100, 0x000000, 0xFFC080, {across = true, add = true, alpha = 0.6})
   quad("WHITE", 40, 200, 200, 220, 180, 300, 20, 290, {add = true, alpha = 0.5})
   quad("WHITE", 31, 81, 63, 81, 63, 113, 31, 113, {mesh = true})
+  quad("SRC", 31, 120, 63, 120, 63, 152, 31, 152, {uv = {4, 4, 12, 4, 12, 12, 4, 12}})
 end
 function same(a, b)
   local bad = 0
@@ -86,6 +108,13 @@ function mesh_wrong()
   for y = 4, 19 do for x = 4, 19 do
     local expected = (x + y) % 2 == 0 and 0xFFFFFF or 0x0000FF
     if pget(x, y, "MESH") ~= expected then wrong = wrong + 1 end
+  end end
+  return wrong
+end
+function uv_wrong()
+  local wrong = 0
+  for y = 4, 19 do for x = 4, 19 do
+    if pget(x, y, "UV") ~= pget(4 + (x - 4) // 2, 4 + (y - 4) // 2, "SRC") then wrong = wrong + 1 end
   end end
   return wrong
 end

@@ -4,6 +4,10 @@ new
 tick 2
 # straight: every pixel as img draws it
 expect_lua same("FLAT", "PLAIN") == 0
+expect_lua uv_wrong() == 0
+expect_lua pget(16, 12, "DEPTH") == 0x00FF00 and pget(16, 22, "DEPTH") == 0x00FF00 and pget(2, 2, "DEPTH") == 0x0000FF
+expect_lua pget(16, 12, "NEAR_CLIP") == 0xFF0000 and pget(16, 26, "NEAR_CLIP") == 0x00FF00 and pget(2, 10, "NEAR_CLIP") == 0x0000FF
+expect_lua_error quad("SRC", 4, 4, 20, 4, 20, 20, 4, 20, {uv = {0, 0}})
 # a quarter-mix of white over nothing: all 256 pixels, all the same, none outside (no hole, none mixed twice)
 expect_lua count("MIXED") == 256
 expect_lua select(2, count("MIXED")) == select(3, count("MIXED"))
