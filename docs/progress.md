@@ -136,6 +136,8 @@ storm of their own.
 also storms the PlayStation and Saturn functions (quad, grad, light, warp, linetint, img's new mixes, reverb, the
 sounds' pan and envelope) with arguments in their shape, so most of them draw and the strips are compared; 25
 sequences of that under ASan and UBSan, no findings.
+2026-10-18: 50 explicit `math.randomseed` values (1–50), 120 ticks each, with `--check-strips`: no mismatch. The original
+failing sequence was not recorded, so the 455-pixel mismatch remains unproven as fixed.
 
 Measured on the console afterwards (autotest builds with the speaker on, `-DBP_LOUD=ON`):
 
