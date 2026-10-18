@@ -107,6 +107,7 @@ typedef struct surface {
     int w, h;
     int x0, y0, xs, ys, fw, fh;
     bool swap;
+    bool canvas; /* a canvas the game draws on: CANVAS_KEY in it is see-through, so mixing looks for it */
     uint8_t part, dither;
 } surface;
 void v2_draw(surface *s); /* pinyol@2: the world 2x and the script's text and shapes, onto s (lua_game.c) */

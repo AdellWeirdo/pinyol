@@ -324,28 +324,31 @@ static inline uint32_t ready(uint16_t c, int mode, unsigned alpha) {
     return ((c & 31) * alpha >> sh) | ((c >> 11) * alpha >> sh) << 11 | ((c >> 5 & 63) * alpha >> sh) << 21;
 }
 
-/* n pixels down a column, each mixed with its ready colour; not inlined, so its loop keeps its numbers in registers */
+/* n pixels down a column, each mixed with its ready colour. Specialised by mode, byte order and canvas (constants in an
+ * always-inlined body), so each is a plain loop with its numbers in registers; not inlined into its callers for the same reason.
+ * Only a canvas looks for CANVAS_KEY under a pixel (a see-through one takes the colour as it is). */
+static inline __attribute__((always_inline)) void mixed_loop(uint16_t *dst, int ys, int n, const uint32_t *col, unsigned alpha,
+                                                             int mode, bool swap, bool canvas) {
+    for (int j = 0; j < n; j++, dst += ys) {
+        const uint16_t under = swap ? bswap16(*dst) : *dst;
+        uint16_t v;
+        if (mode == BLEND_ALPHA) v = canvas && under == CANVAS_KEY ? (uint16_t)col[j] : mix565(under, (uint16_t)col[j], alpha, BLEND_ALPHA);
+        else if (mode == BLEND_SUB) v = canvas && under == CANVAS_KEY ? unspread(col[j]) : not_key(sub565_sat(under, col[j]));
+        else v = canvas && under == CANVAS_KEY ? not_key(unspread(col[j])) : not_key(add565_sat(under, col[j]));
+        *dst = swap ? bswap16(v) : v;
+    }
+}
+
+#define MIXED_MODES(swap, canvas)                                                                   \
+    if (mode == BLEND_ALPHA) mixed_loop(dst, ys, n, col, alpha, BLEND_ALPHA, swap, canvas);         \
+    else if (mode == BLEND_SUB) mixed_loop(dst, ys, n, col, alpha, BLEND_SUB, swap, canvas);        \
+    else mixed_loop(dst, ys, n, col, alpha, BLEND_ADD, swap, canvas)
+
 static __attribute__((noinline)) void mixed_run(const surface *s, uint16_t *dst, int ys, int n, const uint32_t *col, int mode,
                                                 unsigned alpha) {
-    const bool swap = s->swap;
-    if (mode == BLEND_ALPHA) {
-        for (int j = 0; j < n; j++, dst += ys) {
-            const uint16_t under = swap ? bswap16(*dst) : *dst, c = (uint16_t)col[j];
-            *dst = under == CANVAS_KEY ? stored(s, c) : stored(s, mix565(under, c, alpha, BLEND_ALPHA));
-        }
-    } else if (mode == BLEND_SUB) {
-        for (int j = 0; j < n; j++, dst += ys) {
-            const uint16_t under = swap ? bswap16(*dst) : *dst;
-            const uint16_t v = under == CANVAS_KEY ? unspread(col[j]) : not_key(sub565_sat(under, col[j]));
-            *dst = swap ? bswap16(v) : v;
-        }
-    } else {
-        for (int j = 0; j < n; j++, dst += ys) {
-            const uint16_t under = swap ? bswap16(*dst) : *dst;
-            const uint16_t v = under == CANVAS_KEY ? not_key(unspread(col[j])) : not_key(add565_sat(under, col[j]));
-            *dst = swap ? bswap16(v) : v;
-        }
-    }
+    if (s->canvas) { MIXED_MODES(false, true); }
+    else if (s->swap) { MIXED_MODES(true, false); }
+    else { MIXED_MODES(false, false); }
 }
 
 /* A ramp's colour at step t, as RGB565, the dither's offset d (8-bit steps) added before the low bits go. */

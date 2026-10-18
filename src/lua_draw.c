@@ -442,7 +442,7 @@ static void commit(ov_cmd *c, int text_bytes, int corners) {
         band(c);
         return;
     }
-    surface whole = {.px = target->pixels, .w = target->w, .h = target->h};
+    surface whole = {.px = target->pixels, .w = target->w, .h = target->h, .canvas = true};
     surface s = clipping ? gfx_clip(&whole, clip_r.x, clip_r.y, clip_r.w, clip_r.h) : whole;
     if (s.w > 0 && s.h > 0) {
         if (c->op == OV_SHADE) gfx_canvas_shade(&s, c->x, c->y, c->w, c->h); /* see-through stays so */
