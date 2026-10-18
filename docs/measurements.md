@@ -388,6 +388,11 @@ for placing and drawing the 30 (it was 9.4 before one sort a frame, a table and 
 480 ns a pixel lit with dither against ~150 unlit. So a character of 10 pieces and ~10 thousand pixels is about 1.5 ms plain and 5 ms
 lit; light the ones that need it, and keep the pieces to the size of what they draw.
 
+The same quad (400x280 pixels, flat) with a picture of 32x32, 128x128 and 256x256: 7.2, 9.1 and 47 ms of strips (51, 68 and 400 ns a
+pixel). A picture over about 128x128 (32 KB) stops fitting the memory cache and every pixel waits for the external RAM: keep the
+pictures a quad draws to 128x128 or less (cut a big floor into tiles, or draw it from a smaller one: the quad scales it).
+The clamps of a quad's texture coordinates are skipped when a column's ends are inside the picture (affine 7.8 -> 6.7 ms).
+
 ## The same mixer on a desktop
 
 Measured on a desktop (an optimized build, `make audio_bench`): the order and the ratios, not the console's milliseconds (the
