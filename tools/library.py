@@ -116,7 +116,7 @@ def check_game(game: Path, headless: Path, out: Path) -> dict:
     if errors:
         return {"ok": False, "id": gid, "title": title, "errors": errors}
     with tempfile.TemporaryDirectory() as t:
-        v = subprocess.run([str(headless), "--game", str(game), "--saves", t, "--fresh", "--validate"],
+        v = subprocess.run([str(headless), "--game", str(game), "--saves", t, "--fresh", "--validate", "--strict-assets"],
                            capture_output=True, text=True, timeout=60)
         if v.returncode:
             errors.append("El motor no acepta el juego:\n" + (v.stdout + v.stderr).strip()[-1500:])
@@ -124,7 +124,8 @@ def check_game(game: Path, headless: Path, out: Path) -> dict:
             script = Path(t) / "play.script"
             script.write_text(f"tick 90\nshot cover\ntick {PLAY_TICKS - 90}\nexpect_ok\n")
             try:
-                p = subprocess.run([str(headless), "--game", str(game), "--saves", t, "--fresh", "--script", str(script)],
+                p = subprocess.run([str(headless), "--game", str(game), "--saves", t, "--fresh", "--script", str(script),
+                                    "--strict-assets"],
                                    capture_output=True, text=True, timeout=120)
                 if p.returncode:
                     errors.append("El juego falla al jugarlo diez segundos:\n" + (p.stdout + p.stderr).strip()[-1500:])

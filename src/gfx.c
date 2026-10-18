@@ -17,6 +17,7 @@ static size_t pic_bytes, pic_budget = PIC_BUDGET, budget_set; /* the pictures' d
 static uint32_t pic_frame;                         /* counts gfx_new_frame: 0 for ever in v1 games, nothing goes */
 static char forced[16][32];
 static int nforced;
+static char missing_id[32];
 
 void gfx_reset(void) {
     for (int i = 0; i < nassets; i++) {
@@ -26,6 +27,7 @@ void gfx_reset(void) {
     }
     nassets = 0;
     nforced = 0;
+    missing_id[0] = 0;
     canvas_px = 0;
     pic_bytes = 0, pic_budget = budget_set ? budget_set : PIC_BUDGET, pic_frame = 0;
     memset(slot, 0, sizeof slot);
@@ -171,6 +173,7 @@ static bool load_packed(asset *a) {
 }
 
 static bool load_asset(asset *a) {
+    a->invalid_mask = false;
     for (int i = 0; i < nforced; i++)
         if (!strcmp(forced[i], a->id)) return false;
     char rel[96];
@@ -213,6 +216,7 @@ static bool load_asset(asset *a) {
         hal_log("asset %s: bad mask size, drawing opaque", a->id);
         free(a->mask);
         a->mask = NULL;
+        a->invalid_mask = true;
     }
     a->bytes = npx * 2 + (a->mask ? (size_t)len : 0), pic_bytes += a->bytes;
     return true;
@@ -262,7 +266,14 @@ static asset *lookup(const char *id, bool quiet) {
     return a;
 }
 
-asset *gfx_asset(const char *id) { return lookup(id, false); }
+asset *gfx_asset(const char *id) {
+    asset *a = lookup(id, false);
+    if ((a->missing || a->invalid_mask) && !missing_id[0])
+        snprintf(missing_id, sizeof missing_id, "%s", a->id[0] ? a->id : "<empty>");
+    return a;
+}
+
+const char *gfx_missing_asset(void) { return missing_id; }
 
 asset *gfx_find(const char *id) {
     char key[32];

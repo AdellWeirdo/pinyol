@@ -38,10 +38,11 @@ You cannot see the `pinyol_sim` window, so play the game headless with a test sc
 (syntax in docs/lua.md, "Testing"; `tests/*.script` are real ones):
 
 ```sh
-./build/pinyol_headless --game games/<id> --fresh --script games/<id>/tests/<id>.script --check-strips
+./build/pinyol_headless --game games/<id> --fresh --script games/<id>/tests/<id>.script --check-strips --strict-assets
 ```
 
-It prints `PASS` or `FAIL` with the Lua error and line. End scripts with `expect_ok`. To look at the screen, put
+It prints `PASS` or `FAIL` with the Lua error and line. `--strict-assets` also fails when requested art is missing
+or corrupt. End scripts with `expect_ok`. To look at the screen, put
 `shot name` in the script: it writes `games/<id>/saves/name.ppm`; `sips -s format png X.ppm --out X.png` (macOS)
 turns it into a PNG you can open. Look at it: a game that passes but draws nothing is not done. Take a shot of every
 screen with text (title, messages, game over, the end) and look at each text: inside its box with a margin, never

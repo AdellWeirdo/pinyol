@@ -24,7 +24,8 @@ games/mygame/
 ```
 
 `uv run tools/new_game.py games/mygame` writes such a game, with placeholder art, a dialogue, an item and an end.
-Check it with `pinyol_headless --game games/mygame --validate`. Zero errors means every reference resolves.
+Check it with `pinyol_headless --game games/mygame --validate --strict-assets`. This checks content and art used in
+the first frame. Play each route with a test script to check art loaded later.
 
 ## Contents
 
@@ -58,7 +59,7 @@ Check it with `pinyol_headless --game games/mygame --validate`. Zero errors mean
 | `arena.json` | no | Only for games that use the `["arena", ID]` effect. |
 | `zones/<ZONE>.json` | one per zone | Loaded the first time the zone is entered. |
 | `dialogues/<D_ID>.json` | one per dialogue | Loaded the first time it is used. |
-| `assets/` | in practice | `<ID>.rgb565`, `<ID>.meta.json`, optional `<ID>.mask` (section 14). The validator does not check assets; a missing one draws a magenta/ink checkerboard and logs `asset <ID> missing, using placeholder`. |
+| `assets/` | in practice | `<ID>.rgb565`, `<ID>.meta.json`, optional `<ID>.mask` (section 14). A missing picture draws a magenta/ink checkerboard; `--strict-assets` treats any requested missing or invalid picture as an error. Only pictures used during the checked run are examined. |
 | `audio/` | the music.json title and end cues, at least | `<ID>.wav` (section 13). The validator checks almost every sound referenced from data (not conduit `sfx`/`sfx_turn` or the music.json `title`/`end` `ambient`); at runtime a missing sound is silent. |
 | `fonts/` | yes | `FONT_MAIN.fnt`, `FONT_MAIN_L.fnt`, `FONT_BOLD.fnt`, `FONT_BOLD_L.fnt` (section 15). The game does not start without all four. |
 | `saves/` | created by the engine | Save slots and `settings.txt`. Desktop tools can redirect it with `--saves DIR`. |
@@ -1362,7 +1363,7 @@ Dialogue lines have no length limit (they page); choices are cut after 2 lines w
 `pinyol_headless` is the engine's command-line runner (CMake target `pinyol_headless`, no window, no sound device).
 
 ```
-pinyol_headless --game DIR [--saves DIR] [--fresh] (--validate | --script FILE) [--audio FILE.pcm] [--video FILE.mp4]
+pinyol_headless --game DIR [--saves DIR] [--fresh] (--validate | --script FILE) [--strict-assets] [--audio FILE.pcm] [--video FILE.mp4]
 ```
 
 | Option | Meaning |
@@ -1371,6 +1372,7 @@ pinyol_headless --game DIR [--saves DIR] [--fresh] (--validate | --script FILE) 
 | `--saves DIR` | save folder (default `DIR/saves`) |
 | `--fresh` | delete `*.sav` and `*.ppm` in the save folder first |
 | `--validate` | run the validator |
+| `--strict-assets` | draw the first frame and fail if any required picture used during validation or a test script is missing or invalid; optional picture lookups are allowed |
 | `--script FILE` | run a test script (after validation, if both are given and validation passed) |
 | `--audio FILE.pcm` | dump the mix as raw PCM16 mono at 22050 Hz |
 | `--video FILE.mp4` | record the run at 30 fps through `ffmpeg` |

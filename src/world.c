@@ -576,7 +576,7 @@ const char *klaus_variant(const char *id) {
     static char buf[40];
     if (!G.bag || !id || (strncmp(id, G.pl.prefix, strlen(G.pl.prefix)) && strcmp(id, G.pl.portrait))) return id;
     snprintf(buf, sizeof buf, "%s_B", id);
-    return gfx_asset(buf)->missing ? id : buf;
+    return gfx_asset_opt(buf)->missing ? id : buf;
 }
 
 static void draw_klaus(surface *s) {
@@ -653,7 +653,7 @@ void world_render(surface *s) {
     cam_x = floorf(cam_x);
     cam_y = floorf(cam_y);
     const char *bg_id = jstr(Z->def, "bg");
-    asset *bg = bg_id ? gfx_asset(bg_id) : NULL;
+    asset *bg = bg_id ? gfx_asset_opt(bg_id) : NULL;
     char hd_id[40];
     snprintf(hd_id, sizeof hd_id, "%s_HD", bg_id ? bg_id : "");
     hd.bg = bg && !bg->missing ? gfx_asset_opt(hd_id) : NULL;
@@ -719,7 +719,7 @@ void world_render(surface *s) {
     } else if (jget(Z->def, "foreground")) { /* roofs, canopies, front walls: always in front of characters */
         char fg_id[16];
         snprintf(fg_id, sizeof fg_id, "FG_%s", Z->id);
-        asset *fg = gfx_asset(fg_id);
+        asset *fg = gfx_asset_opt(fg_id);
         if (!fg->missing) gfx_blit(s, fg, 0, -(int)cam_x, -(int)cam_y, 0, false);
     }
     draw_tiles(s, Z->layer[2]);
@@ -864,7 +864,7 @@ void world_render_marker(surface *s) {
         font_draw(s, f, 36, y + 6, t, -1, -1, C_INK);
         int x = one_row ? 36 + tw + 10 : 36, cy = one_row ? y : y + row - 6;
         cJSON_ArrayForEach(ck, jget(ob, "checks")) { /* small checklist: icon + box, ticked by its flag */
-            asset *ic = gfx_asset(jstr(ck, "icon"));
+            asset *ic = gfx_asset_opt(jstr(ck, "icon"));
             if (!ic->missing) gfx_blit(s, ic, 0, x, cy + (row - ic->h) / 2, 0, false);
             gfx_frame(s, x + 18, cy + (row - 12) / 2, 12, 12, C_INK);
             if (cond_eval(jget(ck, "if"))) {

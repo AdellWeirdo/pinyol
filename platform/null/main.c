@@ -18,6 +18,8 @@
 #define PINYOL_GAME "examples/hola"
 #endif
 
+static bool strict_assets;
+
 static void wipe_saves(const char *dir) {
     mkdir(dir, 0755);
     DIR *d = opendir(dir);
@@ -91,11 +93,13 @@ static void frame_tick(void) {
     static uint16_t fb[SCREEN_W * SCREEN_H];
     static unsigned n;
     mix_tick();
-    if ((!video && !crcs && !check_strips) || n++ % 2) return;
+    if (!video && !crcs && !check_strips && !strict_assets) return;
+    bool capture = n++ % 2 == 0;
+    if (!capture && !strict_assets) return;
     game_render(fb);
-    if (check_strips) compare_strips(fb, n);
-    if (video) fwrite(fb, 2, SCREEN_W * SCREEN_H, video);
-    if (crcs) fprintf(crcs, "%08x\n", (unsigned)crc32(fb, sizeof fb));
+    if (check_strips && capture) compare_strips(fb, n);
+    if (video && capture) fwrite(fb, 2, SCREEN_W * SCREEN_H, video);
+    if (crcs && capture) fprintf(crcs, "%08x\n", (unsigned)crc32(fb, sizeof fb));
 }
 
 static FILE *open_video(const char *path) {
@@ -123,6 +127,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--saves") && i + 1 < argc) cfg.save_dir = argv[++i];
         else if (!strcmp(argv[i], "--script") && i + 1 < argc) script = argv[++i];
         else if (!strcmp(argv[i], "--validate")) validate = true;
+        else if (!strcmp(argv[i], "--strict-assets")) strict_assets = true;
         else if (!strcmp(argv[i], "--fresh")) fresh = true;
         else if (!strcmp(argv[i], "--audio") && i + 1 < argc) dump = fopen(argv[++i], "wb");
         else if (!strcmp(argv[i], "--crc") && i + 1 < argc) crcs = fopen(argv[++i], "w");
@@ -133,7 +138,7 @@ int main(int argc, char **argv) {
         }
         else {
             fprintf(stderr, "usage: %s --game DIR [--saves DIR] [--fresh] (--validate | --script FILE) "
-                            "[--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--pictures KB]\n", argv[0]);
+                            "[--strict-assets] [--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--pictures KB]\n", argv[0]);
             return 2;
         }
     }
@@ -146,7 +151,15 @@ int main(int argc, char **argv) {
     }
     int rc = 0;
     if (validate) rc = content_validate() ? 1 : 0;
+    if (strict_assets && !rc && !script) {
+        static uint16_t fb[SCREEN_W * SCREEN_H];
+        game_render(fb); /* exercise first _draw even when checking without a play script */
+    }
     if (script && !rc) rc = script_run(script, frame_tick);
+    if (strict_assets && gfx_missing_asset()[0]) {
+        fprintf(stderr, "asset check: required picture %s is missing or invalid\n", gfx_missing_asset());
+        if (!rc) rc = 1;
+    }
     game_shutdown();
     if (dump) fclose(dump);
     if (crcs) fclose(crcs);

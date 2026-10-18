@@ -194,6 +194,8 @@ if(Python3_FOUND) # the site's numbers: the minutes played, the ranking, the cov
            $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/midi) # a MIDI file played by a bank of samples, and one from a SoundFont
   add_test(NAME vag_sounds COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/vag_test.py
            $<TARGET_FILE:pinyol_headless> ${CMAKE_BINARY_DIR}/vag)
+  add_test(NAME strict_assets COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/strict_assets_test.py
+           $<TARGET_FILE:pinyol_headless>)
 endif()
 # The desktop app's install of a dropped .zip (platform/sdl/desktop.c: the system's tar on macOS and Windows, unzip on
 # Linux)

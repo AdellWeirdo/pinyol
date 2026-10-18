@@ -159,7 +159,7 @@ void title_tick(void) {
 }
 
 void title_render(surface *s) {
-    asset *bg = gfx_asset("BG_TITLE"), *logo = gfx_asset("LOGO");
+    asset *bg = gfx_asset_opt("BG_TITLE"), *logo = gfx_asset_opt("LOGO");
     if (bg->missing) gfx_fill(s, 0, 0, SCREEN_W, SCREEN_H, C_BROWN);
     else gfx_blit2x(s, bg, 0, 0, 0);
     if (!logo->missing) {
@@ -478,7 +478,7 @@ static void end_text_draw(surface *s, const char *t, int y) {
 
 void end_render(surface *s) {
     gfx_fill(s, 0, 0, SCREEN_W, SCREEN_H, C_BLACK);
-    asset *logo = gfx_asset("LOGO_SMALL");
+    asset *logo = gfx_asset_opt("LOGO_SMALL");
     if (!logo->missing) gfx_blit(s, logo, 0, (SCREEN_W - logo->w) / 2, 6, 0, false);
     const char *end = jstr(chapter_def(chapter_current()), "end_text") ? jstr(chapter_def(chapter_current()), "end_text")
                                                                        : jstr(G.game, "end_text");

@@ -123,6 +123,7 @@ typedef struct {
     uint16_t *pixels; /* frames * w * h; NULL for a packed picture until gfx_pixels unpacks it */
     uint8_t *mask;    /* frames * stride * h, MSB first, 1 = opaque; NULL = opaque */
     bool missing;
+    bool invalid_mask;
     bool canvas;      /* made by the game while it runs (gfx_canvas): its pixels change */
     uint32_t gen;     /* a canvas: one more each time it is drawn on, so what was made from it is made again */
     /* packed (tools/png2asset.py --packed): a palette and each frame's columns, only their opaque runs */
@@ -146,6 +147,7 @@ typedef struct {
 } font;
 
 asset *gfx_asset(const char *id); /* cached, never NULL; missing files give a checkerboard */
+const char *gfx_missing_asset(void); /* first required picture missing or malformed, or "" */
 /* A game's pictures share PIC_BUDGET bytes of memory. Past it, those not asked for in the frame being made go,
  * least recently asked for first, and come back by themselves when asked for again (a moment's load from the card):
  * a game's art can be far bigger than the console's memory, as long as each frame's fits. */

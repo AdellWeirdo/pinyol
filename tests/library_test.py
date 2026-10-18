@@ -27,6 +27,15 @@ with tempfile.TemporaryDirectory() as t:
     good = pack_game.pack(mine, t / "zips", False)
     r = library.check(good, t / "good", headless)
     assert r["ok"] and r["id"] == "mi_bolsillo", r
+    bad_art = t / "bad_art_game"
+    shutil.copytree(mine, bad_art)
+    meta = json.loads((bad_art / "game.json").read_text(encoding="utf-8"))
+    (bad_art / "game.json").write_text(json.dumps({**meta, "id": "sin_dibujo"}), encoding="utf-8")
+    with (bad_art / "main.lua").open("a") as lua:
+        lua.write("\nfunction _draw() img('MISSING_ART', 10, 10) end\n")
+    missing = pack_game.pack(bad_art, t / "zips", False)
+    r = library.check(missing, t / "bad_art", headless)
+    assert not r["ok"] and any("MISSING_ART" in e for e in r["errors"]), r
     shared = t / "para-compartir.zip"  # as people share it: the game's folder, with notes and the editor's project beside
     with zipfile.ZipFile(good) as src, zipfile.ZipFile(shared, "w") as z:
         for n in src.namelist():
