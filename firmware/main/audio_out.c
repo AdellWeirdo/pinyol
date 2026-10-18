@@ -104,6 +104,7 @@ static void mix_task(void *arg) {
         hal_audio_unlock();
         audio_out_mix_us += esp_timer_get_time() - t;
         audio_out_blocks++;
+        if (audio_out_blocks == 8) audio_out_underruns = 0; /* (the DMA ran dry before the first block: not a late mixer) */
         size_t sent;
         i2s_channel_write(tx, stereo, sizeof stereo, &sent, portMAX_DELAY); /* blocks: this paces the mixer */
         for (int k = 0; k < 3; k++) { /* what came in meanwhile, as one block goes out one comes in */
