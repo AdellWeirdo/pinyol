@@ -332,9 +332,13 @@ static inline __attribute__((always_inline)) void mixed_loop(uint16_t *dst, int 
     for (int j = 0; j < n; j++, dst += ys) {
         const uint16_t under = swap ? bswap16(*dst) : *dst;
         uint16_t v;
-        if (mode == BLEND_ALPHA) v = canvas && under == CANVAS_KEY ? (uint16_t)col[j] : mix565(under, (uint16_t)col[j], alpha, BLEND_ALPHA);
-        else if (mode == BLEND_SUB) v = canvas && under == CANVAS_KEY ? unspread(col[j]) : not_key(sub565_sat(under, col[j]));
-        else v = canvas && under == CANVAS_KEY ? not_key(unspread(col[j])) : not_key(add565_sat(under, col[j]));
+        if (mode == BLEND_ALPHA) {
+            v = canvas && under == CANVAS_KEY ? (uint16_t)col[j] : mix565(under, (uint16_t)col[j], alpha, BLEND_ALPHA);
+        } else if (mode == BLEND_SUB) {
+            v = canvas ? (under == CANVAS_KEY ? unspread(col[j]) : not_key(sub565_sat(under, col[j]))) : sub565_sat(under, col[j]);
+        } else {
+            v = canvas ? (under == CANVAS_KEY ? not_key(unspread(col[j])) : not_key(add565_sat(under, col[j]))) : add565_sat(under, col[j]);
+        }
         *dst = swap ? bswap16(v) : v;
     }
 }
