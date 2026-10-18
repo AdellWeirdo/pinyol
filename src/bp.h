@@ -222,7 +222,9 @@ void gfx_blit_ex(surface *s, const asset *a, int frame, int x, int y, float sx, 
 /* A box shaded from colour c1 (RGB888) at its top, or left if `across`, to c2 at its bottom, or right; dither as
  * for gfx_quad; mode and alpha (0..256) as gfx_blit_mixed. */
 void gfx_grad(surface *s, int x, int y, int w, int h, const uint8_t c1[3], const uint8_t c2[3], bool across, bool dither,
-              int mode, unsigned alpha);
+              int mode, unsigned alpha, const uint16_t *table);
+/* Its ramp worked out ahead for a dithered, unmixed box (w or h times 4 entries: see gfx_quad.c) to pass as `table` to every strip. */
+void gfx_grad_table(uint16_t *out, int x, int y, int w, int h, const uint8_t c1[3], const uint8_t c2[3], bool across);
 /* A light: a soft round glow of colour rgb reaching r pixels from (cx, cy), added to what is there (or taken from it, `sub`:
  * a shadow), times intensity (0..256). cone: only within the angle of the direction (ux, uy, a unit vector in 14 bits) whose
  * cosine (14 bits) is cos_outer, full inside cos_inner's, half between. Reads no picture: only the pixels in the circle cost. */

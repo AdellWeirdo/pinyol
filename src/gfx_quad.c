@@ -469,11 +469,27 @@ static inline uint16_t ramp565(const int32_t first[3], const int32_t step[3], in
     return ramp565_at(ch, d);
 }
 
+/* The ramp of a dithered box worked out once (when it is recorded) and not again for each strip: for a box going down, 4 columns'
+ * worth of colours a row, phase by phase (out[phase * h + row]: the colour of a pixel in a column whose x & 3 is phase); across, 4 rows'
+ * worth a column (out[column * 4 + phase], phase the row's y & 3). RGB565 as it is (not byte swapped). h or w times 4 entries. */
+void gfx_grad_table(uint16_t *out, int x, int y, int w, int h, const uint8_t c1[3], const uint8_t c2[3], bool across) {
+    const int len = across ? w : h;
+    int32_t step[3], first[3];
+    for (int i = 0; i < 3; i++) {
+        step[i] = (c2[i] - c1[i]) * 65536 / len;
+        first[i] = c1[i] * 65536 + step[i] / 2;
+    }
+    for (int t = 0; t < len; t++)
+        for (int ph = 0; ph < 4; ph++)
+            out[across ? (size_t)t * 4 + ph : (size_t)ph * h + t] =
+                ramp565(first, step, t, across ? PSX_DITHER[ph * 4 + ((x + t) & 3)] : PSX_DITHER[((y + t) & 3) * 4 + ph]);
+}
+
 /* A box filled from colour c1 at its top (or left) to c2 at its bottom (right), each channel stepping evenly from the
  * first row's middle to the last's; dither: the PlayStation's 4x4 added before the low bits go, so a slow ramp shows a
  * fine pattern, not bands. Seen through or added to what is under it like a picture (mode, alpha 0..256). */
 void gfx_grad(surface *s, int x, int y, int w, int h, const uint8_t c1[3], const uint8_t c2[3], bool across, bool dither,
-              int mode, unsigned alpha) {
+              int mode, unsigned alpha, const uint16_t *table) {
     int u0, v0, n = CLIP_X(s, x, w, &u0), m = CLIP_Y(s, y, h, &v0);
     if (n <= 0 || m <= 0) return;
     const int ys = step_y(s), len = across ? w : h;
@@ -491,14 +507,21 @@ void gfx_grad(surface *s, int x, int y, int w, int h, const uint8_t c1[3], const
             uint16_t tbl[4][64];
             for (int j0 = 0; j0 < m; j0 += 64) {
                 const int cm = m - j0 < 64 ? m - j0 : 64;
-                for (int ph = 0; ph < phases; ph++)
-                    for (int j = 0; j < cm; j++) {
-                        const int d = dither ? PSX_DITHER[((y + v0 + j0 + j) & 3) * 4 + ph] : 0;
-                        tbl[ph][j] = stored(s, ramp565(first, step, v0 + j0 + j, d));
+                const uint16_t *base[4];
+                for (int ph = 0; ph < phases; ph++) {
+                    if (table && !s->swap) { /* the ramp worked out when the command was recorded, as the surface keeps it */
+                        base[ph] = table + (size_t)ph * h + v0 + j0;
+                        continue;
                     }
+                    for (int j = 0; j < cm; j++) {
+                        if (table) tbl[ph][j] = stored(s, table[(size_t)ph * h + v0 + j0 + j]);
+                        else tbl[ph][j] = stored(s, ramp565(first, step, v0 + j0 + j, dither ? PSX_DITHER[((y + v0 + j0 + j) & 3) * 4 + ph] : 0));
+                    }
+                    base[ph] = tbl[ph];
+                }
                 for (int k = 0; k < n; k++) {
                     const int px = x + u0 + k;
-                    const uint16_t *col = tbl[dither ? (px & 3) : 0];
+                    const uint16_t *col = base[dither ? (px & 3) : 0];
                     uint16_t *dst = at(s, px, y + v0 + j0);
                     for (int j = 0; j < cm; j++, dst += ys) *dst = col[j];
                 }
@@ -508,7 +531,8 @@ void gfx_grad(surface *s, int x, int y, int w, int h, const uint8_t c1[3], const
                 const int px = x + u0 + k;
                 uint16_t col[4];
                 for (int ph = 0; ph < phases; ph++) /* ph: the row's 4-row phase */
-                    col[ph] = stored(s, ramp565(first, step, u0 + k, dither ? PSX_DITHER[ph * 4 + (px & 3)] : 0));
+                    col[ph] = stored(s, table ? table[(size_t)(u0 + k) * 4 + ph]
+                                              : ramp565(first, step, u0 + k, dither ? PSX_DITHER[ph * 4 + (px & 3)] : 0));
                 uint16_t *dst = at(s, px, y + v0);
                 if (!dither)
                     for (int j = 0; j < m; j++, dst += ys) *dst = col[0];

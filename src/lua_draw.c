@@ -172,7 +172,8 @@ static void draw_one(surface *s, const ov_cmd *c) {
     }
     case OV_GRAD: {
         const typeof(ov_quad[0]) *q = &ov_quad[c->ext - 1];
-        gfx_grad(s, c->x, c->y, c->w, c->h, q->light[0], q->light[1], q->lights, q->dither, q->mode, q->alpha + (q->alpha >> 7));
+        gfx_grad(s, c->x, c->y, c->w, c->h, q->light[0], q->light[1], q->lights, q->dither, q->mode, q->alpha + (q->alpha >> 7),
+                 c->len ? (const uint16_t *)(ov_pts + c->str) : NULL); /* (the ramp, worked out when recorded) */
         break;
     }
     case OV_LIGHT: {
@@ -814,6 +815,19 @@ static int l_grad(lua_State *L) {
     ov_quad[nquad].light[1][0] = (uint8_t)(c2 >> 16), ov_quad[nquad].light[1][1] = (uint8_t)(c2 >> 8), ov_quad[nquad].light[1][2] = (uint8_t)c2;
     ov_quad[nquad].lights = across, ov_quad[nquad].dither = dither;
     ov_quad[nquad].mode = o.mode, ov_quad[nquad].alpha = (uint8_t)(o.alpha * 255 + 0.5f);
+    /* a dithered box that is not mixed with what is under it: its ramp worked out here, once, not in each of the strips (the dither
+     * is in screen rows and columns, so with the camera's shift); a box too big for what is left of the list's room is worked out as it is drawn */
+    const int len = across ? w : h, n = len * 4;
+    if (dither && ov_quad[nquad].mode == BLEND_ALPHA && ov_quad[nquad].alpha == 255 && len <= 1024 && npts + n <= OV_PTS) {
+        uint8_t a1[3] = {ov_quad[nquad].light[0][0], ov_quad[nquad].light[0][1], ov_quad[nquad].light[0][2]};
+        uint8_t a2[3] = {ov_quad[nquad].light[1][0], ov_quad[nquad].light[1][1], ov_quad[nquad].light[1][2]};
+        gfx_grad_table((uint16_t *)&ov_pts[npts], i16(x - cam_x), i16(y - cam_y), w, h, a1, a2, across);
+        c->str = (uint16_t)npts, c->len = (uint16_t)n;
+        npts += n;
+        c->ext = (uint8_t)(++nquad);
+        commit(c, 0, n / 2);
+        return 0;
+    }
     c->ext = (uint8_t)(++nquad);
     commit(c, 0, 0);
     return 0;

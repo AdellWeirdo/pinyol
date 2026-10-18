@@ -397,7 +397,9 @@ The clamps of a quad's texture coordinates are skipped when a column's ends are 
 
 `perf("ops")` on `examples/psx_demo` (CPU ms of the strips, both cores added, so about twice the time on the clock): quads 22.2 (5), grads 16.1
 (3), lights 4.8 (2), picture 2.7, the rest nothing; the strips take 25 ms on the clock. A dithered full-height gradient costs 1.4 ms of
-the clock more than a plain one: every strip rebuilds its four dither phases of the ramp (cache them across strips if it matters).
+the clock more than a plain one: every strip rebuilt its four dither phases of the ramp. Now the ramp is worked out once, when the command
+is recorded (`gfx_grad_table`, into the frame's `ov_pts`; a box too tall for what is left of it works it out as it draws): the same three
+gradients 16.1 -> 10.4 ms of CPU, a full-sky dithered gradient 3.5 -> 2.5 ms of the clock (a plain one is 2.1), psx_demo's strips 26.8 -> 23.7 ms.
 
 `lib/cam.lua` zoomed and turned (the world drawn on a canvas, then a quad of it): not zoomed, 60 fps and no cost; a 480x320 canvas at zoom 1.3
 turned 10 degrees, 79 ms a frame (36 filling the canvas in the external memory, 33 of the strips); a 240x160 canvas, 31 ms (30 fps). It
