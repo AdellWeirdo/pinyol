@@ -1,0 +1,78 @@
+# lib/rig.lua: pieces on pieces. Poses as numbers (hero:point), animations, blends, events, flip and scale, and the drawing.
+new
+tick 2
+# the rest: body's pivot on the feet; the head's pivot 40 above; the arm 8 right and 34 up
+lua hero:place(100, 200)
+expect_lua ptnear("body", 0, 0, 100, 200) and ptnear("head", 0, 0, 100, 160) and ptnear("arm", 0, 0, 108, 166)
+# a point of a piece from its pivot: the head's top centre (8 above its pivot)
+expect_lua ptnear("head", 0, -8, 100, 152) and ptnear("arm", 0, 18, 108, 184)
+# mirrored: the arm goes to the left, the head stays over the feet
+lua hero:place(100, 200, {flip = true})
+expect_lua ptnear("arm", 0, 0, 92, 166) and ptnear("head", 0, 0, 100, 160)
+# bigger: everything from the origin twice as far
+lua hero:place(100, 200, {scale = 2})
+expect_lua ptnear("arm", 0, 0, 116, 132) and ptnear("head", 0, -8, 100, 104)
+# idle half way: the head turned 10 degrees about its pivot and the body raised 2
+lua running = true
+tick 30
+lua hero:place(100, 200)
+expect_lua ptnear("head", 0, 0, 100, 158) and ptnear("head", 0, -8, 100 + 8 * math.sin(math.rad(10)), 158 - 8 * math.cos(math.rad(10)))
+# a turned piece's child goes with it: the arm hangs from the body (which does not turn), the head's own children would
+expect_lua ptnear("arm", 0, 0, 108, 164)
+# the loop: at its end it is where it began; the animation goes on
+tick 30
+expect_lua hero.name == "idle" and not hero.done
+# wave: the arm up 90 at tick 15 (smooth), the event fires once at 15, again at 30, then idle follows
+lua hero:play("wave", {fade = 0}) events = {}
+tick 14
+expect_lua nev() == 0
+tick 1
+lua hero:place(100, 200)
+expect_lua nev() == 1 and events[1] == "peak"
+# 90 degrees: the arm's tip (18 down its length) points to the right of its pivot (it was straight down)
+expect_lua ptnear("arm", 0, 18, 90, 166, 0.5)
+tick 15
+expect_lua events[2] == "end" and hero.name == "idle"
+# fading from the pose it was in: still holds the arm at 45; idle has no arm track (0): over 10 ticks the arm goes from 45 to 0
+lua hero:play("still", {fade = 0})
+tick 5
+expect_lua near(hero.pose.arm.rot, 45, 0.01)
+lua hero:play("idle", {fade = 10})
+tick 5
+expect_lua near(hero.pose.arm.rot, 22.5, 2.5)
+tick 6
+expect_lua near(hero.pose.arm.rot, 0, 0.01)
+# an animation that does not loop and has nothing after it stops on its last pose and says so
+lua hero:play("still", {fade = 0})
+tick 15
+expect_lua hero.done and hero.name == "still"
+lua hero:place(100, 200)
+expect_lua ptnear("arm", 0, 0, 108, 166)
+# the same animation named again goes on; restart starts it over
+lua hero:play("swap", {fade = 0})
+tick 12
+expect_lua hero.pose.head.frame == 1
+lua hero:play("swap")
+expect_lua hero.t > 5
+lua hero:play("swap", {restart = true, fade = 0})
+expect_lua hero.t == 0
+# errors: an animation that is not there; a piece before its parent; a point before it is placed
+expect_lua_error hero:play("fly")
+expect_lua_error rig.new({parts = {{id = "a", parent = "b"}, {id = "b"}}})
+expect_lua_error rig.new({parts = {{id = "a"}, {id = "a"}}})
+# the drawing: at the rest, body red, head green over its top, the arm blue over the body (it is in front)
+lua running = false hero:play("still", {fade = 0}) hero.pose = nil
+lua hero.pose = {body = {rot = 0, x = 0, y = 0, sx = 1, sy = 1}, head = {rot = 0, x = 0, y = 0, sx = 1, sy = 1}, arm = {rot = 0, x = 0, y = 0, sx = 1, sy = 1}}
+lua DRAW = {x = 240, y = 250, o = {}}
+tick 4
+expect_lua px(235, 220) == 0xFF0000 and px(240, 205) == 0x00FF00 and px(240, 200) ~= 0xFF0000 and px(248, 220) == 0x0000FF
+# nothing outside the pieces
+expect_lua px(200, 250) == 0 and px(240, 150) == 0
+# flipped: the arm on the other side of the head
+lua DRAW = {x = 240, y = 250, o = {flip = true}}
+tick 4
+expect_lua px(232, 220) == 0x0000FF and px(248, 220) ~= 0x0000FF
+# the wave half way, seen: the arm up (blue), the head turned a little
+lua DRAW = {x = 240, y = 250, o = {scale = 3}} hero:play("wave", {restart = true, fade = 0}) running = true
+tick 16
+shot rig

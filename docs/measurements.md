@@ -383,6 +383,11 @@ world (the Lua drawing), 8 ms of strips; 34 fps at the frame's edge (a tick + wo
 frame). Each particle is about 50 us of Lua a frame; one options table a `light()` call cost 1.3 ms more at that size (now shared).
 `transition`: iris at 0.5, 5.5 ms of strips; blocks 1.8; a smooth fade 12.3 (a mixed full-screen box).
 
+`lib/rig.lua`, three characters of 10 pieces (30 quads of 40x80, every one overlapping the others, lit and dithered): 4.8 ms of Lua
+for placing and drawing the 30 (it was 9.4 before one sort a frame, a table and a closure a piece went), 46 ms of strips: about
+480 ns a pixel lit with dither against ~150 unlit. So a character of 10 pieces and ~10 thousand pixels is about 1.5 ms plain and 5 ms
+lit; light the ones that need it, and keep the pieces to the size of what they draw.
+
 ## The same mixer on a desktop
 
 Measured on a desktop (an optimized build, `make audio_bench`): the order and the ratios, not the console's milliseconds (the
