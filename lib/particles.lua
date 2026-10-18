@@ -21,7 +21,8 @@
 -- A group keeps 600 at most: the oldest go first. Glows and the scaled sprites cost the frame's few drawing slots (128 for
 -- every light, gradient, quad and scaled picture together): a group draws the 64 youngest glows and shadows of a frame, and
 -- the 48 youngest sprites that are scaled; the older ones of those shapes are skipped: many small lights are for a few sparks, not
--- for a snowstorm.
+-- for a snowstorm. On the console each particle costs about 50 us of Lua a frame (update and draw) besides its pixels: a camp
+-- fire of ~110 (flames, embers, smoke) is 2.5 ms of tick, 3 of drawing and 8 of strips; keep a scene to some 100.
 local M = {}
 local Group = {}
 Group.__index = Group
@@ -30,6 +31,7 @@ Emitter.__index = Emitter
 
 local MAX = 600
 local GLOWS, SPRITES = 64, 48
+local GLOW_OPT, SHADOW_OPT = {intensity = 1}, {intensity = 1, sub = true} -- (one table each, not one a particle: light() copies what it needs)
 
 function M.new() return setmetatable({list = {}, emitters = {}}, Group) end
 
@@ -42,7 +44,7 @@ local function spawn(self, x, y, n, o)
     local l = math.max(1, math.floor(life * (0.6 + 0.8 * math.random())))
     local p = {x = x, y = y, vx = math.cos(a) * v, vy = math.sin(a) * v, life = l, left = l, size = o.size or 2,
                size_end = o.size_end or 0, gravity = o.gravity or 0, wind = o.wind or 0, drag = o.drag or 0.02,
-               colours = colours, shape = o.shape or "circle", image = o.image, frame = o.frame, blend = o.blend, fade = o.fade}
+               colours = colours, nc = #colours, shape = o.shape or "circle", image = o.image, frame = o.frame, blend = o.blend, fade = o.fade}
     if #self.list >= MAX then table.remove(self.list, 1) end
     self.list[#self.list + 1] = p
   end
@@ -88,8 +90,6 @@ function Group:update()
   end
 end
 
-local function lerp(a, b, t) return a + (b - a) * t end
-
 -- how many of the oldest of each kind to leave out so the youngest fit the frame's slots
 local function over(list)
   local glows, sprites = 0, 0
@@ -104,14 +104,16 @@ function Group:draw()
   local skip_glows, skip_sprites = over(self.list)
   for _, p in ipairs(self.list) do
     local age = 1 - p.left / p.life
-    local c = p.colours[math.min(#p.colours, 1 + math.floor(age * #p.colours))]
-    local k = lerp(1, p.size_end, age) -- how big, as a part of the start
-    local r = p.size * k
+    local ci = 1 + (age * p.nc) // 1
+    local c = p.colours[ci > p.nc and p.nc or ci]
+    local r = p.size * (1 + (p.size_end - 1) * age) -- how big: from the start's size to size_end times it
     local shape = p.shape
     if shape == "glow" or shape == "shadow" then
       if skip_glows > 0 then skip_glows = skip_glows - 1
       elseif r >= 1 then
-        light(math.floor(p.x), math.floor(p.y), math.floor(r), c, {intensity = 1 - age, sub = shape == "shadow"})
+        local o = shape == "glow" and GLOW_OPT or SHADOW_OPT
+        o.intensity = 1 - age
+        light(p.x // 1, p.y // 1, r // 1, c, o)
       end
     elseif shape == "sprite" then
       local w, h = imgsize(p.image)

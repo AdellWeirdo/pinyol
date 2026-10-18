@@ -378,6 +378,11 @@ section's work, 30.5 fps after (strips 30.2 -> 25.5 ms). Where the 25.5 go: the 
 sign 2.4, haze 1.7, banner 1.6. A mixed pixel is paid only on a canvas for its see-through colour check (`surface.canvas`): testing
 every pixel for it took full-screen `linetint` from 12.3 to 22 ms.
 
+`lib/particles.lua`, a camp fire of about 110 particles (flames and embers as added `light()`s, smoke as shadows): 2.5 ms of tick, 2.9 of
+world (the Lua drawing), 8 ms of strips; 34 fps at the frame's edge (a tick + world + strips of more than ~13.5 ms misses a 60 Hz
+frame). Each particle is about 50 us of Lua a frame; one options table a `light()` call cost 1.3 ms more at that size (now shared).
+`transition`: iris at 0.5, 5.5 ms of strips; blocks 1.8; a smooth fade 12.3 (a mixed full-screen box).
+
 ## The same mixer on a desktop
 
 Measured on a desktop (an optimized build, `make audio_bench`): the order and the ratios, not the console's milliseconds (the
