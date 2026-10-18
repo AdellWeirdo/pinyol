@@ -409,6 +409,12 @@ A lit quad laid opaque whose column ends are inside the picture and the light's 
 before their dither): a lit quad bench 35.1 -> 29.0 ms of strips, psx_demo's strips 23.7 -> 22.6 ms. A quad mixed with what is under it (add,
 alpha) is still the slow, general loop (a mixed quad bench 36.9 ms).
 
+`examples/psx_views`, the staged-camera prototype for Micromiserias: one logical actor passes through lateral, fixed and rear views
+without losing position or state. On Cirera, lateral drew at 59.9 fps (8.4 ms of strips). A large filled floor polygon in the fixed
+view and a full road polygon in the rear view brought both to about 30.6 fps (roughly 15–19 ms of strips). Replacing those with a
+rectangle and twelve-pixel horizontal bands: fixed 59.6–60 fps (4.3–4.6 ms of strips), rear 59.8–60 fps (4.3–6.3 ms). These are
+short samples of shape-only art; they do not establish the budget for packed sprites, prerendered scenery and music together.
+
 ## The same mixer on a desktop
 
 Measured on a desktop (an optimized build, `make audio_bench`): the order and the ratios, not the console's milliseconds (the
