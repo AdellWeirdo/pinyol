@@ -12,6 +12,24 @@ expect_lua sx == 270 and sy == 180 and sc == 1 and order == -40
 lua sx, sy, sc, order = views.project(rear, 30, 120, 20)
 expect_lua sx == 255 and sy == 130 and sc == 0.5 and order == -120
 expect_lua views.project(rear, 0, -40, 0) == nil
+lua rear_fast = views.projector(rear)
+lua side_fast = views.projector(side) fixed_fast = views.projector(fixed)
+expect_lua select(1, side_fast(10, 20, 30)) == select(1, views.project(side, 10, 20, 30))
+expect_lua select(2, fixed_fast(10, 20, 30)) == select(2, views.project(fixed, 10, 20, 30))
+lua sx, sy, sc, order = rear_fast(30, 120, 20)
+expect_lua sx == 255 and sy == 130 and sc == 0.5 and order == -120
+lua rear.cz = 20
+lua sx, sy, sc, order = rear_fast(30, 120, 20)
+expect_lua math.abs(sx - 257.14285714286) < 0.00001 and math.abs(sy - 137.14285714286) < 0.00001 and math.abs(sc - 4 / 7) < 0.00001 and order == -120
+lua rear.cx = 10
+expect_lua math.abs(select(1, rear_fast(30, 120, 20)) - (240 + 80 / 7)) < 0.00001
+lua rear.cx = nil
+expect_lua rear_fast(0, 20, 0) == nil
+lua rear.cz = nil
+expect_lua_error views.projector({kind = "rear", focal = 0})
+expect_lua_error views.projector({kind = "rear", max_scale = 0})
+expect_lua_error views.project({kind = "rear", max_scale = -1}, 0, 10, 0)
+expect_lua_error rear_fast(0 / 0, 120, 0)
 lua zones = {{id = "side", z0 = 0, z1 = 100}, {id = "fixed", z0 = 100, z1 = 200}, {id = "rear", z0 = 200, z1 = 320}}
 expect_lua views.pick(zones, 0, 99) == "side" and views.pick(zones, 0, 100) == "fixed" and views.pick(zones, 0, 200) == "rear"
 expect_lua views.pick(zones, 0, 320) == nil and views.pick(zones, 0, 320, "end") == "end"

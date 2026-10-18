@@ -38,12 +38,38 @@ function M.project(view, x, z, h)
   if kind == "rear" then
     if dz <= 0 then return nil end
     local focal, offset = number(view.focal, 80, "focal"), number(view.offset, 40, "offset")
-    assert(focal > 0 and offset >= 0, "views.project: rear focal must be positive and offset nonnegative")
-    local scale = math.min(number(view.max_scale, 4, "max_scale"), focal / (dz + offset))
+    local max_scale = number(view.max_scale, 4, "max_scale")
+    assert(focal > 0 and offset >= 0 and max_scale > 0, "views.project: rear focal and max_scale must be positive, offset nonnegative")
+    local scale = math.min(max_scale, focal / (dz + offset))
     return ox + dx * scale, number(view.horizon, oy, "horizon") + (number(view.eye, 120, "eye") - h) * scale,
            scale, -z
   end
   error("views.project: unknown camera kind " .. tostring(kind), 2)
+end
+
+-- Reuse a rear camera's validated lens for many actors. cx/cz remain live for a following camera.
+function M.projector(view)
+  assert(type(view) == "table", "views.projector: camera must be a table")
+  if view.kind ~= "rear" then
+    M.project(view, 0, 1, 0)
+    return function(x, z, h) return M.project(view, x, z, h) end
+  end
+  local ox = number(view.ox, 0, "ox")
+  local horizon = number(view.horizon, number(view.oy, 0, "oy"), "horizon")
+  local eye = number(view.eye, 120, "eye")
+  local focal = number(view.focal, 80, "focal")
+  local offset = number(view.offset, 40, "offset")
+  local max_scale = number(view.max_scale, 4, "max_scale")
+  assert(focal > 0 and offset >= 0 and max_scale > 0, "views.project: rear focal and max_scale must be positive, offset nonnegative")
+  return function(x, z, h)
+    assert(finite(x) and finite(z), "views.project: x and z must be finite numbers")
+    h = number(h, 0, "height")
+    local dx = x - number(view.cx, 0, "cx")
+    local dz = z - number(view.cz, 0, "cz")
+    if dz <= 0 then return nil end
+    local scale = math.min(max_scale, focal / (dz + offset))
+    return ox + dx * scale, horizon + (eye - h) * scale, scale, -z
+  end
 end
 
 function M.pick(zones, x, z, fallback)
