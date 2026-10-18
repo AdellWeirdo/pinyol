@@ -42,6 +42,9 @@ lua cam3d = {kind = "rear", ox = 100, horizon = 20, eye = 0, focal = 100, offset
 lua face3d = function(id, z, opts) return {id = id, corners = {{x = 0, z = z, h = 0, u = 0, v = 0}, {x = 10, z = z, h = 0, u = 1, v = 0}, {x = 10, z = z, h = 10, u = 1, v = 1}, {x = 0, z = z, h = 10, u = 0, v = 1}}, opts = opts} end
 lua views.draw3d(cam3d, {face3d("near", 20, {light = 17}), face3d("far", 40), face3d("tie", 40)})
 expect_lua calls3d[4] == nil and calls3d[1][1] == "far" and calls3d[2][1] == "tie" and calls3d[3][1] == "near"
+# Rear-view vertices use the prepared projector, not repeated generic projection.
+lua projection_calls = 0 old_project = views.project views.project = function(...) projection_calls = projection_calls + 1 return old_project(...) end views.draw3d(cam3d, {face3d("fast", 20)}) views.project = old_project
+expect_lua projection_calls == 0
 expect_lua calls3d[3][2] == 100 and calls3d[3][3] == 20 and calls3d[3][4] == 140 and calls3d[3][7] == -20
 expect_lua calls3d[3][10].light == 17 and calls3d[3][10].uv[1] == 0 and calls3d[3][10].uv[7] == 0
 lua calls3d = {} views.draw3d({kind = "fixed"}, {face3d("fixed_near", 40), face3d("fixed_far", 20)})

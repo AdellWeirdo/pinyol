@@ -423,6 +423,19 @@ Cirera answered `hello 1 card 14964864` on `/dev/cu.usbmodem2101`. Without chang
 
 After building and flashing **only the app** at `0x20000` with `BP_REMOTE=ON`, the installed `psx_demo` still ran at `30.6 fps`, with `render 30.80 ms`, audio `28%` of a core and `0 underruns`. A temporary in-memory `_draw` wrapper drew a textured face crossing the rear camera's near plane through `views.draw3d`; the face appeared in the captured board frame, and the game reported `30.5 fps` with `0 underruns`. No game files were transferred. These runs establish that the new renderer works on Cirera, but do not isolate its cost: the scene already misses 60 fps and frame content differed between samples.
 
+## Rear-camera geometry cost (2026-10-18)
+
+Cirera was identified by `hello 1 card 14964864` and MAC `7c:e8:b1:b2:89:48`. Only the app at `0x20000` was flashed. The already installed `psx_demo` supplied its 96×48 sign texture; temporary Lua changed `_draw` in RAM to render one, four or eight copies of the same 80×80 projected face. Each case ran for 11 seconds; the last performance report was used, since earlier reports lagged one scene. The sign rendered correctly on the panel. No SD files changed.
+
+| Scene | Before: `_draw` / strips / fps | Reused rear projector: `_draw` / strips / fps |
+|---|---:|---:|
+| Empty | 0.02 / 1.13 / 59.9 | 0.02 / 1.13 / 60.1 |
+| 1 face | 2.52 / 1.97 / 60.1 | 2.14 / 1.97 / 60.1 |
+| 4 faces | 7.92 / 4.10 / 46.1 | 6.19 / 4.10 / 54.5 |
+| 8 faces | 15.06 / 6.92 / 30.6 | 11.56 / 6.92 / 30.6 |
+
+Times are milliseconds. `views.draw3d` now validates the rear lens once per call and uses `views.projector` for actors and vertices. CPU `_draw` improved 15–23% in these scenes; raster cost did not change. The eight-face case stayed at 30.6 fps because display timing and other frame work still crossed the next presentation interval. Identical overlapping faces stress overdraw; a real scene with distinct geometry needs a separate measurement.
+
 ## The same mixer on a desktop
 
 Measured on a desktop (an optimized build, `make audio_bench`): the order and the ratios, not the console's milliseconds (the

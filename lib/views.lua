@@ -82,8 +82,9 @@ function M.draw3d(view, faces)
   assert(not rear or near > 0, "views.draw3d: near must be positive")
   local cz = number(view.cz, 0, "cz")
   assert(not rear or (finite(cz + near) and cz + near > cz), "views.draw3d: near plane must be representable")
+  local project = rear and M.projector(view) or function(x, z, h) return M.project(view, x, z, h) end
   -- Validate the lens even when the face list is empty or every face is hidden.
-  M.project(view, 0, rear and cz + near or 1, 0)
+  project(0, rear and cz + near or 1, 0)
   local visible = {}
   for index, face in ipairs(faces) do
     assert(type(face) == "table", "views.draw3d: each item must be a table")
@@ -92,7 +93,7 @@ function M.draw3d(view, faces)
              and (face.h == nil or finite(face.h)),
              "views.draw3d: sprite needs draw function and finite x, z, h")
       if not rear or face.z - cz >= near then
-        local sx, sy, scale = M.project(view, face.x, face.z, face.h)
+        local sx, sy, scale = project(face.x, face.z, face.h)
         assert(finite(sx) and finite(sy) and finite(scale), "views.draw3d: sprite projection must be finite")
         visible[#visible + 1] = {draw = face.draw, sx = sx, sy = sy, scale = scale,
           depth = view.kind == "side" and face.x or rear and -face.z or face.z, index = index}
@@ -147,7 +148,7 @@ function M.draw3d(view, faces)
                "views.draw3d: clipped faces do not support corner lights")
         local depth, area, projected = 0, 0, {}
         for i, v in ipairs(clipped) do
-          local sx, sy = M.project(view, v.x, v.z, v.h)
+          local sx, sy = project(v.x, v.z, v.h)
           assert(finite(sx) and finite(sy), "views.draw3d: projected corner must be finite")
           projected[i] = {x = sx, y = sy, u = v.u, v = v.v}
           depth = depth + (view.kind == "side" and v.x or rear and -v.z or v.z) / #clipped
