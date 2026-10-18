@@ -1,0 +1,35 @@
+# The same logical point projected by three PS1-style cameras.
+new
+lua side = {kind = "side", ox = 40, oy = 220, forward = 2, depth = 0.5}
+lua fixed = {kind = "fixed", ox = 240, oy = 100, basis = {1, 0.5, -0.25, 0.5}, scale = 1, grow = 0.01}
+lua rear = {kind = "rear", ox = 240, horizon = 80, eye = 120, focal = 80, offset = 40}
+lua sx, sy, sc, order = views.project(side, 10, 20, 30)
+expect_lua sx == 80 and sy == 195 and sc == 1 and order == 10
+lua sx, sy, sc, order = views.project(fixed, 10, 20, 30)
+expect_lua sx == 260 and math.abs(sy - 71.5) < 0.001 and math.abs(sc - 1.2) < 0.001 and order == 20
+lua sx, sy, sc, order = views.project(rear, 30, 40, 20)
+expect_lua sx == 270 and sy == 180 and sc == 1 and order == -40
+lua sx, sy, sc, order = views.project(rear, 30, 120, 20)
+expect_lua sx == 255 and sy == 130 and sc == 0.5 and order == -120
+expect_lua views.project(rear, 0, -40, 0) == nil
+lua zones = {{id = "side", z0 = 0, z1 = 100}, {id = "fixed", z0 = 100, z1 = 200}, {id = "rear", z0 = 200, z1 = 320}}
+expect_lua views.pick(zones, 0, 99) == "side" and views.pick(zones, 0, 100) == "fixed" and views.pick(zones, 0, 200) == "rear"
+expect_lua views.pick(zones, 0, 320) == nil and views.pick(zones, 0, 320, "end") == "end"
+expect_lua_error views.project({kind = "rear", focal = 0}, 0, 10, 0)
+expect_lua_error views.project({kind = "fixed", basis = {1, 2}}, 0, 10, 0)
+expect_lua_error views.project({kind = "unknown"}, 0, 10, 0)
+# One actor and one persistent value survive both camera cuts.
+shot lateral
+lua actor.miseria = 57 actor.x = 30
+hold RIGHT 42
+tick 30
+expect_lua zone == "fixed" and actor.z >= 100 and actor.x == 30 and actor.miseria == 57 and not transition.active()
+shot fija
+hold RIGHT 42
+tick 30
+expect_lua zone == "rear" and actor.z >= 200 and actor.x == 30 and actor.miseria == 57 and not transition.active()
+shot trasera
+hold LEFT 42
+tick 30
+expect_lua zone == "fixed" and actor.z < 200 and actor.miseria == 57
+expect_ok

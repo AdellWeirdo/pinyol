@@ -146,6 +146,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [tormenta](examples/tormenta) | a vertical shoot-'em-up played with the console on its side: a standing canvas shown turned, hundreds of bullets |
 | [laberinto](examples/laberinto) | first person as Wolfenstein 3D drew it: raycast() draws the maze from inside, textured and fogged, ghosts and gems standing in it |
 | [gotico](examples/gotico) | a castle hall at night as the 32-bit consoles drew it: candle light added, a ghost and a dash's afterimages half seen through, a skull boss that turns and swells |
+| [psx_views](examples/psx_views) | one actor and three staged PS1-style cameras: lateral, fixed with foreground occlusion, and a corridor seen from behind; the same position and state survive every cut |
 | [sonidos](examples/sonidos) | sounds made from numbers (a factory of coins, lasers, explosions), a theremin, an engine that follows the speed, music in layers |
 | [control](examples/control) | directing a 1994 newscast from the control room: cuts, tape and captions on the beat of the theme, the producer's lines written as a story in Catalan and Spanish, the console's LED as the tally light, a video clip on a monitor; then a camera that does not exist looks at you, hears you and knows your battery |
 | [raton_de_biblioteca](examples/raton_de_biblioteca) | made by Codex from one sentence on a fresh clone: a Game Boy-look mouse in a library, cheese and cats (then put on the whole screen by hand) |
