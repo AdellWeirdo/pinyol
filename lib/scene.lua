@@ -11,7 +11,7 @@
 --   scene.go(title)                         -- in _init
 --   function _update() scene.update() end   function _draw() scene.draw() end
 --
--- scene.go(s, args, {fade}) empties the stack for s (the sprites of the scenes leaving are taken away: spr_clear,
+-- scene.go(s, args, {fade, transition}) empties the stack for s (the sprites of the scenes leaving are taken away: spr_clear,
 -- and juice's tweens, timers and scripts stop: a cutscene of the level does not go on in the title);
 -- scene.push(s, args) puts s on top; scene.pop(result) goes back, the scene under it gets resume(result).
 -- scene.top() is the scene on top, scene.depth() how many there are.
@@ -42,7 +42,7 @@ function M.go(s, args, opts)
   assert(type(s) == "table", "scene.go: a scene is a table")
   local p = {kind = "go", scene = s, args = args}
   local secs = opts and opts.fade or 0
-  if secs > 0 then fading = {p = p, len = math.max(1, math.floor(secs * 30 + 0.5)), t = 0} -- out, then in
+  if secs > 0 then fading = {p = p, len = math.max(1, math.floor(secs * 30 + 0.5)), t = 0, opts = opts} -- out, then in
   else pending = p end
 end
 function M.push(s, args) assert(type(s) == "table", "scene.push: a scene is a table") pending = {kind = "push", scene = s, args = args} end
@@ -73,6 +73,10 @@ function M.draw()
     local k = fading.t <= fading.len and fading.t / fading.len or 2 - fading.t / fading.len
     camera()
     clip()
+    if fading.opts.transition then -- one of transition's kinds, with its options (color, dir, cx, cy...) from the same table
+      require("transition").draw_kind(fading.opts.transition, k, fading.opts)
+      return
+    end
     local steps = math.floor(k * 5 + 0.5)
     if steps >= 5 then rect(0, 0, SCREEN_W, SCREEN_H, 0x000000)
     else for _ = 1, steps do shade(0, 0, SCREEN_W, SCREEN_H) end end

@@ -1,0 +1,138 @@
+# lib/transition.lua: every kind covers as much as k says and where it says; k 0 nothing, k 1 all. lib/particles.lua: glows, shadows,
+# sprites, emitters (rate, ticks, stop, follow). scene.go with a transition.
+new
+tick 3
+# fade: nothing, half, all
+lua use("fade0")
+tick 2
+expect_lua white(5, 5) and white(470, 310)
+lua use("fade5")
+tick 2
+expect_lua red("T", 240, 160) > 100 and red("T", 240, 160) < 160
+lua use("fade1")
+tick 2
+expect_lua black(5, 5) and black(470, 310)
+# wipe: from the left a half; from the bottom a quarter (up); from the right a half (left)
+lua use("wipe_r")
+tick 2
+expect_lua black(100, 160) and white(380, 160) and black(239, 5) and white(241, 5)
+lua use("wipe_u")
+tick 2
+expect_lua black(240, 300) and white(240, 100) and black(5, 241) and white(5, 239)
+lua use("wipe_l")
+tick 2
+expect_lua black(380, 160) and white(100, 160)
+# curtain: the sides closing, the middle open (and the top and bottom closing, with vertical)
+lua use("curtain")
+tick 2
+expect_lua black(50, 160) and black(440, 160) and white(240, 160)
+lua use("curtain_v")
+tick 2
+expect_lua black(240, 20) and black(240, 300) and white(240, 160)
+# blinds: 8 bars of 40: each shut in its middle (20 of 40 rows), open at its edges; vertical with 4 bars of 120
+lua use("blinds")
+tick 2
+expect_lua black(100, 20) and white(100, 2) and black(100, 60) and white(100, 38)
+lua use("blinds_v")
+tick 2
+expect_lua black(60, 100) and white(5, 100) and black(180, 100)
+# iris: open round its centre, shut at the corners and at the edges farther than its radius; it can be centred elsewhere
+lua use("iris")
+tick 2
+expect_lua white(240, 160) and white(240, 260) and black(10, 10) and black(240, 310) and black(470, 310)
+lua use("iris_at")
+tick 2
+expect_lua white(100, 100) and white(100, 200) and black(470, 310)
+lua use("iris1")
+tick 2
+expect_lua black(240, 160)
+lua use("iris0")
+tick 2
+expect_lua white(240, 160) and white(5, 5)
+# blocks: half of them at half, none at 0, all at 1
+lua use("blocks")
+tick 2
+expect_lua black_share() > 0.4 and black_share() < 0.6
+lua use("blocks0")
+tick 2
+expect_lua black_share() == 0
+lua use("blocks1")
+tick 2
+expect_lua black_share() == 1
+# another colour
+lua use("colour")
+tick 2
+expect_lua red("T", 240, 160) == 255 and blu("T", 240, 160) == 0
+# a kind that is not one
+expect_lua_error transition.go("spin", 1)
+expect_lua_error transition.draw_kind("spin", 0.5)
+# go: closes (covered at the middle: on_mid once), holds, opens; active until the end
+lua mid_calls, done_calls = 0, 0 transition.go("fade", 0.5, {hold = 0.1, on_mid = function() mid_calls = mid_calls + 1 end, on_done = function() done_calls = done_calls + 1 end})
+expect_lua transition.active() and not transition.covered() and mid_calls == 0
+tick 15
+expect_lua transition.covered() and mid_calls == 1
+tick 5
+expect_lua mid_calls == 1
+tick 40
+expect_lua not transition.active() and done_calls == 1 and mid_calls == 1
+# scene.go with a transition: the scene changes in the middle of it (fade is in 30ths of a second there)
+lua scene.go(sceneB, nil, {fade = 0.2, transition = "iris"})
+tick 3
+expect_lua where == "A"
+tick 10
+expect_lua where == "B"
+# particles: a still glow is bright in its middle and nothing outside its radius; it fades with age
+lua fx:clear() fx:burst(240, 160, 1, {speed = 0, shape = "glow", size = 20, size_end = 1, colours = {0xFFFFFF}, life = 200})
+tick 3
+expect_lua fx:count() == 1 and red("P", 240, 160) > 200 and red("P", 240, 185) == 0 and red("P", 262, 160) == 0
+lua fx:clear() fx:burst(240, 160, 1, {speed = 0, shape = "glow", size = 20, colours = {0x0000FF}, life = 200})
+tick 3
+expect_lua blu("P", 240, 160) > 200 and red("P", 240, 160) == 0
+# a sprite: where it is, added to what is under it (black there: its own red), and not outside its 16 pixels
+lua fx:clear() fx:burst(100, 100, 1, {speed = 0, shape = "sprite", image = "SPR", blend = "add", size = 1, size_end = 1, life = 200})
+tick 3
+expect_lua red("P", 100, 100) > 100 and red("P", 130, 100) == 0 and red("P", 100, 130) == 0
+# a bigger sprite (scaled) covers more
+lua fx:clear() fx:burst(100, 100, 1, {speed = 0, shape = "sprite", image = "SPR", size = 3, size_end = 3, life = 200})
+tick 3
+expect_lua red("P", 100, 100) == 255 and red("P", 120, 100) == 255 and red("P", 140, 100) == 0
+# a shadow takes light away from what is there; on black, nothing
+lua fx:clear() fx:burst(240, 160, 1, {speed = 0, shape = "shadow", size = 20, colours = {0xFFFFFF}, life = 200})
+tick 3
+expect_lua red("P", 240, 160) == 0
+# the old shapes still draw (circle, square, pixel) and burst still counts
+lua fx:clear() fx:burst(50, 50, 10, {shape = "square", speed = 1, life = 30})  fx:burst(60, 60, 10, {life = 30}) fx:burst(70, 70, 5, {shape = "pixel", life = 30})
+expect_lua fx:count() == 25
+tick 70
+expect_lua fx:count() == 0
+# an emitter: its rate a tick (0.5: every other), until stop; ticks makes it stop by itself; follow takes a table's place
+lua fx:clear() em = fx:emit({x = 10, y = 10, rate = 0.5, life = 1000, speed = 0})
+tick 20
+expect_lua fx:count() == 10 and fx:emitting() == 1
+lua em:stop()
+tick 2
+expect_lua fx:emitting() == 0 and fx:count() == 10
+lua fx:clear() fx:emit({x = 10, y = 10, rate = 1, ticks = 5, life = 1000, speed = 0})
+tick 10
+expect_lua fx:count() == 5 and fx:emitting() == 0
+lua fx:clear() hero = {x = 200, y = 100} em = fx:emit({follow = hero, ox = 4, oy = -6, rate = 1, life = 1000, speed = 0})
+tick 1
+lua hero.x = 300
+tick 1
+expect_lua fx.list[1].x == 204 and fx.list[1].y == 94 and fx.list[2].x == 304
+lua em:move(0, 0)
+# a group keeps 600 at most
+lua fx:clear() fx:burst(5, 5, 700, {life = 1000, speed = 0})
+expect_lua fx:count() == 600
+# many glows in a frame do not break the drawing (the group draws a few dozen and skips the rest)
+lua fx:clear() fx:burst(240, 160, 400, {shape = "glow", size = 6, speed = 4, life = 500})
+tick 5
+expect_ok
+# a camp fire to look at: embers and flames as added glows, smoke as a shadow, on the scene's colour
+lua scene.go(sceneA) fx:clear()
+tick 4
+lua fx:emit({x = 240, y = 250, rate = 0.6, angle = -90, spread = 30, speed = 1.6, life = 60, shape = "shadow", size = 14, size_end = 2.2, colours = {0x404040, 0x202020}, gravity = -0.02})
+lua fx:emit({x = 240, y = 250, rate = 1.2, angle = -90, spread = 40, speed = 1.2, life = 40, shape = "glow", size = 14, size_end = 0.4, colours = {0xD07820, 0xA04810, 0x40200C}, gravity = -0.05, speed = 1.4})
+lua fx:emit({x = 240, y = 250, rate = 0.5, angle = -90, spread = 70, speed = 3, life = 50, shape = "glow", size = 5, colours = {0xFFC870, 0xFF6020}, gravity = 0.04})
+tick 120
+shot fx
