@@ -365,13 +365,18 @@ The same way (one thing on a black screen; 1.5 ms of strips is the empty frame):
 | a packed background 480x320 | 5.0 ms |
 | the same with `dim = 0.4` or `mul = 0x8090FF` | 5.0 ms: free |
 | `warp` of that background, every row moved | 18.9 ms (about 110 ns a pixel), and 4 ms of Lua for the 320 rows' function |
-| `linetint` over the whole screen, added | 34.5 ms before it made each row's colour ready once (`gfx_lines`) |
+| `linetint` over the whole screen, added | 34.5 ms before it made each row's colour ready once (`gfx_lines`), then 12.3 ms |
 | a quad 480 wide, a floor going away, flat | 8.2 ms |
-| the same with `persp = true` (6 bands) | 17.4 ms |
+| the same with `persp = true` (6 bands) | 17.4 ms with affine cells; 10.8 ms now, perspective-correct (U/w, V/w, 1/w, one division every 16 pixels) |
 | a clip 240x160 scrolling every pixel, drawn at scale 2 | 5.1 ms, 60 fps |
 
 What this says: a light, a warp and a perspective quad are for a part of the screen; a background is darkened through its palette
 for nothing; a clip at 240x160 drawn twice as big plays at 60 fps even when every pixel changes.
+
+`examples/psx_demo` (a full-screen sky, a carpet in perspective, a lit sign and banner, two lights, text): 24.5 fps at the start of this
+section's work, 30.5 fps after (strips 30.2 -> 25.5 ms). Where the 25.5 go: the carpet about 7, the sky and ground grads about 6, the
+sign 2.4, haze 1.7, banner 1.6. A mixed pixel is paid only on a canvas for its see-through colour check (`surface.canvas`): testing
+every pixel for it took full-screen `linetint` from 12.3 to 22 ms.
 
 ## The same mixer on a desktop
 
