@@ -405,6 +405,10 @@ gradients 16.1 -> 10.4 ms of CPU, a full-sky dithered gradient 3.5 -> 2.5 ms of 
 turned 10 degrees, 79 ms a frame (36 filling the canvas in the external memory, 33 of the strips); a 240x160 canvas, 31 ms (30 fps). It
 is for a moment (a hit, a reveal), not a whole level.
 
+A lit quad laid opaque whose column ends are inside the picture and the light's range skips every clamp (coordinates, lights, colours
+before their dither): a lit quad bench 35.1 -> 29.0 ms of strips, psx_demo's strips 23.7 -> 22.6 ms. A quad mixed with what is under it (add,
+alpha) is still the slow, general loop (a mixed quad bench 36.9 ms).
+
 ## The same mixer on a desktop
 
 Measured on a desktop (an optimized build, `make audio_bench`): the order and the ratios, not the console's milliseconds (the

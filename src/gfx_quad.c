@@ -95,6 +95,32 @@ static __attribute__((noinline)) void col_general(const surface *s, uint16_t *ds
     const uint8_t *mask = q->mask;
     const bool swap = s->swap, plain = q->plain, isLit = q->lit;
     const int8_t *dith = q->dither ? &PSX_DITHER[x & 3] : NULL; /* this column's offsets, 4 apart down the rows */
+    if (isLit && plain && !mask) {
+        /* the common one: a lit picture laid opaque. u, v and the lights are straight lines down the column, so with both ends in
+         * range every pixel is, and the clamps (of the picture's coordinates, of each light, of each colour before its dither) go */
+        const int32_t ue = u + du * (n - 1), ve = v + dv * (n - 1);
+        const int32_t umax = (W - 1) << 16 | 0xFFFF, vmax = (H - 1) << 16 | 0xFFFF;
+        const int32_t le[3] = {lr + dlr * (n - 1), lg + dlg * (n - 1), lb + dlb * (n - 1)};
+        const int32_t lmax = 255 << 16 | 0xFFFF;
+        const bool inside = u >= 0 && ue >= 0 && v >= 0 && ve >= 0 && u <= umax && ue <= umax && v <= vmax && ve <= vmax &&
+                            lr >= 0 && lg >= 0 && lb >= 0 && le[0] >= 0 && le[1] >= 0 && le[2] >= 0 &&
+                            lr <= lmax && lg <= lmax && lb <= lmax && le[0] <= lmax && le[1] <= lmax && le[2] <= lmax;
+        if (inside) {
+            int8_t dt[4] = {0, 0, 0, 0};
+            if (dith)
+                for (int k = 0; k < 4; k++) dt[k] = dith[k * 4];
+            for (int i = 0; i < n; i++, y++, dst += ys, u += du, v += dv, lr += dlr, lg += dlg, lb += dlb) {
+                const uint16_t c = src[(v >> 16) * W + (u >> 16)];
+                const int r5 = c >> 11, g6 = c >> 5 & 63, b5 = c & 31, d = dt[y & 3];
+                int r = ((r5 << 3 | r5 >> 2) * (lr >> 16) >> 7) + d, g = ((g6 << 2 | g6 >> 4) * (lg >> 16) >> 7) + (d >> 1),
+                    b = ((b5 << 3 | b5 >> 2) * (lb >> 16) >> 7) + d;
+                r = r < 0 ? 0 : r > 255 ? 255 : r, g = g < 0 ? 0 : g > 255 ? 255 : g, b = b < 0 ? 0 : b > 255 ? 255 : b;
+                const uint16_t out = (uint16_t)((r >> 3) << 11 | (g >> 2) << 5 | (b >> 3));
+                *dst = swap ? bswap16(out) : out;
+            }
+            return;
+        }
+    }
     for (int i = 0; i < n; i++, y++, dst += ys, u += du, v += dv, lr += dlr, lg += dlg, lb += dlb) {
         int iu = u >> 16, iv = v >> 16;
         if ((unsigned)iu >= (unsigned)W) iu = iu < 0 ? 0 : W - 1;
