@@ -24,6 +24,14 @@ it is; all packed). It builds again only what changed, prints each picture's siz
 check by eye. The list's format is at the top of [tools/build_art.py](../tools/build_art.py); `make_art.py` stays for what a list
 cannot say (a pocket of background to fill, a region to protect).
 
+For small single-frame pictures drawn on 3D faces, make one 128×128 texture page after `build_art.py`:
+
+```sh
+uv run tools/make_atlas.py games/<id> PROPS ICO_KEY SPR_SIGN
+```
+
+It writes `assets/PROPS.pk`, `art/.built/PROPS.png` and `props_atlas.lua`. Each picture gets a one-pixel edge so UV sampling cannot pick up its neighbour. Use `local a = require("props_atlas").ICO_KEY`, then `quad(a.id, x1, y1, x2, y2, x3, y3, x4, y4, {uv = a.uv})`. One call makes one page; split groups that do not fit. Animated strips and pictures over 126 pixels on either side stay as their own assets. Pages are 32 KB when unpacked as RGB565, within the measured cache-friendly quad size; speed still depends on how much screen area the quads cover.
+
 ## 0. Choose a look
 
 A game looks like the console it is made for. Pick one with whoever the game is for (ask, if they have not said),
