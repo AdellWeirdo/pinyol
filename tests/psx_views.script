@@ -70,6 +70,13 @@ expect_lua_error views.draw3d(cam3d, {bad_uv})
 expect_lua_error views.draw3d(cam3d, {face3d("bad", 20, false)})
 expect_lua_error views.draw3d(cam3d, {face3d(5, 20)})
 expect_lua_error views.draw3d({kind = "rear", near = 0}, {})
+# Sprites and polygon faces share painter order. A sprite behind the near plane is culled.
+lua calls3d = {} draw_sprite3d = function(x,y,s) calls3d[#calls3d + 1] = {"sprite",x,y,s} end
+lua views.draw3d(cam3d, {face3d("front_face",20), {draw=draw_sprite3d,x=5,z=40,h=0}, face3d("back_face",60), {draw=draw_sprite3d,x=5,z=0,h=0}})
+expect_lua calls3d[4] == nil and calls3d[3] ~= nil and calls3d[1][1] == "back_face" and calls3d[2][1] == "sprite" and calls3d[3][1] == "front_face"
+expect_lua calls3d[2][2] == 112.5 and calls3d[2][3] == 20 and calls3d[2][4] == 2.5
+expect_lua_error views.draw3d(cam3d, {{draw=true,x=0,z=20}})
+expect_lua_error views.draw3d(cam3d, {{draw=draw_sprite3d,x=0,z=0/0}})
 lua quad = old_quad
 # One actor and one persistent value survive both camera cuts.
 shot lateral

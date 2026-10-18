@@ -2,7 +2,7 @@
 -- lateral and rear cameras. The game keeps its actor in world coordinates when the shot changes.
 --
 --   sx, sy, scale, order = views.project(camera, x, z, h)
---   views.draw3d(camera, faces) -- faces: {id, corners = {{x,z,h,u,v} x4}, opts?}
+--   views.draw3d(camera, items) -- face: {id, corners = {{x,z,h,u,v} x4}, opts?}; actor: {x,z,h,draw}
 --   id = views.pick(zones, x, z, fallback) -- half-open rectangles; the first matching zone wins
 -- `order` sorts far to near in ascending order. A point behind a rear camera returns nil.
 local M = {}
@@ -86,45 +86,58 @@ function M.draw3d(view, faces)
   M.project(view, 0, rear and cz + near or 1, 0)
   local visible = {}
   for index, face in ipairs(faces) do
-    assert(type(face) == "table" and type(face.id) == "string" and type(face.corners) == "table"
-           and #face.corners == 4 and (face.opts == nil or type(face.opts) == "table"),
-           "views.draw3d: face needs an id, four corners and optional opts")
-    local corners = {}
-    for i = 1, 4 do
-      local v = face.corners[i]
-      assert(type(v) == "table" and finite(v.x) and finite(v.z) and finite(v.h)
-             and finite(v.u) and finite(v.v), "views.draw3d: corner needs finite x, z, h, u, v")
-      corners[i] = v
-    end
-    local clipped = {}
-    local cut = false
-    if rear then
-      local previous = corners[4]
-      for i = 1, 4 do
-        local current = corners[i]
-        local a, b = previous.z - cz >= near, current.z - cz >= near
-        if a ~= b then
-          cut = true
-          local t = (cz + near - previous.z) / (current.z - previous.z)
-          clipped[#clipped + 1] = {x = previous.x + t * (current.x - previous.x), z = cz + near,
-            h = previous.h + t * (current.h - previous.h), u = previous.u + t * (current.u - previous.u),
-            v = previous.v + t * (current.v - previous.v)}
-        end
-        if b then clipped[#clipped + 1] = current end
-        previous = current
+    assert(type(face) == "table", "views.draw3d: each item must be a table")
+    if face.draw ~= nil then
+      assert(type(face.draw) == "function" and finite(face.x) and finite(face.z)
+             and (face.h == nil or finite(face.h)),
+             "views.draw3d: sprite needs draw function and finite x, z, h")
+      if not rear or face.z - cz >= near then
+        local sx, sy, scale = M.project(view, face.x, face.z, face.h)
+        assert(finite(sx) and finite(sy) and finite(scale), "views.draw3d: sprite projection must be finite")
+        visible[#visible + 1] = {draw = face.draw, sx = sx, sy = sy, scale = scale,
+          depth = view.kind == "side" and face.x or rear and -face.z or face.z, index = index}
       end
     else
-      clipped = corners
-    end
-    if #clipped >= 3 then
-      assert(not (cut and face.opts and face.opts.lights),
-             "views.draw3d: clipped faces do not support corner lights")
-      local depth = 0
-      for _, v in ipairs(clipped) do
-        depth = depth + (view.kind == "side" and v.x or rear and -v.z or v.z) / #clipped
+      assert(type(face.id) == "string" and type(face.corners) == "table"
+             and #face.corners == 4 and (face.opts == nil or type(face.opts) == "table"),
+             "views.draw3d: face needs an id, four corners and optional opts")
+      local corners = {}
+      for i = 1, 4 do
+        local v = face.corners[i]
+        assert(type(v) == "table" and finite(v.x) and finite(v.z) and finite(v.h)
+               and finite(v.u) and finite(v.v), "views.draw3d: corner needs finite x, z, h, u, v")
+        corners[i] = v
       end
-      assert(finite(depth), "views.draw3d: face depth must be finite")
-      visible[#visible + 1] = {face = face, vertices = clipped, depth = depth, index = index, cut = cut}
+      local clipped = {}
+      local cut = false
+      if rear then
+        local previous = corners[4]
+        for i = 1, 4 do
+          local current = corners[i]
+          local a, b = previous.z - cz >= near, current.z - cz >= near
+          if a ~= b then
+            cut = true
+            local t = (cz + near - previous.z) / (current.z - previous.z)
+            clipped[#clipped + 1] = {x = previous.x + t * (current.x - previous.x), z = cz + near,
+              h = previous.h + t * (current.h - previous.h), u = previous.u + t * (current.u - previous.u),
+              v = previous.v + t * (current.v - previous.v)}
+          end
+          if b then clipped[#clipped + 1] = current end
+          previous = current
+        end
+      else
+        clipped = corners
+      end
+      if #clipped >= 3 then
+        assert(not (cut and face.opts and face.opts.lights),
+               "views.draw3d: clipped faces do not support corner lights")
+        local depth = 0
+        for _, v in ipairs(clipped) do
+          depth = depth + (view.kind == "side" and v.x or rear and -v.z or v.z) / #clipped
+        end
+        assert(finite(depth), "views.draw3d: face depth must be finite")
+        visible[#visible + 1] = {face = face, vertices = clipped, depth = depth, index = index, cut = cut}
+      end
     end
   end
   table.sort(visible, function(a, b)
@@ -132,26 +145,30 @@ function M.draw3d(view, faces)
     return a.depth < b.depth
   end)
   for _, entry in ipairs(visible) do
-    local face, vertices = entry.face, entry.vertices
-    local function draw(a, b, c, d)
-      local coords, uv = {}, {}
-      for _, v in ipairs({a, b, c, d}) do
-        local x, y = M.project(view, v.x, v.z, v.h)
-        assert(finite(x) and finite(y) and finite(v.u) and finite(v.v),
-               "views.draw3d: projected corner and UV must be finite")
-        coords[#coords + 1], coords[#coords + 2] = x, y
-        uv[#uv + 1], uv[#uv + 2] = v.u, v.v
-      end
-      local opts = {}
-      for key, value in pairs(face.opts or {}) do opts[key] = value end
-      opts.uv = uv
-      quad(face.id, coords[1], coords[2], coords[3], coords[4], coords[5], coords[6],
-           coords[7], coords[8], opts)
-    end
-    if not entry.cut then
-      draw(vertices[1], vertices[2], vertices[3], vertices[4])
+    if entry.draw then
+      entry.draw(entry.sx, entry.sy, entry.scale)
     else
-      for i = 2, #vertices - 1 do draw(vertices[1], vertices[i], vertices[i + 1], vertices[i + 1]) end
+      local face, vertices = entry.face, entry.vertices
+      local function draw(a, b, c, d)
+        local coords, uv = {}, {}
+        for _, v in ipairs({a, b, c, d}) do
+          local x, y = M.project(view, v.x, v.z, v.h)
+          assert(finite(x) and finite(y) and finite(v.u) and finite(v.v),
+                 "views.draw3d: projected corner and UV must be finite")
+          coords[#coords + 1], coords[#coords + 2] = x, y
+          uv[#uv + 1], uv[#uv + 2] = v.u, v.v
+        end
+        local opts = {}
+        for key, value in pairs(face.opts or {}) do opts[key] = value end
+        opts.uv = uv
+        quad(face.id, coords[1], coords[2], coords[3], coords[4], coords[5], coords[6],
+             coords[7], coords[8], opts)
+      end
+      if not entry.cut then
+        draw(vertices[1], vertices[2], vertices[3], vertices[4])
+      else
+        for i = 2, #vertices - 1 do draw(vertices[1], vertices[i], vertices[i + 1], vertices[i + 1]) end
+      end
     end
   end
 end
