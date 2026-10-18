@@ -15,6 +15,12 @@ expect_lua same("NEUTRAL", "PLAIN") == 0
 expect_lua red("BRIGHT", 10, 10) > 0x78 and red("BRIGHT", 10, 10) < 0x90
 # lit across: black on the left, as it is on the right, between in the middle
 expect_lua red("RAMP", 4, 10) < 24 and red("RAMP", 19, 10) > 232 and red("RAMP", 12, 10) > 90 and red("RAMP", 12, 10) < 170
+# Saturn VDP1 mesh writes only pixels with even X+Y; diagonal triangles share no seam.
+expect_lua pget(4, 4, "MESH") == 0xFFFFFF and pget(5, 4, "MESH") == 0x0000FF and pget(4, 5, "MESH") == 0x0000FF and pget(5, 5, "MESH") == 0xFFFFFF
+expect_lua mesh_wrong() == 0
+expect_lua pget(6, 6, "MESH_MASK") == 0xFFFFFF and pget(7, 6, "MESH_MASK") == 0x0000FF and pget(14, 6, "MESH_MASK") == 0x0000FF
+expect_lua pget(6, 6, "MESH_LIT") == 0x000000 and pget(7, 6, "MESH_LIT") == 0x0000FF
+expect_lua pget(10, 10, "MESH_PERSP") == 0xFFFFFF and pget(11, 10, "MESH_PERSP") == 0x0000FF
 # far off the canvas: clipped, every pixel the picture's, nothing to crash
 expect_lua count("FAR") == 1024
 # grad: near black at the top to near white at the bottom, level along each row, never darker going down

@@ -46,7 +46,7 @@ typedef struct {
     const uint16_t *src;
     const uint8_t *mask;
     int w, h, stride;
-    bool lit, dither;
+    bool lit, dither, mesh;
     int mode;
     unsigned alpha; /* 0..256 */
     bool plain;     /* opaque: no look at what is under it */
@@ -95,7 +95,7 @@ static __attribute__((noinline)) void col_general(const surface *s, uint16_t *ds
     const uint8_t *mask = q->mask;
     const bool swap = s->swap, plain = q->plain, isLit = q->lit;
     const int8_t *dith = q->dither ? &PSX_DITHER[x & 3] : NULL; /* this column's offsets, 4 apart down the rows */
-    if (isLit && plain && !mask) {
+    if (isLit && plain && !mask && !q->mesh) {
         /* the common one: a lit picture laid opaque. u, v and the lights are straight lines down the column, so with both ends in
          * range every pixel is, and the clamps (of the picture's coordinates, of each light, of each colour before its dither) go */
         const int32_t ue = u + du * (n - 1), ve = v + dv * (n - 1);
@@ -122,6 +122,7 @@ static __attribute__((noinline)) void col_general(const surface *s, uint16_t *ds
         }
     }
     for (int i = 0; i < n; i++, y++, dst += ys, u += du, v += dv, lr += dlr, lg += dlg, lb += dlb) {
+        if (q->mesh && ((x ^ y) & 1)) continue;
         int iu = u >> 16, iv = v >> 16;
         if ((unsigned)iu >= (unsigned)W) iu = iu < 0 ? 0 : W - 1;
         if ((unsigned)iv >= (unsigned)H) iv = iv < 0 ? 0 : H - 1;
@@ -150,7 +151,7 @@ static __attribute__((noinline)) void col_persp(const surface *s, uint16_t *dst,
                                                 int32_t iw, int32_t diw, const quad_ctx *q) {
     int32_t uw = st->u, vw = st->v, lr = st->lr, lg = st->lg, lb = st->lb;
     const int32_t duw = st->du, dvw = st->dv;
-    const bool fast = q->plain && !q->lit && !q->mask;
+    const bool fast = q->plain && !q->lit && !q->mask && !q->mesh;
     float fi = (float)(iw > 16 ? iw : 16);
     int32_t u0 = (int32_t)((float)uw / fi * 65536.0f), v0 = (int32_t)((float)vw / fi * 65536.0f);
     while (n > 0) {
@@ -260,7 +261,7 @@ static void triangle(surface *s, const quad_ctx *q, vertex p[3]) {
         if (q->persp) {
             const col_step st = {u, v, lr, lg, lb, du, dv, dlr, dlg, dlb};
             col_persp(s, dst, ys, n, lo, x, &st, (int32_t)(c0[5] + (uint32_t)lo * drow[5]), (int32_t)drow[5], q);
-        } else if (q->plain && !q->lit && !q->mask) col_plain(dst, ys, n, u, v, du, dv, q, s->swap);
+        } else if (q->plain && !q->lit && !q->mask && !q->mesh) col_plain(dst, ys, n, u, v, du, dv, q, s->swap);
         else {
             const col_step st = {u, v, lr, lg, lb, du, dv, dlr, dlg, dlb};
             col_general(s, dst, ys, n, lo, x, &st, q);
@@ -377,11 +378,11 @@ const quad_mip *gfx_quad_mip(const asset *a, int frame, const int16_t xy8[8]) {
 }
 
 void gfx_quad(surface *s, const asset *a, int frame, const int16_t xy8[8], const uint8_t light[4][3], bool lights,
-              int mode, unsigned alpha, bool dither, int persp, const quad_mip *mip) {
+              int mode, unsigned alpha, bool dither, bool mesh, int persp, const quad_mip *mip) {
     if (!a->pixels || frame < 0 || frame >= a->frames) return;
     const int tw = mip ? mip->w : a->w, th = mip ? mip->h : a->h; /* the picture, or its smaller copy */
     quad_ctx q = {.src = mip ? mip->px : a->pixels + (size_t)frame * a->w * a->h, .w = tw, .h = th, .stride = (tw + 7) / 8,
-                  .lit = lights, .dither = dither && lights, .mode = mode, .alpha = alpha};
+                  .lit = lights, .dither = dither && lights, .mesh = mesh, .mode = mode, .alpha = alpha};
     q.mask = mip ? mip->mask : a->mask ? a->mask + (size_t)frame * q.stride * th : NULL;
     if (q.mask) { /* a frame with no see-through pixel needs no look at its mask for each pixel */
         const size_t n = (size_t)q.stride * th;

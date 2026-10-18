@@ -11,6 +11,7 @@ function _init()
   canvas("WHITE", N, N); target("WHITE"); cls(0xFFFFFF)
   canvas("HALVES", N, N); target("HALVES"); rect(0, 0, N, N // 2, 0xFF0000); rect(0, N // 2, N, N // 2, 0x00FF00)
   canvas("GREY", N, N); target("GREY"); cls(0x404040)
+  canvas("MASK", N, N); target("MASK"); rect(0, 0, 8, N, 0xFFFFFF)
   target()
 end
 function out(name, f) canvas(name, 32, 32); target(name); f(); target() end
@@ -23,6 +24,10 @@ function _draw()
   out("NEUTRAL", function() quad("SRC", 4, 4, 20, 4, 20, 20, 4, 20, {light = 0x808080}) end)
   out("BRIGHT", function() quad("GREY", 4, 4, 20, 4, 20, 20, 4, 20, {light = 0xFFFFFF}) end)
   out("RAMP", function() quad("WHITE", 4, 4, 20, 4, 20, 20, 4, 20, {lights = {0x000000, 0x808080, 0x808080, 0x000000}}) end)
+  out("MESH", function() rect(0, 0, 32, 32, 0x0000FF); quad("WHITE", 4, 4, 20, 4, 20, 20, 4, 20, {mesh = true}) end)
+  out("MESH_MASK", function() rect(0, 0, 32, 32, 0x0000FF); quad("MASK", 4, 4, 20, 4, 20, 20, 4, 20, {mesh = true}) end)
+  out("MESH_LIT", function() rect(0, 0, 32, 32, 0x0000FF); quad("WHITE", 4, 4, 20, 4, 20, 20, 4, 20, {mesh = true, light = 0x000000}) end)
+  out("MESH_PERSP", function() rect(0, 0, 32, 32, 0x0000FF); quad("WHITE", 4, 4, 20, 4, 24, 20, 0, 20, {mesh = true, persp = true}) end)
   out("FAR", function() quad("SRC", -900, -900, 1500, -700, 1400, 1300, -800, 1100) end)
   -- a floor in perspective: the top edge 100 wide, the bottom 200, a texture red above its middle and green below
   for _, name in ipairs({"P0", "P1", "P8"}) do
@@ -41,6 +46,7 @@ function _draw()
   grad(0, 0, 480, 60, 0x000000, 0x6040A0, {dither = true})
   grad(300, 100, 100, 100, 0x000000, 0xFFC080, {across = true, add = true, alpha = 0.6})
   quad("WHITE", 40, 200, 200, 220, 180, 300, 20, 290, {add = true, alpha = 0.5})
+  quad("WHITE", 31, 81, 63, 81, 63, 113, 31, 113, {mesh = true})
 end
 function same(a, b)
   local bad = 0
@@ -75,3 +81,11 @@ end
 function mean(name) local t = 0 for y = 0, 31 do for x = 0, 31 do t = t + red(name, x, y) end end return t / 1024 end
 function spread(name, y) local seen, n = {}, 0 for x = 0, 31 do local c = red(name, x, y) if not seen[c] then seen[c] = true n = n + 1 end end return n end
 function far_from_plain() local worst = 0 for y = 0, 31 do for x = 0, 31 do worst = math.max(worst, math.abs(red("GVD", x, y) - red("GV", x, y))) end end return worst end
+function mesh_wrong()
+  local wrong = 0
+  for y = 4, 19 do for x = 4, 19 do
+    local expected = (x + y) % 2 == 0 and 0xFFFFFF or 0x0000FF
+    if pget(x, y, "MESH") ~= expected then wrong = wrong + 1 end
+  end end
+  return wrong
+end

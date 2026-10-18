@@ -1,0 +1,43 @@
+# Pinyol: investigación PS1 y Saturn (18 octubre 2026)
+
+Objetivo: usar técnicas documentadas de ambas consolas para dar más recursos expresivos a juegos de Cirera. Pinyol corre en ESP32-S3, dibuja 480×320 en tiras y comparte CPU, RAM y acceso a PSRAM con juego, audio y pantalla. No intenta ejecutar juegos ni reproducir los chips originales ciclo a ciclo. La fidelidad buscada es **visual, sonora y de flujo de trabajo**, con 60 fps como objetivo cuando la escena lo permita.
+
+## Qué dicen las fuentes
+
+| Sistema | Técnica documentada | Consecuencia para Pinyol |
+| --- | --- | --- |
+| PS1 GPU | La GPU dibuja en orden de envío, sin búfer Z; bibliotecas de Sony agrupan primitivas por profundidad en una *ordering table*. [Especificación de profundidad](https://psx-spx.consoledev.net/dev/ps1/gpu/depth-ordering/), [Sony Ordering Table Primer](https://psx.arthus.net/sdk/Psy-Q/DOCS/TECHNOTE/ordtbl.pdf). | Agrupar y ordenar sprites, quads y recortes de decorado de lejos a cerca; reutilizar `rooms.order` donde baste. No reservar un búfer Z completo. |
+| PS1 GTE | Transforma, proyecta y calcula iluminación antes del dibujo; la GPU recibe primitivas 2D. [Material de formación GTE de Sony](https://psx.arthus.net/sdk/Psy-Q/DOCS/TRAINING/FALL96/gte.pdf). | Una etapa pequeña de transformación, recorte cercano y descarte de caras puede alimentar el `quad` existente. Empezar con geometría limitada y precalculada. |
+| PS1 GPU | Texturas indexadas, CLUT, páginas de textura, ventanas, modulación, tramado y cuatro modos de semitransparencia. [PSX-SPX Rendering Attributes](https://psx-spx.consoledev.net/dev/ps1/gpu/rendering-attributes/). | Pinyol ya tiene paletas, modulación, tramado y modos de mezcla. Falta una estrategia explícita de páginas/atlas y UV por primitiva; la máscara de transparencia por texel de PS1 no equivale al alfa global de Pinyol. |
+| Saturn VDP1 | Comandos de sprites distorsionados, Gouraud, sombras, semiluminancia y `mesh`; `mesh` dibuja solo si X+Y es par. [Manual VDP1 de Sega, capítulo 6](https://antime.kapsi.fi/sega/files/ST-013-R3-061694.pdf). | `quad` ya hace deformación y luces por vértice; `mesh = true` añade el patrón global de VDP1. Sombras y modos de color necesitan pruebas visuales separadas, no copiar ajustes de registro. |
+| Saturn VDP2 | Planos normales y rotados, scroll y zoom por línea, scroll vertical por celda, ventanas, prioridades, color por línea y cálculo de color. [Manual VDP2 de Sega](https://antime.kapsi.fi/sega/files/ST-058-R2-060194.pdf). | PPU ya ofrece 4 BG, affine, scroll y ventanas a 240×160; `warp` y `linetint` cubren parte a 480×320 pero son caros. Integrar prioridades y perfilar efectos por tiras antes de ampliar resolución. |
+| Saturn SCSP / PS1 SPU | SCSP usa ranuras, envolventes, LFO y DSP; SPU usa voces ADPCM, ADSR y reverberación. [Manual SCSP de Sega](https://antime.kapsi.fi/sega/files/ST-077-R2-052594.pdf), [PSX-SPX SPU](https://psx-spx.consoledev.net/soundprocessingunitspu/). | Pinyol ya tiene VAG/SPUM, ADSR, MIDI con banco y reverb. Medir coste de filtros/LFO por voz y mezcla estéreo antes de ampliar voces o frecuencia de salida. |
+| PS1 MDEC/CD | El vídeo usa macrobloques DCT y flujo desde CD; audio y vídeo se intercalan. [PSX-SPX MDEC](https://psx-spx.consoledev.net/macroblockdecodermdec/), [streaming en CD](https://psx-spx.consoledev.net/dev/ps1/cdr/cdromfileformats/streaming/). | NPV2 y ADPCM desde SD cumplen funciones parecidas para juegos; medir sincronía audio/vídeo y carga por sala antes de un nuevo códec. |
+
+## Papers, patentes y código de referencia
+
+- [Paul Heckbert, *Fundamentals of Texture Mapping and Image Warping* (1989)](https://www2.eecs.berkeley.edu/Pubs/TechRpts/1989/5504.html): transformaciones afines y proyectivas, muestreo y filtrado. Sirve para comparar el quad afín y `persp` de Pinyol.
+- [Chris Hecker, *Perspective Texture Mapping*](https://chrishecker.com/Miscellaneous_Technical_Articles): deducción práctica de gradientes y aproximaciones. Útil para escoger intervalos de corrección de perspectiva según error visible y CPU.
+- [Patente Sony US5933148A](https://patents.google.com/patent/US5933148A/en): subdivisión/adaptación de textura proyectiva a interpolación lineal. Da una idea de diseño; **no demuestra** que todos los juegos o la GPU de PS1 hicieran exactamente ese algoritmo. `quad(..., {persp=true})` ya corrige por tramos.
+- [Patente Sega EP0660298A1](https://patents.google.com/patent/EP0660298A1/en): patrones de acceso a bancos de VRAM según modos de pantalla. Lección para Cirera: planificar lecturas de textura, PPU y tiras alrededor de memoria/caché; no trasplantar registros Saturn.
+- [Patente Sega US5634850A](https://patents.google.com/patent/US5634850A/en): composición de gráficos móviles y fondos. Referencia para prioridad entre capas, no especificación exhaustiva de VDP2.
+- [DuckStation, rasterizador software PS1](https://github.com/stenzek/duckstation/blob/master/src/core/gpu_sw_rasterizer.inl) y [Mednafen/Beetle Saturn, VDP1](https://github.com/libretro/beetle-saturn-libretro/blob/master/mednafen/ss/vdp1_common.h): cotejar píxeles límite, mezcla, tramado y malla contra emulación madura.
+- [PSn00bSDK](https://github.com/Lameguy64/PSn00bSDK) y [libyaul](https://github.com/yaul-org/libyaul): modelos de comandos y herramientas con los que realmente se construyen juegos para las máquinas.
+
+Patentes, manuales y emuladores son **referencias técnicas**. Esta nota resume conceptos; ninguna fuente autoriza copiar código, tablas extensas, gráficos ni texto al motor. Revisar licencia de cada repositorio antes de reutilizar implementación.
+
+## Estado real de Pinyol
+
+- **Ya disponible:** PPU 240×160 con cuatro fondos, sprites, affine, ventanas y efectos por línea; overlay 480×320; `quad` con tintes por vértice, tramado, perspectiva opcional, cuatro mezclas y ahora `mesh`; Mode 7, raycast, máscaras de decorado, precarga de salas, mip de quads, audio ADPCM, MIDI/bancos, reverb y vídeo NPV2.
+- **Aún falta:** tubería 3D general (transformación, recorte cercano, caras/UV), ordenación de primitivas de escena como API común, intercalado de prioridad PPU/overlay, scroll/zoom por línea a 480×320 que cumpla presupuesto, LFO/filtros por voz si aportan al juego, y sincronía de vídeo/sonido medida en hardware.
+- **Límite medido:** un quad simple cuesta alrededor de 150 ns/píxel y uno iluminado 400 ns/píxel en Cirera; `warp` de pantalla completa llegó a 18,9 ms y `linetint` a 12,3 ms. Una escena compleja de ejemplo (`psx_demo`) sigue por debajo de 60 fps. Véase [mediciones](measurements.md). Costes dependen de textura, mezcla y caché; no extrapolar solo por número de polígonos.
+
+## Fases de mejora, con criterio de salida
+
+1. **Fidelidad visual barata.** Probar `mesh` con máscara, luz, perspectiva y tiras; comparar patrones y mezcla con manual/emulador. Medir en Cirera que quads sin `mesh` no retrocedan. Hecho en host; medición de placa pendiente.
+2. **Escena PS1.** Una lista acotada de primitivas que ordene de lejos a cerca; transformación y recorte cercano; UV por triángulo/quad cuando los modelos lo requieran. Reutilizar proyección de `lib/views.lua` y orden de `lib/rooms.lua`. Criterio: cámara trasera y lateral con oclusión correcta, sin costura al cruzar una tira y sin asignación por píxel; 60 fps en escena de referencia reducida.
+3. **Composición Saturn.** Poner prioridades, máscaras y scroll por línea de la PPU al servicio de una sala completa, con API clara para sprites y fondos. Criterio: un actor puede pasar delante y detrás de un decorado móvil, con color y ventanas correctos; medir el coste de cada capa antes de subirla a 480×320.
+4. **Arte y memoria.** Atlas/páginas con paletas compartidas y presupuesto visible de PSRAM/caché; conservar mip de quads. Criterio: reducción medida de tiempo de tiras y fallos de caché en una sala cargada; tiempos de entrada a sala medidos.
+5. **Audio y vídeo.** LFO/filtro por voz solo si cabe con música, efectos y reverb activos; sincronía NPV2+ADPCM verificada. Criterio: cero underruns y latencia A/V documentada en placa, con escenas y sonidos reales.
+
+Mantener pruebas host de píxeles y equivalencia de tiras. Medir cada fase con `perf()` y escena repetible en la placa antes de elegir la siguiente. No asumir que las prestaciones de PS1/Saturn caben literalmente en 240 MHz y RAM interna escasa.

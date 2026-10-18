@@ -283,6 +283,12 @@ foreach(s ${SCRIPTS})
   add_test(NAME script_${n} COMMAND pinyol_headless --game ${game}
            --saves ${CMAKE_BINARY_DIR}/saves_${n} --fresh --script ${s} --check-strips)
 endforeach()
+if(Python3_FOUND)
+  add_test(NAME quad_mesh_screen COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/quad_mesh_screen.py
+           ${CMAKE_BINARY_DIR}/saves_quad/quad.ppm)
+  set_tests_properties(script_quad PROPERTIES FIXTURES_SETUP quad_mesh)
+  set_tests_properties(quad_mesh_screen PROPERTIES FIXTURES_REQUIRED quad_mesh)
+endif()
 # the console's menu (a game too) lists the examples as the console lists its games
 set_tests_properties(script_cirera PROPERTIES ENVIRONMENT "PINYOL_GAMES=${CMAKE_CURRENT_SOURCE_DIR}/examples")
 # a canvas shown turned, changed every frame, must look different from one frame to the next (not a kept copy)
