@@ -233,13 +233,24 @@ void gfx_light(surface *s, int cx, int cy, int r, const uint8_t rgb[3], unsigned
 void gfx_warp(surface *s, const asset *a, int frame, int x, int y, const int16_t *rows, const int16_t *cols, bool wrap);
 /* Row j of a box (h rows) given the colour rowcol[j]: laid (`lay`), or added, taken or mixed by mode and alpha (0..256). */
 void gfx_lines(surface *s, int x, int y, int w, int h, const uint16_t *rowcol, int mode, unsigned alpha, bool lay);
+struct quad_mip;
 /* A frame of the picture on any four corners, in order: top-left, top-right, bottom-right, bottom-left of the picture
  * (xy8: x, y of each, in eighths of a pixel; at most +-16000). lights: each corner's colour to light it by (0..255 a
  * channel, 128 as it is), blending across the quad; mode and alpha (0..256) as gfx_blit_mixed; dither: the PlayStation's
  * 4x4 on the lit colours. persp: 0 as two flat triangles; 1 the picture put on the four corners as in perspective, cut into as
  * many cells as the quad needs; more: that many cells a side. The picture must be unpacked (gfx_pixels). */
 void gfx_quad(surface *s, const asset *a, int frame, const int16_t xy8[8], const uint8_t light[4][3], bool lights,
-              int mode, unsigned alpha, bool dither, int persp);
+              int mode, unsigned alpha, bool dither, int persp, const struct quad_mip *mip);
+/* A picture drawn much smaller than it is is sampled from a smaller copy of itself (a mip level: each texel the average of a
+ * 2^n square, see-through ones left out): a pixel then reads one texel near the last, not one a whole row away, which keeps
+ * the memory cache warm (a 256x256 picture is 6 times the cost of a 128x128), and no longer shimmers. gfx_quad_mip, called when
+ * the quad is recorded (never while strips are drawn), gives the copy for a quad of these corners, or NULL (a loaded picture
+ * only; one the game draws on is sampled as it is). It stays good for the frame: gfx_quad_begin starts the next one.
+ * gfx_quad_forget(px): the picture whose pixels these were is let go. */
+typedef struct quad_mip { const uint16_t *px; const uint8_t *mask; int w, h; } quad_mip;
+const quad_mip *gfx_quad_mip(const asset *a, int frame, const int16_t xy8[8]);
+void gfx_quad_begin(void);
+void gfx_quad_forget(const uint16_t *pixels);
 void gfx_blit_scaled(surface *s, const asset *a, int frame, int bx0, int bx1, int by0, int by1, int32_t u, int32_t du,
                      int32_t v, int32_t dv, const asset *alt, int tint);
 void gfx_nine(surface *s, const asset *a, int frame, int x, int y, int w, int h, int k); /* a frame from the picture's thirds */

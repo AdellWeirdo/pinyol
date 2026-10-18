@@ -8,6 +8,7 @@
  * screen is drawn in turned strips, so it goes column by column: for each column the rows inside the triangle are
  * found from its three edges, and the picture's row and column are stepped down them in 16.16 fixed point. */
 #include <math.h>
+#include <stdlib.h>
 
 #include "gfx_px.h"
 
@@ -260,15 +261,105 @@ static bool make_homography(const int16_t xy8[8], homography *H) {
     return true;
 }
 
+/* ------------------------------------------------------------------ mips: a smaller copy of a picture drawn small */
+
+typedef struct {
+    quad_mip m;
+    const uint16_t *key; /* the picture's pixels it was made from */
+    int frame, level;
+    uint32_t stamp; /* the frame it was last asked for in: one asked for this frame is never taken from under its quad */
+    bool dead;      /* its picture was let go: freed at the next frame */
+} mip_slot;
+#define MIP_SLOTS 3
+static mip_slot mip_cache[MIP_SLOTS];
+static uint32_t mip_frame = 1;
+
+static void mip_free(mip_slot *s) {
+    free((void *)s->m.px), free((void *)s->m.mask);
+    *s = (mip_slot){0};
+}
+
+void gfx_quad_begin(void) {
+    mip_frame++;
+    for (int i = 0; i < MIP_SLOTS; i++)
+        if (mip_cache[i].dead) mip_free(&mip_cache[i]);
+}
+
+void gfx_quad_forget(const uint16_t *pixels) {
+    for (int i = 0; i < MIP_SLOTS; i++)
+        if (pixels && mip_cache[i].key == pixels) mip_cache[i].dead = true, mip_cache[i].key = NULL;
+}
+
+/* The picture's frame made 2^level times smaller each way: a texel the average of its square (the ones that are see-through
+ * left out; see-through itself when most of them are). */
+static bool mip_make(mip_slot *sl, const asset *a, int frame, int level) {
+    const int w = a->w >> level, h = a->h >> level, bs = 1 << level, stride = (w + 7) / 8, astride = (a->w + 7) / 8;
+    uint16_t *px = malloc((size_t)w * h * 2);
+    uint8_t *mask = a->mask ? calloc((size_t)stride * h, 1) : NULL;
+    if (!px || (a->mask && !mask)) {
+        free(px), free(mask);
+        return false;
+    }
+    const uint16_t *src = a->pixels + (size_t)frame * a->w * a->h;
+    const uint8_t *amask = a->mask ? a->mask + (size_t)frame * astride * a->h : NULL;
+    for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++) {
+            int r = 0, g = 0, b = 0, n = 0;
+            for (int j = 0; j < bs; j++)
+                for (int i = 0; i < bs; i++) {
+                    const int sx = x * bs + i, sy = y * bs + j;
+                    if (amask && !(amask[sy * astride + sx / 8] & (0x80 >> (sx % 8)))) continue;
+                    const uint16_t c = src[sy * a->w + sx];
+                    r += c >> 11, g += c >> 5 & 63, b += c & 31, n++;
+                }
+            if (amask && n * 2 < bs * bs) n = 0; /* mostly see-through: it is */
+            px[y * w + x] = n ? (uint16_t)((r / n) << 11 | (g / n) << 5 | (b / n)) : 0;
+            if (mask && n) mask[y * stride + x / 8] |= 0x80 >> (x % 8);
+        }
+    sl->m = (quad_mip){px, mask, w, h};
+    sl->key = a->pixels, sl->frame = frame, sl->level = level, sl->dead = false;
+    return true;
+}
+
+const quad_mip *gfx_quad_mip(const asset *a, int frame, const int16_t xy8[8]) {
+    if (!a->pixels || a->canvas || frame < 0 || frame >= a->frames) return NULL;
+    int64_t twice = 0; /* the quad's area (shoelace), in eighths of a pixel squared */
+    for (int i = 0; i < 4; i++) {
+        const int j = (i + 1) & 3;
+        twice += (int64_t)xy8[2 * i] * xy8[2 * j + 1] - (int64_t)xy8[2 * j] * xy8[2 * i + 1];
+    }
+    const double area = fabs((double)twice) / 128.0; /* pixels */
+    double ratio = sqrt((double)a->w * a->h / (area < 1 ? 1 : area)); /* texels a pixel steps over, about */
+    int level = 0;
+    while (ratio >= 2.0 && (a->w >> (level + 1)) >= 4 && (a->h >> (level + 1)) >= 4) level++, ratio /= 2;
+    if (!level) return NULL;
+    mip_slot *free_slot = NULL;
+    for (int i = 0; i < MIP_SLOTS; i++) {
+        mip_slot *sl = &mip_cache[i];
+        if (sl->m.px && !sl->dead && sl->key == a->pixels && sl->frame == frame && sl->level == level) {
+            sl->stamp = mip_frame;
+            return &sl->m;
+        }
+        if (!sl->m.px) free_slot = free_slot ? free_slot : sl;
+        else if (sl->stamp != mip_frame && !free_slot) free_slot = sl; /* (not one a quad of this frame holds) */
+    }
+    if (!free_slot) return NULL;
+    if (free_slot->m.px) mip_free(free_slot);
+    if (!mip_make(free_slot, a, frame, level)) return NULL;
+    free_slot->stamp = mip_frame;
+    return &free_slot->m;
+}
+
 void gfx_quad(surface *s, const asset *a, int frame, const int16_t xy8[8], const uint8_t light[4][3], bool lights,
-              int mode, unsigned alpha, bool dither, int persp) {
+              int mode, unsigned alpha, bool dither, int persp, const quad_mip *mip) {
     if (!a->pixels || frame < 0 || frame >= a->frames) return;
-    quad_ctx q = {.src = a->pixels + (size_t)frame * a->w * a->h, .w = a->w, .h = a->h, .stride = (a->w + 7) / 8,
+    const int tw = mip ? mip->w : a->w, th = mip ? mip->h : a->h; /* the picture, or its smaller copy */
+    quad_ctx q = {.src = mip ? mip->px : a->pixels + (size_t)frame * a->w * a->h, .w = tw, .h = th, .stride = (tw + 7) / 8,
                   .lit = lights, .dither = dither && lights, .mode = mode, .alpha = alpha};
-    q.mask = a->mask ? a->mask + (size_t)frame * q.stride * a->h : NULL;
+    q.mask = mip ? mip->mask : a->mask ? a->mask + (size_t)frame * q.stride * th : NULL;
     if (q.mask) { /* a frame with no see-through pixel needs no look at its mask for each pixel */
-        const size_t n = (size_t)q.stride * a->h;
-        const int tail = a->w & 7; /* the last byte of a row has bits past the picture's width */
+        const size_t n = (size_t)q.stride * th;
+        const int tail = tw & 7; /* the last byte of a row has bits past the picture's width */
         bool all = true;
         for (size_t i = 0; i < n && all; i++) {
             const uint8_t want = (tail && (i + 1) % q.stride == 0) ? (uint8_t)(0xFF << (8 - tail)) : 0xFF;
@@ -290,7 +381,7 @@ void gfx_quad(surface *s, const asset *a, int frame, const int16_t xy8[8], const
         }
     }
     /* the corners and what each carries: the picture's own corners, so the frame fills the quad */
-    const float tu[4] = {0, (float)a->w, (float)a->w, 0}, tv[4] = {0, 0, (float)a->h, (float)a->h};
+    const float tu[4] = {0, (float)tw, (float)tw, 0}, tv[4] = {0, 0, (float)th, (float)th};
     vertex v[4];
     for (int i = 0; i < 4; i++) {
         v[i].x = xy8[2 * i], v[i].y = xy8[2 * i + 1];

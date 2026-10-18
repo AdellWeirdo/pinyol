@@ -391,6 +391,8 @@ lit; light the ones that need it, and keep the pieces to the size of what they d
 The same quad (400x280 pixels, flat) with a picture of 32x32, 128x128 and 256x256: 7.2, 9.1 and 47 ms of strips (51, 68 and 400 ns a
 pixel). A picture over about 128x128 (32 KB) stops fitting the memory cache and every pixel waits for the external RAM: keep the
 pictures a quad draws to 128x128 or less (cut a big floor into tiles, or draw it from a smaller one: the quad scales it).
+A picture drawn at less than half its size is now sampled from a smaller copy (a mip level, `gfx_quad_mip`): six quads of 100x100 with a
+256x256 picture, 5.9 ms of strips (a canvas of the same size, which is not mipped, was the slow case above). Loaded pictures only.
 The clamps of a quad's texture coordinates are skipped when a column's ends are inside the picture (affine 7.8 -> 6.7 ms).
 
 ## The same mixer on a desktop

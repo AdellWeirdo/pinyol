@@ -49,6 +49,7 @@ static struct { /* quad's corners and how it is drawn (grad's two colours in lig
     uint8_t light[4][3];
     bool lights, dither;
     uint8_t mode, alpha, persp; /* BLEND_*, 255: opaque; quad's perspective cells (0: none, 1: as many as it needs) */
+    const struct quad_mip *mip; /* quad: the smaller copy of its picture it is sampled from, or NULL */
 } ov_quad[OV_EXT];
 static int nquad;
 static int nstyle, nxf;
@@ -159,7 +160,7 @@ static void draw_one(surface *s, const ov_cmd *c) {
     case OV_QUAD: {
         const typeof(ov_quad[0]) *q = &ov_quad[c->ext - 1];
         const unsigned al = q->alpha + (q->alpha >> 7);
-        gfx_quad(s, c->a, c->frame, q->xy, q->light, q->lights, q->mode, al, q->dither, q->persp);
+        gfx_quad(s, c->a, c->frame, q->xy, q->light, q->lights, q->mode, al, q->dither, q->persp, q->mip);
         break;
     }
     case OV_GRAD: {
@@ -933,6 +934,7 @@ static int l_quad(lua_State *L) {
     memcpy(ov_quad[nquad].xy, xy, sizeof xy), memcpy(ov_quad[nquad].light, light, sizeof light);
     ov_quad[nquad].lights = lights, ov_quad[nquad].dither = dither && lights;
     ov_quad[nquad].mode = o.mode, ov_quad[nquad].alpha = (uint8_t)(o.alpha * 255 + 0.5f), ov_quad[nquad].persp = (uint8_t)persp;
+    ov_quad[nquad].mip = gfx_quad_mip(a, c->frame, xy);
     c->ext = (uint8_t)(++nquad);
     commit(c, 0, 0);
     return 0;
@@ -1158,6 +1160,7 @@ void draw_frame_begin(void) { /* each _draw starts on the screen, with no camera
     gfx_new_frame(); /* the pictures this frame asks for stay in memory while it is drawn */
     nseen[frame_no & 1] = 0;
     nov = ntext = nstyle = nxf = npts = nclip = nlook = nquad = 0;
+    gfx_quad_begin();
     target = NULL, cam_x = cam_y = 0, clipping = false;
 }
 

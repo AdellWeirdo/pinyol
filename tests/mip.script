@@ -1,0 +1,15 @@
+# A picture drawn much smaller than it is is sampled from a smaller copy: a 1-pixel checker (256x256) on 64x64 pixels is the
+# grey of its average, not black and white by luck of where each pixel falls; see-through texels stay see-through
+new
+tick 4
+# smaller by 4: a grey everywhere inside, none of the extremes
+expect_lua extremes("MIN", 2, 2, 61, 61) == 0 and red("MIN", 32, 32) > 100 and red("MIN", 32, 32) < 155
+# the same with the perspective (the edges slant: look inside)
+expect_lua extremes("MINP", 20, 4, 40, 58) == 0 and red("MINP", 30, 32) > 100 and red("MINP", 30, 32) < 155
+# a picture drawn as big as it is (nearly) has no copy: the checker is as it was, black and white
+expect_lua extremes("BIGUP", 5, 5, 250, 250) > 40000
+# see-through: the left half of HALF still shows what is under it (blue), the right is red, the line between at the middle
+expect_lua blu("HALF16", 3, 8) == 255 and red("HALF16", 3, 8) == 0 and red("HALF16", 12, 8) > 240 and blu("HALF16", 12, 8) == 0
+expect_lua red("HALF16", 7, 8) == 0 and red("HALF16", 8, 8) > 240
+# the screen, in strips and whole, is the same (the run checks it)
+shot mip

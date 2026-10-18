@@ -41,7 +41,7 @@ static void placeholder(asset *a, int w, int h, int frames) {
     a->frames = frames > 0 && frames <= 64 ? frames : 1;
     a->ax = a->w / 2;
     a->ay = a->h - 1;
-    if (a->pixels != &oom_pixel) free(a->pixels);
+    if (a->pixels != &oom_pixel) gfx_quad_forget(a->pixels), free(a->pixels);
     free(a->mask);
     a->mask = NULL;
     a->pixels = malloc((size_t)a->w * a->h * a->frames * 2);
@@ -67,6 +67,7 @@ void gfx_set_budget(size_t bytes) { pic_budget = budget_set = bytes; } /* for ev
 size_t gfx_picture_bytes(void) { return pic_bytes; }
 
 static void let_go(asset *a) { /* its data freed; the rest (its name, size, anchor) stays for when it comes back */
+    gfx_quad_forget(a->pixels);
     free(a->pixels), free(a->mask), free(a->pk);
     a->pixels = NULL, a->mask = NULL, a->pk = NULL, a->pal = NULL, a->cols = NULL;
     pic_bytes -= a->bytes;

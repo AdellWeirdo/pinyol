@@ -1,0 +1,28 @@
+{
+  "asset": "BIG",
+  "type": "sprite",
+  "w": 256,
+  "h": 256,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    128,
+    255
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "none"
+  },
+  "memory_bytes": {
+    "pixels": 131072,
+    "mask": 0,
+    "total": 131072
+  }
+}

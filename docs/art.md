@@ -95,7 +95,8 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
   modulated its textures; cut a floor into **bands of quads** as that console's games did, so the texture stays straight
   (a quad is two flat triangles: one big tilted quad shows its diagonal; `persp = true` divides by depth as it goes, for a floor
   that goes away). Keep the picture a quad draws to **128x128 or less**: past that it no longer fits the memory cache and a pixel
-  costs 6 times more (docs/measurements.md). `grad()` for skies and
+  costs 6 times more (docs/measurements.md); a loaded picture drawn at less than half its size is sampled from a smaller copy of
+  itself (no shimmer, warm cache), so a big one is fine when it is drawn small, not when it is drawn big. `grad()` for skies and
   vignettes; `dither = true` on either breaks the bands of a slow ramp into the PlayStation's fine 4x4 pattern, which is
   most of that look. `img`'s `sub` takes light away (a shadow, a dark vapour), `quarter` adds a faint quarter (a halo).
   They cost like the other mixed pixels: a handful of big ones a frame, not dozens.
