@@ -60,6 +60,17 @@ static __attribute__((noinline)) void col_plain(uint16_t *dst, int ys, int n, in
                                                 const quad_ctx *q, bool swap) {
     const uint16_t *src = q->src;
     const int W = q->w, wmax = q->w - 1, hmax = q->h - 1;
+    /* u and v are straight lines down the column: with both ends inside the picture every pixel is, and the clamps go */
+    const int32_t ue = u + du * (n - 1), ve = v + dv * (n - 1);
+    const int32_t umax = wmax << 16 | 0xFFFF, vmax = hmax << 16 | 0xFFFF;
+    const bool inside = u >= 0 && ue >= 0 && v >= 0 && ve >= 0 && u <= umax && ue <= umax && v <= vmax && ve <= vmax;
+    if (inside) {
+        if (swap)
+            for (int i = 0; i < n; i++, dst += ys, u += du, v += dv) *dst = bswap16(src[(v >> 16) * W + (u >> 16)]);
+        else
+            for (int i = 0; i < n; i++, dst += ys, u += du, v += dv) *dst = src[(v >> 16) * W + (u >> 16)];
+        return;
+    }
     if (swap)
         for (int i = 0; i < n; i++, dst += ys, u += du, v += dv) {
             int iu = u >> 16, iv = v >> 16;
