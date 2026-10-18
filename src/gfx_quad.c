@@ -116,7 +116,7 @@ static __attribute__((noinline)) void col_persp(const surface *s, uint16_t *dst,
     float fi = (float)(iw > 16 ? iw : 16);
     int32_t u0 = (int32_t)((float)uw / fi * 65536.0f), v0 = (int32_t)((float)vw / fi * 65536.0f);
     while (n > 0) {
-        const int span = n < 8 ? n : 8;
+        const int span = n < 16 ? n : 16;
         uw += duw * span, vw += dvw * span, iw += diw * span;
         fi = (float)(iw > 16 ? iw : 16);
         const int32_t u1 = (int32_t)((float)uw / fi * 65536.0f), v1 = (int32_t)((float)vw / fi * 65536.0f);

@@ -90,7 +90,6 @@ function _update()
 end
 
 function _draw()
-  rect(0, 0, 480, 320, 0x000000)
   -- the sky: night overhead to a glow at the horizon, dithered
   grad(0, 0, 480, HORIZON, 0x080818, 0x6A3A58, {dither = true})
   grad(0, HORIZON - 40, 480, 40, 0x000000, 0x301418, {add = true, alpha = 0.5})
@@ -107,9 +106,9 @@ function _draw()
   quad("TEX_BANNER", 350, 34, 390, 30, 394, 104, 346, 108, {lights = {lit(0), lit(1.6), lit(3.2), lit(4.8)}, dither = true})
   -- the lantern: its shadow on the floor (taken away), a halo (a quarter), its light (added)
   img("TEX_GLOW", lantern_x - 64, lantern_y + 24, {scale_x = 2, scale_y = 0.5, sub = true, alpha = 0.6})
-  img("TEX_GLOW", lantern_x - 64, lantern_y - 64, {scale = 2, quarter = true})
   local flick = 1 + math.sin(t / 3) * 0.05
-  img("TEX_GLOW", lantern_x - 32 * flick, lantern_y - 32 * flick, {scale = flick, add = true})
+  light(lantern_x, lantern_y, 84, 0x603818, {intensity = 0.7}) -- the halo
+  light(lantern_x, lantern_y, math.floor(40 * flick), 0xFFC878) -- its light (added)
   rect(lantern_x - 3, lantern_y - 5, 6, 10, 0xF0C060)
   -- what it can do
   text("A ROOM: " .. NAMES[room], 8, 282, {font = "arcade", color = 0xE0D0C0, outline = 0x100808})
