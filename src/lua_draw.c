@@ -21,7 +21,13 @@
 
 /* ------------------------------------------------------------------ the overlay: text and shapes at 480x320 */
 
-enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS, OV_QUAD, OV_GRAD, OV_LIGHT, OV_WARP, OV_LINES };
+enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS, OV_QUAD, OV_GRAD, OV_LIGHT, OV_WARP, OV_LINES, OV_OPS };
+static const char *const OP_NAME[OV_OPS] = {"text", "rect", "shade", "panel", "plate", "box", "img", "frame", "line", "circ", "poly", "points", "quad", "grad", "light", "warp", "linetint"};
+
+/* Where a frame goes (the meter, perf("ops")): each kind of command counted when it is recorded and timed as the strips draw it, in the
+ * frame's own numbers (prof_last: the frame before the one being recorded). Timing each command costs, so only while asked for. */
+static struct { uint32_t us[2][OV_OPS]; uint16_t n[OV_OPS]; int cmds, slots; } prof_cur, prof_last; /* us: a row for each part that draws */
+static unsigned prof_want;
 
 typedef struct {
     uint8_t op, font, scale, ext; /* ext: 1 + its entry in ov_style (text) or ov_xf (img); 0: none */
@@ -70,6 +76,7 @@ static int ndirty;
 
 static ov_cmd *ov_add(int op) {
     if (nov == OV_MAX) return NULL;
+    prof_cur.n[op]++;
     ov_cmd *c = &ov[nov++];
     memset(c, 0, sizeof *c);
     c->op = (uint8_t)op;
@@ -218,19 +225,50 @@ static void draw_one(surface *s, const ov_cmd *c) {
     }
 }
 
+static void draw_timed(surface *s, const ov_cmd *c) {
+    if (!prof_want) {
+        draw_one(s, c);
+        return;
+    }
+    const uint32_t t = hal_micros();
+    draw_one(s, c);
+    prof_cur.us[s->part & 1][c->op] += hal_micros() - t;
+}
+
 void draw_overlay(surface *s) {
     const int b0 = s->x0 / BAND, b1 = (s->x0 + s->w - 1) / BAND; /* the bands of this strip (all, for the whole frame) */
     for (int i = 0; i < nov; i++) {
         const ov_cmd *c = &ov[i];
         if (c->band1 < b0 || c->band0 > b1) continue; /* nowhere near: a byte compared, not a call and its clipping */
         if (!c->clip) {
-            draw_one(s, c);
+            draw_timed(s, c);
             continue;
         }
         const screen_rect *r = &ov_clip[c->clip - 1];
         surface in = gfx_clip(s, r->x, r->y, r->w, r->h);
-        if (in.w > 0 && in.h > 0) draw_one(&in, c);
+        if (in.w > 0 && in.h > 0) draw_timed(&in, c);
     }
+}
+
+void draw_profile(unsigned who, bool on) { prof_want = on ? prof_want | who : prof_want & ~who; }
+
+int draw_profile_rows(draw_prof_row *rows, int max) { /* the last frame's kinds of command, dearest first */
+    draw_prof_row all[OV_OPS];
+    int n = 0;
+    for (int op = 0; op < OV_OPS; op++) {
+        if (!prof_last.n[op]) continue;
+        const draw_prof_row r = {OP_NAME[op], prof_last.n[op], (prof_last.us[0][op] + prof_last.us[1][op]) / 1000.0f};
+        int k = n++;
+        while (k > 0 && all[k - 1].ms < r.ms) all[k] = all[k - 1], k--;
+        all[k] = r;
+    }
+    n = n < max ? n : max;
+    memcpy(rows, all, (size_t)n * sizeof *rows);
+    return n;
+}
+
+void draw_profile_slots(int *cmds, int *cmds_max, int *slots, int *slots_max) {
+    *cmds = prof_last.cmds, *cmds_max = OV_MAX, *slots = prof_last.slots, *slots_max = OV_EXT;
 }
 
 /* ------------------------------------------------------------------ canvases, camera, clip */
@@ -1159,6 +1197,9 @@ void draw_frame_begin(void) { /* each _draw starts on the screen, with no camera
     frame_no++;
     gfx_new_frame(); /* the pictures this frame asks for stay in memory while it is drawn */
     nseen[frame_no & 1] = 0;
+    prof_cur.cmds = nov, prof_cur.slots = nquad; /* the frame before: all its strips are drawn */
+    prof_last = prof_cur;
+    memset(&prof_cur, 0, sizeof prof_cur);
     nov = ntext = nstyle = nxf = npts = nclip = nlook = nquad = 0;
     gfx_quad_begin();
     target = NULL, cam_x = cam_y = 0, clipping = false;

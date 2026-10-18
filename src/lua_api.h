@@ -70,6 +70,13 @@ void draw_frame_begin(void);      /* before _draw: a new list */
 void draw_overlay(surface *s);    /* the list, onto s (a window of the screen or all of it) */
 bool draw_covers_screen(void);    /* the list starts with a full-screen opaque picture: the world need not be drawn */
 void draw_free(void);             /* the game's fonts, when its Lua state goes */
+/* Where a frame goes: while somebody wants it (a bit each, so the meter and a game's perf("ops") do not undo each other) every
+ * command is timed as the strips draw it. The last whole frame's kinds of command, dearest first (name, how many, CPU ms
+ * of the strips: both cores added), and how full the frame's lists were. */
+typedef struct { const char *name; int n; float ms; } draw_prof_row;
+void draw_profile(unsigned who, bool on);
+int draw_profile_rows(draw_prof_row *rows, int max);
+void draw_profile_slots(int *cmds, int *cmds_max, int *slots, int *slots_max);
 void draw_flush(void);            /* after each call into the game: the masks of the canvases it drew on */
 
 /* lua_game.c: a game's values as JSON and back (store, link) */

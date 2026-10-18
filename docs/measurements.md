@@ -395,6 +395,10 @@ A picture drawn at less than half its size is now sampled from a smaller copy (a
 256x256 picture, 5.9 ms of strips; the same six with a canvas of that size (not mipped), 22.8 ms: 3.9 times. Loaded pictures only.
 The clamps of a quad's texture coordinates are skipped when a column's ends are inside the picture (affine 7.8 -> 6.7 ms).
 
+`perf("ops")` on `examples/psx_demo` (CPU ms of the strips, both cores added, so about twice the time on the clock): quads 22.2 (5), grads 16.1
+(3), lights 4.8 (2), picture 2.7, the rest nothing; the strips take 25 ms on the clock. A dithered full-height gradient costs 1.4 ms of
+the clock more than a plain one: every strip rebuilds its four dither phases of the ramp (cache them across strips if it matters).
+
 ## The same mixer on a desktop
 
 Measured on a desktop (an optimized build, `make audio_bench`): the order and the ratios, not the console's milliseconds (the

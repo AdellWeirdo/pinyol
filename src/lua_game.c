@@ -842,20 +842,34 @@ static void meter_draw(surface *s) {
     uint32_t sum = 0;
     for (int i = 0; i < 60; i++) sum += meter.ms10[i];
     float ms = sum / 600.0f;
-    char line[3][64];
+    char line[5][96];
     snprintf(line[0], sizeof line[0], "%.0f fps   %.1f ms a frame", ms > 0 ? 1000 / ms : 0, ms);
     snprintf(line[1], sizeof line[1], "update %.1f  draw %.1f  layers %.1f", us_update / 1000.0f, us_draw / 1000.0f,
              us_ppu / 1000.0f);
     snprintf(line[2], sizeof line[2], "Lua %u KB   pictures %u KB", (unsigned)(mem_used / 1024),
              (unsigned)(gfx_picture_bytes() / 1024));
-    int lh = G.font.h - 6, h = 3 * lh + 8, tw = 0;
-    for (int i = 0; i < 3; i++) {
+    int cmds, cmds_max, slots, slots_max;
+    draw_profile_slots(&cmds, &cmds_max, &slots, &slots_max);
+    snprintf(line[3], sizeof line[3], "commands %d/%d   slots %d/%d", cmds, cmds_max, slots, slots_max);
+    draw_prof_row rows[3];
+    const int nr = draw_profile_rows(rows, 3);
+    int at = snprintf(line[4], sizeof line[4], "strips (CPU ms):");
+    for (int i = 0; i < nr && at < (int)sizeof line[4]; i++)
+        at += snprintf(line[4] + at, sizeof line[4] - (size_t)at, " %s %.1f", rows[i].name, rows[i].ms);
+    if (!nr) snprintf(line[4], sizeof line[4], "strips: one frame to measure");
+    const int nl = 5;
+    int lh = G.font.h - 6, h = nl * lh + 8, tw = 0, tw_all = 0;
+    for (int i = 0; i < nl; i++) {
         int w = font_width(&G.font, line[i], (int)strlen(line[i]));
-        tw = w > tw ? w : tw;
+        tw_all = w > tw_all ? w : tw_all;
+        if (i < 3) tw = w > tw ? w : tw;
     }
-    int bx = 10 + tw + 10, by = 4 + h - 5; /* the bars, right of the words: up to 33 ms, the 16.7 ms of 60 fps marked */
-    gfx_shade(s, 4, 4, bx + 66, h), gfx_shade(s, 4, 4, bx + 66, h);
-    for (int i = 0; i < 3; i++) font_draw(s, &G.font, 10, 6 + i * lh, line[i], (int)strlen(line[i]), -1, C_PAPER);
+    /* the bars sit right of the first three lines (up to 33 ms, the 16.7 ms of 60 fps marked); the two lines of the strips are wider */
+    int bx = 10 + tw + 10, by = 4 + 3 * lh + 2;
+    int shade_w = bx + 66 > 10 + tw_all + 6 ? bx + 66 : 10 + tw_all + 6;
+    if (shade_w > SCREEN_W - 4) shade_w = SCREEN_W - 4;
+    gfx_shade(s, 4, 4, shade_w, h), gfx_shade(s, 4, 4, shade_w, h);
+    for (int i = 0; i < nl; i++) font_draw(s, &G.font, 10, 6 + i * lh, line[i], (int)strlen(line[i]), -1, C_PAPER);
     for (int i = 0; i < 60; i++) {
         int v = meter.ms10[(meter.k + i) % 60], bh = v / 10 > 33 ? 33 : v / 10;
         gfx_fill(s, bx + i, by - bh, 1, bh, v <= 175 ? RGB(96, 224, 128) : RGB(255, 96, 80));
@@ -864,10 +878,27 @@ static void meter_draw(surface *s) {
 }
 
 static int l_perf(lua_State *L) { /* perf() -> ms of the last _update, _draw, picture, and KB of script memory;
-                                   * perf(true) / perf(false): the meter on the screen */
+                                   * perf(true) / perf(false): the meter on the screen;
+                                   * perf("ops") -> {kind = {n, ms}}, commands, slots: where the last frame's drawing went */
     if (lua_isboolean(L, 1)) {
         meter.on = lua_toboolean(L, 1);
         return 0;
+    }
+    if (lua_type(L, 1) == LUA_TSTRING && !strcmp(lua_tostring(L, 1), "ops")) {
+        draw_profile(2u, true); /* from now on every frame is measured (the first answer is empty: a frame has to go by) */
+        draw_prof_row rows[32];
+        const int n = draw_profile_rows(rows, 32);
+        lua_createtable(L, 0, n);
+        for (int i = 0; i < n; i++) {
+            lua_createtable(L, 0, 2);
+            lua_pushinteger(L, rows[i].n), lua_setfield(L, -2, "n");
+            lua_pushnumber(L, rows[i].ms), lua_setfield(L, -2, "ms");
+            lua_setfield(L, -2, rows[i].name);
+        }
+        int cmds, cmds_max, slots, slots_max;
+        draw_profile_slots(&cmds, &cmds_max, &slots, &slots_max);
+        lua_pushinteger(L, cmds), lua_pushinteger(L, slots);
+        return 3;
     }
     lua_pushnumber(L, us_update / 1000.0f), lua_pushnumber(L, us_draw / 1000.0f), lua_pushnumber(L, us_ppu / 1000.0f);
     lua_pushnumber(L, mem_used / 1024.0f);
@@ -1214,6 +1245,7 @@ void v2_draw(surface *s) {
     if (draw_covers_screen()) {} /* a full-screen opaque picture comes first: no world */
     else if (blank) gfx_fill(s, 0, 0, SCREEN_W, SCREEN_H, backdrop); /* (the same pixels as the world doubled) */
     else gfx_upscale2x(&world, s);
+    draw_profile(1u, meter.on); /* (the commands are timed only while the meter is up) */
     draw_overlay(s);
     if (meter.on) meter_draw(s);
     if (failed) { /* the error, readable, over whatever was drawn */

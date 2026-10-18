@@ -1,0 +1,18 @@
+# perf("ops"): the last frame's drawing by kind (how many, the strips' CPU ms), the commands and the slots (quads, lights, grads...)
+new
+tick 4
+lua ops, cmds, slots = perf("ops")
+tick 6
+lua ops, cmds, slots = perf("ops")
+# counts: 1 + 3 rects, 1 box, 3 quads, 2 lights, 1 text
+expect_lua ops.rect.n == 4 and ops.box.n == 1 and ops.quad.n == 3 and ops.light.n == 2 and ops.text.n == 1
+expect_lua cmds == 11 and slots == 5
+# time: the quads (three 90x90 pictures) are measured, and cost more than the box
+expect_lua ops.quad.ms > 0 and ops.quad.ms > ops.box.ms
+expect_lua ops.img == nil and ops.grad == nil
+# perf() as before; perf(true) shows the meter (a 5-line one now) and the strips still match the whole frame (the run checks)
+expect_lua select("#", perf()) == 4
+lua perf(true)
+tick 8
+expect_ok
+shot prof

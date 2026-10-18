@@ -737,7 +737,12 @@ like a level's end, not every frame.
 seconds does too). `perf()` returns the milliseconds the last `_update`, `_draw` and picture took, and the script's
 memory in KB, to see where a frame goes. `perf(true)` shows a meter over the game: the frames a second, the last 60
 frames as bars (red past the 16.7 ms of 60 fps), those times and the memory of the script and the pictures;
-`perf(false)` hides it. MENU and C together show or hide it on the console, F3 in the simulator. `require("name")`
+`perf(false)` hides it; two more lines say how full the frame's lists are (`commands 120/2048`, `slots 40/128`: the 128 are
+shared by every quad, light, gradient, warp and scaled picture) and which kinds of drawing cost most in the strips (CPU
+milliseconds, both cores added). `perf("ops")` gives the same to the game: `ops, commands, slots = perf("ops")`, `ops.quad.n` and
+`ops.quad.ms` for each kind (`text`, `rect`, `shade`, `panel`, `plate`, `box`, `img`, `frame`, `line`, `circ`, `poly`, `points`, `quad`,
+`grad`, `light`, `warp`, `linetint`) of the last whole frame; the first call starts measuring, so it answers after a frame has gone by.
+Measuring times each command in each strip, so it costs a little while it is on. MENU and C together show or hide the meter on the console, F3 in the simulator. `require("name")`
 loads `name.lua` from the game folder (`"ui.menu"` is `ui/menu.lua`). `file("story/es.txt")` returns the text of any
 file of the game (1 MB at most), or nil: stories, levels written by hand, a metro's stations as CSV.
 
