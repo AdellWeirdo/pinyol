@@ -38,6 +38,7 @@ static volatile int mic_w, mic_r;
 static portMUX_TYPE mic_lock = portMUX_INITIALIZER_UNLOCKED;
 volatile int64_t audio_out_mix_us;
 volatile int audio_out_blocks, audio_out_underruns;
+volatile int32_t audio_out_mix_min_us = INT32_MAX, audio_out_mix_max_us; /* the quickest and the slowest block (the slowest is the task being preempted) */
 
 static void w(uint8_t reg, uint8_t v) {
     uint8_t b[2] = {reg, v};
@@ -102,7 +103,10 @@ static void mix_task(void *arg) {
         hal_audio_lock();
         audio_mix(mono, BLOCK);
         hal_audio_unlock();
-        audio_out_mix_us += esp_timer_get_time() - t;
+        int32_t dt = (int32_t)(esp_timer_get_time() - t);
+        audio_out_mix_us += dt;
+        if (dt < audio_out_mix_min_us) audio_out_mix_min_us = dt;
+        if (dt > audio_out_mix_max_us) audio_out_mix_max_us = dt;
         audio_out_blocks++;
         for (int i = 0; i < BLOCK; i++) stereo[2 * i] = stereo[2 * i + 1] = mono[i];
         size_t sent;

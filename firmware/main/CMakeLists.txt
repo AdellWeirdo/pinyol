@@ -1,4 +1,4 @@
-idf_component_register(SRCS main.c display.c sd.c input.c audio_out.c power.c launcher.c ota.c cable.c remote.c bench.c bench_ppu.c link_radio.c
+idf_component_register(SRCS main.c display.c sd.c input.c audio_out.c power.c launcher.c ota.c cable.c remote.c bench.c bench_ppu.c bench_audio.c link_radio.c
                        INCLUDE_DIRS .
                        EMBED_FILES logo_small.rgb565 logo_big.rgb565 # pinyol's logo on the ink (brand.py)
                        REQUIRES pinyol_core esp_timer esp_psram esp_driver_spi esp_driver_ledc esp_driver_gpio
@@ -23,6 +23,9 @@ if(BP_BENCH) # -DBP_BENCH=ON: renderer measurements instead of the game list (be
   endif()
   if(BP_BENCH STREQUAL "ppu")
     target_compile_definitions(${COMPONENT_LIB} PRIVATE BP_BENCH_PPU)
+  endif()
+  if(BP_BENCH STREQUAL "audio")
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE BP_BENCH_AUDIO)
   endif()
 endif()
 if(BP_OTA_NEVER_GOOD)

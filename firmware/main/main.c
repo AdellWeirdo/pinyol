@@ -510,6 +510,8 @@ void app_main(void) {
     bench_v1_run();
 #elif defined(BP_BENCH_PPU)
     bench_ppu_run();
+#elif defined(BP_BENCH_AUDIO)
+    bench_audio_run();
 #else
     bench_run();
 #endif
