@@ -192,6 +192,9 @@ add_test(NAME validate COMMAND pinyol_headless --game ${GAME_DIR} --validate)
 
 The data adventures pinyol started with are built this way.
 
+The engine's checkout is found by the game's scripts through `PINYOL_ENGINE` (a path; `ENGINE` in some) and, failing that, a
+sibling folder: `export PINYOL_ENGINE=~/Desktop/DEV/pinyol/pinyol-engine/pinyol` works wherever the game's repo lives.
+
 ## Share a game, play it in the browser
 
 ```sh

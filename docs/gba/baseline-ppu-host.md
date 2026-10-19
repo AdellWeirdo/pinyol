@@ -313,7 +313,7 @@ rm -rf results && ./run_all.sh    # 3 runs x all builds x content A/B, 2000 fram
 python3 summarize.py          # per-build tables
 python3 gen_tables.py         # the markdown tables
 python3 prof_table.py clang_prof_O2   # profile attribution (also gcc_prof_O2)
-python3 make_md.py /Users/pauavila/Desktop/DEV/pinyol/np2d/docs/gba/baseline-ppu-host.md   # regenerates this file
+python3 make_md.py docs/gba/baseline-ppu-host.md   # regenerates this file
 # one scene, quick: frames, content, name filter
 ./out/bench_clang_O2 2000 A "GBA mode 0"
 # sampling profile
