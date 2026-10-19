@@ -236,6 +236,43 @@ static void object_window_and_blend_sprite(void) {
     CHECK(fb[0][0] == (15 << 11 | 31 << 5 | 15)); /* half white over black, with no blend mode set */
 }
 
+/* Three places where the model followed the GBA only partly (docs/gba/audit-01-ppu.md rows 12 and 13). */
+static void blend_sprite_and_window_fidelity(void) {
+    const uint16_t half_white = 15 << 11 | 31 << 5 | 15; /* half white over black */
+    /* A semi-transparent sprite over another sprite blends with what is under both, not with the sprite below it. */
+    setup();
+    memset(spr_idx, 1, sizeof spr_idx);
+    PPU.obj_pal[1] = WHITE;
+    PPU.obj[1] = (ppu_obj){.on = true, .x = 0, .y = 0, .w = 8, .h = 8, .affine = -1, .idx = spr_idx};
+    PPU.obj[0] = (ppu_obj){.on = true, .x = 4, .y = 0, .w = 8, .h = 8, .affine = -1, .mode = OBJ_BLEND, .idx = spr_idx};
+    PPU.fx.second = PPU_BACK, PPU.fx.eva = 8, PPU.fx.evb = 8;
+    PPU.bg_pal[0] = 0;
+    ppu_render(&fb[0][0]);
+    CHECK(fb[0][2] == WHITE);      /* the lower sprite alone */
+    CHECK(fb[0][6] == half_white); /* overlap: blended with the backdrop, as the lower sprite is not visible there */
+    CHECK(fb[0][10] == half_white);
+    /* An object window turned on with no window sprite shows nothing outside it: everything is outside. */
+    setup();
+    tiled(0, 0);
+    for (int i = 0; i < 32 * 32; i++) map[i] = 1;
+    PPU.win.obj_on = true, PPU.win.obj_in = PPU_BG0, PPU.win.out = 0;
+    ppu_render(&fb[0][0]);
+    CHECK(fb[10][10] == GREY && fb[100][200] == GREY);
+    PPU.win.out = PPU_BG0;
+    ppu_render(&fb[0][0]);
+    CHECK(fb[10][10] == RED);
+    /* A semi-transparent sprite blends even where a window bars effects (it has a second target). */
+    setup();
+    memset(spr_idx, 1, sizeof spr_idx);
+    PPU.obj_pal[1] = WHITE;
+    PPU.obj[0] = (ppu_obj){.on = true, .x = 0, .y = 0, .w = 8, .h = 8, .affine = -1, .mode = OBJ_BLEND, .idx = spr_idx};
+    PPU.fx.second = PPU_BACK, PPU.fx.eva = 8, PPU.fx.evb = 8;
+    PPU.bg_pal[0] = 0;
+    PPU.win.on[0] = true, PPU.win.rect[0] = (ppu_rect){0, 240, 0, 160}, PPU.win.in[0] = PPU_OBJ, PPU.win.out = PPU_OBJ;
+    ppu_render(&fb[0][0]);
+    CHECK(fb[0][0] == half_white);
+}
+
 static uint16_t bmp[16 * 8];
 static uint8_t bmp_mask[2 * 8];
 
@@ -354,6 +391,7 @@ int main(void) {
     effects();
     mosaic_and_lines();
     object_window_and_blend_sprite();
+    blend_sprite_and_window_fidelity();
     bitmaps();
     bitmap_against_formula();
     tile_row_shortcuts();

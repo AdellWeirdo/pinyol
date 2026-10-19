@@ -172,6 +172,7 @@ static ppu_line_scroll line_scroll_tab[PPU_BGS][PPU_H];
 static ppu_line_affine line_affine_tab[PPU_BGS][PPU_H];
 static ppu_line_span line_win_tab[2][PPU_H];
 static uint16_t line_back_tab[PPU_H];
+static uint8_t line_ev_tab[PPU_H];
 
 /* ------------------------------------------------------------------ the sandbox */
 
@@ -741,6 +742,17 @@ static int l_fade(lua_State *L) { /* fade("light" | "dark", layers, amount 0..16
     return 0;
 }
 
+static int l_line_fx(lua_State *L) { /* line_fx(y, amount 0..16): the fade's amount, or the blend's weight of the first target
+                                        (the second gets 16 - amount), on line y: fog that thickens with distance */
+    int y = line_index(L, 1);
+    if (PPU.line.fx_ev != line_ev_tab) { /* first use this frame: every line starts at the effect's own amount */
+        memset(line_ev_tab, PPU.fx.mode == FX_ALPHA ? PPU.fx.eva : PPU.fx.evy, sizeof line_ev_tab);
+        PPU.line.fx_ev = line_ev_tab;
+    }
+    line_ev_tab[y] = (uint8_t)ev(L, 2);
+    return 0;
+}
+
 static int l_show(lua_State *L) { /* show(layers): which of BG0..BG3 and OBJ are drawn */
     PPU.layers = (uint8_t)(luaL_checkinteger(L, 1) & (PPU_BG0 | PPU_BG1 | PPU_BG2 | PPU_BG3 | PPU_OBJ));
     return 0;
@@ -1059,7 +1071,7 @@ static void api(lua_State *L) {
         {"pal", l_pal}, {"palette", l_palette}, {"backdrop", l_backdrop}, {"bg", l_bg}, {"scroll", l_scroll},
         {"affine", l_affine}, {"rot", l_rot}, {"mode7", l_mode7}, {"project", l_project}, {"mget", l_mget},
         {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_backdrop", l_line_backdrop},
-        {"line_window", l_line_window}, {"line_off", l_line_off}, {"sheet", l_sheet}, {"spr", l_spr},
+        {"line_window", l_line_window}, {"line_fx", l_line_fx}, {"line_off", l_line_off}, {"sheet", l_sheet}, {"spr", l_spr},
         {"spr_off", l_spr_off}, {"spr_clear", l_spr_clear}, {"prio", l_prio}, {"bank", l_bank}, {"spr_mat", l_spr_mat},
         {"mat", l_mat}, {"show", l_show}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off},
         {"window", l_window}, {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow},

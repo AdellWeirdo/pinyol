@@ -147,6 +147,10 @@ add_executable(ppu_test tests/ppu_test.c platform/null/hal_null.c platform/link_
 target_compile_options(ppu_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(ppu_test pinyol_core)
 add_test(NAME ppu COMMAND ppu_test)
+add_executable(ppu_golden_test tests/ppu_golden_test.c platform/null/hal_null.c platform/link_udp.c)
+target_compile_options(ppu_golden_test PRIVATE -Wall -Wextra -Werror ${SAN})
+target_link_libraries(ppu_golden_test pinyol_core)
+add_test(NAME ppu_golden COMMAND ppu_golden_test ${CMAKE_CURRENT_SOURCE_DIR}/tests/ppu_golden.txt)
 add_executable(psg_test tests/psg_test.c platform/null/hal_null.c platform/link_udp.c)
 target_compile_options(psg_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(psg_test pinyol_core)
@@ -273,6 +277,10 @@ if(NOT NO_PIL)
   set_tests_properties(script_neo PROPERTIES FIXTURES_REQUIRED neo_game)
   set_tests_properties(script_clip PROPERTIES FIXTURES_REQUIRED clip_game)
 endif()
+# line_fx: a fade whose amount grows down the screen, then line_off: two pictures, no more, no fewer
+add_test(NAME linefx_crc COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/linefx \
+  --saves ${CMAKE_BINARY_DIR}/saves_linefx_crc --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/linefx.script \
+  --crc ${CMAKE_BINARY_DIR}/linefx.crc >/dev/null && test $(sort -u ${CMAKE_BINARY_DIR}/linefx.crc | wc -l) -eq 2")
 if(NODE)
   foreach(s ${SCRIPTS})
     get_filename_component(n ${s} NAME_WE)

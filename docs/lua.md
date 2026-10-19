@@ -146,6 +146,7 @@ Each of the 160 lines can have its own values: wavy water, parallax bands, gradi
 | `line_scroll(n, y, x [, y_offset])` | layer n's scroll on line y |
 | `line_backdrop(y, colour)` | the backdrop on line y (a sky gradient) |
 | `line_window(k, y, x1, x2)` | window k's span on line y (a circle, a cone of light) |
+| `line_fx(y, amount)` | 0..16 on line y: the amount of the `fade`, or how much of a `blend`'s first target shows (the second gets 16 − amount). Fog thickening toward the horizon of a `mode7` floor: `fade("light", BG2, 0)` once, then `line_fx` for each line. While it is on, every fade and blend of the game takes its amount from it, so a screen-wide fade needs `line_off()` first |
 | `line_off()` | back to the layers' own values (a `mode7` floor stays) |
 
 ## Levels from Tiled
