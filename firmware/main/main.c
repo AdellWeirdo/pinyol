@@ -508,6 +508,8 @@ void app_main(void) {
     display_backlight(100);
 #ifdef BP_BENCH_V1
     bench_v1_run();
+#elif defined(BP_BENCH_PPU)
+    bench_ppu_run();
 #else
     bench_run();
 #endif

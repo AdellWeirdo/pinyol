@@ -4,3 +4,5 @@
 void bench_run(void);
 /* -DBP_BENCH=v1: how long the v1 engine takes to draw each zone of the games on the card. */
 void bench_v1_run(void);
+/* -DBP_BENCH=ppu: the real ppu_render (src/ppu.c) on the board, the scenes of the host harness (bench_ppu.c). */
+void bench_ppu_run(void);
