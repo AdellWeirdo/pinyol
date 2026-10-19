@@ -1,0 +1,14 @@
+KEYS clip: 22050 samples (1.000 s); first 1147 last -17006, first jump 3529, last jump 229, typical jump 8615
+  lowpass 0.55, whole clip           seam jump  18153 (ordinary max step 8615), clip 22050 samples
+  lowpass 0.55, loop from 10 cycles  seam jump   8436 (ordinary max step 8615), clip 22050 samples
+  lowpass 1 (none), whole clip       seam jump  26652 (ordinary max step 35641), clip 22050 samples
+  lowpass 0.55, loop from 40 cycles  seam jump   8601 (ordinary max step 8615), clip 22050 samples
+loop seam: biggest jump across the 3 seams 18153, the biggest jump in a stretch with no seam 8615 (rms 10184)
+  C4: start jump 2741, release jump 4246 (steady rms 4401), tail rms in the last 50 ms 0.0, ended: yes
+  E4: start jump 2627, release jump 5289 (steady rms 4394), tail rms in the last 50 ms 0.0, ended: yes
+  G4: start jump 4086, release jump 6193 (steady rms 4400), tail rms in the last 50 ms 0.0, ended: yes
+  C5: start jump 5077, release jump 8142 (steady rms 4394), tail rms in the last 50 ms 0.0, ended: yes
+instrument notes: worst start jump 5077, worst release jump 8142
+wave table: rms 2792 max jump 5604
+noise 7: rms 2044
+GBA mode: tail rms 1819 in the second after the last release (the reverb), max jump 19712

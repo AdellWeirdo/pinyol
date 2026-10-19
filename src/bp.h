@@ -435,6 +435,7 @@ typedef struct {
     bool env;
     float attack, decay, sustain, release;
     float reverb; /* 0..1: how much of it goes through the reverb */
+    int wait;     /* samples after the start of the next block of sound before it sounds: a delay to the sample */
 } sfx_opts;
 int audio_sfx_play_opts(const char *id, const sfx_opts *o);
 int reverb_find(const char *name);      /* a room by name ("room", "hall", "space_echo"...), -1 if there is none */
@@ -504,7 +505,7 @@ void audio_force_missing(const char *id);
 
 /* Synthesised voices (psg.c), mixed with the rest: notes instead of recordings. */
 #define PSG_VOICES 4
-enum { PSG_SQUARE, PSG_TRIANGLE, PSG_SAW, PSG_SINE, PSG_NOISE };
+enum { PSG_SQUARE, PSG_TRIANGLE, PSG_SAW, PSG_SINE, PSG_NOISE, PSG_WAVE /* a table, as the GBA's wave channel */ };
 typedef struct {
     uint8_t wave;        /* PSG_* */
     float freq, vol;     /* Hz; 0..1 */
@@ -513,7 +514,13 @@ typedef struct {
     float sustain;       /* 0..1 of vol held after the decay; 0: the note ends by itself (a pluck) */
     float len, release;  /* seconds: when the note is let go (0: never by itself), and its fade after */
     float slide;         /* Hz per second added to the pitch (a laser, a drop) */
+    uint8_t table[32];   /* PSG_WAVE: one period in 32 steps of 0..15, the wave channel's 4-bit samples */
+    bool lfsr7;          /* noise: a 7-bit shift register (a metallic, pitched noise) instead of 15 */
+    float vib_depth, vib_speed, vib_delay; /* vibrato: cents each way, Hz, seconds before it starts */
+    float bend;          /* semitones above the note: live, with psg_set */
 } psg_note;
+typedef struct { float vol; bool set_bend; float bend; } psg_mod; /* vol < 0: unchanged */
+void psg_set(int voice, const psg_mod *m); /* a note that sounds, changed: its volume, its bend */
 void psg_play(int voice, const psg_note *n); /* starts at once, replacing what the voice played */
 void psg_release(int voice);
 void psg_reset(void);

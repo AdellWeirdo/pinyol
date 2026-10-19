@@ -48,7 +48,7 @@ enum { OBJ_NORMAL, OBJ_BLEND /* always a first blend target */, OBJ_WINDOW /* it
 typedef struct {
     bool on, hflip, vflip, mosaic;
     int16_t x, y;      /* top-left of the sprite's box on screen */
-    uint8_t w, h;      /* source size in pixels, up to 128 x 128 */
+    uint8_t w, h;      /* source size in pixels, up to 255 x 255 (lua_game.c bounds sheets the same) */
     uint8_t prio;      /* 0..3: over backgrounds of the same priority */
     uint8_t bank;      /* indexed pixels use palette entry index + 16 * bank */
     uint8_t mode;      /* OBJ_NORMAL, OBJ_BLEND, OBJ_WINDOW */

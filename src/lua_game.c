@@ -172,6 +172,7 @@ static ppu_line_scroll line_scroll_tab[PPU_BGS][PPU_H];
 static ppu_line_affine line_affine_tab[PPU_BGS][PPU_H];
 static ppu_line_span line_win_tab[2][PPU_H];
 static uint16_t line_back_tab[PPU_H];
+static uint8_t line_ev_tab[PPU_H];
 
 /* ------------------------------------------------------------------ the sandbox */
 
@@ -741,6 +742,17 @@ static int l_fade(lua_State *L) { /* fade("light" | "dark", layers, amount 0..16
     return 0;
 }
 
+static int l_line_fx(lua_State *L) { /* line_fx(y, amount 0..16): the fade's amount, or the blend's weight of the first target
+                                        (the second gets 16 - amount), on line y: fog that thickens with distance */
+    int y = line_index(L, 1);
+    if (PPU.line.fx_ev != line_ev_tab) { /* first use this frame: every line starts at the effect's own amount */
+        memset(line_ev_tab, PPU.fx.mode == FX_ALPHA ? PPU.fx.eva : PPU.fx.evy, sizeof line_ev_tab);
+        PPU.line.fx_ev = line_ev_tab;
+    }
+    line_ev_tab[y] = (uint8_t)ev(L, 2);
+    return 0;
+}
+
 static int l_show(lua_State *L) { /* show(layers): which of BG0..BG3 and OBJ are drawn */
     PPU.layers = (uint8_t)(luaL_checkinteger(L, 1) & (PPU_BG0 | PPU_BG1 | PPU_BG2 | PPU_BG3 | PPU_OBJ));
     return 0;
@@ -921,14 +933,19 @@ static cJSON *store;
 
 static void store_path(char *p, size_t n) { snprintf(p, n, "%s/v2.json", G.save_dir); }
 
-/* The saves live in two files, v2.json and v2.json.b, written in turn: each ends its JSON with "#gen N" and the
- * newest one that reads whole is the saves (a cut mid-write spoils only the one being written). Each is padded to
- * whole 4 KB sectors and rewritten in place, so a save on the console's FAT touches its data and little else. */
+/* The saves live in two files, v2.json and v2.json.b, written in turn: each ends its JSON with "#gen N crc XXXXXXXX" (the
+ * generation, and the CRC-32 of the JSON before it) and the newest one that reads whole and checks is the saves (a cut or
+ * torn write spoils only the one being written: the card may put a file's sectors down in any order). Each is padded to
+ * whole 4 KB sectors and rewritten in place, so a save on the console's FAT touches its data and little else. A file
+ * with no "crc" (an older engine's) is believed as it is, and an older engine reads these: it stops at the "#gen N". */
 static cJSON *store_read(const char *path, long *gen) {
     char *txt = read_file(path, NULL);
     cJSON *j = txt ? cJSON_Parse(txt) : NULL; /* stops at the end of the JSON: the "#gen" after it is not read */
     const char *g = txt ? strstr(txt, "\n#gen ") : NULL;
-    *gen = g ? strtol(g + 6, NULL, 10) : 0;
+    unsigned crc = 0;
+    int fields = g ? sscanf(g, "\n#gen %ld crc %x", gen, &crc) : 0;
+    if (!g) *gen = 0;
+    if (fields == 2 && crc32_buf((const uint8_t *)txt, (size_t)(g - txt)) != crc) cJSON_Delete(j), j = NULL; /* torn */
     free(txt);
     if (!cJSON_IsObject(j)) cJSON_Delete(j), j = NULL;
     return j;
@@ -950,20 +967,24 @@ static cJSON *store_get(void) {
     return store;
 }
 
-/* The saves into the older of the two files (see store_read), in place when it is already the right size. */
+/* The saves into the older of the two files (see store_read), in place when it is already the right size. The generation
+ * moves on only once the file is down: a save that fails is tried again on the same file, never on the last good one. */
 #define SAVE_SECTOR 4096
 bool save_file_atomic(const char *p, const char *txt) {
-    char path[400], tail[32];
-    long gen = __atomic_add_fetch(&store_gen, 1, __ATOMIC_SEQ_CST);
+    char path[400], tail[48];
+    long gen = __atomic_load_n(&store_gen, __ATOMIC_SEQ_CST) + 1;
     snprintf(path, sizeof path, gen % 2 ? "%s.b" : "%s", p);
-    int nt = snprintf(tail, sizeof tail, "\n#gen %ld\n", gen);
-    size_t n = strlen(txt), size = (n + (size_t)nt + SAVE_SECTOR) / SAVE_SECTOR * SAVE_SECTOR;
+    size_t n = strlen(txt);
+    int nt = snprintf(tail, sizeof tail, "\n#gen %ld crc %08x\n", gen, (unsigned)crc32_buf((const uint8_t *)txt, n));
+    size_t size = (n + (size_t)nt + SAVE_SECTOR) / SAVE_SECTOR * SAVE_SECTOR;
     struct stat st;
     FILE *f = (!stat(path, &st) && (size_t)st.st_size == size) ? fopen(path, "r+b") : fopen(path, "wb");
     if (!f) return false;
     bool ok = fwrite(txt, 1, n, f) == n && fwrite(tail, 1, (size_t)nt, f) == (size_t)nt;
     for (size_t k = n + (size_t)nt; ok && k < size; k++) ok = fputc(' ', f) != EOF; /* the rest of the sector */
-    return (fclose(f) == 0) && ok;
+    ok = (fclose(f) == 0) && ok;
+    if (ok) __atomic_store_n(&store_gen, gen, __ATOMIC_SEQ_CST);
+    return ok;
 }
 
 __attribute__((weak)) bool hal_save(const char *path, const char *txt) { return save_file_atomic(path, txt); }
@@ -1090,7 +1111,7 @@ static void api(lua_State *L) {
         {"pal", l_pal}, {"palette", l_palette}, {"backdrop", l_backdrop}, {"bg", l_bg}, {"scroll", l_scroll},
         {"affine", l_affine}, {"rot", l_rot}, {"mode7", l_mode7}, {"project", l_project}, {"mget", l_mget},
         {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_backdrop", l_line_backdrop},
-        {"line_window", l_line_window}, {"line_off", l_line_off}, {"sheet", l_sheet}, {"spr", l_spr},
+        {"line_window", l_line_window}, {"line_fx", l_line_fx}, {"line_off", l_line_off}, {"sheet", l_sheet}, {"spr", l_spr},
         {"spr_off", l_spr_off}, {"spr_clear", l_spr_clear}, {"prio", l_prio}, {"bank", l_bank}, {"spr_mat", l_spr_mat},
         {"mat", l_mat}, {"show", l_show}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off},
         {"window", l_window}, {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow},

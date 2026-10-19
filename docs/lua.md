@@ -146,6 +146,7 @@ Each of the 160 lines can have its own values: wavy water, parallax bands, gradi
 | `line_scroll(n, y, x [, y_offset])` | layer n's scroll on line y |
 | `line_backdrop(y, colour)` | the backdrop on line y (a sky gradient) |
 | `line_window(k, y, x1, x2)` | window k's span on line y (a circle, a cone of light) |
+| `line_fx(y, amount)` | 0..16 on line y: the amount of the `fade`, or how much of a `blend`'s first target shows (the second gets 16 − amount). Fog thickening toward the horizon of a `mode7` floor: `fade("light", BG2, 0)` once, then `line_fx` for each line. While it is on, every fade and blend of the game takes its amount from it, so a screen-wide fade needs `line_off()` first |
 | `line_off()` | back to the layers' own values (a `mode7` floor stays) |
 
 ## Levels from Tiled
@@ -407,7 +408,7 @@ game (the same `id` in game.json) hear each other.
 |---|---|
 | `link.send(value [, to])` | `true`, or `false` when this console has used up its share of the air for now (20 messages a second). `value` is a number, string, boolean or a table of them, as `store`, up to 220 bytes as JSON; `to` is one console's id, or everyone |
 | `link.recv()` | `from, value` of the oldest message waiting, or `nil`: `for from, m in link.recv do ... end` |
-| `link.peers()` | the ids of the consoles playing this game nearby (heard in the last 3 seconds), smallest first: every console sees the same order, so they can agree who is player 1 or who sits next to whom |
+| `link.peers()` | the ids of the consoles playing this game nearby (heard in the last 3 seconds), smallest first: every console sees the same order, so they can agree who is player 1 or who sits next to whom. Up to 16 at once; an id is a large number, not 0, 1, 2: take a console's place in this list, not its id |
 | `link.id()` | this console's id (0 where there is no radio) |
 
 The radio comes on the first time a game uses `link` and goes off when it ends. Messages can be lost on the way
@@ -424,10 +425,13 @@ order, so consoles that get the same messages can compute the same thing.
 
 | Call | Does |
 |---|---|
-| `sfx(id [, gain [, {pitch, loop, pan, reverb, attack, decay, sustain, release, loop_start, loop_end}]])` | plays `audio/<id>.wav` (or a sound made with `sound`) once, or looping; `pitch` 1 as recorded, 2 an octave up, 0.5 down; `pan` -1 (left ear) to 1 (right), 0 the middle: the far ear fades to nothing as it goes, the near one stays full, so an unpanned sound is as it always was. Platforms with one speaker hear it at half. `attack`, `decay` (seconds), `sustain` (0 to 1, the level it settles at) and `release` (seconds) shape its volume like a PlayStation voice: it climbs, falls to the sustain level, and when you `sfx_stop` it, lets go over the release instead of cutting (any of the four makes an envelope; the others default to no attack, no decay, full sustain, no release). `loop_start` and `loop_end` (seconds into the clip, with `loop = true`) loop only that part: a held organ note, an engine's steady hum after its start-up. `reverb` (0 to 1) sends that much of it into the room set by `reverb()`. Returns a handle |
+| `sfx(id [, gain [, {pitch, loop, pan, reverb, attack, decay, sustain, release, loop_start, loop_end, delay}]])` | plays `audio/<id>.wav` (or a sound made with `sound`) once, or looping; `pitch` 1 as recorded, 2 an octave up, 0.5 down; `pan` -1 (left ear) to 1 (right), 0 the middle: the far ear fades to nothing as it goes, the near one stays full, so an unpanned sound is as it always was. Platforms with one speaker hear it at half. `attack`, `decay` (seconds), `sustain` (0 to 1, the level it settles at) and `release` (seconds) shape its volume like a PlayStation voice: it climbs, falls to the sustain level, and when you `sfx_stop` it, lets go over the release instead of cutting (any of the four makes an envelope; the others default to no attack, no decay, full sustain, no release). `loop_start` and `loop_end` (seconds into the clip, with `loop = true`) loop only that part: a held organ note, an engine's steady hum after its start-up. `reverb` (0 to 1) sends that much of it into the room set by `reverb()`. Returns a handle; `delay` (seconds, up to 10) starts it that long after the next block of sound, to the sample, so hits asked for in one frame keep their exact spacing |
 | `audio/<id>.vag` | a sound kept as the PlayStation's ADPCM (4 bits a sample, a third of PCM16 in memory, decoded as it plays): `uv run tools/wav2vag.py in.wav GAME ID [--loop START END]` makes it from any WAV; `sfx("ID")` plays it like a WAV (a `.vag` of the same name wins), and with `loop = true` loops the part the file was given (or `loop_start`/`loop_end`, rounded down to 28 samples). Not for studio tracks, which take WAVs |
 | `sfx_set(handle, {gain, pitch, pan})` | changes a sound while it plays: an engine that follows the speed, a theremin, a car crossing the screen |
 | `sfx_stop(handle)`, `sfx_on(handle)` | stops it (a sound with a `release` fades over it); is it still playing? |
+| `instrument{sample, root, loop, adsr, gain, reverb}` | a recording that plays any note (below). Returns the instrument |
+| `i:play(note [, velocity [, {reverb, delay}]])` | plays a note (a name like `"E4"` or a frequency in Hz) at the pitch it needs; `velocity` 0 to 1. Returns a handle, which `sfx_set`, `sfx_stop` and `sfx_on` take as well |
+| `i:release(handle)` | lets the note go: its envelope's release, then it ends. An instrument with no envelope stops |
 | `reverb(room [, wet [, {music, ambient}]])` | a room of the PlayStation's for the game's sounds, the one its sound chip's own reverb is: `"room"`, `"studio_small"`, `"studio_medium"`, `"studio_large"`, `"hall"`, `"half_echo"`, `"space_echo"`, `"delay"`. `wet` (0 to 1, default 0.5) is how much of the room comes back; a sound goes into it with `sfx`'s `reverb`, the music and the ambience with `music` and `ambient` (default 0). `reverb()` lets it ring out and goes. Each room keeps a few to 60 KB of memory while it is on |
 | `volume(v)` | everything the game sounds (effects, music, tones, the studio), from 0 (silent) to 1; each game starts at 1 |
 | `sound(id, recipe [, seed])` | makes a sound from a recipe: `"coin"`, `"laser"`, `"explosion"`, `"powerup"`, `"hit"`, `"jump"`, `"blip"` or `"random"`; each seed gives another. Returns its numbers |
@@ -440,6 +444,7 @@ order, so consoles that get the same messages can compute the same thing.
 | `music_time()` | seconds into the song `music()` started, as the player hears it now, going on across its loops; `nil` when none plays. For notes on the beat |
 | `tone(voice, pitch [, options])` | plays a synthesised note on voice 0-3, replacing what it played |
 | `tone(voice)` | lets the voice's note go (it fades with its release) |
+| `tone_set(voice, {vol, bend})` | changes a note while it sounds: its volume (0 to 1), its bend in semitones (a slide up to the next note, a dive-bomb) |
 | `note(name)` | the frequency of a note: `note("A4")` is 440, also `"C#3"`, `"Eb5"` |
 
 Recordings are not the only way: like the GBA's sound channels, four voices make notes from waveforms, for music
@@ -447,8 +452,11 @@ and effects written in Lua. `pitch` is a frequency in Hz or a note name. The opt
 
 | Option | Default | |
 |---|---|---|
-| `wave` | `"square"` | `"square"`, `"triangle"`, `"saw"`, `"sine"` or `"noise"` |
+| `wave` | `"square"` | `"square"`, `"triangle"`, `"saw"`, `"sine"` or `"noise"`; or a table of 32 numbers from 0 to 15, one period of any shape you draw (the GBA's wave channel) |
 | `vol` | 0.5 | 0 to 1 |
+| `lfsr` | 15 | noise only: `7` makes the shorter, pitched noise (metallic hiss, a hi-hat, a tone-like buzz) |
+| `vibrato` | none | `{depth = 25, speed = 5.5, delay = 0}`: the pitch wobbles that many cents each way, that many times a second, after `delay` seconds |
+| `bend` | 0 | semitones above the note (`tone_set` moves it while the note sounds) |
 | `duty` | 0.5 | square only: the high part of each period (0.125 and 0.25 sound thinner) |
 | `attack` | 0.005 | seconds to reach full volume |
 | `decay` | 0.25 | seconds (time constant) to fall towards `sustain` |
@@ -461,6 +469,8 @@ and effects written in Lua. `pitch` is a frequency in Hz or a note name. The opt
 tone(0, "C5", {wave = "square", duty = 0.25, decay = 0.08})           -- a blip
 tone(1, 900, {wave = "noise", decay = 0.2})                            -- a hit
 tone(2, 1200, {wave = "saw", sustain = 1, len = 0.15, slide = -6000})  -- a laser
+tone(1, "C2", {wave = {8,10,12,14,15,14,12,10,8,6,4,2,0,2,4,6,8,10,12,14,15,14,12,10,8,6,4,2,0,2,4,6}, sustain = 1})  -- a bass
+tone(0, "A4", {sustain = 1, vibrato = {depth = 20, speed = 6, delay = 0.2}})                                    -- a held note that sings
 ```
 
 Music made in a tracker (MilkyTracker, OpenMPT, ProTracker...) saved as a ProTracker `.mod`, up to 32 channels and
@@ -512,6 +522,28 @@ sound("HUM", {wave = "sine", freq = 220, sustain = 1, decay = 0})   -- whole cyc
 local h = sfx("HUM", 0.5, {loop = true})
 sfx_set(h, {pitch = 1 + speed / 10})      -- in _update
 ```
+
+### Instruments
+
+An instrument turns one recording into any note, as the GBA's sound driver did with its small samples: it is played faster or
+slower to reach the note, it loops a part of itself while the key is held, and an envelope shapes the start and the end.
+
+```lua
+sound("PAD", {wave = "saw", freq = 220, sustain = 1, decay = 0})
+local pad = instrument{
+  sample = "PAD", root = "A3",           -- the note the recording is at ("C4" if left out)
+  loop = {from = 0.1, to = 0.8},         -- seconds: plays on to 0.8, then round from 0.1 while held; true: the whole sound
+  adsr = {a = 0.02, d = 0.15, s = 0.6, r = 0.4},   -- seconds, and the sustain's level (0 to 1)
+  gain = 0.8, reverb = 0.3,               -- reverb: how much goes through the game's reverb(room)
+}
+local h = pad:play("E4", 0.9)            -- in _update, when the key goes down
+pad:release(h)                           -- when it comes up: it fades over `r`, then ends
+```
+
+Without `adsr` the envelope is a short one (3 ms in, 80 ms out) so a note never clicks; `adsr = false` plays the recording
+as it is. It is the engine's `sfx` voice with an envelope (the attack climbs evenly; the decay and the release fall by a constant
+factor a sample, as the PlayStation's sound chip's do) and a loop region, so what `sfx` says about voices holds: a new sound takes
+the one nearest its end when they are all busy. Times are turned into whole samples once, when a note is played.
 
 A sound that stops dead (`decay = 0`) is meant to loop; one that decays fades its last moment so it never clicks.
 Making a sound takes a moment (a long one, some hundredths of a second on the console): make them in `_init` or
@@ -757,11 +789,11 @@ A game downloaded from the community cannot harm the console:
 
 - Lua 5.4 with 32-bit integers and floats on every platform (the same results everywhere).
 - 4 MB of memory for the script (`"lua_memory_kb"` in game.json, up to 6144); past it, "not enough memory".
-- A call (`_init`, `_update`, `_draw`) that runs 50 million VM instructions without returning is stopped: an
+- A call (`_init`, `_update`, `_draw`) that runs 20 million VM instructions without returning is stopped: an
   endless loop becomes an error, not a frozen console.
 - No `io`, `os`, `debug` or `package`; `load` takes source text only, never bytecode; `require` only reads `.lua`
   files inside the game folder.
-- `math.random` starts from the same seed every run, so a game and its tests repeat exactly.
+- `math.random` starts from the same seed every run, so a game and its tests repeat exactly; `math.randomseed(n)` sets another.
 
 ## Testing
 

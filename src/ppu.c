@@ -40,7 +40,8 @@ typedef struct {
 static lines LB[2] = {{.fade.ey = -1}, {.fade.ey = -1}}; /* one per core */
 
 static struct {
-    uint8_t order[4][PPU_OBJS], count[4]; /* the frame's visible sprites by priority, back to front */
+    uint32_t rows[PPU_H][PPU_OBJS / 32]; /* per line, a bit per sprite whose box crosses it (sprite i: word i / 32) */
+    uint32_t pri[4][PPU_OBJS / 32];      /* per priority, a bit per drawn sprite; high bits draw first (127 under 0) */
     bool any_objwin;
     bool track; /* keep the pixel under the top one (an alpha blend needs it) */
 } F;
@@ -92,6 +93,14 @@ static inline int wrapi(int v, int m) { /* v mod m, never negative */
 ALWAYS void put(lines *L, int x, uint32_t px, int bit, bool win, bool track) {
     if (win && !(L->show[x] & bit)) return;
     if (track) L->under[x] = L->top[x];
+    L->top[x] = px;
+}
+
+/* A sprite's pixel: as put, but over another sprite the pixel under stays the one under that lower sprite: on the GBA only
+ * the top sprite pixel exists, so a semi-transparent one blends with the background, never with a sprite below it. */
+ALWAYS void put_obj(lines *L, int x, uint32_t px, bool win, bool track) {
+    if (win && !(L->show[x] & PPU_OBJ)) return;
+    if (track && ((L->top[x] >> 16) & 7) != ID_OBJ) L->under[x] = L->top[x];
     L->top[x] = px;
 }
 
@@ -333,12 +342,12 @@ ALWAYS void obj_line_x(lines *L, const ppu_obj *o, int y, bool win, bool track) 
         if (o->hflip)
             for (int x = xa; x < xb; x++) {
                 uint8_t i = src[o->w - 1 - (x - o->x)];
-                if (i) put(L, x, pal[(i + bank) & 255] | id, PPU_OBJ, win, track);
+                if (i) put_obj(L, x, pal[(i + bank) & 255] | id, win, track);
             }
         else
             for (int x = xa; x < xb; x++) {
                 uint8_t i = src[x - o->x];
-                if (i) put(L, x, pal[(i + bank) & 255] | id, PPU_OBJ, win, track);
+                if (i) put_obj(L, x, pal[(i + bank) & 255] | id, win, track);
             }
         return;
     }
@@ -347,7 +356,7 @@ ALWAYS void obj_line_x(lines *L, const ppu_obj *o, int y, bool win, bool track) 
         int x0 = x - x % mw, x1 = x0 + mw < xb ? x0 + mw : xb;
         uint16_t c;
         if (obj_pixel(o, x0, sy, &c))
-            for (; x < x1; x++) put(L, x, c | id, PPU_OBJ, win, track);
+            for (; x < x1; x++) put_obj(L, x, c | id, win, track);
         x = x1;
     }
 }
@@ -377,7 +386,12 @@ ALWAYS void layers_x(lines *L, int p, int y, bool win, bool track) {
         else if (b->mode == BG_AFFINE) bg_affine_x(L, b, n, y, win, track);
         else if (b->mode == BG_BITMAP) bg_bitmap_x(L, b, n, y, win, track);
     }
-    for (int k = 0; k < F.count[p]; k++) obj_line_x(L, &PPU.obj[F.order[p][k]], y, win, track);
+    for (int w = PPU_OBJS / 32 - 1; w >= 0; w--)
+        for (uint32_t m = F.rows[y][w] & F.pri[p][w]; m;) {
+            int b = 31 - __builtin_clz(m); /* highest first: back to front */
+            m &= ~(1u << b);
+            obj_line_x(L, &PPU.obj[w * 32 + b], y, win, track);
+        }
 }
 
 static void layers_plain(lines *L, int p, int y) { layers_x(L, p, y, false, false); }
@@ -407,19 +421,24 @@ static void fade_tables(fade_lut *f, int ey, bool up) {
 static inline uint16_t fade(const fade_lut *f, uint16_t c) { return f->r[c >> 11] | f->g[(c >> 5) & 63] | f->b[c & 31]; }
 
 static void prepare(void) {
-    memset(F.count, 0, sizeof F.count);
+    memset(F.rows, 0, sizeof F.rows);
+    memset(F.pri, 0, sizeof F.pri);
     F.any_objwin = false;
     bool blend_obj = false;
-    for (int i = PPU_OBJS - 1; i >= 0 && (PPU.layers & PPU_OBJ); i--) { /* back to front: 127 under 0 */
+    for (int i = 0; i < PPU_OBJS && (PPU.layers & PPU_OBJ); i++) {
         const ppu_obj *o = &PPU.obj[i];
         if (!o->on || !o->w || !o->h || (!o->idx && !o->rgb)) continue;
         if (o->mode == OBJ_WINDOW) {
             F.any_objwin = true;
             continue;
         }
+        int bx, by, bw, bh;
+        obj_box(o, &bx, &by, &bw, &bh);
+        int y0 = by < 0 ? 0 : by, y1 = by + bh > PPU_H ? PPU_H : by + bh;
+        if (bx >= PPU_W || bx + bw <= 0 || y0 >= y1) continue; /* off screen: no line would draw it */
         blend_obj |= o->mode == OBJ_BLEND;
-        int p = o->prio & 3;
-        F.order[p][F.count[p]++] = (uint8_t)i;
+        F.pri[o->prio & 3][i >> 5] |= 1u << (i & 31);
+        for (int y = y0; y < y1; y++) F.rows[y][i >> 5] |= 1u << (i & 31);
     }
     F.track = PPU.fx.mode == FX_ALPHA || blend_obj;
 }
@@ -451,7 +470,7 @@ static void line(lines *L, int y, uint16_t *out) {
         for (int x = 0; x < PPU_W; x++) L->under[x] = back;
 
     L->drew = PPU_BACK, L->drew_blend = false;
-    L->win = PPU.win.on[0] || PPU.win.on[1] || (PPU.win.obj_on && F.any_objwin);
+    L->win = PPU.win.on[0] || PPU.win.on[1] || PPU.win.obj_on;
     if (L->win) windows(L, y);
     void (*layers)(lines *, int, int) =
         L->win ? (F.track ? layers_win_track : layers_win) : (F.track ? layers_track : layers_plain);
@@ -478,16 +497,27 @@ static void line(lines *L, int y, uint16_t *out) {
             return;
         }
     }
-    for (int x = 0; x < PPU_W; x++) {
+    if (!win) {
+        for (int x = 0; x < PPU_W; x++) {
+            uint32_t top = L->top[x];
+            uint16_t c = (uint16_t)top;
+            int t = (int)(top >> 16), tb = 1 << (t & 7), ub = 1 << ((L->under[x] >> 16) & 7);
+            if ((t & ID_BLEND) && (second & ub)) c = blend(c, (uint16_t)L->under[x], ea, eb);
+            else if (first & tb) {
+                if (mode == FX_ALPHA) {
+                    if (second & ub) c = blend(c, (uint16_t)L->under[x], ea, eb);
+                } else if (mode == FX_LIGHTEN || mode == FX_DARKEN) c = fade(&L->fade, c);
+            }
+            out[x] = c;
+        }
+        return;
+    }
+    for (int x = 0; x < PPU_W; x++) { /* the same, except that a window can bar the effects at x */
         uint32_t top = L->top[x];
         uint16_t c = (uint16_t)top;
-        if (win && !(L->show[x] & PPU_FX)) {
-            out[x] = c;
-            continue;
-        }
         int t = (int)(top >> 16), tb = 1 << (t & 7), ub = 1 << ((L->under[x] >> 16) & 7);
-        if ((t & ID_BLEND) && (second & ub)) c = blend(c, (uint16_t)L->under[x], ea, eb);
-        else if (first & tb) {
+        if ((t & ID_BLEND) && (second & ub)) c = blend(c, (uint16_t)L->under[x], ea, eb); /* a blending sprite has a second target: the window's bit does not matter */
+        else if ((L->show[x] & PPU_FX) && (first & tb)) {
             if (mode == FX_ALPHA) {
                 if (second & ub) c = blend(c, (uint16_t)L->under[x], ea, eb);
             } else if (mode == FX_LIGHTEN || mode == FX_DARKEN) c = fade(&L->fade, c);

@@ -4,5 +4,5 @@
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",
-  "description": "Sonidos hechos con números (una fábrica de monedas, láseres y explosiones), un theremin con el dedo, un motor que sube con la velocidad y música en capas que se encienden y se apagan."
+  "description": "Sonidos hechos con números (una fábrica de monedas, láseres y explosiones), un theremin con el dedo, un motor que sube con la velocidad, música en capas que se encienden y se apagan y un teclado con una muestra tocada como cualquier nota."
 }

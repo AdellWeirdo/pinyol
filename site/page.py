@@ -289,7 +289,7 @@ def library(pages: str = "") -> str:
     return f"""<section id="biblioteca" class="library-sec" aria-labelledby="biblioteca-t"><div class="wrap">
 <h2 id="biblioteca-t" class="sr">Los juegos</h2>
 <div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="{HOME}crear/#subir">Cómo se sube</a></div>
-<div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="{HOME}juega/" data-pages="{pages}">
+<div class="library" id="library" data-src="{RAW}/library/library.json" data-base="{RAW}/library/" data-repo="{REPO}" data-play="{HOME}juega/" data-pages="{pages}" data-stats="{STATS}">
 <p class="lib-state">La Biblioteca necesita JavaScript para cargarse. Sus juegos también están en <a href="{REPO}/tree/main/library">GitHub</a>.</p></div>
 </div></section>"""
 
@@ -302,6 +302,7 @@ def share() -> str:
 <div class="actions"><a class="btn btn-primary" href="{REPO}/issues/new?template=biblioteca.yml">Sube tu juego</a><a class="btn btn-ghost" href="{HOME}biblioteca/">La Biblioteca</a></div>
 <figure class="tutorial"><video src="video/subir.mp4" poster="video/subir.jpg" width="960" height="600" controls preload="none" playsinline aria-describedby="subir-cap"></video>
 <figcaption id="subir-cap">Tutorial, de tu juego a la Biblioteca: descarga el .zip desde el editor, rellena el formulario y adjúntalo. Un robot lo comprueba y, cuando está aprobado, ya se puede jugar aquí. Las esperas van aceleradas.</figcaption></figure>
+<p class="sub">¿Quieres subir una versión nueva de un juego que ya está en la Biblioteca? Envía el formulario otra vez, desde la misma cuenta de GitHub y con el mismo identificador (el id de tu game.json): al aprobarlo sustituye al anterior, y quien ya jugaba conserva sus partidas guardadas. La ficha del juego puede tardar un poco en mostrar los cambios.</p>
 <p class="sub">¿Algo tuyo publicado aquí sin tu permiso, o algo que no debería estar? <a href="{REPO}/issues/new?title=Retirar%3A%20">Pide que lo retiremos</a>.</p>
 </div></section>"""
 
@@ -494,8 +495,20 @@ def thousands(v: int) -> str:
 
 
 def footer() -> str:
-    return f"""<footer><div class="wrap"><img src="img/logo.png" alt="pinyol" width="64" height="42" loading="lazy">
-<span>Código MIT · arte y sonido CC0</span><span>Game Boy, PICO-8, Neo Geo y las demás consolas que se nombran son marcas de sus dueños; pinyol y Cirera no tienen relación con ellos.</span><span>Apple, Mac y macOS son marcas de Apple; Windows, de Microsoft, y Linux, de Linus Torvalds.</span><a href="{REPO}">GitHub</a><a href="{REPO}/blob/main/docs/measurements.md">Mediciones</a><span>Las visitas, las partidas y el tiempo jugado se cuentan con <a href="https://www.goatcounter.com">GoatCounter</a>, sin cookies ni datos personales.</span><span>Los comentarios y los votos de cada juego se guardan en GitHub y se cargan con giscus solo si los pides.</span><span>La Biblioteca, el ranking y las cifras de cada juego se leen de GitHub al abrir la página.</span></div></footer>"""
+    """The logo and the licence, two short columns of links, and the small print folded away (it is all still there)."""
+    tabs = "".join(f'<li><a href="{HOME}{t}">{name}</a></li>' for t, name in TABS)
+    return f"""<footer><div class="wrap foot">
+<div class="foot-brand"><img src="img/logo.png" alt="pinyol" width="64" height="42" loading="lazy"><p>Código MIT · arte y sonido CC0</p></div>
+<div class="foot-col"><p class="foot-h">Explora</p><ul>{tabs}</ul></div>
+<div class="foot-col"><p class="foot-h">El proyecto</p><ul><li><a href="{REPO}">GitHub</a></li><li><a href="{REPO}/blob/main/docs/measurements.md">Mediciones</a></li></ul></div>
+<details class="foot-fine"><summary>Marcas, privacidad y datos</summary><div>
+<p>Game Boy, PICO-8, Neo Geo y las demás consolas que se nombran son marcas de sus dueños; pinyol y Cirera no tienen relación con ellos.</p>
+<p>Apple, Mac y macOS son marcas de Apple; Windows, de Microsoft, y Linux, de Linus Torvalds.</p>
+<p>Las visitas, las partidas y el tiempo jugado se cuentan con <a href="https://www.goatcounter.com">GoatCounter</a>, sin cookies ni datos personales.</p>
+<p>Los comentarios y los votos de cada juego se guardan en GitHub y se cargan con giscus solo si los pides.</p>
+<p>La Biblioteca, el ranking y las cifras de cada juego se leen de GitHub al abrir la página.</p>
+</div></details>
+</div></footer>"""
 
 
 NEW_TAB = " (se abre en una pestaña nueva)"

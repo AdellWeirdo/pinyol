@@ -14,9 +14,10 @@ from pathlib import Path
 import i18n
 import page
 
-# giscus: a Discussion per game (its id), in the category "Juegos". category_id stays empty until the category exists
+# giscus: a Discussion per game (its id), in the category "Juegos" (an Announcement category: only giscus and the
+# maintainers open Discussions there). With category_id empty the page says comments are coming and loads nothing.
 # (docs/comments.md): until then the pages say the comments are on their way.
-GISCUS = {"repo": "ipaud/pinyol", "repo_id": "R_kgDOVJaigg", "category": "Juegos", "category_id": ""}
+GISCUS = {"repo": "ipaud/pinyol", "repo_id": "R_kgDOVJaigg", "category": "Juegos", "category_id": "DIC_kwDOVJaigs4DIxP0"}
 HOME = page.HOME  # the language's home page, from a game's page (../../ once published)
 # A game whose game.json describes it in another language, as the site says it in Spanish (the tables translate it)
 SAID = {"control": "Realizas el informativo de la noche de 1994 desde la sala de control: cortas cámaras, lanzas el "

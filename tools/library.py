@@ -14,6 +14,10 @@ keeps only what the console reads, validates the game and plays it for ten secon
 DIR/result.json ({"ok", "id", "title", "errors", ...}), DIR/game/ (the clean folder) and DIR/cover.png.
 publish (trusted, runs no game code): packs DIR/game into library/<id>/game.zip, copies the cover, adds the entry to
 library/library.json. A game id belongs to whoever published it first; they can send new versions.
+update (the maintainer, from a .zip): a new version of a game already in the Library, checked and published in its
+author's name, keeping the title, description and licence its form gave it.
+
+    python3 tools/library.py update GAME.zip --headless build/pinyol_headless
 """
 from __future__ import annotations
 
@@ -172,6 +176,11 @@ def check_issue(out: Path, headless: Path) -> dict:
     return check(zip_path, out, headless, fields)
 
 
+def index() -> list[dict]:
+    path = LIBRARY / "library.json"
+    return json.loads(path.read_text()) if path.exists() else []
+
+
 def publish(checked: Path, issue: int, author: str) -> str:
     result = json.loads((checked / "result.json").read_text())
     if not result.get("ok"):
@@ -180,8 +189,8 @@ def publish(checked: Path, issue: int, author: str) -> str:
         sys.exit(f"not published: odd GitHub login {author!r}")
     gid = result["id"]
     index_path = LIBRARY / "library.json"
-    index = json.loads(index_path.read_text()) if index_path.exists() else []
-    old = next((e for e in index if e["id"] == gid), None)
+    entries = index()
+    old = next((e for e in entries if e["id"] == gid), None)
     if old and old["author"].lower() != author.lower():
         sys.exit(f"not published: the id {gid!r} is {old['author']}'s; change the id in game.json")
     dest = LIBRARY / gid
@@ -195,16 +204,34 @@ def publish(checked: Path, issue: int, author: str) -> str:
              "description": result.get("form_description") or result.get("description", ""),
              "author": author, "license": result.get("license", ""), "issue": issue, "date": date.today().isoformat(),
              "cover": (dest / "cover.png").exists()}
-    index = [entry] + [e for e in index if e["id"] != gid]
-    index_path.write_text(json.dumps(index, ensure_ascii=False, indent=1) + "\n")
+    entries = [entry] + [e for e in entries if e["id"] != gid]
+    index_path.write_text(json.dumps(entries, ensure_ascii=False, indent=1) + "\n")
     return gid
+
+
+def update(zip_path: Path, headless: Path, issue: int | None = None) -> str:
+    """A new version of a game that is already in the Library. Its author, title, description and licence stay."""
+    with tempfile.TemporaryDirectory() as t:
+        checked = Path(t)
+        result = check(zip_path, checked, headless)
+        if not result.get("ok"):
+            sys.exit("not updated: " + "; ".join(result.get("errors", [])))
+        old = next((e for e in index() if e["id"] == result["id"]), None)
+        if not old:
+            sys.exit(f"not updated: {result['id']!r} is not in the Library; a new game goes through the form")
+        result.update(form_title=old["title"], form_description=old["description"], license=old["license"])
+        (checked / "result.json").write_text(json.dumps(result, ensure_ascii=False, indent=1))
+        return publish(checked, old["issue"] if issue is None else issue, old["author"])
 
 
 def comment(checked: Path) -> str:
     r = json.loads((checked / "result.json").read_text())
     if r.get("ok"):
+        known = any(e["id"] == r["id"] for e in index())  # an id already in the Library: this is a new version
         return (f"**{r.get('form_title') or r.get('title')}** (`{r['id']}`) se abre y se juega diez segundos sin errores. "
-                "Ahora lo revisamos: cuando lleve la etiqueta «aprobado» se publica en la Biblioteca.")
+                + ("Ya está en la Biblioteca: cuando lleve la etiqueta «aprobado» sustituirá a la versión anterior "
+                   "(si es de otra cuenta, no se publicará: cambia el id en game.json)."
+                   if known else "Ahora lo revisamos: cuando lleve la etiqueta «aprobado» se publica en la Biblioteca."))
     errors = "\n".join(f"- {e}" for e in r.get("errors", []))
     return ("El robot no ha podido aceptar el juego todavía:\n\n" + errors +
             "\n\nCorrígelo y edita este issue (por ejemplo, arrastra el .zip nuevo): se vuelve a comprobar solo.")
@@ -220,6 +247,10 @@ def main() -> None:
         p.add_argument("--out", type=Path, required=True)
         p.add_argument("--headless", type=Path, default=ROOT / "build" / "pinyol_headless")
     sub.add_parser("comment").add_argument("checked", type=Path)
+    p = sub.add_parser("update")
+    p.add_argument("zip", type=Path)
+    p.add_argument("--headless", type=Path, default=ROOT / "build" / "pinyol_headless")
+    p.add_argument("--issue", type=int)
     p = sub.add_parser("publish")
     p.add_argument("checked", type=Path)
     p.add_argument("--issue", type=int, required=True)
@@ -230,6 +261,11 @@ def main() -> None:
         return
     if a.cmd == "publish":
         print(publish(a.checked, a.issue, a.author))
+        return
+    if a.cmd == "update":
+        print(update(a.zip, a.headless, a.issue))
+        print("Next: git add library && git commit && git push; then rebuild the site (uv run site/build.py) and publish "
+              "gh-pages, so the game's own page shows the changes.", file=sys.stderr)
         return
     r = check_issue(a.out, a.headless) if a.cmd == "check-issue" else check(a.zip, a.out, a.headless)
     print(json.dumps(r, ensure_ascii=False, indent=1))

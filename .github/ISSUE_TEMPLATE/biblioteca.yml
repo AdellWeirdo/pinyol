@@ -9,6 +9,7 @@ body:
         Un robot comprobará tu juego (lo abre, lo juega diez segundos y saca su portada) y te contestará aquí. Si todo va bien, lo revisamos y aparece en https://pinyol.ipaud.dev/#biblioteca.
         El .zip es el de `python3 tools/pack_game.py games/<id>`, el del editor («Guardar archivo») o tu carpeta del juego comprimida. Máximo 48 MB (96 MB descomprimido, 4000 archivos).
         A la consola, un juego de más de 32 MB descomprimido se copia por la tarjeta SD: el cable llega a 32 MB.
+        ¿Una versión nueva de un juego que ya está en la Biblioteca? Envía este formulario otra vez, con el mismo id en `game.json` y desde la misma cuenta de GitHub: al aprobarlo sustituye al anterior.
         ¿Ves en la Biblioteca algo tuyo publicado sin tu permiso, o algo que no debería estar? [Abre un issue](https://github.com/ipaud/pinyol/issues/new?title=Retirar%3A%20) contándolo y lo retiramos.
   - type: input
     id: titulo

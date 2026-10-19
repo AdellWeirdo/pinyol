@@ -1,0 +1,6 @@
+# line_fx: the fade's amount per line (CMakeLists.txt's linefx_crc compares the frames); bad arguments are errors
+tick 100
+expect_lua n >= 100
+expect_ok
+expect_lua_error line_fx(160, 1)
+expect_lua_error line_fx(-1, 1)

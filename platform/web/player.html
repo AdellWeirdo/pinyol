@@ -4,6 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>pinyol player</title>
+<script>
+/* A phone or tablet (or ?touch=1, to try it on a computer): html.touch. Unless it is the editor's player (?embed=1),
+   html.pad-mode too: the whole console fits the screen, with its buttons where they are on the real one. */
+(function () {
+  var q = location.search, d = document.documentElement;
+  if (!matchMedia('(pointer: coarse)').matches && !/[?&]touch=1/.test(q)) return;
+  d.classList.add('touch');
+  if (!/[?&]embed=1/.test(q)) d.classList.add('pad-mode');
+})();
+</script>
 <style>
   :root {
     /* pinyol's colours (its site and brand manual): ink, paper, cherry */
@@ -127,6 +137,78 @@
 @keyframes pad-hop{40%{transform:translateY(-8px) scale(1.06)}}
 @keyframes pad-in{from{opacity:0;transform:translateY(8px) scale(.97)}}
 @media (prefers-reduced-motion:reduce){#pad-ask,#pad-ask *{animation:none!important;transition:none!important}.pad-art .wave{opacity:.3}}
+
+/* A big loading screen over the game's screen: what is happening, how far along, and a bar */
+.loading { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; justify-items: center; gap: 10px;
+           padding: 16px; text-align: center; background: radial-gradient(circle at 50% 40%, #1c2350, #0b0e1f 70%); }
+.loading[hidden] { display: none; }
+.load-title { margin: 0; font-size: clamp(1.05rem, .8rem + 1.6vw, 1.6rem); font-weight: 650; }
+.load-pct { margin: 0; min-height: 1em; font-size: clamp(2.6rem, 1.4rem + 6vw, 4.5rem); font-weight: 700; line-height: 1;
+            font-variant-numeric: tabular-nums; }
+.load-bar { width: min(80%, 420px); height: 12px; border-radius: 999px; background: var(--panel); overflow: hidden;
+            box-shadow: inset 0 0 0 1px var(--line); }
+.load-bar i { display: block; height: 100%; width: var(--p, 0%); border-radius: inherit; background: var(--accent);
+              transition: width .15s linear; }
+.load-bar.ind i { width: 38%; transition: none; animation: load-slide 1.1s ease-in-out infinite; }
+@keyframes load-slide { from { translate: -100% 0; } to { translate: 265% 0; } }
+@media (prefers-reduced-motion: reduce) { .load-bar.ind i { animation: none; width: 100%; opacity: .5; } }
+#gate-title.err { color: #f08a7a; }
+
+/* ── pad-mode, a phone or tablet: the whole console in one screen, with no scrolling. The Cirera's cream body, its
+   screen in a black bezel, and the buttons where they are on the real one: the green cross on the left, the three
+   terracotta round ones on the right (C on top, B below it, A to the right), MENU and START slanted under them. ── */
+html.pad-mode { overflow: hidden; }
+html.pad-mode body { padding: 6px; }
+.pad-mode main { max-width: none; margin: 0; padding: 10px; gap: 0; grid-template-rows: auto auto auto auto;
+  background: linear-gradient(#f3eee2, #e6dfcf 55%, #d3c9b4); border-radius: 30px;
+  box-shadow: inset 0 1px 0 #fff, 0 20px 40px -20px #000; }
+.pad-mode header { min-height: 0; justify-content: flex-end; }
+.pad-mode .brand, .pad-mode .by, .pad-mode h1, .pad-mode .keys { display: none; }
+.pad-mode .tools { margin: 0 4px 2px; }
+.pad-mode .tools button { background: #d8d0bd; color: #3b372e; box-shadow: inset 0 0 0 1px #b8ae96; }
+.pad-mode .tools button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+.pad-mode .screen { margin: 8px; width: calc(100% - 16px); border-radius: 3px; box-shadow: 0 0 0 8px #232429; }
+.pad-mode #status { margin-top: 4px; min-height: 0; text-align: center; font-size: .85rem; color: #7a2a1a; }
+.pad-mode #status:empty { display: none; }
+/* the pad: about as tall as it is wide, or less if the screen is short (the screen is 2/3 of the width, minus the margins) */
+.pad-mode .pad { display: block; position: relative; container-type: size; min-height: 200px;
+  height: min(86vw, calc(100dvh - (100vw - 64px) * .6667 - 96px)); }
+.pad-mode .pad button { border: 0; box-shadow: none; }
+.pad-mode .pad button.on { filter: brightness(.78); transform: translateY(1px) scale(.96); }
+.pad-mode .dpad { position: absolute; left: 7cqw; top: 50%; translate: 0 -50%; width: min(42cqw, 72cqh); aspect-ratio: 1;
+  grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); filter: drop-shadow(0 3px 2px rgb(60 69 38 / .5)); }
+.pad-mode .dpad::before { content: ""; grid-area: 2 / 2; background: #6c7a47; }
+.pad-mode .pad .dpad button { background: radial-gradient(circle at 38% 30%, #7c8c55, #4f5c31); color: rgb(0 0 0 / .32); font-size: .9rem; }
+.pad-mode .dpad .u { border-radius: 32% 32% 4% 4%; } .pad-mode .dpad .d { border-radius: 4% 4% 32% 32%; }
+.pad-mode .dpad .l { border-radius: 32% 4% 4% 32%; } .pad-mode .dpad .r { border-radius: 4% 32% 32% 4%; }
+.pad-mode .abc { position: absolute; right: 7cqw; top: 44%; translate: 0 -50%; display: block; width: min(37cqw, 62cqh);
+  aspect-ratio: 24.4 / 26.3; }
+.pad-mode .pad .abc button { position: absolute; width: 45%; aspect-ratio: 1; border-radius: 50%; font-size: 1.1rem; color: rgb(0 0 0 / .35);
+  background: radial-gradient(circle at 35% 30%, #e08a62, #b0532f); filter: drop-shadow(0 3px 0 #7d3a1f); }
+.pad-mode .abc .c { left: 13%; top: 0; } .pad-mode .abc .b { left: 0; top: 58%; } .pad-mode .abc .a { left: 55%; top: 37.7%; }
+.pad-mode .pad .abc button.on { filter: brightness(.78) drop-shadow(0 1px 0 #7d3a1f); }
+.pad-mode .mid { position: absolute; right: 5cqw; bottom: 7cqh; display: flex; gap: min(7cqw, 10cqh); }
+.pad-mode .mid button { position: relative; width: min(16cqw, 26cqh); height: min(8cqw, 13cqh); border-radius: 999px; rotate: -22deg;
+  background: linear-gradient(#d3d6dc, #9da1a9); box-shadow: 0 2px 0 #777b83; }
+.pad-mode .pad .mid button { box-shadow: 0 2px 0 #777b83; }
+.pad-mode .mid button::after { content: ""; position: absolute; inset: -12px; } /* a bigger target than the picture */
+.pad-mode .mid b { display: none; }
+.pad-mode .mid i { position: absolute; top: calc(100% + 5px); left: 50%; translate: -50% 0; rotate: 22deg; font: 700 .68rem/1 system-ui, sans-serif;
+  color: #8f8574; pointer-events: none; }
+@media (orientation: landscape) { /* the real console's layout: cross | screen | buttons */
+  .pad-mode main { height: calc(100dvh - 12px); grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; }
+  .pad-mode header, .pad-mode #status { grid-column: 1 / -1; }
+  /* as big as the height allows, but always leaving 130 px on each side for the buttons */
+  .pad-mode .console { grid-column: 2; grid-row: 2; align-self: center; width: min(calc((100dvh - 96px) * 1.5), calc(100vw - 300px)); }
+  .pad-mode .pad { display: contents; min-height: 0; height: auto; }
+  .pad-mode .dpad, .pad-mode .abc, .pad-mode .mid { position: relative; inset: auto; translate: none; } /* (relative: the abc buttons sit inside it) */
+  .pad-mode .dpad { grid-column: 1; grid-row: 2; align-self: center; justify-self: center; width: min(100% - 16px, 44dvh); }
+  .pad-mode .abc { grid-column: 3; grid-row: 2; align-self: start; justify-self: center; width: min(100% - 24px, 40dvh); margin-top: 6dvh; }
+  .pad-mode .mid { grid-column: 3; grid-row: 2; align-self: end; justify-self: center; width: min(100% - 24px, 40dvh); justify-content: space-between;
+                   gap: 0; margin-bottom: 4dvh; }
+  .pad-mode .mid button { flex: 0 0 42%; width: auto; height: auto; aspect-ratio: 2 / 1; }
+}
+@media (prefers-reduced-motion: reduce) { .pad-mode .pad button { transition: none; } }
 </style>
 </head>
 <body>
@@ -186,6 +268,11 @@
       <label class="pick" id="pick">Abrir un juego (.zip)<input type="file" id="file" accept=".zip,application/zip"></label>
       <p class="hint" id="hint">o arrástralo aquí</p>
     </div>
+    <div class="loading" id="loading" hidden role="status" aria-live="polite">
+      <p class="load-title" id="load-title"></p>
+      <p class="load-pct" id="load-pct"></p>
+      <div class="load-bar" id="load-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i id="load-fill"></i></div>
+    </div>
   </div>
     <span id="led" aria-hidden="true" hidden></span>
   </div>
@@ -209,7 +296,7 @@
       <button class="u" data-b="0" aria-label="Arriba">▲</button><button class="l" data-b="2" aria-label="Izquierda">◀</button>
       <button class="r" data-b="3" aria-label="Derecha">▶</button><button class="d" data-b="1" aria-label="Abajo">▼</button>
     </div>
-    <div class="mid"><button data-b="8">MENU</button><button data-b="7">START</button></div>
+    <div class="mid"><button data-b="8" aria-label="MENU"><b>MENU</b><i aria-hidden="true">M</i></button><button data-b="7" aria-label="START"><b>START</b><i aria-hidden="true">S</i></button></div>
     <div class="abc">
       <button class="c" data-b="6">C</button><button class="a" data-b="4">A</button><button class="b" data-b="5">B</button>
     </div>
@@ -278,6 +365,31 @@ const status = (text, error) => {
   $('status').textContent = text || '';
   $('status').classList.toggle('error', !!error);
 };
+/* The big loading screen: what is going on, how far along (a number, or null when it can't be known) and a bar. */
+function showLoading(title, pct, note) {
+  const known = typeof pct === 'number';
+  const p = known ? Math.max(0, Math.min(100, Math.round(pct))) : 0;
+  $('gate').hidden = true;
+  $('loading').hidden = false;
+  $('load-title').textContent = title;
+  $('load-pct').textContent = known ? p + ' %' : note || '';
+  $('load-bar').classList.toggle('ind', !known);
+  if (known) $('load-bar').setAttribute('aria-valuenow', String(p)); else $('load-bar').removeAttribute('aria-valuenow');
+  $('load-fill').style.setProperty('--p', p + '%');
+}
+function hideLoading() {
+  $('loading').hidden = true;
+  if (!started) $('gate').hidden = false;
+}
+/* Something went wrong: say it big, on the screen, where the loading was; the way to open a .zip stays */
+function fail(message) {
+  hideLoading();
+  status(message, true);
+  $('gate-title').textContent = message;
+  $('gate-title').classList.add('err');
+  $('play').hidden = true;
+  $('pick').hidden = false;
+}
 let runtimeReady, gameFiles = null, started = false;
 const ready = new Promise(r => { runtimeReady = r; });
 
@@ -357,7 +469,7 @@ function gameFolder(entries) {
 
 async function load(buf, url) {
   try {
-    status(t('Abriendo el juego…'));
+    showLoading(t('Abriendo el juego…'), null);
     const files = gameFolder(await unzip(buf));
     const meta = JSON.parse(new TextDecoder().decode(files.get('game.json')));
     const id = String(meta.id || 'game');
@@ -366,14 +478,16 @@ async function load(buf, url) {
     $('title').textContent = gameFiles.title;
     document.title = gameFiles.title + ' · pinyol';
     $('gate-title').textContent = gameFiles.title;
+    $('gate-title').classList.remove('err');
     $('play').hidden = false;
     $('pick').hidden = true;
     $('hint').textContent = t('Teclado, mando, ratón o botones en pantalla');
     if (url) { $('download').href = url; $('download').hidden = false; }
     status('');
+    hideLoading();
     $('play').focus();
   } catch (e) {
-    status(e.message, true);
+    fail(e.message);
   }
 }
 
@@ -383,7 +497,7 @@ async function start() {
   if (!gameFiles || started) return;
   started = true;
   $('play').disabled = true;
-  status(t('Cargando el motor…'));
+  showLoading(t('Cargando el motor…'), null);
   await ready;
   const FS = Module.FS;
   try {
@@ -393,7 +507,7 @@ async function start() {
       FS.writeFile(path, bytes);
     }
   } catch (e) { /* a file and a folder with the same name, say */
-    status(t('El juego no se puede abrir: sus archivos no encajan'), true);
+    fail(t('El juego no se puede abrir: sus archivos no encajan'));
     return;
   }
   FS.mkdirTree('/persist'); /* the game's saves (store, stored) live in the browser's IndexedDB */
@@ -403,6 +517,7 @@ async function start() {
   setInterval(syncSaves, 4000);
   document.addEventListener('visibilitychange', () => { if (document.hidden) syncSaves(); });
   addEventListener('pagehide', syncSaves);
+  $('loading').hidden = true;
   $('gate').hidden = true;
   $('tools').hidden = false;
   $('full').hidden = !document.fullscreenEnabled; /* not on the iPhone: its browser only does it for videos */
@@ -569,7 +684,7 @@ const FRAME = new URLSearchParams(location.search).get('frame') === '1' && paren
 if (FRAME) {
   document.documentElement.classList.add('frame');
   document.body.classList.add('frame');
-  const tellSize = () => parent.postMessage({ pinyol: 'size', h: Math.ceil(document.querySelector('main').getBoundingClientRect().height) }, location.origin);
+  const tellSize = () => parent.postMessage({ pinyol: 'size', h: Math.ceil(document.querySelector('main').getBoundingClientRect().height) + (document.documentElement.classList.contains('pad-mode') ? 12 : 0) }, location.origin);
   new ResizeObserver(tellSize).observe(document.querySelector('main'));
   addEventListener('message', e => {
     if (e.origin !== location.origin || !e.data || e.data.pinyol !== 'open' || !(e.data.zip instanceof ArrayBuffer) || started) return;
@@ -592,7 +707,8 @@ try { shellWanted = localStorage.getItem('pinyol-shell') !== 'off'; } catch (e) 
 function fitShell() {
   const room = Math.min(innerWidth - 32, 1800, FRAME ? Infinity : (innerHeight - ROOM_Y) * 174 / 96); /* (in a frame, as tall as it needs) */
   const screen = Math.floor(room * SCREEN_MM / CASE_MM / 240) * 240;
-  const fits = screen >= 480 && !document.body.classList.contains('embed') && matchMedia('(pointer: fine)').matches;
+  const fits = screen >= 480 && !document.body.classList.contains('embed') && matchMedia('(pointer: fine)').matches
+    && !document.documentElement.classList.contains('pad-mode');
   const on = fits && shellWanted;
   $('shell').hidden = !fits;
   $('shell').setAttribute('aria-pressed', String(on));
@@ -626,14 +742,38 @@ addEventListener('keydown', key(true));
 addEventListener('keyup', key(false));
 addEventListener('blur', () => { keyHeld = 0; showHeld(); });
 
+/* The game's zip, with the real share of it that has arrived. The size is the server's Content-Length, trusted only
+   when the bytes come as they are (a compressed answer would arrive in more bytes than it says): otherwise the
+   screen shows what has arrived, in MB, with the bar running. */
+async function download(url) {
+  const title = t('Descargando el juego…');
+  showLoading(title, 0);
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(t('No se ha podido descargar el juego') + ' (' + r.status + ')');
+  if (!r.body) return r.arrayBuffer();
+  const total = r.headers.get('content-encoding') ? 0 : Number(r.headers.get('content-length')) || 0;
+  const reader = r.body.getReader(), chunks = [];
+  let got = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    got += value.length;
+    if (total) showLoading(title, Math.min(99, got * 100 / total));
+    else showLoading(title, null, (got / 1048576).toFixed(1) + ' MB');
+  }
+  const out = new Uint8Array(got);
+  let at = 0;
+  for (const c of chunks) { out.set(c, at); at += c.length; }
+  return out.buffer;
+}
+
 const param = new URLSearchParams(location.search).get('game');
 if (param) {
   const url = new URL(param, location.href);
   if (url.protocol === 'http:' || url.protocol === 'https:') {
-    status(t('Descargando el juego…'));
-    fetch(url).then(r => { if (!r.ok) throw new Error(t('No se ha podido descargar el juego') + ' (' + r.status + ')'); return r.arrayBuffer(); })
-      .then(buf => load(buf, url.href)).catch(e => status(e.message, true));
-  } else status(t('Dirección de juego no válida'), true);
+    download(url).then(buf => load(buf, url.href)).catch(e => fail(e.message));
+  } else fail(t('Dirección de juego no válida'));
 }
 </script>
 {{{ SCRIPT }}}

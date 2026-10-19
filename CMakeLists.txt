@@ -151,6 +151,10 @@ add_executable(grad_test tests/grad_test.c platform/null/hal_null.c platform/lin
 target_compile_options(grad_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(grad_test pinyol_core)
 add_test(NAME grad_table COMMAND grad_test) # a dithered gradient from its ramp worked out ahead is the one that works it out itself
+add_executable(ppu_golden_test tests/ppu_golden_test.c platform/null/hal_null.c platform/link_udp.c)
+target_compile_options(ppu_golden_test PRIVATE -Wall -Wextra -Werror ${SAN})
+target_link_libraries(ppu_golden_test pinyol_core)
+add_test(NAME ppu_golden COMMAND ppu_golden_test ${CMAKE_CURRENT_SOURCE_DIR}/tests/ppu_golden.txt)
 add_executable(psg_test tests/psg_test.c platform/null/hal_null.c platform/link_udp.c)
 target_compile_options(psg_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(psg_test pinyol_core)
@@ -163,6 +167,10 @@ add_executable(synth_test tests/synth_test.c platform/null/hal_null.c platform/l
 target_compile_options(synth_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(synth_test pinyol_core)
 add_test(NAME synth COMMAND synth_test)
+add_executable(audio_voice_test tests/audio_voice_test.c platform/null/hal_null.c platform/link_udp.c)
+target_compile_options(audio_voice_test PRIVATE -Wall -Wextra -Werror ${SAN})
+target_link_libraries(audio_voice_test pinyol_core)
+add_test(NAME audio_voice COMMAND audio_voice_test)
 add_executable(studio_test tests/studio_test.c platform/null/hal_null.c platform/link_udp.c)
 target_compile_options(studio_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(studio_test pinyol_core)
@@ -245,6 +253,8 @@ if(NOT NO_PIL)
            $<TARGET_FILE:pinyol_headless>) # what tools/library.py takes and refuses from the Library's form
 endif()
 # The libretro core as a frontend sees it: a game from its folder, its game.json and its zip plays the same, and a
+  add_test(NAME store_atomic COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/store_test.py
+           $<TARGET_FILE:pinyol_headless>) # the saves: two files in turn, a checksum, a failed save leaves the last good one
 # damaged zip or one reaching outside its folder is refused (tests/libretro_test.c is the frontend)
 add_executable(libretro_test tests/libretro_test.c)
 target_include_directories(libretro_test PRIVATE third_party/libretro)
@@ -305,6 +315,10 @@ if(NOT NO_PIL)
   set_tests_properties(script_neo PROPERTIES FIXTURES_REQUIRED neo_game)
   set_tests_properties(script_clip PROPERTIES FIXTURES_REQUIRED clip_game)
 endif()
+# line_fx: a fade whose amount grows down the screen, then line_off: two pictures, no more, no fewer
+add_test(NAME linefx_crc COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/linefx \
+  --saves ${CMAKE_BINARY_DIR}/saves_linefx_crc --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/linefx.script \
+  --crc ${CMAKE_BINARY_DIR}/linefx.crc >/dev/null && test $(sort -u ${CMAKE_BINARY_DIR}/linefx.crc | wc -l) -eq 2")
 if(NODE)
   foreach(s ${SCRIPTS})
     get_filename_component(n ${s} NAME_WE)

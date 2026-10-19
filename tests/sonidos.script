@@ -23,6 +23,37 @@ expect_lua not sfx_on(h)
 lua h2 = sfx("T1")
 tick 300
 expect_lua not sfx_on(h2)
+# an instrument: one recording, any note, an envelope; released it lets go by itself and the voice ends
+lua pad = instrument{sample = "T1", root = "A4", loop = true, adsr = {a = 0.01, d = 0.05, s = 0.6, r = 0.1}}
+lua ih = pad:play("A4", 0.8)
+expect_lua ih ~= 0 and sfx_on(ih)
+tick 30
+expect_lua sfx_on(ih)
+lua pad:release(ih)
+tick 30
+expect_lua not sfx_on(ih)
+# a velocity out of range is made safe; a bad note, a missing or unsafe sample are errors
+expect_lua pad:play(440, 5) ~= 0
+expect_lua_error pad:play("zz")
+expect_lua_error instrument{}
+expect_lua_error instrument{sample = "../x"}
+expect_lua_error instrument{sample = "T1", root = "nope"}
+# without an envelope the release stops it; a sound with sends and a delay
+lua raw = instrument{sample = "T1", loop = true, adsr = false}
+lua rh = raw:play("C4")
+lua raw:release(rh)
+expect_lua not sfx_on(rh)
+lua dh = sfx("T1", 0.3, {reverb = 0.5, echo = 0.3, delay = 0.1})
+expect_lua dh ~= 0
+lua sfx_stop(dh)
+# the wave channel, the 7-bit noise, vibrato and bend, and a note changed while it sounds
+lua tone(1, "C3", {wave = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0}, vibrato = {depth = 20, speed = 6, delay = 0.1}})
+lua tone(3, 8000, {wave = "noise", lfsr = 7})
+lua tone_set(1, {bend = 2, vol = 0.3})
+lua tone(1) tone(3)
+expect_lua_error tone(1, "C3", {wave = {1, 2, 3}})
+expect_lua_error tone_set(7, {vol = 1})
+expect_lua_error tone_set(1, 5)
 # the toys
 press C
 hold A 30
@@ -37,6 +68,35 @@ expect_lua toy == 4 and layers[1] and not layers[2]
 press UP
 expect_lua layers[2]
 shot capas
+# the keyboard: a key held plays an instrument note, let go it releases and ends; the timbres; the GBA mode
+press C
+expect_lua toy == 5 and cursor == 1 and timbre == 1 and not gba
+press RIGHT
+press RIGHT
+expect_lua cursor == 3
+hold A 20
+expect_lua last_h ~= 0 and held == nil
+tick 60
+expect_lua not sfx_on(last_h)
+press B
+expect_lua gba
+hold A 25
+shot teclado
+press UP
+expect_lua timbre == 2
+hold A 25
+press UP
+expect_lua timbre == 3
+hold A 10
+press DOWN
+press DOWN
+expect_lua timbre == 1
+tap 90 150
+tick 3
+shot teclado_toque
+tick 10
+press C
+expect_lua toy == 1 and not gba
 # limits
 expect_lua_error sound("../x", "coin")
 expect_lua_error sound("X", "nothing")

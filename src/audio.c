@@ -643,7 +643,7 @@ int audio_sfx_play_opts(const char *id, const sfx_opts *o) {
     c->last = k;
     hal_audio_lock();
     /* (an ADPCM clip's blocks stand in for pcm: the voice is on while it has some, and reads blk) */
-    int h = audio_voice_start_locked(c->vag[k] ? (const int16_t *)c->vag[k] : c->pcm[k], c->n[k], o->gain, o->pitch, o->loop, 0, 0, 0);
+    int h = audio_voice_start_locked(c->vag[k] ? (const int16_t *)c->vag[k] : c->pcm[k], c->n[k], o->gain, o->pitch, o->loop, o->wait, 0, 0);
     sfx_voice *x = by_handle(h);
     if (x) {
         set_pan(x, o->pan);
