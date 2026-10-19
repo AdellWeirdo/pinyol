@@ -41,9 +41,13 @@ Digests of what the real hardware did, audits of np2d against it, measurements, 
 4. `-DBP_BENCH=audio` again on `main`, after the mixer's changes (below, "Commits after the merge"): idle 1.84 -> 1.10 %, four PSG
    tones 9.72 -> 5.72 %, everything at once 19.72 -> 15.45 % of a core; the table is in [baseline-audio-board.md](baseline-audio-board.md).
 
+5. **An instrument and PSG tones beside a running game** (TRECE): 57-59 fps with 8 notes and 4 tones sounding, audio at 27 % of a core,
+   no underruns ([baseline-audio-board.md](baseline-audio-board.md)). The 38.6 fps window seen once before the mixer's changes did not come back.
+6. **`examples/pinball` on the console** (sent over the cable, `w:drive` flippers): 59-60 fps, tick 1.7 ms, audio 4-5 %; the flippers answer the
+   keys and the ball is shot from the spring. (A hint that ran past the panel's edge on the console was cut in two lines.)
+
 Still open: the saves' retry with a card that fails (compiled and read, never run: it needs the card taken out while the game saves,
-and the firmware does not remount a card put back), and an instrument sounding next to a running game, which dipped one window to
-38.6 fps before the mixer's changes and has not been measured again.
+and the firmware does not remount a card put back).
 
 ## Commits (branch `gba-engine`, from `cards`'s tip; nothing pushed)
 

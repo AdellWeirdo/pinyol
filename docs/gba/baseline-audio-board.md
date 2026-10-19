@@ -70,3 +70,21 @@ reverb, ADPCM), which does more for each voice, so the same bench gave a differe
 - Checked: a hash of 12 mixes (loops, one-shots, pitched, envelopes with a loop region, pan, reverb, delays, a released voice, PSG tones
   of every wave) is identical before and after, in mono and stereo; 152 tests pass; MAQUETA's train scene on the board runs at
   59.6-60 fps with 0 underruns. Its audio load stays at 8 % of a core: that game's is the music stream, which none of this touches.
+
+## Next to a running game (TRECE's quick game, `main` at `5e0c395`, 2026-10-19)
+
+Played from the cable with `lua:` (an instrument with 8 held notes, then 4 PSG triangle tones with vibrato added), three 1 s windows
+of the console's own `perf:` line for each, no screenshots (a capture freezes the game):
+
+| What plays beside TRECE | fps | audio, % of a core | underruns |
+|---|---|---|---|
+| the game alone | 58.2-59.1 | 7 | 0 |
+| + 8 instrument notes | 57.2-59.1 | 15-20 | 0 |
+| + 4 PSG tones with vibrato | 58.2-59.3 | 23-28 | 0 |
+| everything released | 58.5 | 7 | 0 |
+
+The game keeps 57-59 fps with 27 % of a core going to sound. The one window at 38.6 fps seen before the mixer's changes was not
+repeated (nine windows here, none under 57); it may have been the instrument's setup (`sound()` makes its sample the moment it is
+called) and not the voices. The audio share is more than the bench's (8 notes 8 %, plus 7 % of TRECE's own sound is 15 %): on the
+console the mixer shares core 1 with the second half of the drawing, which preempts it.
+
