@@ -961,10 +961,12 @@ static void mix_core(int16_t *out, int n, bool stereo) {
         memset(dr, 0, sizeof dr);
         memset(gv, 0, sizeof gv);
         const bool rv = reverb_on();
+        bool amb_open = false; /* an ambience bed is playing: the bus has something to carry */
         for (int c = 0; c < NSTREAMS && !paused; c++) { /* pause freezes the world; menu clicks still play */
             stream *s = &st[c];
             if (!s->f) continue;
             if (s->dying && silent(s)) { close_stream(s); continue; }
+            if (c < S_AMB0 + NAMB) amb_open = true;
             float *dst = c < S_AMB0 + NAMB ? amb : acc;
             ramp b = c == S_MUS ? bus_mus : (ramp){1, 1, 0};
             long p0 = s->pos, bar = s->bar;
@@ -983,7 +985,10 @@ static void mix_core(int16_t *out, int n, bool stereo) {
                 if (panned) pl[i] -= x * ramp_next(&s->cut_l), pr[i] -= x * ramp_next(&s->cut_r);
             }
         }
-        for (int i = 0; i < m && !paused; i++) { /* ambience bus: gain then a ramped one-pole lowpass (1 = open) */
+        /* with no bed playing, its lowpass empty and the three ramps at rest, the loop below adds nothing and moves nothing */
+        const bool amb_rest = !amb_open && lp_state == 0 && lp_l == 0 && lp_r == 0 && amb_lp.v == amb_lp.target &&
+                              bus_amb.v == bus_amb.target && bus_mus.v == bus_mus.target;
+        for (int i = 0; i < m && !paused && !amb_rest; i++) { /* ambience bus: gain then a ramped one-pole lowpass (1 = open) */
             const float a = ramp_next(&amb_lp), g = ramp_next(&bus_amb);
             lp_state += a * (amb[i] * g - lp_state);
             acc[i] += lp_state;
@@ -1020,14 +1025,19 @@ static void mix_core(int16_t *out, int n, bool stereo) {
                 }
             else { /* faster or slower: between two samples, by the fraction */
                 uint32_t step = (uint32_t)(x->pitch * 65536.0f);
+                /* what the loop does not change, and the buses nothing goes into: acc is a float pointer like these, so
+                 * through the voice every one of them would be loaded again each sample, and a bus at 0 added to anyway */
+                const float gain = x->gain, send_d = x->send_d, send_r = x->send_r, side_l = x->side_l, side_r = x->side_r, rev = x->rev;
+                const bool sends = send_d != 0 || send_r != 0, pan = side_l != 0 || side_r != 0, wet = rv && rev != 0;
                 for (int i = i0; i < m && x->pcm; i++) {
                     int a = x->pos, b = a + 1 < x->end ? a + 1 : (x->loop && !x->vag ? x->loop_from : a);
                     int sa = x->vag ? vag_get(x, a) : x->pcm[a], sb = x->vag ? (b == a ? sa : vag_get(x, b)) : x->pcm[b];
-                    float y = (sa + (float)(sb - sa) * (float)x->frac / 65536.0f) * x->gain;
+                    float y = (sa + (float)(sb - sa) * (float)x->frac / 65536.0f) * gain;
                     if (x->env) y *= env_next(x); /* (a release that ends the voice leaves this sample its last) */
-                    acc[i] += y, sd[i] += y * x->send_d, sr[i] += y * x->send_r;
-                    dl[i] += y * x->side_l, dr[i] += y * x->side_r;
-                    if (rv) gv[i] += y * x->rev;
+                    acc[i] += y;
+                    if (sends) sd[i] += y * send_d, sr[i] += y * send_r;
+                    if (pan) dl[i] += y * side_l, dr[i] += y * side_r;
+                    if (wet) gv[i] += y * rev;
                     x->frac += step;
                     x->pos += (int)(x->frac >> 16), x->frac &= 0xFFFF;
                     if (x->pos >= x->end) {

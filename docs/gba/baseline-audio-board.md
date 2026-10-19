@@ -37,3 +37,36 @@ other (the 12 plain voices: 0.5 %), so the cost is steady. No underrun in any ca
 - **Reverb**: the GBA's two echoes with the 8-bit rate cost about 1.8 % over the four instruments; the plate reverb 6.3 %.
 - **Everything at once** (8 instrument notes, 4 vibrato tones, the GBA reverb and its rate) is 17.3 % of a core. The mixer shares
   core 1 with the second half of each frame's drawing, which preempts it; this has not been measured together with a game.
+
+## On `main`, with the merged mixer, and what was cut from it
+
+The table above is the `gba-engine` mixer. After the merge with `font-catalog` the mixer is the catalog's (sends, panning, game
+reverb, ADPCM), which does more for each voice, so the same bench gave a different row set. Measured on the board on 2026-10-19
+(min, % of a core), before and after three changes that leave the output bit for bit the same:
+
+| Case | before | after |
+|---|---|---|
+| idle (no voice) | 1.84 | 1.10 |
+| 4 sample voices | 4.63 | 3.66 |
+| 12 sample voices | 11.87 | 10.31 |
+| 8 sample voices, pitched | 9.07 | 7.71 |
+| 8 instrument notes | 9.51 | 8.15 |
+| 4 PSG tones, wave table | 9.72 | 5.72 |
+| 4 PSG tones, wave table + vibrato | 11.41 | 7.73 |
+| 8 instruments + 4 tones + GBA reverb + lo-fi | 19.72 | 15.45 |
+
+- **The ambience bus left out when it has nothing in it** (`mix_core`): with no bed playing, its lowpass empty and its three ramps
+  at rest, the loop adds nothing and moves nothing, and it was 22 000 cycles a block, 42 % of the idle cost. `tests/audio_ambient_test.c`
+  holds it (a bed through a shut lowpass sings out after it ends; without the empty-lowpass condition that test fails).
+- **PSG**: the wave channel divided by 7.5 on every sample (a software division on this core, there is no hardware one); its 256
+  possible levels are now a table, worked out with the same expression. The vibrato phase and the slide are no longer advanced when
+  their speed is 0.
+- **Sample voices** read their gain, sends, pan and reverb once instead of through the voice on every sample, and a bus whose send is
+  0 is no longer added to.
+- Found on the way, and not it: the engine's `.bss` living in PSRAM (`firmware/components/pinyol_core/linker.lf`) and the mixer running
+  from flash. Putting `audio.c` and `psg.c` inside the RAM (32 KB of the 139 KB free) or their code in IRAM changed nothing: with the
+  game idle on the other core the loops are bound by instructions (about 60-90 cycles a sample for a loop of some 40 instructions on
+  an in-order core), not by memory. Left as it was.
+- Checked: a hash of 12 mixes (loops, one-shots, pitched, envelopes with a loop region, pan, reverb, delays, a released voice, PSG tones
+  of every wave) is identical before and after, in mono and stereo; 152 tests pass; MAQUETA's train scene on the board runs at
+  59.6-60 fps with 0 underruns. Its audio load stays at 8 % of a core: that game's is the music stream, which none of this touches.
