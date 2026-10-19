@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define LAUNCHER_MAX 32 /* the list shows LAUNCHER_ROWS at a time and scrolls */
+#define LAUNCHER_MAX 64 /* the list shows LAUNCHER_ROWS at a time and scrolls */
 #define LAUNCHER_ROWS 4
 
 typedef struct {

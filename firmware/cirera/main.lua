@@ -145,7 +145,8 @@ local function update_list()
     if press > 6 then state, zoom = "launch", 0 end
     return
   end
-  if #GAMES == 0 then return end
+  if btnp("b") then asking = true end
+  if #GAMES == 0 then return end -- (nothing to move through or open; B still asks to switch off)
   if btnp("left", 18, 6) or btnp("up", 18, 6) then move(-1) end
   if btnp("right", 18, 6) or btnp("down", 18, 6) then move(1) end
   local x, _, _, tapped = touch()
@@ -153,7 +154,6 @@ local function update_list()
     if x < 70 then move(-1) elseif x > 170 then move(1) else press = 1 sfx("OK") end
   end
   if btnp("a") or btnp("start") then press = 1 sfx("OK") end
-  if btnp("b") then asking = true end
 end
 
 local function step(s) -- the nearest of the few sizes
