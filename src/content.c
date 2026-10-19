@@ -1,8 +1,10 @@
 /* Content loading (JSON files under the game folder) and the reference validator. */
 #include <dirent.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/stat.h>
 
 #include "bp.h"
 
@@ -58,12 +60,13 @@ bool game_has(const char *rel) {
 }
 
 char *read_file(const char *path, long *len) {
+    struct stat st; /* only a file: Linux opens a folder too, and its "length" is LONG_MAX */
+    if (stat(path, &st) || !S_ISREG(st.st_mode)) return NULL;
     FILE *f = fopen(path, "rb");
     if (!f) return NULL;
-    fseek(f, 0, SEEK_END);
-    long n = ftell(f);
+    long n = fseek(f, 0, SEEK_END) ? -1 : ftell(f);
     fseek(f, 0, SEEK_SET);
-    char *d = n >= 0 ? malloc((size_t)n + 1) : NULL;
+    char *d = n >= 0 && n < LONG_MAX ? malloc((size_t)n + 1) : NULL;
     if (d && fread_chunked(d, (size_t)n, f) != (size_t)n) {
         free(d);
         d = NULL;
