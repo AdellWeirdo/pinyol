@@ -223,6 +223,8 @@ if(NOT NO_PIL)
            $<TARGET_FILE:pinyol_headless>) # what tools/library.py takes and refuses from the Library's form
 endif()
 # The libretro core as a frontend sees it: a game from its folder, its game.json and its zip plays the same, and a
+  add_test(NAME store_atomic COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/store_test.py
+           $<TARGET_FILE:pinyol_headless>) # the saves: two files in turn, a checksum, a failed save leaves the last good one
 # damaged zip or one reaching outside its folder is refused (tests/libretro_test.c is the frontend)
 add_executable(libretro_test tests/libretro_test.c)
 target_include_directories(libretro_test PRIVATE third_party/libretro)

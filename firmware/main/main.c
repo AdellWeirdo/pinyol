@@ -59,21 +59,32 @@ static SemaphoreHandle_t save_mx, save_write_mx;
 static TaskHandle_t saver;
 static char *save_txt, save_path[400];
 #define SAVE_QUIET_MS 1000
+#define SAVE_RETRIES 3    /* a failed write is tried again, this many times, this far apart */
+#define SAVE_RETRY_MS 3000
 
-static void save_now(void) {
+/* True when there was nothing to write or it is down. A save that fails is put back (unless the game has stored something
+ * newer meanwhile) for the saver to try again: the game has long since been told it was kept. */
+static bool save_now(void) {
     xSemaphoreTake(save_write_mx, portMAX_DELAY);
     xSemaphoreTake(save_mx, portMAX_DELAY);
     char *t = save_txt, p[400];
     snprintf(p, sizeof p, "%s", save_path);
     save_txt = NULL;
     xSemaphoreGive(save_mx);
+    bool ok = true;
     if (t) {
         int64_t a = esp_timer_get_time();
-        if (!save_file_atomic(p, t)) hal_log("saves: %s could not be written", p);
-        else hal_log("saves: %u bytes in %.0f ms", (unsigned)strlen(t), (esp_timer_get_time() - a) / 1000.0);
+        ok = save_file_atomic(p, t);
+        if (!ok) {
+            hal_log("saves: %s could not be written", p);
+            xSemaphoreTake(save_mx, portMAX_DELAY);
+            if (!save_txt) save_txt = t, t = NULL, snprintf(save_path, sizeof save_path, "%s", p);
+            xSemaphoreGive(save_mx);
+        } else hal_log("saves: %u bytes in %.0f ms", (unsigned)strlen(t), (esp_timer_get_time() - a) / 1000.0);
         free(t);
     }
     xSemaphoreGive(save_write_mx);
+    return ok;
 }
 
 static void saver_task(void *arg) {
@@ -81,7 +92,7 @@ static void saver_task(void *arg) {
     for (;;) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         while (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(SAVE_QUIET_MS))) { /* until the stores stop for a moment */ }
-        save_now();
+        for (int tries = 0; !save_now() && tries < SAVE_RETRIES; tries++) vTaskDelay(pdMS_TO_TICKS(SAVE_RETRY_MS));
     }
 }
 
