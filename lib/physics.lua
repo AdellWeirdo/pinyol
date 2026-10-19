@@ -15,6 +15,9 @@
 --   w:circle(x, y, r, {turns = true}): it rolls (b.angle turns with it)
 --   w:poly(x, y, {x0, y0, x1, y1, ...}, {...}): a convex shape around (x, y), its corners relative to it; b.x, b.y
 --     become its centre of mass; w:corners(b) -> its corners on the screen now (to draw it with poly())
+--   w:drive(b, angle [, px, py]): a static polygon the game moves (a flipper, a door, a crusher): turned to `angle` degrees
+--     about the point (px, py) (given once; its own centre if never), it gives what touches it the speed of its surface
+--     as it moves, so a flipper swung up throws the ball and one held still only holds it. Call it every tick, before step()
 --   w:water(x, y, w, h, {lift, drag, flow_x, flow_y}): bodies in it float (lift 2: half under), slow down and
 --     drift with the current; what floats tips back level
 --
@@ -181,6 +184,24 @@ end
 
 function World:step() -- all of it in C (src/lua_physics.c): one call a tick
   self.last_hits = physics_step(self, SUBSTEPS, ITERATIONS, BOUNCE_MIN, PUSH_BACK, SLOP)
+end
+
+-- A static polygon turned to `angle` about (px, py) over this tick: the centre of mass goes round the pivot, and the step
+-- (C) moves it there a substep at a time with the speed of its surface, so what it meets is hit by a moving flipper and is
+-- not jumped past. It rests, speed 0, if nobody drives it the next tick.
+function World:drive(b, angle, px, py)
+  if not b.static or not b.turns then error("physics drive: a static polygon (or a static box or circle with turns = true)", 2) end
+  local a0 = b.angle or 0
+  if px or not b._arm then
+    px, py = px or b.x, py or b.y
+    local a, dx, dy = a0 * RAD, b.x - px, b.y - py -- where the centre is from the pivot, in the body's own frame
+    b._arm, b._pivot = {dx * cos(a) + dy * sin(a), -dx * sin(a) + dy * cos(a)}, {px, py}
+  end
+  px, py = b._pivot[1], b._pivot[2]
+  local a1 = angle % 360
+  local c, s = cos(a1 * RAD), sin(a1 * RAD)
+  b.tx, b.ty, b.ta = px + b._arm[1] * c - b._arm[2] * s, py + b._arm[1] * s + b._arm[2] * c, a1
+  b.vx, b.vy, b.spin, b.kin = b.tx - b.x, b.ty - b.y, (a1 - a0 + 180) % 360 - 180, true
 end
 
 function World:hits() return self.last_hits end

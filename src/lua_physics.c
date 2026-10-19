@@ -30,7 +30,8 @@ typedef struct {
     int kind;                  /* 0 circle, 1 box, 2 polygon; -1 something else (left alone) */
     float x, y, w, h, r;       /* as in Lua: a box's x, y is its top-left corner */
     float cx, cy, vx, vy, spin, angle, inv, iinv, bounce, friction;
-    bool turns, touched;
+    float sx, sy, sa, tx, ty, ta; /* a driven body: where the tick began and where it goes (kin) */
+    bool turns, touched, kin;
     const void *ptr;           /* its table: ropes and the warm start find it by this */
     int n, nl;                 /* corners on the screen, and its own (relative to its centre) */
     float lp[2 * MAXC], v[2 * MAXC], nrm[2 * MAXC];
@@ -121,6 +122,11 @@ static bool read_body(lua_State *L, int t, pbody *b) {
     b->turns = bool_field(L, t, "turns");
     b->spin = b->turns ? num_field(L, t, "spin", 0) : 0, b->angle = b->turns ? num_field(L, t, "angle", 0) : 0;
     b->touched = false, b->n = b->nl = 0;
+    b->kin = b->turns && b->inv <= 0 && bool_field(L, t, "kin"); /* (set by w:drive: a static body the game moves) */
+    if (b->kin) {
+        b->sx = b->x, b->sy = b->y, b->sa = b->angle;
+        b->tx = num_field(L, t, "tx", b->x), b->ty = num_field(L, t, "ty", b->y), b->ta = num_field(L, t, "ta", b->angle);
+    }
     if (b->kind == 0) {
         b->r = num_field(L, t, "r", 1);
     } else if (b->kind == 1) {
@@ -522,6 +528,13 @@ static int l_physics_step(lua_State *L) {
     }
     nhits = 0;
     for (int step = 0; step < substeps; step++) {
+        for (int i = 0; i < n; i++) { /* a driven body is where it is this far through the tick, so what it meets is not jumped */
+            pbody *b = &B[i];
+            if (b->kind < 0 || !b->kin) continue;
+            float f = (float)(step + 1) / (float)substeps;
+            if (step + 1 == substeps) b->x = b->tx, b->y = b->ty, b->angle = b->ta;
+            else b->x = b->sx + (b->tx - b->sx) * f, b->y = b->sy + (b->ty - b->sy) * f, b->angle = fmodf(b->sa + b->spin * f + 360, 360);
+        }
         for (int i = 0; i < n; i++) { /* (what turns moves after its contacts are worked out) */
             pbody *b = &B[i];
             if (b->kind < 0 || b->inv <= 0) continue;
@@ -547,8 +560,10 @@ static int l_physics_step(lua_State *L) {
     }
     for (int i = 0; i < n; i++) { /* back into Lua: what moves */
         pbody *b = &B[i];
-        if (b->kind < 0 || b->inv <= 0) continue;
+        if (b->kind < 0 || (b->inv <= 0 && !b->kin)) continue;
+        if (b->kin) b->vx = b->vy = b->spin = 0; /* it stops being driven: one that nobody turns next tick does not throw */
         lua_rawgeti(L, 7, i + 1);
+        if (b->kin) lua_pushboolean(L, 0), lua_setfield(L, -2, "kin");
         lua_pushnumber(L, b->x), lua_setfield(L, -2, "x");
         lua_pushnumber(L, b->y), lua_setfield(L, -2, "y");
         lua_pushnumber(L, b->vx), lua_setfield(L, -2, "vx");

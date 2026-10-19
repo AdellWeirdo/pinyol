@@ -1,0 +1,18 @@
+# w:drive: a flipper held still holds the ball (it rests on it); swung up it throws it; the same poses without the speeds do not
+new
+tick 150
+expect_lua math.abs(A.ball.vy) < 0.6 and math.abs(A.ball.y - (195 - 5)) < 3
+expect_lua math.abs(B.ball.vy) < 0.6 and math.abs(B.ball.y - (195 - 5)) < 3
+lua swing = true; A.up = 0; B.up = 0
+tick 12
+expect_lua A.up > 4
+expect_lua A.up > 2.5 * B.up
+# one driven in mid-swing and then left alone: it rests, with no speed to throw with
+lua other_turns = true
+tick 1
+expect_lua other.angle == 345 and not other.kin
+lua other_turns = false
+tick 2
+expect_lua other.spin == 0 and other.vx == 0 and other.vy == 0 and other.angle == 345
+expect_lua_error A.w:drive(A.w:circle(0, 0, 5), 0)
+expect_ok
