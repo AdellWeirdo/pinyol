@@ -90,3 +90,22 @@ sent over the cable runs on the panel at 58-60 fps with the distance haze visibl
 
 The firmware that was on the board (np2d-psx's build) is back in slot 0, checked by screenshot. The merged build is kept in the
 scratchpad only (`gba_on_catalog_firmware.bin`); TRECE's folder is on the card (`games/trece`, 3.4 MB).
+
+## `unified`: every branch in one (2026-10-19)
+
+`unified` is `gba-on-catalog` plus the three things it lacked, merged one at a time with the suite run after: local `main` (the console
+lists up to 64 games), `origin/main` (IL·LUSTRES, a new version) and `audreygotchi-gb` (the Audreygotchi Game Boy port: a
+work-in-progress backup of `games/audreygotchi`, 1266 files, 49 MB with its screenshots). No conflict in any of the three.
+Every local branch and `origin/main` is now an ancestor of `unified`. What `unified` holds:
+
+| Line of work | Branches | Came in through |
+|---|---|---|
+| The engine the console ran, with the PlayStation/Saturn look | `psx-saturn-engine` -> `font-catalog` | `gba-on-catalog` |
+| This GBA study | `gba-engine` | `gba-on-catalog` |
+| The site: comments, footer, library updates, the phone player | `giscus`, `footer`, `library-update`, `mobile-player`, `cards` | `gba-engine` (they were its base) and `origin/main` |
+| 64-game list, the faster screen pipeline | `launcher-max-64`, `perf-turned-blit-overlap`, `cirera-empty-b` | `main` |
+| Older work already in `main` | `fases`, `gb-talk`, `mic`, `studio`, `libretro-dev`, `npc-foot`, `os-logos`, `engine-section`, `library-ilustres` | `main` |
+| Audreygotchi | `audreygotchi-gb` | direct |
+
+Not source and not merged: `origin/gh-pages` (the deployed site) and `origin/stats` (data). Local `main` and `origin/main` had each
+6 commits the other lacked; `unified` has both sets. Neither was moved, and nothing was pushed.
