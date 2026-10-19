@@ -46,6 +46,33 @@ sprites whose box crosses it, and off-screen sprites are dropped). The frames ar
   +6 %, only the OBJ_BLEND-sprites scene gains (−17 %). `-funroll-loops` on `-O2`: clear −14 %, but 4 layers +10 %,
   mode 0 +8 %. The default `-O2` is the best overall; do not revisit without a new kernel.
 
+## After the fidelity fixes, on the board (2026-10-19)
+
+The 15 scenes again with the current `src/ppu.c` (sprites per line, the three fidelity fixes, the split final loop): **15 of 15
+frame hashes equal the table above**, the two changed on purpose included. Median cycles per frame, one core:
+
+| Scene | before the sprite masks | with them | now | now vs before | share of a core at 60 fps |
+|---|---|---|---|---|---|
+| clear only | 331 k | 378 k | 376 k | +13.7 % | 9 % |
+| 1 layer | 1,247 k | 1,283 k | 1,281 k | +2.7 % | 32 % |
+| 4 layers | 3,376 k | 3,386 k | 3,383 k | +0.2 % | 85 % |
+| 128 sprites 16x16 | 1,554 k | 914 k | 913 k | -41.3 % | 23 % |
+| 1 affine layer | 1,702 k | 1,746 k | 1,744 k | +2.5 % | 44 % |
+| light: 2L+32 spr | 2,335 k | 2,188 k | 2,187 k | -6.3 % | 55 % |
+| GBA mode 0: 4L+128 spr | 4,759 k | 4,081 k | 4,078 k | -14.3 % | 102 % |
+| Mode 7: aff+1L+64 spr | 3,472 k | 3,162 k | 3,161 k | -9.0 % | 79 % |
+| Max: aff+3L+128 spr | 5,643 k | 4,974 k | 4,970 k | -11.9 % | 124 % |
+| FX: 4L+alpha+window | 6,286 k | 5,946 k | 5,943 k | -5.5 % | 149 % |
+| FX: 128 spr half OBJ_BLEND | 2,723 k | 2,078 k | 1,725 k | -36.7 % | 43 % |
+| x: 4L+alpha only | 6,138 k | 6,166 k | 5,451 k | -11.2 % | 136 % |
+| x: 4L+window only | 3,902 k | 4,203 k | 4,200 k | +7.6 % | 105 % |
+| x: 4L+128 spr half OBJ_BLEND | 6,043 k | 5,387 k | 5,029 k | -16.8 % | 126 % |
+| x: 128 sprites off-screen | 1,201 k | 383 k | 381 k | -68.3 % | 10 % |
+
+The fixes did not cost anything: the sprite scenes are where they were (-0.1 %), and the scenes that blend gained, because the
+final loop was split into the common case with no window and the one with windows (alpha only -11.6 % against the masks alone, a
+blending-sprite scene -17 %, the host had predicted -7 % for the first). Layout noise is still about 0.5 % between runs here.
+
 ## Expected frame hashes (current `src/ppu.c`)
 
 FNV-1a 64 of frames 0..119 of each scene, as `bench_ppu.c` prints them (`hash=`) and as the host harness gave them on 2026-10-19.

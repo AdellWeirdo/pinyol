@@ -162,7 +162,7 @@ each). What changed, with the measurements:
 - **Sound:** a gain change eases over the block instead of stepping; `sfx(..., {reverb, echo, delay})` (delay to the sample);
   `instrument{sample, root, loop, adsr}` with `i:play(note, velocity)` and `i:release(handle)` (loop region, ADSR in whole
   samples, general voice path only for the voices that need it). The GBA's PSG options on `tone`: a 32-step wave table (its
-  wave channel), the 7-bit noise (`lfsr = 7`), `vibrato`, `bend`, and `tone_set`. Not yet measured on the board
-  (`audio_out_mix_us`). `examples/sonidos` has a fifth toy, **Teclado**, that plays an instrument, a drawn wave and 7-bit noise, with the GBA mode
+  wave channel), the 7-bit noise (`lfsr = 7`), `vibrato`, `bend`, and `tone_set`. On the board a voice costs 0.4-0.6 % of a core, a tone 2.0-2.4 %
+  (docs/gba/baseline-audio-board.md). `examples/sonidos` has a fifth toy, **Teclado**, that plays an instrument, a drawn wave and 7-bit noise, with the GBA mode
   (its reverb and 8-bit rate): to listen to it, `pinyol_sim --game sonidos`.
 - **A real game:** TRECE's pitch has distance haze with `line_fx` (`TRECE/trece/campo.lua`).
