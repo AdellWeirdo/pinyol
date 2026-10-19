@@ -397,7 +397,7 @@ game (the same `id` in game.json) hear each other.
 |---|---|
 | `link.send(value [, to])` | `true`, or `false` when this console has used up its share of the air for now (20 messages a second). `value` is a number, string, boolean or a table of them, as `store`, up to 220 bytes as JSON; `to` is one console's id, or everyone |
 | `link.recv()` | `from, value` of the oldest message waiting, or `nil`: `for from, m in link.recv do ... end` |
-| `link.peers()` | the ids of the consoles playing this game nearby (heard in the last 3 seconds), smallest first: every console sees the same order, so they can agree who is player 1 or who sits next to whom |
+| `link.peers()` | the ids of the consoles playing this game nearby (heard in the last 3 seconds), smallest first: every console sees the same order, so they can agree who is player 1 or who sits next to whom. Up to 16 at once; an id is a large number, not 0, 1, 2: take a console's place in this list, not its id |
 | `link.id()` | this console's id (0 where there is no radio) |
 
 The radio comes on the first time a game uses `link` and goes off when it ends. Messages can be lost on the way
@@ -759,11 +759,11 @@ A game downloaded from the community cannot harm the console:
 
 - Lua 5.4 with 32-bit integers and floats on every platform (the same results everywhere).
 - 4 MB of memory for the script (`"lua_memory_kb"` in game.json, up to 6144); past it, "not enough memory".
-- A call (`_init`, `_update`, `_draw`) that runs 50 million VM instructions without returning is stopped: an
+- A call (`_init`, `_update`, `_draw`) that runs 20 million VM instructions without returning is stopped: an
   endless loop becomes an error, not a frozen console.
 - No `io`, `os`, `debug` or `package`; `load` takes source text only, never bytecode; `require` only reads `.lua`
   files inside the game folder.
-- `math.random` starts from the same seed every run, so a game and its tests repeat exactly.
+- `math.random` starts from the same seed every run, so a game and its tests repeat exactly; `math.randomseed(n)` sets another.
 
 ## Testing
 

@@ -1,0 +1,10 @@
+Audios para escuchar (los WAV estan solo en este disco, no en git; generados offline con el motor, 22050 Hz mono; el mismo codigo que el juguete Teclado de examples/sonidos).
+
+  teclado_muestra.wav      do, mi, sol, do agudo: una muestra (sierra filtrada) tocada con instrument{...}, envolvente
+                           A 0.02 s, D 0.15 s, S 0.6, R 0.35 s. Cada nota se mantiene 0.7 s y se suelta.
+  teclado_onda_tabla.wav   las mismas notas una octava mas graves con una onda de tabla de 32 pasos y vibrato (15 cents, 5.5 Hz, tras 0.15 s).
+  teclado_ruido7.wav       ocho golpes de ruido de 7 bits, cada vez mas agudos.
+  teclado_modo_gba.wav     la muestra con el reverb de dos ecos de la GBA y 13 379 Hz a 8 bits.
+
+Que escuchar: chasquidos al soltar o en la costura del bucle (una vez por segundo en notas largas), si el vibrato suena natural,
+si el reverb se parece al de la GBA. numbers.txt tiene las medidas (saltos entre muestras) de lo que esto deberia confirmar.

@@ -144,3 +144,25 @@ Measured on the console afterwards (autotest builds with the speaker on, `-DBP_L
 | Video, 213x160 at 15 fps at scale 2, with its sound, from the flash | 61 fps, a tick 0.5 ms on average with the decoding |
 
 Not checked by eye yet: the LED's colours.
+
+## 2026-10-19 · Studying the GBA again: its PPU measured, fixed, and its sound driver's instruments
+
+Research digests and audits are in [gba/](gba/) (video, system, audio, genres, the ESP32-S3 renderer; what np2d does against
+each). What changed, with the measurements:
+
+- **A real renderer test:** `tests/ppu_golden_test.c` hashes the whole frame of 30 scenes (every layer kind, effect and window
+  edge) against `tests/ppu_golden.txt`; the same scenes on the board (`firmware/main/bench_ppu.c`, `-DBP_BENCH=ppu`) give the
+  same hashes as on a Mac. The renderer costs about twice what `bench.c`'s kernels suggested (mode 0: 102 % of a core, not 52 %):
+  [gba/baseline-ppu-board.md](gba/baseline-ppu-board.md).
+- **Sprites per line:** a mask of the sprites each line crosses; off-screen sprites are dropped. Mode 0 −14 %, 128 sprites −41 %
+  on the board. Compiler flags for `ppu.c` do not pay.
+- **PPU fidelity:** `line_fx(y, amount)` (a blend or fade per line: fog on a `mode7` floor); a semi-transparent sprite over
+  another sprite blends with the background; an object window with no window sprite shuts everything outside it; a blending
+  sprite blends where a window bars effects.
+- **Sound:** a gain change eases over the block instead of stepping; `sfx(..., {reverb, echo, delay})` (delay to the sample);
+  `instrument{sample, root, loop, adsr}` with `i:play(note, velocity)` and `i:release(handle)` (loop region, ADSR in whole
+  samples, general voice path only for the voices that need it). The GBA's PSG options on `tone`: a 32-step wave table (its
+  wave channel), the 7-bit noise (`lfsr = 7`), `vibrato`, `bend`, and `tone_set`. Not yet measured on the board
+  (`audio_out_mix_us`). `examples/sonidos` has a fifth toy, **Teclado**, that plays an instrument, a drawn wave and 7-bit noise, with the GBA mode
+  (its reverb and 8-bit rate): to listen to it, `pinyol_sim --game sonidos`.
+- **A real game:** TRECE's pitch has distance haze with `line_fx` (`TRECE/trece/campo.lua`).
