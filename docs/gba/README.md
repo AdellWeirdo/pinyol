@@ -31,10 +31,18 @@ Digests of what the real hardware did, audits of np2d against it, measurements, 
 
 1. `-DBP_BENCH=ppu`: 15 of 15 hashes equal the table in `baseline-ppu-board.md`; no regression (+-0.5 %).
 2. `-DBP_BENCH=audio`: the mixer's cost per voice, tone and reverb ([baseline-audio-board.md](baseline-audio-board.md)); no underruns.
-3. The normal firmware is back in slot 0 and boots to the game list at 59.9 fps.
+3. **The board runs the engine of branch `font-catalog` (`np2d-psx`), not this one.** Its slot 0 held `np2d-psx/firmware/build/pinyol_console.bin`
+   (the first MB of my backup is byte-identical to it) and the Cirera menu on the card (`games/cirera`, from that branch) calls
+   `load_pictures`, which this branch does not have. A firmware built from this branch therefore boots to an error screen
+   ("main.lua:33 attempt to call a nil value (upvalue 'load_pictures')"), not to the list. An earlier version of this file
+   said the board "boots to the game list at 59.9 fps" with such a build: that was read from the log's perf line, which an
+   erroring menu also prints; nobody had looked at the screen. The original firmware is back in slot 0 (checked) and the menu works.
 
-Still open: the saves' retry with a card that fails (only compiled), a Lua game using `line_fx` on the board (TRECE, MAQUETA), and
-an instrument sounding next to a running game (the mixer shares core 1 with half of each frame's drawing).
+Still open, and **blocked by that**: a Lua game using `line_fx` on the board (TRECE and MAQUETA are not in the console's list anyway:
+the original firmware lists 32 games and leaves the rest out; TRECE's folder was sent over the cable and is on the card now), an
+instrument sounding next to a running game, and the saves' retry with a card that fails. To do them, this work has to run on the
+console's engine: `git merge gba-engine` into `font-catalog` conflicts in `CMakeLists.txt`, `README.md`, `docs/lua.md`, `src/audio.c`
+and `src/lua_sound.c` (tried in a scratch worktree, aborted). `src/audio.c` and `lua_sound.c` are the ones that need care.
 
 ## Commits (branch `gba-engine`, from `cards`'s tip; nothing pushed)
 
