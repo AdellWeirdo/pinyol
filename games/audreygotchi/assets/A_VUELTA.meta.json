@@ -1,0 +1,31 @@
+{
+  "asset": "A_VUELTA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 71,
+  "h": 57,
+  "frames": 4,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "anchor": [
+    35,
+    56
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 7897,
+    "as_rgb565": 32376
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "asset": "A_NUDOS",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 50,
+  "h": 58,
+  "frames": 6,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "anchor": [
+    25,
+    57
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 7441,
+    "as_rgb565": 34800
+  }
+}

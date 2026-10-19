@@ -1,0 +1,29 @@
+{
+  "asset": "A_CRECE_AURA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 146,
+  "h": 73,
+  "frames": 3,
+  "frame_ms": [
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2
+  ],
+  "anchor": [
+    73,
+    72
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 9687,
+    "as_rgb565": 63948
+  }
+}

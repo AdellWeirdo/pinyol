@@ -1,0 +1,33 @@
+{
+  "asset": "A_DISFRAZ_CARNAVAL_FIESTA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 131,
+  "h": 142,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    65,
+    141
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 23891,
+    "as_rgb565": 186020
+  }
+}

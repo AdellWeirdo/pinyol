@@ -1,0 +1,25 @@
+{
+  "asset": "IC_SUB_LECHE",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 13,
+  "h": 16,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    6,
+    15
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 216,
+    "as_rgb565": 416
+  }
+}

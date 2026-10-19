@@ -1,0 +1,72 @@
+# The scenes: her birth, her growing up, Sancho meeting her, his visit, the farewell
+tick 5
+press START
+tick 2
+lua title_setup_night = true
+press A
+tick 2
+press A
+tick 5
+expect_lua S.mode == "birth"
+tick 240
+shot b_cielo
+tick 120
+shot b_estrella
+tick 300
+shot b_zoom
+tick 450
+shot b_cae
+tick 600
+shot b_orejas
+tick 1200
+expect_ok
+lua S.mode = "main" S.guide_seen = true
+lua require("core.scene_grow").due(S, "Cachorro", "Juvenil") S.phase = "Juvenil" require("core.scene_grow").start(S, S._frame_ms)
+tick 150
+shot g_brillo
+tick 180
+shot g_parpadeo
+tick 90
+shot g_destello
+tick 60
+shot g_crecida
+tick 120
+expect_lua S.mode == "main"
+lua S.sancho_intro_at = S.clock:now() - 1 S.last_input_ts = S.clock:now()
+tick 60
+shot s_llega
+tick 200
+shot s_saluda
+tick 200
+shot s_explica
+tick 400
+shot s_menu
+tick 300
+lua S:_emit_sound("sancho")
+tick 60
+shot s_visita
+lua require("core.lifecycle").start_farewell(S, S._frame_ms)
+tick 120
+shot f_habitacion
+tick 600
+shot f_ventana
+tick 500
+shot f_baja
+tick 600
+shot f_llega
+tick 900
+shot f_sube
+tick 900
+shot f_aleja
+tick 700
+shot f_estrella
+tick 600
+shot f_creditos
+tick 900
+shot f_autores
+tick 1200
+shot f_logo
+tick 700
+press A
+tick 10
+expect_ok

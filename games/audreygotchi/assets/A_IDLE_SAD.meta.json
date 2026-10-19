@@ -1,0 +1,25 @@
+{
+  "asset": "A_IDLE_SAD",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 70,
+  "h": 67,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    35,
+    66
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 1517,
+    "as_rgb565": 9380
+  }
+}

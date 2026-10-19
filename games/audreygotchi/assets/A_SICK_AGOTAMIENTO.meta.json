@@ -1,0 +1,25 @@
+{
+  "asset": "A_SICK_AGOTAMIENTO",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 80,
+  "h": 63,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    40,
+    62
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 1630,
+    "as_rgb565": 10080
+  }
+}

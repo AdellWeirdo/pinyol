@@ -1,0 +1,33 @@
+{
+  "asset": "A_CACHORRO_SALTO_FALLA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 73,
+  "h": 73,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    36,
+    72
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 5117,
+    "as_rgb565": 53290
+  }
+}

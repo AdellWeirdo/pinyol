@@ -1,0 +1,33 @@
+{
+  "asset": "A_AMIGO",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 109,
+  "h": 80,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    54,
+    79
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 10240,
+    "as_rgb565": 87200
+  }
+}

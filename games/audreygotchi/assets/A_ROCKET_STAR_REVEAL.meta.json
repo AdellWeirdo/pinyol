@@ -1,0 +1,33 @@
+{
+  "asset": "A_ROCKET_STAR_REVEAL",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 107,
+  "h": 80,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    53,
+    79
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 9864,
+    "as_rgb565": 85600
+  }
+}

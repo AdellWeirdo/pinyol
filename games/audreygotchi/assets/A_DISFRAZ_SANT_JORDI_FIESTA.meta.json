@@ -1,0 +1,33 @@
+{
+  "asset": "A_DISFRAZ_SANT_JORDI_FIESTA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 131,
+  "h": 116,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    65,
+    115
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 15329,
+    "as_rgb565": 151960
+  }
+}

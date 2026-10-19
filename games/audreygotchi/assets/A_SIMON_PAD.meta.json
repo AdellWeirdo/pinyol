@@ -1,0 +1,35 @@
+{
+  "asset": "A_SIMON_PAD",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 41,
+  "h": 35,
+  "frames": 6,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "anchor": [
+    20,
+    34
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 4681,
+    "as_rgb565": 17220
+  }
+}

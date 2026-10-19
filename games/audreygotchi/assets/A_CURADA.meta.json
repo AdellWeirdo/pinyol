@@ -1,0 +1,31 @@
+{
+  "asset": "A_CURADA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 66,
+  "h": 60,
+  "frames": 4,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "anchor": [
+    33,
+    59
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 6573,
+    "as_rgb565": 31680
+  }
+}

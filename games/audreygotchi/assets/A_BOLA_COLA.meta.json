@@ -1,0 +1,25 @@
+{
+  "asset": "A_BOLA_COLA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 3,
+  "w": 131,
+  "h": 91,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    65,
+    90
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 3390,
+    "as_rgb565": 23842
+  }
+}

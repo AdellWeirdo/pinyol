@@ -1,0 +1,31 @@
+{
+  "asset": "A_ANDA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 131,
+  "h": 91,
+  "frames": 4,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "anchor": [
+    65,
+    90
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 13996,
+    "as_rgb565": 95368
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "asset": "A_NACE_MIRA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 67,
+  "h": 51,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    33,
+    50
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 4828,
+    "as_rgb565": 34170
+  }
+}

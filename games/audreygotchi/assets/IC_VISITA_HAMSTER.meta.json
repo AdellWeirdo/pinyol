@@ -1,0 +1,25 @@
+{
+  "asset": "IC_VISITA_HAMSTER",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 32,
+  "h": 32,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    16,
+    31
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 740,
+    "as_rgb565": 2048
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "asset": "IC_MENU_FIESTA_NOCHEVIEJA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 17,
+  "h": 16,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    8,
+    15
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 336,
+    "as_rgb565": 544
+  }
+}

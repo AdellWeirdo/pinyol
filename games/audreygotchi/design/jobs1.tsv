@@ -1,0 +1,37 @@
+still_a	adult	5 poses: 1 sitting with a soft loving look, blushing cheeks and a tiny heart over her head; 2 playful crouch, front paws down, tail up high; 3 excited, sitting up straight, eyes wide and sparkling; 4 proud, chest out, chin up, eyes closed smugly; 5 sad, ears down, big glossy eyes looking at the floor
+still_b	adult	5 poses: 1 grumpy, eyes narrowed to slits, frowning; 2 curious, head tilted, one front paw raised; 3 bored, lying flat with her chin on her paws; 4 lonely, sitting small, looking up wistfully; 5 sleepy, heavy half-shut eyelids, nodding
+still_c	adult	4 poses: 1 hungry, sitting beside a small empty food bowl, looking at you; 2 very weak and unwell, lying down shivering with a sweat drop; 3 curled into a tight round ball of fur with her face hidden; 4 lying stretched out on a round cushion, waiting, tail up
+sick	adult	4 poses, each a different illness: 1 a cold: runny nose, sneezing; 2 a tummy ache: lying down holding her belly; 3 stressed: frazzled spiky fur and wide shaky eyes; 4 exhausted: melted flat with dark rings under her eyes and a sweat drop
+ear_twitch	adult	3 frames of one animation: sitting still and grumpy; one ear flicks back; ear back up, same as the first
+tail_flick	adult	3 frames of one animation: sitting still, her big tail swishes to the left; tail up high; tail swishes to the right
+yawn	adult	3 frames of one animation: sitting, mouth starting to open; a huge yawn with eyes shut and tiny fangs; mouth closing, sleepy eyes
+happy_wiggle	adult	3 frames of one animation: sitting happy with eyes closed; wiggling her body to the left; wiggling to the right
+vuelta	adult	4 frames of one animation, turning around on the spot: seen from her left side; seen from behind; seen from her right side; facing front again
+come	adult	4 frames of one animation, eating from a small bowl: head down in the bowl; chewing with full cheeks; licking her lips; content beside the empty bowl
+mimos	adult	3 frames of one animation, purring: eyes closed, leaning to one side as if petted; leaning more, a happy smile; content with a small heart over her head
+enamorada	adult	4 frames of one animation, in love: blushing; heart-shaped eyes; a little hop with hearts; sitting with heart eyes and a big heart over her
+negacion	adult	3 frames of one animation, refusing: turning her face away with a snub; nose up, eyes closed, looking away; back facing front, grumpy
+molesta	adult	3 frames of one animation, annoyed: an annoyed glare; ears back, tail lashing; glaring with a small angry scribble over her head
+juzgando	adult	3 frames of one animation, judging you: a long stare; eyes narrowing; very unimpressed half-closed eyes
+furiosa	adult	3 frames of one animation, furious: fur bristling; arched with fangs, hissing; puffed up twice her size
+sacude	adult	4 frames of one animation after a bath: wet, flat and small with water drops; shaking hard with drops flying; puffed up and dizzy with a swirl; grooming a paw
+despierta	adult	4 frames of one animation, waking up: asleep curled; one eye opening; a big stretch with front paws forward; sitting up awake
+saluda	adult	3 frames of one animation, hello: she notices you, ears up; a meow with her mouth open; waving one front paw
+pedir	adult	3 frames of one animation, asking: standing up on her hind legs with front paws raised; looking up at you pleading; sitting again, staring at you
+celebra	adult	4 frames of one animation, celebrating: crouching; jumping with paws up and confetti around; landing with a wiggle; one champion paw raised with a grin
+curada	adult	4 frames of one animation, healed: droopy with a sticking plaster on her head; eyes opening; sitting up and stretching, the plaster flying off; refreshed with a sparkle
+se_duerme	adult	3 frames of one animation, falling asleep: a yawn; lying down, eyes closing; asleep with a small Z
+encontrada	adult	3 frames of one animation, found and glad: a content ball of fur; a happy meow with mouth open; sitting up joyful
+salto	adult	5 frames of one animation, seen FROM BEHIND (her back and tail, the back of her head): sitting looking up; crouching to spring; springing up; stretched up high reaching with both front paws; landing back sitting
+salto_falla	adult	3 frames of one animation, seen FROM BEHIND: leaping and missing, paws in the air; flopping down on the floor; sitting dizzy with a swirl over her head
+lo_tengo	adult	3 frames of one animation: turning to face you with a feather toy held in her mouth; eyes closed, proud, the feather in her mouth; a happy wink, the feather still in her mouth
+caza_laser	adult	5 frames of one animation, seen from her side: crouched low, eyes fixed on the floor ahead; butt wiggling; leaping forward; front paws pinning a small dot on the floor; sitting proud
+caja_audrey	adult	5 frames of one animation with an open cardboard box: the open box empty; her ears peeking out of the box; her head out of the box; her front paws on the rim; fully out of the box waving
+props	adult	4 separate objects drawn in the same Game Boy style, no cat: 1 a closed cardboard box; 2 a cat feather toy, a tuft of feathers with a little bell on a string; 3 a long thin wand stick; 4 a hairbrush
+patas	adult	4 frames, first-person view of the cat's own two fluffy front paws at the bottom of the frame, seen from above: both paws resting side by side; the left paw reaching forward to the left; the right paw reaching forward to the right; both paws pulling a rope tight
+nudos	adult	6 frames, no cat: a tangled ball of rope knot with three loose ends hanging down (left, middle, right), getting looser at each frame, from a very tight tangle to an almost undone loose loop
+cachorro	scale	5 poses of THIS character as a tiny baby kitten at the small scale shown at the right of the reference, about HALF the grown cat's height: a big round head, a short little body, tiny paws, a short fluffy tail, still grumpy: 1 sitting; 2 happy, eyes closed; 3 asleep curled up; 4 holding a baby bottle, looking at you; 5 sick and droopy
+room_kitchen	room	the kitchen
+room_rasca	room	the scratcher room (the cat's play room with a scratching post, a cat bed and a plant)
+room_studio	room	the studio (a desk, paints, a window, a bookshelf)
+room_wc	room	the bathroom (a sink, a toilet, a shower curtain)

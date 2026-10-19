@@ -1,0 +1,25 @@
+{
+  "asset": "A_NUDO_LIBRE",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 50,
+  "h": 58,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    25,
+    57
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 1217,
+    "as_rgb565": 5800
+  }
+}

@@ -1,0 +1,42 @@
+# Every game on the console's screen: a grown Audrey (so all are open), each opened from Jugar and played a little
+tick 5
+press START
+tick 2
+press A
+tick 2
+press A
+tick 5
+lua S.mode = "main" S.phase = "Adulto" S.age_days = 20 S.birth_timestamp = S.clock:now() - 20 * 86400 S.energy = 90 S.guide_seen = true
+tick 5
+lua function open(i) S.mode = "main" S.selected_index = 1 S:press_ok(0) S.play_choice = i S:press_ok(0) end
+lua open(0)
+tick 30
+shot g_feather_intro
+tick 150
+press A
+tick 40
+shot g_feather
+lua open(3)
+tick 180
+press RIGHT
+tick 2
+press A
+tick 4
+shot g_knots
+lua open(5)
+tick 160
+shot g_boxes
+lua open(6)
+tick 160
+shot g_simon
+lua open(4)
+tick 160
+press LEFT
+tick 10
+shot g_laser
+lua open(1)
+tick 160
+press A
+tick 10
+shot g_brush
+expect_ok

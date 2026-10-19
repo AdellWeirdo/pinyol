@@ -1,0 +1,33 @@
+{
+  "asset": "A_AUDREY_BOARD_ROCKET",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 150,
+  "h": 107,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    75,
+    106
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 19970,
+    "as_rgb565": 160500
+  }
+}

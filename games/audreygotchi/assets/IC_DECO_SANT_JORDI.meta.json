@@ -1,0 +1,25 @@
+{
+  "asset": "IC_DECO_SANT_JORDI",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 15,
+  "h": 32,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    7,
+    31
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 386,
+    "as_rgb565": 960
+  }
+}

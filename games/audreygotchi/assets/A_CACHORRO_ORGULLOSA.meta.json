@@ -1,0 +1,25 @@
+{
+  "asset": "A_CACHORRO_ORGULLOSA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 73,
+  "h": 55,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    36,
+    54
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 1180,
+    "as_rgb565": 8030
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "asset": "A_COJIN_ENTRA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 175,
+  "h": 106,
+  "frames": 7,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "anchor": [
+    87,
+    105
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 24920,
+    "as_rgb565": 259700
+  }
+}

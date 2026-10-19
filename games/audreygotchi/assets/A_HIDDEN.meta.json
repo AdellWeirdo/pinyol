@@ -1,0 +1,25 @@
+{
+  "asset": "A_HIDDEN",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 3,
+  "w": 58,
+  "h": 31,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    29,
+    30
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 868,
+    "as_rgb565": 3596
+  }
+}

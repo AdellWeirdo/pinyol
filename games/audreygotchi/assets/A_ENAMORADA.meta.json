@@ -1,0 +1,31 @@
+{
+  "asset": "A_ENAMORADA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 74,
+  "h": 76,
+  "frames": 4,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "anchor": [
+    37,
+    75
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 9443,
+    "as_rgb565": 44992
+  }
+}

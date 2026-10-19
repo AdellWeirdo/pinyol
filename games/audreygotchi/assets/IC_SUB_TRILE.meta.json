@@ -1,0 +1,25 @@
+{
+  "asset": "IC_SUB_TRILE",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 20,
+  "h": 16,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    10,
+    15
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 331,
+    "as_rgb565": 640
+  }
+}

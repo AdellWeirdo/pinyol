@@ -1,0 +1,43 @@
+# A new game: the title, the date and the hour, her birth, then the room
+tick 10
+expect_lua scene == "title"
+shot titulo
+press START
+tick 2
+expect_lua scene == "setup"
+shot fecha
+press A
+tick 2
+press A
+tick 5
+expect_lua scene == "game"
+expect_ok
+shot nace
+tick 1900
+expect_ok
+lua print("mode", S.mode, S.phase, S.hunger, S:ui().label)
+shot tras_nacer
+press A
+tick 30
+lua print("mode", S.mode)
+shot sala
+press RIGHT
+tick 5
+shot menu_der
+press A
+tick 20
+lua print("mode", S.mode, S.overlay_text)
+shot jugar
+press B
+tick 5
+press LEFT
+tick 2
+press A
+tick 10
+lua print("mode", S.mode, S.overlay_text)
+shot comer
+press A
+tick 60
+lua print("mode", S.mode, S.overlay_text, S.sound, S.hunger)
+shot come
+expect_ok

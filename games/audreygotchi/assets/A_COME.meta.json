@@ -1,0 +1,31 @@
+{
+  "asset": "A_COME",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 68,
+  "h": 55,
+  "frames": 4,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "anchor": [
+    34,
+    54
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 7528,
+    "as_rgb565": 29920
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "asset": "A_IDLE_CURIOUS",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 4,
+  "w": 81,
+  "h": 65,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    40,
+    64
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 2228,
+    "as_rgb565": 10530
+  }
+}
