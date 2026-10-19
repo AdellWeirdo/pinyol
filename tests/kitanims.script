@@ -1,0 +1,9 @@
+# kit.lua's named animations: each at its own speed (fps), at the kind's own pause without one, one that stops on its last
+# frame (loop = false), and one said the old way ({first, last}), which plays as it always did
+new
+tick 90
+expect_lua all_stay("rapido", 2) and order("rapido"):match("^[012]*$") and order("rapido"):find("012012")
+expect_lua all_stay("lento", 8) and order("lento"):find("0101")
+expect_lua order("una_vez") == "012" and select(2, stays("una_vez")) > 60
+expect_lua all_stay("viejo", 4) and order("viejo"):find("012012")
+expect_ok

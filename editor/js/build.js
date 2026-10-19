@@ -1,7 +1,7 @@
 // From a project to a game folder pinyol plays: game.json, data.lua (the drawings' sizes, kinds, the map, the objects,
 // the sounds), main.lua (kit and the blocks' code), assets/SPR_<name> (each drawing in the engine's own format) and
 // the four fonts. The same files go in the browser's player and in the .zip for the console's card.
-import { MAX_BYTES, lookOf } from './project.js';
+import { MAX_BYTES, lookOf, checkAnims, checkPivot } from './project.js';
 import { fileOf } from './audio.js';
 import { bytesOf as videoBytes } from './videos.js';
 import { t } from './i18n.js';
@@ -73,12 +73,29 @@ export function packed(d) {
 export const sizeOf = d => packed(d)?.bytes.length ?? d.w * d.h * d.frames.length * 2 + ((d.w + 7) >> 3) * d.h * d.frames.length;
 export const bytesOf = drawings => drawings.reduce((n, d) => n + sizeOf(d), 0);
 
+// The point a drawing turns round, in its cut picture's pixels: its pivot, or the middle of its feet (as always)
+export function anchorOf(d, c) {
+  const p = checkPivot(d.pivot, d.w, d.h);
+  return p ? [p[0] - c.x, p[1] - c.y] : [c.w >> 1, c.h - 1];
+}
+const animsOf = d => checkAnims(d.anims, d.frames.length); // (a project from before, or made by hand, says them its own way)
+
+// How long each frame stays, in ms: as its animation says (the first that has it), else at the drawing's own pause
+// (0: it does not animate). pinyol@2 games do not read it (kit.lua animates by data.lua's anims); it is there for tools.
+export function frameMs(d) {
+  const ms = ticks => Math.round(ticks * 1000 / 60), own = d.animate > 0 ? ms(d.animate) : 0;
+  const out = new Array(d.frames.length).fill(null);
+  for (const a of Object.values(animsOf(d) || {}))
+    for (const f of a.frames) if (f < out.length && out[f] === null) out[f] = a.fps ? Math.round(1000 / a.fps) : own;
+  return out.map(v => v ?? own);
+}
+
 function picture(d) { // -> {rgb565, mask|null, meta} or {pk, meta}
   const pk = packed(d);
   if (pk) {
     const c = pk.crop, n = d.frames.length;
     return { pk: pk.bytes, crop: c, meta: { asset: 'SPR_' + d.name, type: 'sprite', w: c.w, h: c.h, frames: n,
-      frame_ms: new Array(n).fill(0), order: [...Array(n).keys()], anchor: [c.w >> 1, c.h - 1], tile: null,
+      frame_ms: frameMs(d), order: [...Array(n).keys()], anchor: anchorOf(d, c), tile: null,
       format: 'packed', bpp: pk.bpp, colours: pk.colours } };
   }
   const c = cropOf(d), n = d.frames.length, stride = (c.w + 7) >> 3;
@@ -93,8 +110,8 @@ function picture(d) { // -> {rgb565, mask|null, meta} or {pk, meta}
         else seeThrough = true;
       }
   });
-  const meta = { asset: 'SPR_' + d.name, type: 'sprite', w: c.w, h: c.h, frames: n, frame_ms: new Array(n).fill(0),
-                 order: [...Array(n).keys()], anchor: [c.w >> 1, c.h - 1], tile: null,
+  const meta = { asset: 'SPR_' + d.name, type: 'sprite', w: c.w, h: c.h, frames: n, frame_ms: frameMs(d),
+                 order: [...Array(n).keys()], anchor: anchorOf(d, c), tile: null,
                  rgb565: { endian: 'little', order: 'rgb', alpha: seeThrough ? 'mask1' : 'none' } };
   return { rgb565: px, mask: seeThrough ? mask : null, meta, crop: c };
 }
@@ -141,6 +158,10 @@ function levelData(p, l, crops) {
            map: l.map.tiles.length ? { w: l.map.w, h: l.map.h, tiles: l.map.tiles, cells: l.map.cells } : null };
 }
 
+// kit.lua's anims: {idle = {frames = {0, 1}, fps = 8, loop = false}}, fps and loop only when they are not the drawing's
+const animsLua = d => { const a = animsOf(d); return a ? Object.fromEntries(Object.entries(a).map(([k, v]) =>
+  [k, { frames: v.frames, fps: v.fps || undefined, loop: v.loop === false ? false : undefined }])) : undefined; };
+
 function dataLua(p, crops, start) {
   const sprites = {}, kinds = {}, solid = {}, sounds = {};
   for (const d of p.drawings) {
@@ -148,7 +169,7 @@ function dataLua(p, crops, start) {
     sprites[d.name] = { w: c.w, h: c.h, frames: d.frames.length };
     if (d.use === 'object') kinds[d.name] = { behaviour: d.behaviour, speed: d.speed, jump: d.jump, animate: d.animate,
                                               gravity: d.gravity ?? undefined, dir: d.behaviour === 'shot' ? d.dir : undefined,
-                                              anims: d.anims || undefined };
+                                              anims: animsLua(d), pivot: checkPivot(d.pivot, d.w, d.h) ? anchorOf(d, c) : undefined };
     else if (d.use === 'tile' && d.solid) solid[d.name] = true;
   }
   for (const s of p.sounds) // made from numbers; brought in: an effect is a file, music is named by its levels

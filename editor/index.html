@@ -56,6 +56,7 @@
         <button data-tool="erase" title="Goma (tecla E)"><span aria-hidden="true">⌫ </span>Goma</button>
         <button data-tool="fill" title="Rellenar una zona del mismo color (tecla F)"><span aria-hidden="true">◩ </span>Rellenar</button>
         <button data-tool="pick" title="Copiar el color de un píxel (tecla I)"><span aria-hidden="true">⊙ </span>Copiar color</button>
+        <button data-tool="pivot" title="Elegir el punto sobre el que se da la vuelta (tecla O)"><span aria-hidden="true">✛ </span>Punto de giro</button>
         <span class="gap"></span>
         <button id="flip" title="Darle la vuelta, como en un espejo"><span aria-hidden="true">⇋ </span>Espejo</button>
         <button id="clear" title="Dejar vacío este fotograma"><span aria-hidden="true">✕ </span>Vaciar</button>
@@ -71,6 +72,7 @@
         <button id="frame-add" title="Un fotograma nuevo, copia del actual" aria-label="Añadir fotograma">+</button>
         <button id="frame-del" title="Quitar este fotograma" aria-label="Quitar este fotograma">−</button>
         <canvas id="preview" width="64" height="64" role="img" aria-label="La animación"></canvas>
+        <select id="preview-anim" aria-label="Qué animación se ve"></select>
       </div>
       <label class="check" id="all-frames-row"><input type="checkbox" id="all-frames"> Pintar en todos los fotogramas a la vez</label>
     </div>
@@ -106,7 +108,15 @@
           <legend>Animaciones</legend>
           <label class="check"><input type="checkbox" id="anims-on"> Fotogramas distintos para estar quieto, andar, recibir un golpe, verse de lado o de espaldas y hacer acciones</label>
           <div id="anims-rows" class="anim-rows"></div>
+          <p class="hint">Cada animación puede ir a su propia velocidad (vacío: la pausa del dibujo) y repetirse o quedarse en su último fotograma.</p>
           <p class="hint">«Andar» se ve mientras se mueve; «Quieto», mientras no; «de lado» y «de espaldas», según hacia dónde va o se gira (de lado mirando a la derecha: a la izquierda se ve al revés); «Golpe» y las acciones, con el bloque «animación».</p>
+        </fieldset>
+        <fieldset class="use pivot">
+          <legend>Punto de giro</legend>
+          <label class="inline">X <input type="number" id="d-pivot-x" min="1" inputmode="numeric"></label>
+          <label class="inline">Y <input type="number" id="d-pivot-y" min="1" inputmode="numeric"></label>
+          <button id="pivot-reset">El de siempre</button>
+          <p class="hint">Cuando mira al otro lado, el dibujo se da la vuelta sobre este punto (con la herramienta «Punto de giro», en el dibujo). El de siempre: el centro de los pies.</p>
         </fieldset>
       </div>
       <button id="drawing-del" class="danger">Quitar este dibujo</button>
@@ -238,7 +248,9 @@
     <canvas id="import-preview" role="img" aria-label="Así quedará en el juego"></canvas>
     <p><output id="import-size"></output></p>
     <label>Ancho de cada fotograma en el juego (la pantalla mide 240) <input type="number" id="import-w" min="1" max="512" inputmode="numeric"></label>
-    <label>Fotogramas en fila <input type="number" id="import-frames" min="1" max="8" inputmode="numeric"></label>
+    <label>Columnas de fotogramas <input type="number" id="import-cols" min="1" max="64" inputmode="numeric"></label>
+    <label>Filas de fotogramas <input type="number" id="import-rows" min="1" max="64" inputmode="numeric"></label>
+    <p class="hint">Una hoja de fotogramas se corta en casillas iguales, fila a fila (hasta 64).</p>
     <label class="check"><input type="checkbox" id="import-smooth"> Suavizar al reducir (fotos, dibujos a mano)</label>
     <p class="hint">Lo transparente de la imagen queda transparente. Los colores pasan a los de la consola.</p>
     <div class="dialog-buttons"><button value="cancel">Cancelar</button><button value="ok" id="import-ok" class="primary">Añadir</button></div>

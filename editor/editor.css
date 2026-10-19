@@ -214,9 +214,11 @@ dialog p { text-align: center; margin: 6px 0; }
 fieldset.game-info { border: 1px solid var(--line); border-radius: var(--radius); padding: 2px 12px 8px; margin: 10px 0 0; }
 fieldset.game-info legend { color: var(--ink); font-weight: 600; padding: 0 4px; }
 .anim-rows { display: grid; gap: 6px; margin: 4px 0; }
-.anim-row { display: flex; align-items: center; gap: 8px; color: var(--muted); }
-.anim-row span { min-width: 4.5em; color: var(--ink); }
-.anim-row input { width: 4.5em; }
+.anim-row { display: grid; gap: 4px; color: var(--muted); padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.anim-row span { color: var(--ink); }
+.anim-row .anim-range, .anim-row .anim-more { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.anim-row input[type=number] { width: 3.6em; }
+.anim-row label.check { display: inline-flex; align-items: center; gap: 4px; margin: 0; }
 label.inline { display: flex; align-items: center; gap: 8px; margin: 0; }
 
 /* sounds */

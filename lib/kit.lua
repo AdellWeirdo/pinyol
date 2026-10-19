@@ -35,11 +35,13 @@
 -- kit.video(id, corner) in a window, looping, while the game goes on; kit.video() takes it away. The microphone:
 -- kit.mic_level() 0..100, kit.mic_note() Hz. On firmware without a microphone or video these do nothing.
 --
--- Named animations: a kind's anims = {idle = {first, last}, walk = {...}, hit = {...}} (frames from 0) play by
--- themselves, walk while it moves, idle while it stands, also while a conversation waits; idle_side, walk_side,
+-- Named animations: a kind's anims = {idle = {frames = {0}}, walk = {frames = {1, 2, 3}, fps = 10}, hit = {frames =
+-- {4}, loop = false}} (frames from 0, as lib/anim.lua says them; fps: the kind's own pause between frames, animate, if
+-- left out; loop = false stops on the last frame; {first, last} as before still works) play by themselves, walk while it moves, idle while it stands, also while a conversation waits; idle_side, walk_side,
 -- idle_up and walk_up are its side and back views (idle and walk, the front), chosen by the way it last moved or
 -- was turned (kit.face(o, other)); the side view looks right and is flipped to look left. kit.play(o, "hit") plays
--- the hit once, kit.play(o, "act1") an action ("act1".."act6") once: while a conversation waits, its last frame stays. Lives:
+-- the hit once, kit.play(o, "act1") an action ("act1".."act6") once: while a conversation waits, its last frame stays.
+-- A kind's pivot = {x, y} (in its picture) is the point it turns round when it looks the other way. Lives:
 -- kit.set_lives(n) shows hearts, kit.add_lives(-1) takes one; at none, "no_lives" fires (or the level is lost) and
 -- trying the level again gives them back. kit.countdown(seconds) shows a clock; at 0, "time_up" fires (or the level
 -- is lost). kit.label(key, text, where, style): "normal", "shadow", "wave", "big", "gradient". data.style =
@@ -97,6 +99,20 @@ function M.setup(data)
   W = setmetatable(D.words or {}, {__index = WORDS})
   S = setmetatable(D.style or {}, {__index = STYLE})
   D.kinds, D.sprites, D.solid, D.sounds = D.kinds or {}, D.sprites or {}, D.solid or {}, D.sounds or {}
+  for _, k in pairs(D.kinds) do -- each named animation as its frames and the ticks each stays, worked out once
+    local every = (k.animate or 0) > 0 and k.animate or 6
+    for name, r in pairs(k.anims or {}) do
+      if not r.frames then -- {first, last}, as games said them before
+        local a, z = math.min(r[1] or 0, r[2] or 0), math.max(r[1] or 0, r[2] or 0)
+        local frames = {}
+        for f = a, z do frames[#frames + 1] = f end
+        r = {frames = frames}
+        k.anims[name] = r
+      end
+      r.every = r.fps and math.max(1, math.floor(60 / r.fps + 0.5)) or every
+      r.loop = r.loop ~= false
+    end
+  end
   if not D.levels then -- one map, the way games were before levels
     D.levels = {{id = "nivel1", map = D.map, objects = D.objects, background = D.background, camera = D.camera,
                  backdrops = D.backdrops}}
@@ -374,7 +390,7 @@ function M.play(o, name) -- a named animation once: "hit", or an action "act1"..
   local k = o and D.kinds[o.kind]
   local r = k and k.anims and k.anims[name]
   if not r then return end
-  local t = (math.abs(r[2] - r[1]) + 1) * ((k.animate or 0) > 0 and k.animate or 6)
+  local t = #r.frames * r.every
   if name == "hit" then o.hit_t = t else o.act, o.act_t = name, t end
 end
 function M.face(o, t) -- o turns towards t: its side, back or front view, as its drawing has them
@@ -511,15 +527,17 @@ local function animate(o, still) -- its frame this tick; still: the game waits (
     local s = D.sprites[o.sprite]
     local last = (s and s.frames or 1) - 1
     local r = anim_range(k.anims, o, moving)
-    local a, z = 0, last
-    if r then a, z = math.max(0, math.min(r[1], last)), math.max(0, math.min(r[2], last)) end
     if (o.hit_t or 0) > 0 then o.hit_t = o.hit_t - 1 end
-    local every = (k.animate or 0) > 0 and k.animate or 6
+    local every = r and r.every or ((k.animate or 0) > 0 and k.animate or 6)
     local hold = still and (o.act_t or 0) > 0 and o.act_t <= every -- an action's last frame waits for the conversation
     if (o.act_t or 0) > 0 and not hold then o.act_t = o.act_t - 1 end
     if r ~= o.anim_r then o.anim_r, o.anim = r, 0 end -- a new animation starts from its first frame
     if not hold then o.anim = o.anim + 1 end
-    o.frame = a + ((o.anim - 1) // every) % (math.max(a, z) - a + 1)
+    local i = (o.anim - 1) // every
+    if r then -- going round, or stopped on its last frame
+      i = r.loop and i % #r.frames or math.max(0, math.min(i, #r.frames - 1))
+      o.frame = math.max(0, math.min(r.frames[i + 1], last))
+    else o.frame = i % (last + 1) end
   elseif (k.animate or 0) > 0 then -- frames go round while it moves (or always, for things that are not players)
     local player = b == "platformer" or b == "topdown" or b == "grid" or b == "push"
     o.anim = (moving or not player) and o.anim + 1 or 0
@@ -884,6 +902,8 @@ function M.draw()
         local k = D.kinds[o.kind]
         local views = k and k.anims and (k.anims.idle_up or k.anims.walk_up or k.anims.idle_side or k.anims.walk_side)
         if o.flip and not (views and o.view ~= "side") then -- with views, only the side one is flipped
+          local s = D.sprites[o.sprite] -- round its pivot, if it has one: that point stays where it was
+          if k and k.pivot and s then x = x + (2 * k.pivot[1] - s.w + 1) * 2 end
           img("SPR_" .. o.sprite, x, y, {frame = o.frame, scale = 2, flip_x = true})
         else img("SPR_" .. o.sprite, x, y, o.frame, 2) end
       end

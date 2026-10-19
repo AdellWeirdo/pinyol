@@ -41,8 +41,9 @@ export const DRIFTS = { '': t('no'), down: t('hacia abajo'), up: t('hacia arriba
                         right: t('hacia la derecha') };
 
 // what a drawing is unless told otherwise (gravity null: what its behaviour says, platformers and patrols fall)
+// (pivot null: the middle of its feet, as build.js has always written it; else the point it turns round when it looks back)
 export const DRAWING = { use: 'tile', solid: false, behaviour: 'still', speed: 1, jump: 4.5, animate: 8, gravity: null,
-                         dir: 'forward', parallax: 0.5, drift: '', drift_speed: 0.5 };
+                         dir: 'forward', parallax: 0.5, drift: '', drift_speed: 0.5, pivot: null };
 
 export const SIZES = [8, 16, 24, 32, 48, 64];
 export const MAX_FRAMES = 64; // a drawing's frames: room for named animations (still, walking, hit), views and actions
@@ -135,16 +136,27 @@ export function uniqueName(name, taken) {
 
 export function blankFrame(w, h) { return new Array(w * h).fill(-1); }
 
-// named animations: {idle: [first, last], walk: [...], hit: [...]}, frames from 0; null without any
+// named animations as lib/anim.lua names them: {idle: {frames: [0], fps: null, loop: true}, walk: {...}, ...}, frames
+// from 0; fps null: the drawing's own pause between frames. null without any. A project from before has {idle: [first,
+// last]}: the same frames, at the drawing's pause, going round, which is what it always did.
 export function checkAnims(a, frames) {
   if (!a || typeof a !== 'object') return null;
-  const out = {};
-  for (const k of Object.keys(ANIMS))
-    if (Array.isArray(a[k]) && a[k].length === 2) {
-      const [x, y] = a[k].map(v => clampInt(v, 0, frames - 1, 0));
-      out[k] = [Math.min(x, y), Math.max(x, y)];
-    }
+  const out = {}, frame = v => clampInt(v, 0, frames - 1, 0);
+  for (const k of Object.keys(ANIMS)) {
+    const v = a[k];
+    if (Array.isArray(v) && v.length === 2) {
+      const [x, y] = v.map(frame);
+      out[k] = { frames: framesFrom(Math.min(x, y), Math.max(x, y)), fps: null, loop: true };
+    } else if (v && typeof v === 'object' && Array.isArray(v.frames) && v.frames.length)
+      out[k] = { frames: v.frames.slice(0, MAX_FRAMES).map(frame), fps: fpsOf(v.fps), loop: v.loop !== false };
+  }
   return Object.keys(out).length ? out : null;
+}
+export const framesFrom = (first, last) => Array.from({ length: last - first + 1 }, (_, i) => first + i);
+export const fpsOf = v => (v === null || v === undefined || v === '' || !Number.isFinite(Number(v)) ? null : clampNum(v, 1, 60, null));
+// the point a drawing turns round: a pixel of it, or null (the middle of its feet)
+export function checkPivot(v, w, h) {
+  return Array.isArray(v) && v.length === 2 ? [clampInt(v[0], 0, w - 1, w >> 1), clampInt(v[1], 0, h - 1, h - 1)] : null;
 }
 
 // ------------------------------------------------------------------ colours as the console has them
@@ -227,7 +239,7 @@ export function check(p) {
                         animate: clampNum(d.animate, 0, 60, 8), parallax: clampNum(d.parallax, 0, 1, 0.5),
                         gravity: typeof d.gravity === 'boolean' ? d.gravity : null, dir: SHOT_DIRS[d.dir] ? d.dir : 'forward',
                         drift: DRIFTS[d.drift] !== undefined ? d.drift : '', drift_speed: clampNum(d.drift_speed, 0, 4, 0.5),
-                        anims: checkAnims(d.anims, frames.length || 1) });
+                        anims: checkAnims(d.anims, frames.length || 1), pivot: checkPivot(d.pivot, w, h) });
   }
   const levels = Array.isArray(p.levels) ? p.levels : [{ id: 'nivel1', name: t('Nivel {n}', { n: 1 }), map: p.map, objects: p.objects,
     background: p.background, camera: p.camera, hide: [] }]; // before levels: one map

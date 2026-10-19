@@ -1221,8 +1221,8 @@ RGB565 packing: `((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)`.
 |---|---|---|
 | `w`, `h` | required | 1 to 1024. |
 | `frames` | 1 | 1 to 64. |
-| `anchor` | `[w / 2, h − 1]` | Pixel of the image placed on the object's anchor (feet). Use `[0, 0]` for backgrounds and UI art. |
-| `frame_ms` | `[0]` | **An array**; only its first element is read: ms per frame for looping animations (0 = the engine's default for that use). A plain number is ignored. |
+| `anchor` | `[w / 2, h − 1]` | Pixel of the image placed on the object's anchor (feet). Use `[0, 0]` for backgrounds and UI art. Read by `pinyol@1` games (the world and the arena); a `pinyol@2` game places its pictures by their top-left corner and reads nothing of it (the editor writes it from a drawing's turning point, which kit.lua takes from data.lua). |
+| `frame_ms` | `[0]` | **An array**; only its first element is read, by `pinyol@1` games: ms per frame for looping animations (0 = the engine's default for that use). A plain number is ignored. `pinyol@2` games never read it: their timing is in Lua (`"anim"`, kit.lua's anims); the editor writes each frame's real length for tools. |
 
 Any other key (the example games' files also carry `asset`, `type`, `tile`, `order`, `rgb565`, `memory_bytes`...)
 is ignored by the engine.

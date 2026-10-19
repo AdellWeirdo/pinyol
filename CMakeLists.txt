@@ -253,6 +253,8 @@ if(NOT NO_PIL)
            $<TARGET_FILE:pinyol_headless>) # what tools/library.py takes and refuses from the Library's form
 endif()
 # The libretro core as a frontend sees it: a game from its folder, its game.json and its zip plays the same, and a
+  add_test(NAME kit_pivot_flip COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/kitflip_test.py
+           $<TARGET_FILE:pinyol_headless>) # a kind turns round its pivot, one without round its box's middle
   add_test(NAME store_atomic COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/store_test.py
            $<TARGET_FILE:pinyol_headless>) # the saves: two files in turn, a checksum, a failed save leaves the last good one
 # damaged zip or one reaching outside its folder is refused (tests/libretro_test.c is the frontend)
@@ -274,6 +276,7 @@ if(NODE)
   add_test(NAME editor_cable COMMAND ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/editor/test/cable_test.mjs)
   add_test(NAME editor_packed COMMAND ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/editor/test/packed_test.mjs)
   add_test(NAME editor_i18n COMMAND ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/editor/test/i18n_test.mjs) # Catalan, English
+  add_test(NAME editor_anims COMMAND ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/editor/test/anims_test.mjs) # speed, loop, pivot, sheets
 endif()
 file(GLOB SCRIPTS CONFIGURE_DEPENDS tests/*.script)
 foreach(s ${SCRIPTS})

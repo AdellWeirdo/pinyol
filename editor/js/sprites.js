@@ -1,7 +1,7 @@
 // The Drawings tab: pixel by pixel in the console's colours (a palette at hand, or any other), with frames for
 // animation; pictures brought in from files; and what each drawing is for (a tile of the map, solid or not, an
 // object that moves in some way, or a picture behind the map).
-import { PALETTE, COLOUR_NAMES, BEHAVIOURS, SHOT_DIRS, DRIFTS, DRAWING, SIZES, MAX_SIDE, MAX_BYTES, MAX_FRAMES, ANIMS, blankFrame, safeName, uniqueName, rgb565, hex565, rgbOf, hexOf, lookOf, lookColour, checkAnims, } from './project.js';
+import { PALETTE, COLOUR_NAMES, BEHAVIOURS, SHOT_DIRS, DRIFTS, DRAWING, SIZES, MAX_SIDE, MAX_BYTES, MAX_FRAMES, ANIMS, blankFrame, safeName, uniqueName, rgb565, hex565, rgbOf, hexOf, lookOf, lookColour, checkAnims, checkPivot, framesFrom, fpsOf, } from './project.js';
 import { sizeOf, bytesOf } from './build.js';
 import { t } from './i18n.js';
 
@@ -93,6 +93,7 @@ function paint(e, first, at = cellAt(e)) {
   if (!d || !at) return;
   const i = at.y * d.w + at.x, all = $('all-frames').checked && d.frames.length > 1;
   if (tool === 'pick') { if (d.frames[frame][i] >= 0) setColour(d.frames[frame][i]); setTool('pen'); return; }
+  if (tool === 'pivot') { d.pivot = [at.x, at.y]; changed(); return; } // (not undone with the pixels: it moves back the same way)
   if (first) snapshot();
   for (const f of all ? d.frames.keys() : [frame]) {
     if (tool === 'fill') { if (first) fill(d, f, at.x, at.y, colour); }
@@ -125,6 +126,12 @@ function renderCanvas() {
     g.strokeStyle = 'rgba(255,255,255,0.08)';
     for (let i = 1; i < d.w; i++) { g.beginPath(); g.moveTo(i * s + 0.5, 0); g.lineTo(i * s + 0.5, c.height); g.stroke(); }
     for (let i = 1; i < d.h; i++) { g.beginPath(); g.moveTo(0, i * s + 0.5); g.lineTo(c.width, i * s + 0.5); g.stroke(); }
+  }
+  if (d.pivot || tool === 'pivot') { // the point it turns round: its own, or (dimmer) the middle of its feet
+    const g = c.getContext('2d'), [px, py] = d.pivot || [d.w >> 1, d.h - 1], x = (px + 0.5) * s, y = (py + 0.5) * s;
+    g.lineWidth = Math.max(1, s / 6);
+    g.strokeStyle = d.pivot ? '#ffec27' : 'rgba(255,236,39,0.45)';
+    g.beginPath(); g.moveTo(x, y - 2 * s); g.lineTo(x, y + 2 * s); g.moveTo(x - 2 * s, y); g.lineTo(x + 2 * s, y); g.stroke();
   }
   if (document.activeElement === c) { // the keyboard's cursor
     const g = c.getContext('2d');
@@ -202,33 +209,54 @@ function renderProps() {
   $('drift-row').hidden = !d.drift;
   for (const k of ['speed', 'jump', 'animate', 'parallax', 'drift_speed']) { $('d-' + k).value = d[k]; $('o-' + k).textContent = d[k]; }
   $('drawing-del').disabled = app.project.drawings.length < 2;
+  const [px, py] = d.pivot || [d.w >> 1, d.h - 1];
+  Object.assign($('d-pivot-x'), { value: px + 1, max: d.w }), Object.assign($('d-pivot-y'), { value: py + 1, max: d.h });
+  $('pivot-reset').disabled = !d.pivot;
   renderAnims(d);
 }
 
-// named animations: which frames are still, walking, hit (counted from 1 here, from 0 in the project)
+// named animations: which frames are still, walking, hit (counted from 1 here, from 0 in the project), how fast each
+// goes (empty: the drawing's pause) and whether it goes round or stops on its last frame
 function renderAnims(d) {
   const n = d.frames.length, on = !!d.anims, rows = $('anims-rows');
   $('anims-on').checked = on;
   rows.hidden = !on;
+  const of = k => (d.anims && d.anims[k]) || { frames: [0], fps: null, loop: true };
+  const set = (k, v) => { d.anims = checkAnims({ ...d.anims, [k]: { ...of(k), ...v } }, n); changed(); };
   rows.replaceChildren(...Object.entries(ANIMS).map(([k, label]) => {
-    const r = (d.anims && d.anims[k]) || [0, 0], row = document.createElement('div');
+    const a = of(k), row = document.createElement('div');
     row.className = 'anim-row';
+    const first = Math.min(...a.frames), last = Math.max(...a.frames);
     const num = (v, end, which) => { // end: 0 the first frame, 1 the last
       const i = Object.assign(document.createElement('input'), { type: 'number', min: 1, max: n, value: v + 1 });
       i.setAttribute('aria-label', `${label}: ${which}`);
       i.addEventListener('change', () => {
-        const cur = (d.anims && d.anims[k]) || [0, 0], next = end ? [cur[0], i.value - 1] : [i.value - 1, cur[1]];
-        d.anims = checkAnims({ ...d.anims, [k]: next }, n);
-        changed();
+        const x = Math.max(1, Math.min(n, Math.round(i.value) || 1)) - 1, [lo, hi] = end ? [first, x] : [x, last];
+        set(k, { frames: framesFrom(Math.min(lo, hi), Math.max(lo, hi)) });
       });
       return i;
     };
-    row.append(Object.assign(document.createElement('span'), { textContent: label }), t('del'), num(r[0], 0, t('desde')), t('al'),
-               num(r[1], 1, t('hasta')));
+    const fps = Object.assign(document.createElement('input'), { type: 'number', min: 1, max: 60, step: 1, value: a.fps ?? '',
+                                                                   placeholder: '–', className: 'fps' }); // (empty: the drawing's pause)
+    fps.setAttribute('aria-label', `${label}: ${t('fotogramas por segundo')}`);
+    fps.addEventListener('change', () => set(k, { fps: fpsOf(fps.value) }));
+    const loop = Object.assign(document.createElement('input'), { type: 'checkbox', checked: a.loop });
+    loop.addEventListener('change', () => set(k, { loop: loop.checked }));
+    const more = Object.assign(document.createElement('div'), { className: 'anim-more' }), check = document.createElement('label');
+    check.className = 'check';
+    check.append(loop, t('se repite'));
+    more.append(fps, t('por segundo'), check);
+    const range = Object.assign(document.createElement('div'), { className: 'anim-range' });
+    range.append(t('del'), num(first, 0, t('desde')), t('al'), num(last, 1, t('hasta')));
+    row.append(Object.assign(document.createElement('span'), { textContent: label }), range, more); // its name, its frames, how
     return row;
   }));
+  const pick = $('preview-anim'), was = pick.value; // the preview plays one of them, or all the frames in turn
+  pick.replaceChildren(new Option(t('Todos los fotogramas'), ''),
+                       ...Object.entries(ANIMS).filter(([k]) => d.anims && d.anims[k]).map(([k, label]) => new Option(label, k)));
+  pick.value = [...pick.options].some(o => o.value === was) ? was : '';
+  pick.hidden = !d.anims;
 }
-
 
 function render() {
   if (!app.project.drawings.length) return;
@@ -243,6 +271,7 @@ function select(i) { cur = i; frame = 0; anim = 0; render(); }
 function setTool(t) {
   tool = t;
   for (const b of document.querySelectorAll('[data-tool]')) b.setAttribute('aria-pressed', String(b.dataset.tool === t));
+  if (app && app.project) renderCanvas(); // (the pivot's cross shows while its tool is on)
 }
 
 // the colours at hand: the look's (only those, unless its console had more), or pinyol's 24
@@ -262,6 +291,7 @@ export function renderPalette() {
 
 function setColour(v) {
   colour = v;
+  if (tool === 'pivot') setTool('pen');
   for (const b of $('palette').children) b.setAttribute('aria-pressed', String(Number(b.dataset.c) === v));
   $('colour-any').value = hexOf(v);
   if (tool === 'erase' || tool === 'pick') setTool('pen');
@@ -273,20 +303,30 @@ function resize(d, size) {
     for (let y = 0; y < Math.min(size, d.h); y++) for (let x = 0; x < Math.min(size, d.w); x++) n[y * size + x] = f[y * d.w + x];
     return n;
   });
-  Object.assign(d, { w: size, h: size, frames });
+  Object.assign(d, { w: size, h: size, frames, pivot: checkPivot(d.pivot, size, size) });
 }
 
-let anim = 0, last = 0;
+let anim = 0, last = 0, held = 0; // the preview: the step of its animation, and how long one that stops has waited
+function previewAnim(d) { // the animation the preview plays: the one picked, or every frame in turn at the drawing's pause
+  const a = d.anims && d.anims[$('preview-anim').value], pause = Math.max(1, d.animate || 8);
+  return a ? { frames: a.frames, ticks: a.fps ? 60 / a.fps : pause, loop: a.loop } : { frames: [...d.frames.keys()], ticks: pause, loop: true };
+}
 function drawPreview() {
   const d = drawing();
-  if (d) drawPixels($('preview'), d, anim % d.frames.length, 64 / Math.max(d.w, d.h));
+  if (!d) return;
+  const a = previewAnim(d), f = a.frames[Math.min(anim, a.frames.length - 1)] ?? 0;
+  drawPixels($('preview'), d, f % d.frames.length, 64 / Math.max(d.w, d.h));
 }
-function animate(t) { // the preview, at the drawing's animation speed
+function animate(t) { // the preview, at its animation's speed; one that does not go round waits a second on its last frame
   const d = drawing();
-  if (d && d.frames.length > 1 && !$('tab-draw').hidden && t - last > Math.max(1, d.animate || 8) * 1000 / 60) {
-    last = t;
-    anim = (anim + 1) % d.frames.length;
-    drawPreview();
+  if (d && !$('tab-draw').hidden) {
+    const a = previewAnim(d);
+    if (a.frames.length > 1 && t - last > a.ticks * 1000 / 60) {
+      last = t;
+      if (anim + 1 < a.frames.length) anim++;
+      else if (a.loop || ++held > 60 / a.ticks) anim = 0, held = 0;
+      drawPreview();
+    }
   }
   requestAnimationFrame(animate);
 }
@@ -295,31 +335,37 @@ function animate(t) { // the preview, at the drawing's animation speed
 
 let incoming = null; // {bmp, name}: the picture being brought in
 
-function importSize() { // what the picture becomes, as the dialog says: frames in a row, each fw wide in the game
-  const { width: w, height: h } = incoming.bmp;
-  const n = Math.max(1, Math.min(8, Math.round(Number($('import-frames').value)) || 1));
+const count = id => Math.max(1, Math.min(MAX_FRAMES, Math.round(Number($(id).value)) || 1));
+function importSize() { // what the picture becomes, as the dialog says: cols x rows frames, each fw wide in the game
+  const { width: w, height: h } = incoming.bmp, cols = count('import-cols'), rows = Math.min(count('import-rows'), Math.floor(MAX_FRAMES / cols));
   const fw = Math.max(1, Math.min(MAX_SIDE, Math.round(Number($('import-w').value)) || 16));
-  return { n, tw: fw * n, fw, th: Math.max(1, Math.min(MAX_SIDE, Math.round(h * fw * n / w))) };
+  return { cols, rows, tw: fw * cols, fw, th: Math.max(1, Math.min(MAX_SIDE, Math.round(h / rows * fw * cols / w))) };
+}
+
+export function cutFrames(data, tw, cols, rows, fw, th, colourOf) { // a sheet's pixels (RGBA, tw wide) cut cell by cell, row after row
+  const frames = [];
+  for (let r = 0; r < rows; r++)
+    for (let k = 0; k < cols; k++) {
+      const f = blankFrame(fw, th);
+      for (let y = 0; y < th; y++)
+        for (let x = 0; x < fw; x++) {
+          const i = ((r * th + y) * tw + k * fw + x) * 4;
+          if (data[i + 3] >= 128) f[y * fw + x] = colourOf(data[i], data[i + 1], data[i + 2]); // half see-through: gone
+        }
+      frames.push(f);
+    }
+  return frames;
 }
 
 function importPixels() {
-  const { n, tw, fw, th } = importSize(), c = document.createElement('canvas');
-  c.width = tw, c.height = th;
+  const { cols, rows, tw, fw, th } = importSize(), c = document.createElement('canvas');
+  c.width = tw, c.height = th * rows;
   const g = c.getContext('2d', { willReadFrequently: true });
   g.imageSmoothingEnabled = $('import-smooth').checked;
   g.imageSmoothingQuality = 'high';
-  g.drawImage(incoming.bmp, 0, 0, tw, th);
-  const data = g.getImageData(0, 0, tw, th).data, frames = [], look = lookOf(app.project); // in the look's colours
-  for (let k = 0; k < n; k++) {
-    const f = blankFrame(fw, th);
-    for (let y = 0; y < th; y++)
-      for (let x = 0; x < fw; x++) {
-        const i = (y * tw + k * fw + x) * 4;
-        if (data[i + 3] >= 128) f[y * fw + x] = lookColour(look, rgb565(data[i], data[i + 1], data[i + 2])); // half see-through: gone
-      }
-    frames.push(f);
-  }
-  return { w: fw, h: th, frames };
+  g.drawImage(incoming.bmp, 0, 0, tw, th * rows);
+  const data = g.getImageData(0, 0, tw, th * rows).data, look = lookOf(app.project); // in the look's colours
+  return { w: fw, h: th, frames: cutFrames(data, tw, cols, rows, fw, th, (r, gr, b) => lookColour(look, rgb565(r, gr, b))) };
 }
 
 function importPreview() {
@@ -327,7 +373,7 @@ function importPreview() {
   const s = Math.min(240 / pic.w, 160 / pic.h, 8);
   c.width = Math.max(1, Math.round(pic.w * s)), c.height = Math.max(1, Math.round(pic.h * s));
   drawPixels(c, pic, 0, s);
-  incoming.total = pic.w * pic.frames.length; // the row's width: kept when the number of frames changes
+  incoming.total = pic.w * count('import-cols'); // the sheet's width: kept when the number of columns changes
   $('import-size').textContent = `${pic.w} × ${pic.h} px` + (pic.frames.length > 1 ? ' ' + t('cada uno, {n} fotogramas', { n: pic.frames.length }) : '') +
     (ok ? '' : ' · ' + t('no cabe en la memoria de la consola: hazla más pequeña'));
   $('import-size').classList.toggle('warn', !ok);
@@ -351,13 +397,24 @@ async function openImport(file) {
   try { incoming = { bmp: await createImageBitmap(file), name: (file.name || 'imagen').replace(/\.[^.]*$/, '') }; }
   catch { return app.oops(t('No se ha podido leer esa imagen. Prueba a guardarla como PNG.')); }
   const { width: w, height: h } = incoming.bmp;
-  const strip = w > h && w % h === 0 && w / h <= 8 ? w / h : 1; // a row of square frames
-  const tw = Math.min(w, strip > 1 ? MAX_SIDE : 240); // the screen is 240 wide
-  $('import-frames').value = strip;
-  $('import-w').value = Math.round(tw / strip);
+  const [cols, rows] = gridOf(w, h);
+  const tw = Math.min(w, cols * rows > 1 ? MAX_SIDE : 240); // the screen is 240 wide
+  $('import-cols').value = cols, $('import-rows').value = rows;
+  $('import-w').value = Math.round(tw / cols);
   $('import-smooth').checked = w > tw && !fewColours(incoming.bmp);
   importPreview();
   $('import').showModal();
+}
+
+// A sheet's grid of square frames, guessed from its size when it is wider than tall (a row of them, or rows of them); else
+// one picture, for the rows and columns to be said by hand (a square or tall picture may be either)
+export function gridOf(w, h) {
+  if (w > h)
+    for (let rows = 1; rows <= 8; rows++) {
+      const side = h / rows;
+      if (Number.isInteger(side) && w % side === 0 && (w / side) * rows <= MAX_FRAMES) return [w / side, rows];
+    }
+  return [1, 1];
 }
 
 const useOf = pic => pic.w === 16 && pic.h === 16 ? 'tile' : pic.w >= 120 || pic.h >= 120 ? 'backdrop' : 'object';
@@ -379,10 +436,9 @@ function finishImport() {
 
 function initImport() {
   $('import-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; openImport(f); });
-  for (const id of ['import-w', 'import-smooth']) $(id).addEventListener('input', importPreview);
-  $('import-frames').addEventListener('input', e => {
-    const n = Math.max(1, Math.min(8, Math.round(Number(e.target.value)) || 1));
-    $('import-w').value = Math.max(1, Math.round(incoming.total / n));
+  for (const id of ['import-w', 'import-smooth', 'import-rows']) $(id).addEventListener('input', importPreview);
+  $('import-cols').addEventListener('input', () => { // the same width for the sheet: each frame narrower
+    $('import-w').value = Math.max(1, Math.round(incoming.total / count('import-cols')));
     importPreview();
   });
   $('import').addEventListener('close', finishImport);
@@ -414,11 +470,20 @@ export function initDrawings(ctx) {
   for (const b of document.querySelectorAll('[data-tool]')) b.addEventListener('click', () => setTool(b.dataset.tool));
   const c = $('pixels');
   c.addEventListener('pointerdown', e => { if (!e.isPrimary) return; c.setPointerCapture(e.pointerId); paint(e, true); });
-  c.addEventListener('pointermove', e => { if (e.isPrimary && e.buttons && tool !== 'fill' && tool !== 'pick') paint(e, false); });
+  c.addEventListener('pointermove', e => { if (e.isPrimary && e.buttons && tool !== 'fill' && tool !== 'pick') paint(e, false); }); // (the pivot follows)
   c.addEventListener('keydown', canvasKeys);
   c.addEventListener('focus', renderCanvas);
   c.addEventListener('blur', renderCanvas);
   c.addEventListener('contextmenu', e => e.preventDefault());
+  for (const [id, i] of [['d-pivot-x', 0], ['d-pivot-y', 1]])
+    $(id).addEventListener('change', e => {
+      const d = drawing(), p = d.pivot ? [...d.pivot] : [d.w >> 1, d.h - 1];
+      p[i] = Math.round(Number(e.target.value)) - 1;
+      d.pivot = checkPivot(p, d.w, d.h);
+      changed();
+    });
+  $('pivot-reset').addEventListener('click', () => { drawing().pivot = null; changed(); });
+  $('preview-anim').addEventListener('change', () => { anim = 0, held = 0; drawPreview(); });
   $('undo').addEventListener('click', () => restore(undo, redo));
   $('redo').addEventListener('click', () => restore(redo, undo));
   addEventListener('keydown', e => { // the tab's shortcuts, only over its drawing area (single letters type elsewhere)
@@ -426,7 +491,7 @@ export function initDrawings(ctx) {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); restore(e.shiftKey ? redo : undo, e.shiftKey ? undo : redo); }
     else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); restore(redo, undo); }
     else if (!e.ctrlKey && !e.metaKey) {
-      const t = { p: 'pen', e: 'erase', f: 'fill', i: 'pick' }[e.key.toLowerCase()];
+      const t = { p: 'pen', e: 'erase', f: 'fill', i: 'pick', o: 'pivot' }[e.key.toLowerCase()];
       if (t) setTool(t);
     }
   });
