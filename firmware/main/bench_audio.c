@@ -76,6 +76,7 @@ void bench_audio_run(void) {
     LOG("start | CPU %d MHz | free internal %u KB, PSRAM %u KB", CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
         (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024), (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
     if (!audio_out_init(input_bus())) return (void)LOG("no audio output: nothing to measure");
+    audio_reset(); /* as a game's start does: the effects rest until something is sent to them (their idle count starts at 0) */
     /* the clip the toy makes: one second of a filtered saw at 220 Hz */
     synth_params sp;
     synth_defaults(&sp);
@@ -85,9 +86,7 @@ void bench_audio_run(void) {
     if (n < 100 || !audio_sfx_set("BKEYS", pcm, n)) return (void)LOG("could not make the clip");
     LOG("clip: %d samples; 12 sample voices, 4 PSG voices, then 2 echoes", n);
 
-    measure("idle (no voice), right after boot");
-    vTaskDelay(pdMS_TO_TICKS(12000)); /* the effects stop costing after 8 s with nothing sent (studio_fx.c) */
-    measure("idle (no voice), 12 s later");
+    measure("idle (no voice)");
     voices(4, 1.0f, false, 0), measure("4 sample voices, as recorded (fast path)"), stop_all();
     voices(12, 1.0f, false, 0), measure("12 sample voices, as recorded"), stop_all();
     voices(8, 1.3f, false, 0), measure("8 sample voices, pitched (interpolated)"), stop_all();
@@ -114,7 +113,6 @@ void bench_audio_run(void) {
         studio_fx_set(&fx);
         voices(4, 1.3f, true, 0.5f), measure("4 instruments + plate reverb"), stop_all();
     }
-    vTaskDelay(pdMS_TO_TICKS(12000));
-    measure("idle again after everything, 12 s on");
+    measure("idle again after everything");
     LOG("done");
 }

@@ -44,7 +44,8 @@ an instrument sounding next to a running game (the mixer shares core 1 with half
 4. `cf7b20c` firmware: `-DBP_BENCH=ppu`.
 5. `4996ef5` docs: this folder, `progress.md`, three corrections in `docs/lua.md`.
 6. `b3b11dc` firmware: `-DBP_BENCH=audio` and the per-block minimum/maximum.
-7. docs: what the board showed (the PPU after the fixes, the sound's cost).
+7. `adc6354` docs: what the board showed (the PPU after the fixes, the sound's cost).
+8. fix: the audio bench did not reset the audio, so it saw 6.7 % at idle that was its own (commit 7's message says it was the engine's: it was not).
 
 Commits 1 to 4 were each built and tested alone in their own worktree (120, 121, 122 and 122 tests pass). `TRECE` and `MAQUETA` are their own
 repos: their one-file changes are left for their owners to commit. `games/` in this folder was untracked before this work and is not
