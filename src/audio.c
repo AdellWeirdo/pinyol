@@ -57,7 +57,12 @@ typedef struct {
     bool loop;
     uint16_t gen;      /* counts the sounds this voice has started: a handle names one of them */
     int wait;          /* samples of the next block before it starts: a studio step lands on its sample */
-    float send_d, send_r; /* a studio track's sends to its echo and reverb (0 for the game's own sounds) */
+    float send_d, send_r; /* sends to the echo and the reverb: a studio track's, or what sfx asked for */
+    int lf, lt;        /* the loop's region, [lf, lt): the whole clip unless an instrument set it */
+    float g_now;       /* the gain the voice has now: a change goes there over the block, not in one step (no zipper) */
+    uint8_t stage;     /* envelope: 0 none, 1 attack, 2 decay, 3 sustain, 4 release */
+    int ek, ea, ed, er; /* samples into the stage; the attack's, decay's and release's length */
+    float es, lvl, einc; /* sustain level; the level now; its step per sample */
 } sfx_voice;
 
 enum { S_AMB0, S_MUS = S_AMB0 + NAMB, S_VOICE0, S_VOICE1, NSTREAMS };
@@ -389,21 +394,53 @@ void audio_preload(const char *id) {
 /* From RAM, a variant different from the last one, so repeats never sound identical; at a pitch (1 as recorded),
  * looping or once. Returns a handle for audio_sfx_adjust / audio_sfx_stop, 0 if nothing plays. */
 int audio_sfx_play(const char *id, float gain, float pitch, bool loop) {
-    if (!id) return 0;
-    clip *c = clip_get(id);
-    if (!c) return 0;
-    int k = c->count > 1 ? rand() % (c->count - 1) : 0;
-    if (c->count > 1 && k >= c->last) k++;
-    c->last = k;
-    hal_audio_lock();
-    int h = audio_voice_start_locked(c->pcm[k], c->n[k], gain, pitch, loop, 0, 0, 0);
-    hal_audio_unlock();
-    return h;
+    voice_opts o = {.gain = gain, .pitch = pitch, .loop = loop};
+    return audio_voice_play(id, &o);
+}
+
+/* The envelope's next stage (1 attack .. 4 release) from the level it is at: a stage of no length is passed through. */
+static void env_enter(sfx_voice *x, int stage) {
+    x->ek = 0;
+    for (;;) {
+        x->stage = (uint8_t)stage;
+        if (stage == 1) {
+            if (x->ea > 0) {
+                x->lvl = 0, x->einc = 1.0f / (float)x->ea;
+                return;
+            }
+            x->lvl = 1, stage = 2;
+        } else if (stage == 2) {
+            if (x->ed > 0) {
+                x->einc = (x->es - 1.0f) / (float)x->ed;
+                return;
+            }
+            x->lvl = x->es, stage = 3;
+        } else if (stage == 3) {
+            x->lvl = x->es, x->einc = 0;
+            return;
+        } else {
+            x->einc = -x->lvl / (float)x->er;
+            return;
+        }
+    }
+}
+
+/* The level for this sample, and on to the next. Stages end on whole samples (counted, not compared). */
+static inline float env_next(sfx_voice *x) {
+    float l = x->lvl;
+    if (x->stage != 3) {
+        x->lvl += x->einc;
+        if (++x->ek >= (x->stage == 1 ? x->ea : x->stage == 2 ? x->ed : x->er)) {
+            if (x->stage == 4) x->pcm = NULL;
+            else x->lvl = x->stage == 1 ? 1.0f : x->es, env_enter(x, x->stage + 1);
+        }
+    }
+    return l;
 }
 
 /* A voice starts pcm, `wait` samples into the next block mixed (the audio lock held). Returns its handle. */
-int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch, bool loop, int wait, float send_d,
-                             float send_r) {
+int audio_voice_start_opts_locked(const int16_t *pcm, int n, const voice_opts *o) {
+    float pitch = o->pitch;
     pitch = pitch > 0.0625f && pitch < 16 ? pitch : pitch >= 16 ? 16 : 0.0625f; /* NaN too: the lowest */
     int v = -1;
     for (int i = 0; i < SFX_VOICES && v < 0; i++) /* a free voice */
@@ -413,9 +450,42 @@ int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch,
             if (!sfx[i].loop && (v < 0 || sfx[i].n - sfx[i].pos < sfx[v].n - sfx[v].pos)) v = i;
     if (v < 0) v = 0;
     uint16_t gen = (uint16_t)(sfx[v].gen + 1);
-    sfx[v] = (sfx_voice){pcm, n, 0, 0, gain < 0 ? 0 : gain > 1 ? 1 : gain, pitch, loop, gen, wait < 0 ? 0 : wait,
-                         send_d, send_r};
+    float gain = o->gain < 0 ? 0 : o->gain > 1 ? 1 : o->gain;
+    int lf = o->loop_from, lt = o->loop_to ? o->loop_to : n;
+    if (!o->loop || lf < 0 || lf >= lt || lt > n) lf = 0, lt = n; /* nonsense, or not looping: the whole clip */
+    sfx[v] = (sfx_voice){.pcm = pcm, .n = n, .gain = gain, .pitch = pitch, .loop = o->loop, .gen = gen,
+                         .wait = o->delay < 0 ? 0 : o->delay, .send_d = o->send_d, .send_r = o->send_r, .lf = lf,
+                         .lt = lt, .g_now = gain};
+    if (o->adsr) {
+        sfx_voice *x = &sfx[v];
+        x->ea = o->a < 0 ? 0 : o->a, x->ed = o->d < 0 ? 0 : o->d, x->er = o->r < 32 ? 32 : o->r;
+        x->es = o->s < 0 ? 0 : o->s > 1 ? 1 : o->s;
+        env_enter(x, 1);
+    }
     return (gen & 0x7FFF) << 4 | (v + 1); /* never 0 */
+}
+
+int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch, bool loop, int wait, float send_d,
+                             float send_r) {
+    voice_opts o = {.gain = gain, .pitch = pitch, .loop = loop, .delay = wait, .send_d = send_d, .send_r = send_r};
+    return audio_voice_start_opts_locked(pcm, n, &o);
+}
+
+/* From RAM, a variant different from the last one (unless first_variant), with the options; the handle or 0. */
+int audio_voice_play(const char *id, const voice_opts *o) {
+    if (!id) return 0;
+    clip *c = clip_get(id);
+    if (!c) return 0;
+    int k = 0;
+    if (!o->first_variant && c->count > 1) {
+        k = rand() % (c->count - 1);
+        if (k >= c->last) k++;
+        c->last = k;
+    }
+    hal_audio_lock();
+    int h = audio_voice_start_opts_locked(c->pcm[k], c->n[k], o);
+    hal_audio_unlock();
+    return h;
 }
 
 void audio_sfx(const char *id, float gain) { audio_sfx_play(id, gain, 1, false); }
@@ -424,6 +494,15 @@ static sfx_voice *by_handle(int h) { /* under the lock: the voice still playing 
     int v = (h & 15) - 1;
     if (v < 0 || v >= SFX_VOICES || !sfx[v].pcm || (sfx[v].gen & 0x7FFF) != (h >> 4)) return NULL;
     return &sfx[v];
+}
+
+void audio_voice_release(int h) {
+    hal_audio_lock();
+    sfx_voice *x = by_handle(h);
+    if (x && x->stage == 4) { /* already letting go */
+    } else if (x && x->stage && x->wait == 0) env_enter(x, 4);
+    else if (x) x->pcm = NULL; /* no envelope, or not yet sounding: it stops */
+    hal_audio_unlock();
 }
 
 void audio_sfx_adjust(int h, float gain, float pitch) { /* a negative value leaves that one as it is */
@@ -590,6 +669,30 @@ static inline int16_t limit(float x) {
 }
 
 /* Called by the platform's audio callback/task with the audio lock held. */
+/* One voice for samples i0..m of a block, sample by sample: its envelope, the gain easing to where it was set (a step
+ * would click), the loop's region, the pitch between two samples, its sends. The simple voices (steady gain, no envelope,
+ * the whole clip) take the faster paths in audio_mix. */
+static void mix_voice_general(sfx_voice *x, int i0, int m, float *acc, float *sd, float *sr) {
+    float g = x->g_now, dg = (x->gain - g) / (float)(m - i0);
+    uint32_t step = (uint32_t)(x->pitch * 65536.0f);
+    int lf = x->lf, lt = x->lt;
+    for (int i = i0; i < m && x->pcm; i++) {
+        const int16_t *pcm = x->pcm; /* the envelope's end (or the clip's) clears it: this sample is still played */
+        float e = x->stage ? env_next(x) : 1.0f;
+        g += dg;
+        int a = x->pos, b = a + 1 < lt ? a + 1 : (x->loop ? lf : a);
+        float y = (pcm[a] + (float)(pcm[b] - pcm[a]) * (float)x->frac / 65536.0f) * g * e;
+        acc[i] += y, sd[i] += y * x->send_d, sr[i] += y * x->send_r;
+        x->frac += step;
+        x->pos += (int)(x->frac >> 16), x->frac &= 0xFFFF;
+        if (x->pos >= lt) {
+            if (x->loop) x->pos = lf + (x->pos - lt) % (lt - lf);
+            else x->pcm = NULL;
+        }
+    }
+    x->g_now = x->gain; /* arrived: the next block is steady again */
+}
+
 void audio_mix(int16_t *out, int n) {
     static float acc[CHUNK], amb[CHUNK]; /* single caller (audio callback/task): keep them off its small stack */
     static float sd[CHUNK], sr[CHUNK];   /* what the studio's tracks send to its echo and its reverb */
@@ -627,6 +730,10 @@ void audio_mix(int16_t *out, int n) {
             sfx_voice *x = &sfx[v];
             int i0 = x->wait < m ? x->wait : m;
             x->wait -= i0;
+            if (x->pcm && i0 < m && (x->stage || x->g_now != x->gain || x->lf != 0 || x->lt != x->n)) {
+                mix_voice_general(x, i0, m, acc, sd, sr); /* an envelope, a gain on its way, or a loop inside the clip */
+                continue;
+            }
             if (x->pitch == 1) /* as recorded: sample after sample, round again if it loops */
                 for (int i = i0; i < m && x->pcm;) {
                     int k = x->n - x->pos < m - i ? x->n - x->pos : m - i;

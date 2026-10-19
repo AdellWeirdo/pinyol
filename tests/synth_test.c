@@ -88,6 +88,8 @@ int main(void) {
     audio_mix(out, 200);
     CHECK(peak(out, 200) > 5000);
     audio_sfx_adjust(h2, 0, -1);
+    audio_mix(out, 200); /* the gain eases to 0 over this block (a step would click), then it is silent */
+    CHECK(peak(out, 50) > 2 * peak(out + 150, 50));
     audio_mix(out, 200);
     CHECK(peak(out, 200) == 0);
 

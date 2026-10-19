@@ -414,9 +414,12 @@ order, so consoles that get the same messages can compute the same thing.
 
 | Call | Does |
 |---|---|
-| `sfx(id [, gain [, {pitch, loop}]])` | plays `audio/<id>.wav` (or a sound made with `sound`) once, or looping; `pitch` 1 as recorded, 2 an octave up, 0.5 down. Returns a handle |
-| `sfx_set(handle, {gain, pitch})` | changes a sound while it plays: an engine that follows the speed, a theremin |
+| `sfx(id [, gain [, {pitch, loop, reverb, echo, delay}]])` | plays `audio/<id>.wav` (or a sound made with `sound`) once, or looping; `pitch` 1 as recorded, 2 an octave up, 0.5 down. `reverb` and `echo` (0 to 1) send it to the studio's effects (`studio.fx`); `delay` (seconds, up to 10) starts it that long after the next block of sound, to the sample, so hits asked for in one frame keep their exact spacing. Returns a handle |
+| `sfx_set(handle, {gain, pitch})` | changes a sound while it plays: an engine that follows the speed, a theremin. A new gain eases in over the next block of sound (about 12 ms at most), so it never clicks |
 | `sfx_stop(handle)`, `sfx_on(handle)` | stops it; is it still playing? |
+| `instrument{sample, root, loop, adsr, gain, reverb, echo}` | a recording that plays any note (below). Returns the instrument |
+| `i:play(note [, velocity [, {reverb, echo, delay}]])` | plays a note (a name like `"E4"` or a frequency in Hz) at the pitch it needs; `velocity` 0 to 1. Returns a handle, which `sfx_set`, `sfx_stop` and `sfx_on` take as well |
+| `i:release(handle)` | lets the note go: its envelope's release, then it ends. An instrument with no envelope stops |
 | `volume(v)` | everything the game sounds (effects, music, tones, the studio), from 0 (silent) to 1; each game starts at 1 |
 | `sound(id, recipe [, seed])` | makes a sound from a recipe: `"coin"`, `"laser"`, `"explosion"`, `"powerup"`, `"hit"`, `"jump"`, `"blip"` or `"random"`; each seed gives another. Returns its numbers |
 | `sound(id, {numbers})` | makes a sound from its numbers (below), played with `sfx(id)`. Returns them, completed |
@@ -425,6 +428,7 @@ order, so consoles that get the same messages can compute the same thing.
 | `music_time()` | seconds into the song `music()` started, as the player hears it now, going on across its loops; `nil` when none plays. For notes on the beat |
 | `tone(voice, pitch [, options])` | plays a synthesised note on voice 0-3, replacing what it played |
 | `tone(voice)` | lets the voice's note go (it fades with its release) |
+| `tone_set(voice, {vol, bend})` | changes a note while it sounds: its volume (0 to 1), its bend in semitones (a slide up to the next note, a dive-bomb) |
 | `note(name)` | the frequency of a note: `note("A4")` is 440, also `"C#3"`, `"Eb5"` |
 
 Recordings are not the only way: like the GBA's sound channels, four voices make notes from waveforms, for music
@@ -432,8 +436,11 @@ and effects written in Lua. `pitch` is a frequency in Hz or a note name. The opt
 
 | Option | Default | |
 |---|---|---|
-| `wave` | `"square"` | `"square"`, `"triangle"`, `"saw"`, `"sine"` or `"noise"` |
+| `wave` | `"square"` | `"square"`, `"triangle"`, `"saw"`, `"sine"` or `"noise"`; or a table of 32 numbers from 0 to 15, one period of any shape you draw (the GBA's wave channel) |
 | `vol` | 0.5 | 0 to 1 |
+| `lfsr` | 15 | noise only: `7` makes the shorter, pitched noise (metallic hiss, a hi-hat, a tone-like buzz) |
+| `vibrato` | none | `{depth = 25, speed = 5.5, delay = 0}`: the pitch wobbles that many cents each way, that many times a second, after `delay` seconds |
+| `bend` | 0 | semitones above the note (`tone_set` moves it while the note sounds) |
 | `duty` | 0.5 | square only: the high part of each period (0.125 and 0.25 sound thinner) |
 | `attack` | 0.005 | seconds to reach full volume |
 | `decay` | 0.25 | seconds (time constant) to fall towards `sustain` |
@@ -446,6 +453,8 @@ and effects written in Lua. `pitch` is a frequency in Hz or a note name. The opt
 tone(0, "C5", {wave = "square", duty = 0.25, decay = 0.08})           -- a blip
 tone(1, 900, {wave = "noise", decay = 0.2})                            -- a hit
 tone(2, 1200, {wave = "saw", sustain = 1, len = 0.15, slide = -6000})  -- a laser
+tone(1, "C2", {wave = {8,10,12,14,15,14,12,10,8,6,4,2,0,2,4,6,8,10,12,14,15,14,12,10,8,6,4,2,0,2,4,6}, sustain = 1})  -- a bass
+tone(0, "A4", {sustain = 1, vibrato = {depth = 20, speed = 6, delay = 0.2}})                                    -- a held note that sings
 ```
 
 Music made in a tracker (MilkyTracker, OpenMPT, ProTracker...) saved as a ProTracker `.mod`, up to 32 channels and
@@ -497,6 +506,28 @@ sound("HUM", {wave = "sine", freq = 220, sustain = 1, decay = 0})   -- whole cyc
 local h = sfx("HUM", 0.5, {loop = true})
 sfx_set(h, {pitch = 1 + speed / 10})      -- in _update
 ```
+
+### Instruments
+
+An instrument turns one recording into any note, as the GBA's sound driver did with its small samples: it is played faster or
+slower to reach the note, it loops a part of itself while the key is held, and an envelope shapes the start and the end.
+
+```lua
+sound("PAD", {wave = "saw", freq = 220, sustain = 1, decay = 0})
+local pad = instrument{
+  sample = "PAD", root = "A3",           -- the note the recording is at ("C4" if left out)
+  loop = {from = 0.1, to = 0.8},         -- seconds: plays on to 0.8, then round from 0.1 while held; true: the whole sound
+  adsr = {a = 0.02, d = 0.15, s = 0.6, r = 0.4},   -- seconds, and the sustain's level (0 to 1)
+  gain = 0.8, reverb = 0.3,
+}
+local h = pad:play("E4", 0.9)            -- in _update, when the key goes down
+pad:release(h)                           -- when it comes up: it fades over `r`, then ends
+```
+
+Without `adsr` the envelope is a short one (3 ms in, 80 ms out) so a note never clicks; `adsr = false` plays the recording
+as it is. Times are turned into whole samples once, when a note is played, and counted in whole samples while it sounds,
+so a loop's seam and an envelope's stages fall on the same sample on every platform. At most 12 sounds play at once (a new one takes
+the one-shot nearest its end).
 
 A sound that stops dead (`decay = 0`) is meant to loop; one that decays fades its last moment so it never clicks.
 Making a sound takes a moment (a long one, some hundredths of a second on the console): make them in `_init` or

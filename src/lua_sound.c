@@ -2,8 +2,9 @@
  * (tone, note), and music that changes with the game (music_layer).
  *
  *   sound(id, {wave, freq, slide, ...} | kind [, seed]) -> its numbers: a sound made into id, played by sfx(id)
- *   sfx(id [, gain [, {pitch, loop}]]) -> handle;  sfx_set(handle, {gain, pitch});  sfx_stop(handle)
- *   music(id [, fade_ms]);  music_layer(stem, gain [, fade_ms]);  tone(voice, note [, {...}]);  note(name)
+ *   sfx(id [, gain [, {pitch, loop, reverb, echo, delay}]]) -> handle;  sfx_set(handle, {gain, pitch});  sfx_stop(handle)
+ *   instrument{sample, root, loop, adsr, gain, reverb, echo} -> i;  i:play(note [, velocity [, {...}]]) -> handle;  i:release(handle)
+ *   music(id [, fade_ms]);  music_layer(stem, gain [, fade_ms]);  tone(voice, note [, {...}]);  tone_set(voice, {vol, bend});  note(name)
  *   mic() -> level, pitch, hit, recording (nil: no microphone);  mic(false);  mic_record(id, seconds);  mic_record() */
 #include <stdlib.h>
 
@@ -71,16 +72,81 @@ static int l_sound(lua_State *L) {
 }
 
 /* sfx(id [, gain [, {pitch, loop}]]) -> a handle for sfx_set and sfx_stop (0 if it could not play) */
+/* Seconds to whole samples, rounded once here on the game's thread: what the audio thread counts is integers, so a loop seam
+ * or a delay falls on the same sample on every platform. */
+static int samples(float seconds) { return (int)(seconds * AUDIO_HZ + 0.5f); }
+
 static int l_sfx(lua_State *L) {
     const char *id = luaL_checkstring(L, 1);
-    float gain = fin(luaL_optnumber(L, 2, 1)), pitch = 1;
-    bool loop = false;
+    voice_opts o = {.gain = fin(luaL_optnumber(L, 2, 1)), .pitch = 1};
     if (!lua_isnoneornil(L, 3)) {
         luaL_checktype(L, 3, LUA_TTABLE);
-        pitch = opt_float(L, 3, "pitch", 1, 0.0625f, 16), loop = opt_bool(L, 3, "loop", false);
+        o.pitch = opt_float(L, 3, "pitch", 1, 0.0625f, 16), o.loop = opt_bool(L, 3, "loop", false);
+        o.send_r = opt_float(L, 3, "reverb", 0, 0, 1), o.send_d = opt_float(L, 3, "echo", 0, 0, 1);
+        o.delay = samples(opt_float(L, 3, "delay", 0, 0, 10));
     }
-    lua_pushinteger(L, safe_name(id) ? audio_sfx_play(id, gain, pitch, loop) : 0); /* it keeps gain in 0..1 */
+    lua_pushinteger(L, safe_name(id) ? audio_voice_play(id, &o) : 0); /* it keeps gain in 0..1 */
     return 1;
+}
+
+
+/* instrument{sample = "PAD", root = "C4", loop = {from, to} | true, adsr = {a, d, s, r} | false, gain, reverb, echo}:
+ * a recording that plays any note. The table stays the game's own (its fields are read at each play), with the methods. */
+#define INSTRUMENT "pinyol.instrument"
+
+static float note_hz(lua_State *L, int idx, const char *what) {
+    float hz = lua_type(L, idx) == LUA_TSTRING ? psg_note_hz(lua_tostring(L, idx)) : (float)luaL_checknumber(L, idx);
+    if (!(hz > 0 && hz < AUDIO_HZ / 2)) luaL_error(L, "%s is not a note or a frequency", what);
+    return hz;
+}
+
+static int l_instrument(lua_State *L) {
+    luaL_checktype(L, 1, LUA_TTABLE);
+    const char *id = opt_str(L, 1, "sample");
+    if (!id || !safe_name(id)) return luaL_error(L, "instrument: \"sample\" must be the name of a sound");
+    lua_getfield(L, 1, "root");
+    if (!lua_isnil(L, -1)) note_hz(L, -1, "instrument: \"root\"");
+    lua_pop(L, 1);
+    luaL_setmetatable(L, INSTRUMENT);
+    lua_pushvalue(L, 1);
+    return 1;
+}
+
+static int l_instrument_play(lua_State *L) { /* i:play(note [, velocity [, {reverb, echo, delay}]]) -> handle */
+    luaL_checktype(L, 1, LUA_TTABLE);
+    float hz = note_hz(L, 2, "i:play: the note");
+    float vel = lua_isnoneornil(L, 3) ? 1.0f : fin(luaL_checknumber(L, 3));
+    vel = vel < 0 ? 0 : vel > 1 ? 1 : vel;
+    int t = lua_isnoneornil(L, 4) ? 0 : 4;
+    if (t) luaL_checktype(L, 4, LUA_TTABLE);
+    lua_getfield(L, 1, "root");
+    float root = lua_isnil(L, -1) ? psg_note_hz("C4") : note_hz(L, -1, "instrument: \"root\"");
+    lua_pop(L, 1);
+    voice_opts o = {.gain = opt_float(L, 1, "gain", 1, 0, 1) * vel, .pitch = hz / root, .first_variant = true};
+    o.send_r = opt_float(L, t ? 4 : 1, "reverb", opt_float(L, 1, "reverb", 0, 0, 1), 0, 1);
+    o.send_d = opt_float(L, t ? 4 : 1, "echo", opt_float(L, 1, "echo", 0, 0, 1), 0, 1);
+    o.delay = t ? samples(opt_float(L, 4, "delay", 0, 0, 10)) : 0;
+    lua_getfield(L, 1, "loop");
+    o.loop = lua_toboolean(L, -1);
+    if (lua_istable(L, -1)) {
+        o.loop_from = samples(opt_float(L, lua_absindex(L, -1), "from", 0, 0, 600));
+        o.loop_to = samples(opt_float(L, lua_absindex(L, -1), "to", 0, 0, 600));
+    }
+    lua_pop(L, 1);
+    lua_getfield(L, 1, "adsr");
+    o.adsr = !(lua_isboolean(L, -1) && !lua_toboolean(L, -1)); /* adsr = false: the sample as it is */
+    int a = lua_absindex(L, -1);
+    bool given = lua_istable(L, a);
+    o.a = samples(given ? opt_float(L, a, "a", 0.003f, 0, 60) : 0.003f), o.d = samples(given ? opt_float(L, a, "d", 0, 0, 60) : 0);
+    o.s = given ? opt_float(L, a, "s", 1, 0, 1) : 1, o.r = samples(given ? opt_float(L, a, "r", 0.08f, 0, 60) : 0.08f);
+    lua_pop(L, 1);
+    lua_pushinteger(L, safe_name(opt_str(L, 1, "sample")) ? audio_voice_play(opt_str(L, 1, "sample"), &o) : 0);
+    return 1;
+}
+
+static int l_instrument_release(lua_State *L) { /* i:release(handle): its envelope lets go; without one the sound stops */
+    audio_voice_release((int)luaL_checkinteger(L, 2));
+    return 0;
 }
 
 static int l_sfx_set(lua_State *L) { /* sfx_set(handle, {gain, pitch}): a sound that is playing, changed */
@@ -167,7 +233,24 @@ static int l_tone(lua_State *L) {
     if (!lua_isnoneornil(L, 3)) {
         luaL_checktype(L, 3, LUA_TTABLE);
         lua_getfield(L, 3, "wave");
-        if (!lua_isnil(L, -1)) n.wave = (uint8_t)luaL_checkoption(L, -1, NULL, WAVES);
+        if (lua_istable(L, -1)) { /* the wave channel: 32 steps of 0..15 */
+            if (lua_rawlen(L, -1) != 32) return luaL_error(L, "tone: a wave table has 32 numbers (0 to 15), not %d", (int)lua_rawlen(L, -1));
+            n.wave = PSG_WAVE;
+            for (int i = 0; i < 32; i++) {
+                lua_rawgeti(L, -1, i + 1);
+                float v = fin(luaL_checknumber(L, -1));
+                n.table[i] = (uint8_t)(v < 0 ? 0 : v > 15 ? 15 : (int)v);
+                lua_pop(L, 1);
+            }
+        } else if (!lua_isnil(L, -1)) n.wave = (uint8_t)luaL_checkoption(L, -1, NULL, WAVES);
+        lua_pop(L, 1);
+        n.lfsr7 = opt_int(L, 3, "lfsr", 15) == 7, n.bend = opt_float(L, 3, "bend", 0, -48, 48);
+        lua_getfield(L, 3, "vibrato");
+        if (lua_istable(L, -1)) {
+            int vt = lua_absindex(L, -1);
+            n.vib_depth = opt_float(L, vt, "depth", 25, 0, 2400), n.vib_speed = opt_float(L, vt, "speed", 5.5f, 0, 50);
+            n.vib_delay = opt_float(L, vt, "delay", 0, 0, 60);
+        }
         lua_pop(L, 1);
         n.vol = opt_float(L, 3, "vol", n.vol, 0, 1), n.duty = opt_float(L, 3, "duty", n.duty, 0.01f, 0.99f);
         n.attack = opt_float(L, 3, "attack", n.attack, 0, 60), n.decay = opt_float(L, 3, "decay", n.decay, 0, 60);
@@ -175,6 +258,19 @@ static int l_tone(lua_State *L) {
         n.release = opt_float(L, 3, "release", n.release, 0, 60), n.slide = opt_float(L, 3, "slide", 0, -1e5f, 1e5f);
     }
     psg_play(ch, &n);
+    return 0;
+}
+
+/* tone_set(voice, {vol, bend}): a note that sounds, changed (as sfx_set is for recordings) */
+static int l_tone_set(lua_State *L) {
+    int ch = (int)luaL_checkinteger(L, 1);
+    if (ch < 0 || ch >= PSG_VOICES) return luaL_error(L, "tone_set: voice %d does not exist (0 to %d)", ch, PSG_VOICES - 1);
+    luaL_checktype(L, 2, LUA_TTABLE);
+    lua_getfield(L, 2, "bend");
+    bool has_bend = !lua_isnil(L, -1);
+    lua_pop(L, 1);
+    psg_mod m = {.vol = opt_float(L, 2, "vol", -1, -1, 1), .set_bend = has_bend, .bend = opt_float(L, 2, "bend", 0, -48, 48)};
+    psg_set(ch, &m);
     return 0;
 }
 
@@ -218,10 +314,16 @@ static int l_mic_record(lua_State *L) {
 }
 
 void sound_register(lua_State *L) {
-    static const luaL_Reg F[] = {{"sound", l_sound}, {"sfx", l_sfx}, {"sfx_set", l_sfx_set}, {"sfx_stop", l_sfx_stop},
+    luaL_newmetatable(L, INSTRUMENT);
+    lua_createtable(L, 0, 2);
+    lua_pushcfunction(L, l_instrument_play), lua_setfield(L, -2, "play");
+    lua_pushcfunction(L, l_instrument_release), lua_setfield(L, -2, "release");
+    lua_setfield(L, -2, "__index");
+    lua_pop(L, 1);
+    static const luaL_Reg F[] = {{"sound", l_sound}, {"sfx", l_sfx}, {"instrument", l_instrument}, {"sfx_set", l_sfx_set}, {"sfx_stop", l_sfx_stop},
                                  {"sfx_on", l_sfx_on}, {"music", l_music}, {"music_layer", l_music_layer},
                                  {"music_time", l_music_time},
-                                 {"tone", l_tone}, {"note", l_note}, {"mic", l_mic},
+                                 {"tone", l_tone}, {"tone_set", l_tone_set}, {"note", l_note}, {"mic", l_mic},
                                  {"mic_record", l_mic_record}, {"volume", l_volume}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);

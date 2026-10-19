@@ -2,7 +2,7 @@
 -- and negative numbers, bad names. The engine must refuse or clamp, never crash or read outside its memory
 -- (tests/apifuzz.script, under ASan in Debug builds).
 local NAMES = {"btn", "btnp", "touch", "t", "ticks", "rgb", "pal", "palette", "backdrop", "bg", "scroll", "affine",
-  "rot", "mode7", "project", "mget", "mset", "mapsize", "line_scroll", "line_backdrop", "line_window", "line_off",
+  "rot", "mode7", "project", "mget", "mset", "mapsize", "line_scroll", "line_backdrop", "line_window", "line_fx", "line_off", "instrument", "tone_set",
   "sheet", "spr", "spr_off", "spr_clear", "prio", "bank", "spr_mat", "mat", "show", "blend", "fade", "fx_off",
   "window", "window_off", "window_out", "objwindow", "mosaic", "text", "textw", "rect", "box", "shade", "panel",
   "plate", "img", "frame", "sfx", "tone", "note", "perf", "pset", "pget", "line", "circ", "tri", "poly", "cls", "canvas",

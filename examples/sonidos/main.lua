@@ -1,9 +1,10 @@
 -- Sonidos: los sonidos de un juego hechos con números (sound), tocados a cualquier tono y en bucle (sfx, sfx_set),
--- y música que cambia con el juego (music_layer). Solo una grabación, la música en capas; lo demás sale del código.
+-- música que cambia con el juego (music_layer), y un teclado: una sola muestra tocada como cualquier nota (instrument),
+-- una onda dibujada a mano y ruido de 7 bits. Solo una grabación, la música en capas; lo demás sale del código.
 --   C o START: cambia de juguete
 
 local CX, CY = SCREEN_W // 2, SCREEN_H // 2
-local TOYS = {"Fábrica", "Theremin", "Motor", "Capas"}
+local TOYS = {"Fábrica", "Theremin", "Motor", "Capas", "Teclado"}
 toy = 1 -- globals: the test looks at them
 local t = 0
 
@@ -146,14 +147,98 @@ local function layers_draw()
   text("‹ batería · ^ bajo · › melodía (o tócalas)", CX, SCREEN_H - 30, 0xC0B0D0, "main", "center")
 end
 
+-- ------------------------------------------------------------------ Teclado: a recording as any note, a drawn wave, 7-bit noise
+local KEYS = {"C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"}
+local SOLFA = {"do", "re", "mi", "fa", "sol", "la", "si", "do"}
+local TIMBRES = {"muestra con envolvente", "onda de tabla (bajo)", "ruido de 7 bits"}
+local BASS = {8, 10, 12, 14, 15, 14, 12, 10, 8, 6, 4, 2, 0, 2, 4, 6, 8, 10, 12, 14, 15, 14, 12, 10, 8, 6, 4, 2, 0, 2, 4, 6}
+local ADSR = {a = 0.02, d = 0.15, s = 0.6, r = 0.35}
+cursor, timbre, held, gba, last_h = 1, 1, nil, false, 0 -- globals: the test looks at them
+local organ, note_h, via, since = nil, nil, nil, 0
+
+local function press(k)
+  held, since = k, 0
+  if timbre == 1 then
+    note_h = organ:play(KEYS[k], 0.9)
+    last_h = note_h
+  elseif timbre == 2 then
+    tone(1, note(KEYS[k]) / 2, {wave = BASS, vol = 0.7, sustain = 1, vibrato = {depth = 15, speed = 5.5, delay = 0.15}})
+  else
+    tone(3, 2000 + 700 * k, {wave = "noise", lfsr = 7, vol = 0.7, decay = 0.12})
+  end
+end
+
+local function lift()
+  if not held then return end
+  if timbre == 1 and note_h then organ:release(note_h) elseif timbre == 2 then tone(1) end
+  held, note_h = nil, nil
+end
+
+local function set_gba(on) -- the GBA's sound driver: its two-echo reverb, and everything held at 13,379 Hz and 8 bits
+  gba = on
+  studio.fx({reverb = "gba", size = 0.6, lofi = on})
+  organ.reverb = on and 0.5 or 0
+end
+
+local function keys_update()
+  local tx, _, down = touch()
+  if btnp("left") then cursor = (cursor - 2) % 8 + 1 end
+  if btnp("right") then cursor = cursor % 8 + 1 end
+  if btnp("up") or btnp("down") then
+    lift()
+    timbre = (timbre + (btnp("up") and 0 or -2)) % #TIMBRES + 1
+  end
+  if btnp("b") then set_gba(not gba) end
+  if down then
+    local k = math.max(1, math.min(8, math.floor(tx * 8 / 240) + 1))
+    if held ~= k then lift() cursor = k press(k) end
+    via = "touch"
+  elseif via == "touch" then lift() via = nil end
+  if via ~= "touch" then
+    if btnp("a") then lift() press(cursor) via = "a" end
+    if via == "a" and not btn("a") then lift() via = nil end
+  end
+  if held then since = since + 1 / 60 end
+end
+
+local function level(s) -- the envelope's level s seconds after the key goes down (and while it is held)
+  if s < ADSR.a then return s / ADSR.a end
+  if s < ADSR.a + ADSR.d then return 1 - (1 - ADSR.s) * (s - ADSR.a) / ADSR.d end
+  return ADSR.s
+end
+
+local function keys_draw()
+  rect(0, 0, SCREEN_W, SCREEN_H, 0x14202C)
+  -- the envelope: attack, decay, sustain (held), release
+  local x0, y0, w, h = 30, 120, 420, 70
+  local total = ADSR.a + ADSR.d + 0.4 + ADSR.r
+  local function X(s) return x0 + s / total * w end
+  local function Y(l) return y0 + h - l * h end
+  poly({X(0), Y(0), X(ADSR.a), Y(1), X(ADSR.a + ADSR.d), Y(ADSR.s), X(ADSR.a + ADSR.d + 0.4), Y(ADSR.s),
+        X(total), Y(0)}, timbre == 1 and 0x2C5A6E or 0x24323E)
+  if held and timbre == 1 then circ(X(math.min(since, ADSR.a + ADSR.d + 0.4)), Y(level(since)), 5, 0xFFE070) end
+  text(TIMBRES[timbre], 30, 40, 0xE0E8F0, "bold")
+  text(gba and "modo GBA: dos ecos y 8 bits" or "B: modo GBA", 30, 74, gba and 0xFFE070 or 0x7090B0, "main")
+  -- the keys
+  for i = 1, 8 do
+    local x = (i - 1) * 60
+    local on = held == i
+    rect(x + 2, 214, 56, 100, on and 0xFFE070 or (cursor == i and 0xC8D8E8 or 0xF0F4F8))
+    text(SOLFA[i], x + 30, 262, 0x14202C, "bold", "center")
+    text(KEYS[i], x + 30, 288, 0x607080, "main", "center")
+  end
+  text("A o el dedo · ‹ › nota · ^ v timbre", SCREEN_W - 20, 8, 0x7090B0, "main", "right")
+end
+
 -- ------------------------------------------------------------------ the toy box
-local UPDATE = {factory_update, theremin_update, motor_update, layers_update}
-local DRAW = {factory_draw, theremin_draw, motor_draw, layers_draw}
+local UPDATE = {factory_update, theremin_update, motor_update, layers_update, keys_update}
+local DRAW = {factory_draw, theremin_draw, motor_draw, layers_draw, keys_draw}
 
 local function leave(toy_left) -- what a toy plays stops when it is left
   if toy_left == 2 and hum then sfx_stop(hum) hum = nil end
   if toy_left == 3 and engine then sfx_stop(engine) engine = nil end
   if toy_left == 4 then music() end
+  if toy_left == 5 then lift() via = nil if gba then set_gba(false) end end
 end
 
 function _init()
@@ -161,6 +246,10 @@ function _init()
   sound("HUM", {wave = "sine", freq = 220, sustain = 1, decay = 0, vibrato = 0.02, vibrato_speed = 5, volume = 0.6})
   sound("ENGINE", {wave = "saw", freq = 55, sustain = 1, decay = 0, lowpass = 0.5, resonance = 0.3, volume = 0.7})
   made = sound("FAB", RECIPES[pick], seed) -- whole cycles in a second: both loop without a click
+  sound("KEYS", {wave = "saw", freq = 220, sustain = 1, decay = 0, lowpass = 0.55, volume = 0.6}) -- an A3, one second of whole cycles
+  -- the loop starts 10 cycles in (220 Hz: 10 / 220 s): the recording's first moments, where its filter is still warming up,
+  -- are played once and never again, so the seam is no sharper than the wave's own edge (docs/gba/listen/numbers.txt)
+  organ = instrument{sample = "KEYS", root = "A3", loop = {from = 10 / 220, to = 1}, adsr = ADSR, gain = 0.8}
 end
 
 function _update()

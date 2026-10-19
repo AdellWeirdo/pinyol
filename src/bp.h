@@ -363,6 +363,20 @@ int audio_sfx_play(const char *id, float gain, float pitch, bool loop); /* a han
 void audio_sfx_adjust(int handle, float gain, float pitch); /* negative: unchanged */
 void audio_sfx_stop(int handle);
 bool audio_sfx_playing(int handle);
+/* A voice with options (sfx with sends and a start delay; an instrument). Every time is in samples, worked out once by the
+ * caller, so a loop seam or an envelope's stage falls on the same sample on every platform. */
+typedef struct {
+    float gain, pitch;         /* gain 0..1; pitch 1 as recorded, 2 an octave up */
+    bool loop;                 /* round again: from loop_to back to loop_from (the whole clip if both are 0) */
+    int loop_from, loop_to;    /* samples; loop_to 0: the clip's end; outside 0 <= from < to <= length: the whole clip */
+    bool adsr, first_variant;  /* an envelope; always the clip's first variant (an instrument's sample, not a random one) */
+    int a, d, r;               /* attack, decay, release in samples (a release is at least 32: no click) */
+    float s;                   /* sustain level 0..1 */
+    int delay;                 /* samples after the next block's start before it sounds */
+    float send_d, send_r;      /* to the echo and the reverb (studio.fx), 0..1 */
+} voice_opts;
+int audio_voice_play(const char *id, const voice_opts *o); /* a handle, or 0 */
+void audio_voice_release(int handle);                      /* its envelope's release; a voice with no envelope stops */
 bool audio_sfx_set(const char *id, int16_t *pcm, int n); /* a clip the game made; takes pcm (malloc'd) */
 long audio_made_bytes(void);
 void audio_preload(const char *id);
@@ -378,6 +392,7 @@ void audio_reset(void);
 /* For the studio (studio.c), the audio lock held where it says so */
 int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch, bool loop, int wait, float send_d,
                              float send_r); /* a handle */
+int audio_voice_start_opts_locked(const int16_t *pcm, int n, const voice_opts *o); /* (the same, with options) */
 void audio_voice_stop_locked(int handle);
 bool audio_clip_pin(const char *id, const int16_t **pcm, int *n); /* loaded and kept while a track plays it */
 void audio_clip_unpin(const int16_t *pcm);
@@ -421,7 +436,7 @@ void audio_force_missing(const char *id);
 
 /* Synthesised voices (psg.c), mixed with the rest: notes instead of recordings. */
 #define PSG_VOICES 4
-enum { PSG_SQUARE, PSG_TRIANGLE, PSG_SAW, PSG_SINE, PSG_NOISE };
+enum { PSG_SQUARE, PSG_TRIANGLE, PSG_SAW, PSG_SINE, PSG_NOISE, PSG_WAVE /* a table, as the GBA's wave channel */ };
 typedef struct {
     uint8_t wave;        /* PSG_* */
     float freq, vol;     /* Hz; 0..1 */
@@ -430,7 +445,13 @@ typedef struct {
     float sustain;       /* 0..1 of vol held after the decay; 0: the note ends by itself (a pluck) */
     float len, release;  /* seconds: when the note is let go (0: never by itself), and its fade after */
     float slide;         /* Hz per second added to the pitch (a laser, a drop) */
+    uint8_t table[32];   /* PSG_WAVE: one period in 32 steps of 0..15, the wave channel's 4-bit samples */
+    bool lfsr7;          /* noise: a 7-bit shift register (a metallic, pitched noise) instead of 15 */
+    float vib_depth, vib_speed, vib_delay; /* vibrato: cents each way, Hz, seconds before it starts */
+    float bend;          /* semitones above the note: live, with psg_set */
 } psg_note;
+typedef struct { float vol; bool set_bend; float bend; } psg_mod; /* vol < 0: unchanged */
+void psg_set(int voice, const psg_mod *m); /* a note that sounds, changed: its volume, its bend */
 void psg_play(int voice, const psg_note *n); /* starts at once, replacing what the voice played */
 void psg_release(int voice);
 void psg_reset(void);

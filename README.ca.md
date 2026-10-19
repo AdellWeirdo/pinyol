@@ -148,7 +148,7 @@ Et queda un joc petit per canviar: una sala més gran que la pantalla, un person
 | [tormenta](examples/tormenta) | un matamarcians vertical per jugar amb la consola de costat: un llenç dret que es veu girat, centenars de bales |
 | [laberinto](examples/laberinto) | primera persona com la dibuixava Wolfenstein 3D: raycast() dibuixa el laberint des de dins, amb textures i boira, fantasmes i gemmes drets a dins |
 | [gotico](examples/gotico) | la sala d'un castell de nit com la dibuixaven les consoles de 32 bits: llum d'espelmes sumada, un fantasma i els rastres d'un dash mig vistos, un cap calavera que gira i creix |
-| [sonidos](examples/sonidos) | sons fets de números (una fàbrica de monedes, làsers, explosions), un theremin, un motor que segueix la velocitat, música en capes |
+| [sonidos](examples/sonidos) | sons fets de números (una fàbrica de monedes, làsers, explosions), un theremin, un motor que segueix la velocitat, música en capes, un teclat que toca una mostra com qualsevol nota |
 | [control](examples/control) | dirigir un informatiu de 1994 des de la sala de control: talls, cinta i rètols al ritme de la sintonia, les frases de la realitzadora escrites com una història en català i castellà, el LED de la consola com a pilot de càmera, un clip de vídeo en un monitor; després una càmera que no existeix et mira, et sent i sap quanta bateria et queda |
 | [raton_de_biblioteca](examples/raton_de_biblioteca) | fet per Codex amb una frase en un clon nou: un ratolí amb aspecte de Game Boy en una biblioteca, formatge i gats (després posat a pantalla completa a mà) |
 | [oxigeno](examples/oxigeno) | fet per Codex amb una frase: un astronauta amb aspecte de ZX Spectrum que busca ampolles d'oxigen, amb la seva pantalla de càrrega de cinta |

@@ -14,7 +14,9 @@ typedef struct {
     psg_note n;
     bool on, releasing;
     float phase, freq, t, env, attack_step, decay_k, release_k;
-    uint16_t lfsr; float noise; /* noise: a 15-bit shift register clocked at the voice's frequency */
+    uint16_t lfsr; float noise; /* noise: a 15-bit (or 7-bit) shift register clocked at the voice's frequency */
+    float vib_phase, bend, mult; /* mult: the pitch's factor from vibrato and bend, worked out every 16 samples */
+    unsigned tick;
 } voice;
 
 static voice V[PSG_VOICES];
@@ -31,13 +33,21 @@ void psg_play(int ch, const psg_note *n) {
     if (!sine[SINE_N / 4])
         for (int i = 0; i < SINE_N; i++) sine[i] = sinf(6.2831853f * i / SINE_N);
     const float dt = 1.0f / AUDIO_HZ;
-    voice v = {.n = *n, .on = true, .freq = n->freq, .lfsr = 0x7FFF, .noise = 1};
+    voice v = {.n = *n, .on = true, .freq = n->freq, .lfsr = n->lfsr7 ? 0x7F : 0x7FFF, .noise = 1, .bend = n->bend, .mult = 1};
     v.attack_step = n->attack > dt ? dt / n->attack : 1;
     v.env = n->attack > dt ? 0 : 1;
     v.decay_k = n->decay > 0 ? expf(-dt / n->decay) : 0;
     v.release_k = expf(-dt / (n->release > 0.001f ? n->release : 0.001f));
     hal_audio_lock();
     V[ch] = v;
+    hal_audio_unlock();
+}
+
+void psg_set(int ch, const psg_mod *m) {
+    if (ch < 0 || ch >= PSG_VOICES) return;
+    hal_audio_lock();
+    if (m->vol >= 0) V[ch].n.vol = m->vol > 1 ? 1 : m->vol;
+    if (m->set_bend) V[ch].bend = m->bend;
     hal_audio_unlock();
 }
 
@@ -55,6 +65,7 @@ static inline float wave(voice *v) {
     case PSG_TRIANGLE: return 4 * fabsf(p - 0.5f) - 1;
     case PSG_SAW: return 2 * p - 1;
     case PSG_SINE: return sine[(int)(p * SINE_N) & (SINE_N - 1)];
+    case PSG_WAVE: return ((float)v->n.table[(int)(p * 32) & 31] - 7.5f) / 7.5f;
     default: return v->noise;
     }
 }
@@ -77,12 +88,18 @@ void psg_mix(float *acc, int m) {
                 if (v->n.sustain <= 0 && v->env < 0.0005f) v->on = false;
             }
             acc[i] += wave(v) * v->env * v->n.vol * AMP;
-            v->phase += v->freq * dt;
+            if (!(v->tick++ & 15) && (v->n.vib_depth > 0 || v->bend != 0)) { /* vibrato and bend move the pitch */
+                float vib = v->t >= v->n.vib_delay ? v->n.vib_depth * sine[(int)(v->vib_phase * SINE_N) & (SINE_N - 1)] : 0;
+                v->mult = exp2f(v->bend / 12.0f + vib / 1200.0f);
+            }
+            v->vib_phase += v->n.vib_speed * dt;
+            v->vib_phase -= (float)(int)v->vib_phase;
+            v->phase += v->freq * v->mult * dt;
             if (v->phase >= 1) {
                 v->phase -= (float)(int)v->phase;
                 if (v->n.wave == PSG_NOISE) { /* a new noise value each period */
-                    unsigned bit = (v->lfsr ^ (v->lfsr >> 1)) & 1;
-                    v->lfsr = (uint16_t)((v->lfsr >> 1) | (bit << 14));
+                    unsigned bit = (v->lfsr ^ (v->lfsr >> 1)) & 1, top = v->n.lfsr7 ? 6 : 14;
+                    v->lfsr = (uint16_t)((v->lfsr >> 1) | (bit << top));
                     v->noise = v->lfsr & 1 ? 1 : -1;
                 }
             }
