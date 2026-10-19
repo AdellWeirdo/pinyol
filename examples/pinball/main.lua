@@ -208,6 +208,8 @@ function _draw()
   elseif state == "over" then
     banner("FIN", score .. " PUNTOS", "A: OTRA PARTIDA")
   elseif state == "ready" then
-    text("ABAJO: MUELLE", 418, 190, {font = "main", color = charge > 0 and AMBER or DIM, align = "center"})
+    local hint = charge > 0 and AMBER or DIM
+    text("ABAJO:", 418, 186, {font = "main", color = hint, align = "center"})
+    text("MUELLE", 418, 202, {font = "main", color = hint, align = "center"})
   end
 end
