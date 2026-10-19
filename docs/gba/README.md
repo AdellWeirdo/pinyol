@@ -73,3 +73,20 @@ its `audio.c` whole and rebuilds on top of it what this work added: `sfx(..., {d
 `instrument{}` as an `sfx` voice with its envelope and loop region. **Dropped on purpose:** the gain ramp (their engine steps the
 gain; the `synth` test is theirs again), `sfx`'s `echo`, and `reverb` as a send to the studio's reverb (`reverb` is their game
 reverb now). The PPU, `line_fx`, `store`, the PSG options and the Teclado toy merged as they were.
+
+### On the board, with this branch's firmware (2026-10-19)
+
+Built from `gba-on-catalog` (`-DBP_REMOTE=ON`, as the console's own build is): the Cirera menu works (screenshot checked), TRECE
+sent over the cable runs on the panel at 58-60 fps with the distance haze visible. Measured with `tools/remote.py`:
+
+- **`line_fx` (TRECE's haze) costs about 0.6 ms of PPU** (the `picture` figure 4.25 ms with it, 3.63 ms after `line_off()`); the fps
+  is 58-59 either way, so something else is the limit in that scene (tick 1.4 ms, render 14.8 ms).
+- **Eight instrument notes next to a running TRECE: no underrun, but one 5 s window fell to 38.6 fps** (render 22.6 ms, the mixer at
+  24 % of a core); the windows around it were 59.6 and 55.6 fps. The mixer shares core 1 with the second half of each frame. One
+  voice here costs about 1.6-1.8 % of a core (8 notes: +12-14 % over the 6 % idle), three times what the `gba-engine` voice cost
+  (0.6 %): this branch's voice has per-sample envelope, pan and reverb send work. **Keep instruments to a few voices at once next to
+  a heavy game** until the voice is made cheaper.
+- The saves' retry and a card that fails: still not tried.
+
+The firmware that was on the board (np2d-psx's build) is back in slot 0, checked by screenshot. The merged build is kept in the
+scratchpad only (`gba_on_catalog_firmware.bin`); TRECE's folder is on the card (`games/trece`, 3.4 MB).
