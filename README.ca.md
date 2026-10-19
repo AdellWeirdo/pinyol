@@ -154,6 +154,7 @@ Et queda un joc petit per canviar: una sala més gran que la pantalla, un person
 | [oxigeno](examples/oxigeno) | fet per Codex amb una frase: un astronauta amb aspecte de ZX Spectrum que busca ampolles d'oxigen, amb la seva pantalla de càrrega de cinta |
 | [museo_nocturno](examples/museo_nocturno) | fet per Codex amb una frase: un museu de nit en primera persona, cinc quadres robats i vigilants |
 | [paletes](examples/paletes) | fet per Codex amb una frase: pales i pilota contra la consola, en vectors, a 7 punts |
+| [pinball](examples/pinball) | una taula sencera a la pantalla, tres boles, quatre topalls i dues aletes que giren pel seu extrem (`physics` i el seu `w:drive`), un ressort que es tensa amb AVALL, una bola salvada |
 | [costa_relampago](examples/costa_relampago) | fet per Codex en tres encàrrecs (el joc, el seu art generat, 60 fps a la consola): un esquirol amb aspecte de Mega Drive en una costa, capes a la seva pròpia velocitat i un mar mogut línia a línia |
 
 ### Com una aventura feta de dades

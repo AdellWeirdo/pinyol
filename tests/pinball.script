@@ -1,0 +1,40 @@
+# pinball: a weak shot falls back to the spring and can be shot again; a full game played by an autopilot (it taps the flippers
+# when the ball comes down to them) ends with no ball left, some points, a ball that never left the table or went through a wall
+# (12 a tick at most) and parked at the spring on the game-over screen
+new
+tick 5
+expect_lua state == "title"
+press START
+tick 3
+expect_lua state == "ready"
+# a short pull: the ball rises part of the way, falls back, and the spring is ready again
+hold DOWN 7
+tick 3
+expect_lua state == "play"
+tick 500
+expect_lua state == "ready" and ball.x == 344 and ball.y > 300 and balls_left == 3
+# the autopilot
+lua real = {btn = btn, btnr = btnr, btnp = btnp}
+lua tl, tr, cl, cr, rt = 0, 0, 0, 0, 0
+lua btn = function(n) if n == "down" then return state == "ready" and ticks() - rt >= 2 and ticks() - rt < 50 end if n == "left" or n == "a" then if ticks() >= cl and ball.x < 228 and ball.y > 238 and ball.y < 274 and ball.vy > -0.5 then tl, cl = ticks() + 12, ticks() + 40 end return ticks() < tl end if n == "right" or n == "b" then if ticks() >= cr and ball.x >= 228 and ball.y > 238 and ball.y < 274 and ball.vy > -0.5 then tr, cr = ticks() + 12, ticks() + 40 end return ticks() < tr end return false end
+lua btnr = function(n) return n == "down" and state == "ready" and ticks() - rt == 50 end
+lua btnp = function(n) return false end
+lua stat = {vmax = 0, out = 0, plays = 0, last = "ready", still = 0, maxstill = 0}
+lua function watch() local v = math.sqrt(ball.vx ^ 2 + ball.vy ^ 2); if state == "play" then stat.vmax = math.max(stat.vmax, v) end; stat.still = (state == "play" and v < 0.3 and ball.x < 326) and stat.still + 1 or 0; stat.maxstill = math.max(stat.maxstill, stat.still) end
+lua function watch2() if ball.x < 118 or ball.x > 362 or ball.y < -5 or ball.y > 400 then stat.out = stat.out + 1 end; if state ~= stat.last then if state == "ready" then rt = ticks() end if state == "play" then stat.plays = stat.plays + 1 end; stat.last = state end end
+lua local u = _update; function _update() u(); watch(); watch2() end
+lua rt = ticks()
+tick 6000
+expect_lua state == "over" and balls_left == 0
+expect_lua score >= 500 and bumper_hits >= 5
+expect_lua stat.out == 0 and stat.vmax <= 12.6
+expect_lua stat.maxstill < 120
+expect_lua ball.x == 344 and ball.y > 300
+tick 600
+expect_lua state == "over" and ball.x == 344 and ball.y > 300
+# the real buttons back, and a new game starts from A
+lua btn, btnr, btnp = real.btn, real.btnr, real.btnp
+press A
+tick 3
+expect_lua state == "ready" and balls_left == 3 and score == 0
+expect_ok

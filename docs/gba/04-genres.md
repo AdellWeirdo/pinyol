@@ -205,7 +205,7 @@ examined.
 | 14 | Real-time grid battler | none | MISSING | |
 | 15 | Roguelike | none | MISSING | |
 | 16 | Puzzle | puzle (sliding), ladrillos (breakout) | PARTIAL | falling blocks, match-3, rotating-stick maze missing |
-| 17 | Pinball | none (`physics` has only `tests/games/*`) | MISSING | |
+| 17 | Pinball | pinball | PARTIAL | one table: no scrolling, bonus fields or multi-ball; flippers use `w:drive` |
 | 18 | Rhythm | control (cuts on the beat of a theme), sonidos | PARTIAL | no rhythm game proper; `studio.*` unused by examples |
 | 19 | Microgame / party | none | MISSING | |
 | 20 | Life sim / pet | none | MISSING | |
@@ -291,7 +291,7 @@ duels), isometric tactics/skate (Y+Z depth sort), Pac-Man maze-chase (`grid` + `
 4. No tilt/gyro/light sensors in `docs/hardware.md` (WarioWare: Twisted!, Yoshi tilt, Boktai have no pinyol analogue; `mic`
    and touch are the substitutes).
 5. `math.random` is fixed-seed by design: procedural games need a documented way to seed (e.g. from `ticks()` at first input).
-6. `physics` documents no driven/kinematic body (pinball flippers, elevators): verify in `lua_physics.c`.
+6. ~~`physics` documents no driven/kinematic body~~: it had none (a static body was never moved by the step and what it hit felt a wall that jumps). `w:drive(body, angle, px, py)` is one now (`src/lua_physics.c`: the pose goes to its target a substep at a time, with the speed of its surface; `tests/drive.script`). Found by building `examples/pinball`, which also needed a ball that falls back to the spring to be shot again, a saver that counts once a ball, and a ball parked at the game's end: all three were soft-locks the autopilot in `tests/pinball.script` found.
 7. `store` caps at 64 KB total: RPG parties, card collections and life-sim state may need budgeting guidance.
 8. Check `ppu.h` (128x128) vs `lua.md` (255x255) sprite size statement.
 

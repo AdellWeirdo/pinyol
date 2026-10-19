@@ -325,6 +325,8 @@ endif()
 # line_fx: a fade whose amount grows down the screen, then line_off: two pictures, no more, no fewer
 add_test(NAME physics_drive COMMAND $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/drive
   --saves ${CMAKE_BINARY_DIR}/saves_drive --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/drive.script)
+add_test(NAME pinball COMMAND $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/pinball
+  --saves ${CMAKE_BINARY_DIR}/saves_pinball --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/pinball.script)
 add_test(NAME linefx_crc COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/linefx \
   --saves ${CMAKE_BINARY_DIR}/saves_linefx_crc --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/linefx.script \
   --crc ${CMAKE_BINARY_DIR}/linefx.crc >/dev/null && test $(sort -u ${CMAKE_BINARY_DIR}/linefx.crc | wc -l) -eq 2")

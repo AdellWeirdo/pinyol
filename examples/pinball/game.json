@@ -1,0 +1,8 @@
+{
+  "id": "pinball",
+  "title": "Pinball",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "description": "Una mesa, tres bolas, tres topes y dos aletas que giran de verdad. Muelle con la tecla abajo.",
+  "subtitle": "Vectorial · physics y w:drive"
+}

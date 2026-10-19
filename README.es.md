@@ -153,6 +153,7 @@ Te queda un juego pequeño para cambiar: una sala más grande que la pantalla, u
 | [oxigeno](examples/oxigeno) | hecho por Codex con una frase: un astronauta con aspecto de ZX Spectrum que busca botellas de oxígeno, con su pantalla de carga de cinta |
 | [museo_nocturno](examples/museo_nocturno) | hecho por Codex con una frase: un museo de noche en primera persona, cinco cuadros robados y vigilantes |
 | [paletes](examples/paletes) | hecho por Codex con una frase: palas y pelota contra la consola, en vectores, a 7 puntos |
+| [pinball](examples/pinball) | una mesa entera en pantalla, tres bolas, cuatro topes y dos aletas que giran por su extremo (`physics` y su `w:drive`), un muelle que se tensa con ABAJO, una bola salvada |
 | [costa_relampago](examples/costa_relampago) | hecho por Codex en tres encargos (el juego, su arte generado, 60 fps en la consola): una ardilla con aspecto de Mega Drive en una costa, capas a su propia velocidad y un mar movido línea a línea |
 
 ### Como una aventura hecha de datos
