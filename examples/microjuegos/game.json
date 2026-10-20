@@ -1,0 +1,8 @@
+{
+  "id": "microjuegos",
+  "title": "Microjuegos",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "description": "Ocho juegos de cinco segundos, cuatro vidas y un jefe: cada uno ensucia la imagen y el sonido a propósito, y scene.clean lo limpia.",
+  "subtitle": "scene.go con clean · fundido, ventana, mosaico, LED"
+}

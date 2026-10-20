@@ -1,0 +1,200 @@
+# microjuegos: a whole run played by the games' own bots (to the boss, with all its lives and a faster speed on the way), a run that
+# loses every game (the lives go, the game ends), and the cleaning between games: after each microgame (each leaves something on the
+# picture or the sound) a plain scene is drawn and its frame is compared with the one drawn from nothing (the CMake test does it).
+new
+tick 5
+lua RUN = require("run"); SC = require("scene"); function cnt(t) local n = 0 for _ in pairs(t) do n = n + 1 end return n end
+expect_lua SC.top() == RUN.title and cnt(RUN.games) == 7 and RUN.boss.boss
+# the cleaning: the probe, from nothing
+lua PR = {enter = function() bg(3, {map = "BG1", prio = 3, wrap = false, mosaic = true}); palette("WORLD"); palette("OBJ", true); spr(0, sheet("THINGS"), 0, 100, 60, MOSAIC) end, draw = function() rect(20, 20, 60, 20, 0x80C080) end}
+lua SC.go(PR, nil, {clean = true})
+tick 3
+shot leak_0
+# each microgame, stained, then the probe
+lua function stain(i) run = RUN.new(true); SC.go(i == 8 and RUN.play or RUN.play, {game = i == 8 and RUN.boss or RUN.games[i]}, {clean = true}) end
+lua stain(1)
+tick 36
+lua SC.go(PR, nil, {clean = true})
+tick 3
+shot leak_1
+lua stain(2)
+tick 36
+lua SC.go(PR, nil, {clean = true})
+tick 3
+shot leak_2
+lua stain(3)
+tick 36
+lua SC.go(PR, nil, {clean = true})
+tick 3
+shot leak_3
+lua stain(4)
+tick 36
+lua SC.go(PR, nil, {clean = true})
+tick 3
+shot leak_4
+lua stain(5)
+tick 36
+lua SC.go(PR, nil, {clean = true})
+tick 3
+shot leak_5
+lua stain(6)
+tick 36
+lua SC.go(PR, nil, {clean = true})
+tick 3
+shot leak_6
+lua stain(7)
+tick 36
+expect_led FF2000
+lua SC.go(PR, nil, {clean = true})
+tick 3
+expect_led off
+shot leak_7
+lua stain(8)
+tick 36
+lua SC.go(PR, nil, {clean = true})
+tick 3
+shot leak_8
+# the bots win every game whatever the random numbers are (the first verdict of each, five seeds a game; the board once lost a run the host won
+# because one bot ran into the rocks, and only some random numbers showed it)
+lua RES = {}
+lua math.randomseed(1); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[1]}, {clean = true})
+tick 250
+lua RES[101] = run.log and run.log[1]
+lua math.randomseed(2); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[1]}, {clean = true})
+tick 250
+lua RES[102] = run.log and run.log[1]
+lua math.randomseed(3); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[1]}, {clean = true})
+tick 250
+lua RES[103] = run.log and run.log[1]
+lua math.randomseed(4); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[1]}, {clean = true})
+tick 250
+lua RES[104] = run.log and run.log[1]
+lua math.randomseed(5); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[1]}, {clean = true})
+tick 250
+lua RES[105] = run.log and run.log[1]
+lua math.randomseed(1); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[2]}, {clean = true})
+tick 250
+lua RES[201] = run.log and run.log[1]
+lua math.randomseed(2); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[2]}, {clean = true})
+tick 250
+lua RES[202] = run.log and run.log[1]
+lua math.randomseed(3); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[2]}, {clean = true})
+tick 250
+lua RES[203] = run.log and run.log[1]
+lua math.randomseed(4); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[2]}, {clean = true})
+tick 250
+lua RES[204] = run.log and run.log[1]
+lua math.randomseed(5); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[2]}, {clean = true})
+tick 250
+lua RES[205] = run.log and run.log[1]
+lua math.randomseed(1); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[3]}, {clean = true})
+tick 220
+lua RES[301] = run.log and run.log[1]
+lua math.randomseed(2); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[3]}, {clean = true})
+tick 220
+lua RES[302] = run.log and run.log[1]
+lua math.randomseed(3); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[3]}, {clean = true})
+tick 220
+lua RES[303] = run.log and run.log[1]
+lua math.randomseed(4); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[3]}, {clean = true})
+tick 220
+lua RES[304] = run.log and run.log[1]
+lua math.randomseed(5); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[3]}, {clean = true})
+tick 220
+lua RES[305] = run.log and run.log[1]
+lua math.randomseed(1); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[4]}, {clean = true})
+tick 100
+lua RES[401] = run.log and run.log[1]
+lua math.randomseed(2); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[4]}, {clean = true})
+tick 100
+lua RES[402] = run.log and run.log[1]
+lua math.randomseed(3); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[4]}, {clean = true})
+tick 100
+lua RES[403] = run.log and run.log[1]
+lua math.randomseed(4); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[4]}, {clean = true})
+tick 100
+lua RES[404] = run.log and run.log[1]
+lua math.randomseed(5); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[4]}, {clean = true})
+tick 100
+lua RES[405] = run.log and run.log[1]
+lua math.randomseed(1); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[5]}, {clean = true})
+tick 250
+lua RES[501] = run.log and run.log[1]
+lua math.randomseed(2); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[5]}, {clean = true})
+tick 250
+lua RES[502] = run.log and run.log[1]
+lua math.randomseed(3); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[5]}, {clean = true})
+tick 250
+lua RES[503] = run.log and run.log[1]
+lua math.randomseed(4); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[5]}, {clean = true})
+tick 250
+lua RES[504] = run.log and run.log[1]
+lua math.randomseed(5); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[5]}, {clean = true})
+tick 250
+lua RES[505] = run.log and run.log[1]
+lua math.randomseed(1); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[6]}, {clean = true})
+tick 150
+lua RES[601] = run.log and run.log[1]
+lua math.randomseed(2); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[6]}, {clean = true})
+tick 150
+lua RES[602] = run.log and run.log[1]
+lua math.randomseed(3); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[6]}, {clean = true})
+tick 150
+lua RES[603] = run.log and run.log[1]
+lua math.randomseed(4); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[6]}, {clean = true})
+tick 150
+lua RES[604] = run.log and run.log[1]
+lua math.randomseed(5); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[6]}, {clean = true})
+tick 150
+lua RES[605] = run.log and run.log[1]
+lua math.randomseed(1); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[7]}, {clean = true})
+tick 200
+lua RES[701] = run.log and run.log[1]
+lua math.randomseed(2); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[7]}, {clean = true})
+tick 200
+lua RES[702] = run.log and run.log[1]
+lua math.randomseed(3); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[7]}, {clean = true})
+tick 200
+lua RES[703] = run.log and run.log[1]
+lua math.randomseed(4); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[7]}, {clean = true})
+tick 200
+lua RES[704] = run.log and run.log[1]
+lua math.randomseed(5); run = RUN.new(true); SC.go(RUN.play, {game = RUN.games[7]}, {clean = true})
+tick 200
+lua RES[705] = run.log and run.log[1]
+lua math.randomseed(1); run = RUN.new(true); SC.go(RUN.play, {game = RUN.boss}, {clean = true})
+tick 200
+lua RES[801] = run.log and run.log[1]
+lua math.randomseed(2); run = RUN.new(true); SC.go(RUN.play, {game = RUN.boss}, {clean = true})
+tick 200
+lua RES[802] = run.log and run.log[1]
+lua math.randomseed(3); run = RUN.new(true); SC.go(RUN.play, {game = RUN.boss}, {clean = true})
+tick 200
+lua RES[803] = run.log and run.log[1]
+lua math.randomseed(4); run = RUN.new(true); SC.go(RUN.play, {game = RUN.boss}, {clean = true})
+tick 200
+lua RES[804] = run.log and run.log[1]
+lua math.randomseed(5); run = RUN.new(true); SC.go(RUN.play, {game = RUN.boss}, {clean = true})
+tick 200
+lua RES[805] = run.log and run.log[1]
+lua bad = {}; for k, v in pairs(RES) do if v ~= "win" then bad[k] = true end end
+expect_lua cnt(bad) == 0 and cnt(RES) == 40
+# a run played by the bots: from the title's "Demostración" to the boss
+lua SC.go(RUN.title, nil, {clean = true})
+tick 10
+press DOWN
+press A
+tick 20
+expect_lua run.bot and run.lives == 4 and run.played == 0
+lua played = {}; local u = _update; function _update() u(); if SC.top() == RUN.play and RUN.current then played[RUN.current.verb] = true end end
+tick 3500
+expect_lua SC.top() == RUN.title and cnt(played) >= 5 and played["¡JEFE!"]
+expect_lua stored("best") >= 1300
+# a run that loses every game: the lives go, one a game, and it ends
+lua run = RUN.new(true, true); SC.go(RUN.interlude, nil, {clean = true})
+tick 20
+expect_lua run.lives == 4
+lua lost_at = {}; local u2 = _update; function _update() u2(); if SC.top() == RUN.over and not lost_at.t then lost_at.t = run.played; lost_at.lives = run.lives end end
+tick 2000
+expect_lua lost_at.lives == 0 and lost_at.t >= 4 and lost_at.t <= 13
+expect_ok

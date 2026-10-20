@@ -1,0 +1,8 @@
+{
+  "asset": "BG1",
+  "type": "tilemap",
+  "tiles": 3,
+  "map_w": 30,
+  "map_h": 20,
+  "palette": "WORLD"
+}

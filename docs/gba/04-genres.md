@@ -207,7 +207,7 @@ examined.
 | 16 | Puzzle | puzle (sliding), ladrillos (breakout) | PARTIAL | falling blocks, match-3, rotating-stick maze missing |
 | 17 | Pinball | pinball | PARTIAL | one table: no scrolling, bonus fields or multi-ball; flippers use `w:drive` |
 | 18 | Rhythm | control (cuts on the beat of a theme), sonidos | PARTIAL | no rhythm game proper; `studio.*` unused by examples |
-| 19 | Microgame / party | none | MISSING | |
+| 19 | Microgame / party | microjuegos | PARTIAL | eight games, speed ramp, boss; no touch, microphone or tilt games, no assets loaded per game from the card |
 | 20 | Life sim / pet | none | MISSING | |
 | 21 | Card / board | none | MISSING | |
 | 22 | Sports | futbol (5-a-side), paletes (pong) | PARTIAL | golf, tennis, skate missing |
@@ -352,4 +352,25 @@ The ranked list expected per-line effects, `scene` and the 480 x 320 menus to be
   reads their tile numbers with `mget` and empties the layer when it begins.
 - **For script tests** `#` is a comment anywhere in a line (the same as `combate` found): a counting helper (`cnt`) in the script's first line
   does what `#t` cannot.
+
+## 9. What building the microgames showed (`examples/microjuegos`)
+
+The list expected `scene.go` hygiene, the full reset of the picture between games and the load time of each game to be the problems. What it found:
+
+- **`scene.go` did not reset the picture's effects**, only the sprites and juice's tweens. A game that leaves a fade, a window with its per-line
+  spans, a mosaic, a hidden layer, a note of the synthesiser or the LED leaves them to the next. Two examples (`combate`, `tablero`) had each copied the
+  same reset by hand. Now it is `scene.clean()` in `lib/scene.lua`, and `scene.go(s, args, {clean = true})` calls it; `docs/lua.md` says so. The game
+  keeps eight microgames that each leave one of those on purpose, and `tests/microjuegos.script` draws a plain scene after each and compares its frame
+  with one drawn from nothing: the same bytes. Mutants of `clean` (without `fx_off`, `mosaic`, `show(ALL)`, `line_off`, `led`, or `go` ignoring the option) are caught.
+- **What cannot leak is not worth cleaning**: `camera` and `clip` are one drawing's state (the engine resets them each frame), and `window_off(0)` after
+  `line_off()` is invisible (the window then covers the whole picture). The reset leaves them out, or keeps the redundant call, as the case is.
+- **Load time is not a problem on the console**: thirteen games in a run, each with its backdrop and its sheet loaded as it begins, 59.4-60 fps and no slow tick
+  after the first scene's 55 ms.
+- **The bots were the bug**: a demonstration played by each game's own `bot` lost on the console what it won on the host, because one bot ran into the
+  rocks and only some random numbers showed it. A sweep of the first verdict of each game under several seeds (`math.randomseed`) found it, a bot that moves
+  to the nearest free gap instead of away from the nearest rock fixed it, and the test keeps the sweep (5 seeds a game). A game played by a bot should be tested under
+  many seeds, not the one a run happens to have.
+- **For script tests**: `#` is a comment anywhere in a line (a third time): `bad[#bad + 1]` was cut to `bad[` and the check that used it passed; write `bad[k] = true`.
+  The generic `script_<name>` test runs every script with `--check-strips`, which is several times slower than the plain run: a script of 27 000 ticks took 75 s
+  there, and one of 17 000 took 26 s.
 
