@@ -323,18 +323,29 @@ python3 make_md.py docs/gba/baseline-ppu-host.md   # regenerates this file
 Requires `cc` (Apple clang), `/opt/homebrew/bin/gcc-16` (`brew install gcc`), Python 3. `build.sh` reads
 `/Users/pauavila/Desktop/DEV/pinyol/np2d/src/ppu.c` in place; it does not write inside `np2d`.
 
-## Two changes measured with `ppu_golden_test --bench` (2026-10-20)
+## The renderer's changes of 2026-10-20, measured again against the one before them
 
-`ppu_golden_test --bench [scene [frames]]` times a frame of each golden scene (best of five runs), so a change to the renderer is timed
-on exactly the scenes that judge it. Release build, a Mac; the numbers below are the best of six interleaved rounds, because a single run
-moves by up to 10 %.
+`ppu_golden_test --bench [scene [frames]]` times a frame of each golden scene (best of five runs). Release build on a Mac, best of five
+interleaved rounds (a single run moves by up to 10 %), each against `src/ppu.c` at `9354805`, before `line_pal`, the turned-sprite span and
+the blend's tracking:
 
-- **A turned sprite drawn only where its pixels fall** (`obj_line_x`): 16 turned 64 x 64 sprites 607 -> 67 us a frame with the double
-  area, 204 -> 64 without; the same frames (`g.obj-affine-turns`, recorded before the change).
-- **The pixel under the top one kept only by the blend's first target**: a layer that is not in the first target no longer copies
-  what it covers on every pixel. 4 layers + alpha + window -11.7 %, `g.stress` -6.4 %, `g.blend-sprites` -6.4 %, the rest within the
-  noise; the same frames, and two mutants of the condition fail three goldens each.
-- **Tried and left out: the three channels blended at once** (packed into 32 bits, exact to the bit when the weights add up to 16 or
-  less: 375 million pairs of colours and weights compared). On the computer it was mixed (-8 % on some scenes, +15 % on `g.alpha-kinds`,
-  whose weights pass 16), so it is not in; the console's core multiplies more slowly and may say otherwise: worth a try with `bench_ppu`.
+| Scene | big (all of them specialised) | now |
+|---|---|---|
+| layers4 | +0.3 % | -3.2 % |
+| mode0 | -1.7 % | -1.9 % |
+| fx.alpha-window | -3.0 % | -2.4 % |
+| g.alpha-kinds | -0.2 % | +1.2 % |
+| g.stress | +2.0 % | +2.5 % |
+| g.obj-affine-turns | -67.2 % | -66.9 % |
+
+- **The turned sprite's span is the one real gain**: 16 turned 64 x 64 sprites 607 -> 67 us a frame with the double area, 204 -> 64 without.
+- **The blend's tracking gained nothing against the original**: the -11.7 % first written for it was measured against the renderer after
+  `line_pal`, which had made those scenes slower; against the one before, it is within the noise.
+- **The code size is what changed the most, and it is the console's RAM**: `ppu.c` runs from IRAM, which the ESP32-S3 shares with data.
+  Specialising every build (eight ways a line is drawn, each with the span and two kinds of tile layer) took its code from 17.9 KB to 59.3
+  KB: on the board the PPU bench could no longer find 76 KB of internal RAM for its frame. Now the span is a function of its own, the
+  line-palette builds are two (no window and no blend, the sky-and-sea case; and one for the rest, chosen as it runs), and only tile
+  layers have two tracking builds: 31.3 KB, the same frames, the same gains.
+- **Tried and left out: the three channels blended at once** (exact to the bit when the weights add up to 16 or less: 375 million cases
+  compared): mixed on the computer.
 

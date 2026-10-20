@@ -330,7 +330,7 @@ The ranked list expected per-line effects, `scene` and the 480 x 320 menus to be
   (render 15.4 to 23 ms), and the game turned it on only while an enemy spins away. Since then the renderer works out, for each line, the span where a
   turned sprite's source falls inside it, and steps its coordinates by additions: on a computer 16 turned 64 x 64 sprites went from 607 to 67 us a frame
   with the double area (204 to 64 without), the same pixels (`g.obj-affine-turns`, a golden of 24 sprites turned, scaled, sheared and mirrored every way).
-  Not yet measured on the console (`bench_ppu.c` has the scene).
+  On the console the 15 reference scenes did not move (+0.02 %); 128 turned sprites in their double area are 4.26 M cycles a frame.
 - **`scene.go` leaves no effect behind**: `tests/combate.script` compares the meadow's frame before a fight and after it (same party on the screen) and
   they are the same bytes; the game still resets the PPU's effects when each scene begins (`ppu.lua`), and a mutant that does not is caught by that comparison.
 - **Bugs in the game, found by playing whole fights with an autopilot** (not the engine's): the last enemy falling in the middle of a turn skipped the victory

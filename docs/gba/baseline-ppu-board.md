@@ -124,3 +124,18 @@ registers' addresses was +1.0 %; building the layer and sprite functions twice, 
 per line), +0.34 %. The use costs were measured after a copy of both palettes each line (+9.4 %) and after the copy made once a frame with a patch and restore of the
 entries a line changes (+7.7 %).
 
+## The renderer after its 2026-10-20 changes, on the board
+
+The PPU bench with `src/ppu.c` as committed after `47c8470` (reduced to 31.3 KB of code), against `9354805` on the same board: the 15
+scenes sum to +0.02 %, each between -7.1 % (4 layers and windows) and +2.7 %, the same frame hashes. Free internal RAM at the bench's start
+196 KB, largest block 104 KB (the version with every build specialised: 166 KB and 72 KB, and the bench could not place its frame).
+128 turned 16 x 16 sprites in their double area: 4.26 M cycles a frame (a new scene, no older number to compare).
+
+`horizonte` with a palette on every line and the sea's shimmer: 59.6 fps (the sea now repaints half its lines a frame, the even and the odd in
+turn; with all sixty a frame and the reduced renderer it was 50-52, with the big one 55).
+
+**The 24 ms slow frames and `-DBP_TE_LOCK`**: `horizonte` flat for a minute, the game list's own perf line and log. The normal loop: 96
+slow frames a minute (1.56 a second, as the 61.5 Hz panel against the 60 Hz timer predicts) and 59.6 ticks a second; locked to the panel's
+scans: 35 a minute and 61.0 ticks a second (the game 2.4 % fast). Fewer, not none, and the game's speed changes: left off. The cure that
+remains is the panel's own frame rate set to 60 Hz.
+

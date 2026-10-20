@@ -343,6 +343,32 @@ static inline bool obj_pixel(const ppu_obj *o, int sx, int sy, const uint16_t *p
     return true;
 }
 
+/* A turned sprite's line, no mosaic: only the span of the line where the source falls inside the sprite, its coordinates stepped by
+ * additions (as obj_pixel works them out, to the bit). Not inlined into each way a line is drawn: it is called once a sprite a line. */
+static __attribute__((noinline)) void obj_affine_line(lines *L, const ppu_obj *o, int y, int xa, int xb, const uint16_t *opal, uint32_t id,
+                                                      bool win, bool track) {
+    const ppu_affine *A = &PPU.affine[o->affine & (PPU_AFFINES - 1)];
+    const int w = o->w, h = o->h, dy = 2 * (y - o->y) + 1 - h, k0 = 1 - w - 2 * o->x; /* dx = 2 x + k0 */
+    const int32_t mu = A->pa * k0 + A->pb * dy, mv = A->pc * k0 + A->pd * dy;  /* source u, v at x = 0, in 512ths */
+    int x0 = xa, x1 = xb;
+    affine_span(2 * A->pa, mu, -(int64_t)(w / 2) * 512, (int64_t)(w - w / 2) * 512, &x0, &x1);
+    affine_span(2 * A->pc, mv, -(int64_t)(h / 2) * 512, (int64_t)(h - h / 2) * 512, &x0, &x1);
+    if (x0 < xa) x0 = xa;
+    if (x1 > xb) x1 = xb;
+    int32_t U = mu + 2 * A->pa * x0, V = mv + 2 * A->pc * x0;
+    const int32_t su = 2 * A->pa, sv = 2 * A->pc;
+    for (int x = x0; x < x1; x++, U += su, V += sv) {
+        int u = (U >> 9) + w / 2, v = (V >> 9) + h / 2;
+        if ((unsigned)u >= (unsigned)w || (unsigned)v >= (unsigned)h) continue;
+        if (o->idx) {
+            uint8_t i = o->idx[v * w + u];
+            if (i) put_obj(L, x, opal[(i + o->bank * 16) & 255] | id, win, track);
+        } else if (o->rgb && (!o->mask || (o->mask[v * ((w + 7) / 8) + (u >> 3)] & (0x80 >> (u & 7))))) {
+            put_obj(L, x, o->rgb[v * w + u] | id, win, track);
+        }
+    }
+}
+
 ALWAYS void obj_line_x(lines *L, const ppu_obj *o, int y, bool win, bool track, bool lp) {
     const uint16_t *opal = lp ? L->objp : PPU.obj_pal;
     int bx, by, bw, bh;
@@ -371,30 +397,7 @@ ALWAYS void obj_line_x(lines *L, const ppu_obj *o, int y, bool win, bool track, 
             }
         return;
     }
-    if (o->affine >= 0 && mw == 1 && mh == 1) { /* turned, no mosaic: only the span of the line where the source falls inside the sprite,
-                                                 * its coordinates stepped by additions (as obj_pixel works them out, to the bit) */
-        const ppu_affine *A = &PPU.affine[o->affine & (PPU_AFFINES - 1)];
-        const int w = o->w, h = o->h, dy = 2 * (y - o->y) + 1 - h, k0 = 1 - w - 2 * o->x; /* dx = 2 x + k0 */
-        const int32_t mu = A->pa * k0 + A->pb * dy, mv = A->pc * k0 + A->pd * dy;  /* source u, v at x = 0, in 512ths */
-        int x0 = xa, x1 = xb;
-        affine_span(2 * A->pa, mu, -(int64_t)(w / 2) * 512, (int64_t)(w - w / 2) * 512, &x0, &x1);
-        affine_span(2 * A->pc, mv, -(int64_t)(h / 2) * 512, (int64_t)(h - h / 2) * 512, &x0, &x1);
-        if (x0 < xa) x0 = xa;
-        if (x1 > xb) x1 = xb;
-        int32_t U = mu + 2 * A->pa * x0, V = mv + 2 * A->pc * x0;
-        const int32_t su = 2 * A->pa, sv = 2 * A->pc;
-        for (int x = x0; x < x1; x++, U += su, V += sv) {
-            int u = (U >> 9) + w / 2, v = (V >> 9) + h / 2;
-            if ((unsigned)u >= (unsigned)w || (unsigned)v >= (unsigned)h) continue;
-            if (o->idx) {
-                uint8_t i = o->idx[v * w + u];
-                if (i) put_obj(L, x, opal[(i + o->bank * 16) & 255] | id, win, track);
-            } else if (o->rgb && (!o->mask || (o->mask[v * ((w + 7) / 8) + (u >> 3)] & (0x80 >> (u & 7))))) {
-                put_obj(L, x, o->rgb[v * w + u] | id, win, track);
-            }
-        }
-        return;
-    }
+    if (o->affine >= 0 && mw == 1 && mh == 1) { obj_affine_line(L, o, y, xa, xb, opal, id, win, track); return; }
     int sy = mh > 1 ? y - y % mh : y;
     for (int x = xa; x < xb;) { /* a block of mw screen pixels (mosaic) shows its left edge */
         int x0 = x - x % mw, x1 = x0 + mw < xb ? x0 + mw : xb;
@@ -428,15 +431,11 @@ ALWAYS void layers_x(lines *L, int p, int y, bool win, bool track, bool lp) {
         if ((b->prio & 3) != p || !(PPU.layers & (1 << n))) continue;
         /* The pixel under the top one is read only where the top one is the blend's first target (or a blending sprite, which keeps
          * its own count): a layer that is not in the first target need not keep it, a layer in it copies what it covers as it draws */
-        if (track && (PPU.fx.first & (1 << n))) {
-            if (b->mode == BG_TILES) bg_tiles_x(L, b, n, y, win, true, lp);
-            else if (b->mode == BG_AFFINE) bg_affine_x(L, b, n, y, win, true, lp);
-            else if (b->mode == BG_BITMAP) bg_bitmap_x(L, b, n, y, win, true);
-        } else {
-            if (b->mode == BG_TILES) bg_tiles_x(L, b, n, y, win, false, lp);
-            else if (b->mode == BG_AFFINE) bg_affine_x(L, b, n, y, win, false, lp);
-            else if (b->mode == BG_BITMAP) bg_bitmap_x(L, b, n, y, win, false);
-        }
+        if (b->mode == BG_TILES) { /* (tile layers, the common kind, in both builds; the others keep it always, which is never wrong) */
+            if (track && (PPU.fx.first & (1 << n))) bg_tiles_x(L, b, n, y, win, true, lp);
+            else bg_tiles_x(L, b, n, y, win, false, lp);
+        } else if (b->mode == BG_AFFINE) bg_affine_x(L, b, n, y, win, track, lp);
+        else if (b->mode == BG_BITMAP) bg_bitmap_x(L, b, n, y, win, track);
     }
     for (int w = PPU_OBJS / 32 - 1; w >= 0; w--)
         for (uint32_t m = F.rows[y][w] & F.pri[p][w]; m;) {
@@ -446,16 +445,14 @@ ALWAYS void layers_x(lines *L, int p, int y, bool win, bool track, bool lp) {
         }
 }
 
-/* Each in two builds: the common one reads the palettes at the registers' own (constant) addresses; the other, for a frame that replaces
- * palette entries on some lines (line_pal), reads this line's. A pointer in a register costs the inner loops several percent. */
+/* The common builds read the palettes at the registers' own (constant) addresses: a pointer in a register costs the inner loops several
+ * percent. A frame that replaces palette entries on some lines (line_pal) has one build of its own, which reads this line's. */
 static void layers_plain(lines *L, int p, int y) { layers_x(L, p, y, false, false, false); }
 static void layers_track(lines *L, int p, int y) { layers_x(L, p, y, false, true, false); }
 static void layers_win(lines *L, int p, int y) { layers_x(L, p, y, true, false, false); }
 static void layers_win_track(lines *L, int p, int y) { layers_x(L, p, y, true, true, false); }
-static void layers_plain_lp(lines *L, int p, int y) { layers_x(L, p, y, false, false, true); }
-static void layers_track_lp(lines *L, int p, int y) { layers_x(L, p, y, false, true, true); }
-static void layers_win_lp(lines *L, int p, int y) { layers_x(L, p, y, true, false, true); }
-static void layers_win_track_lp(lines *L, int p, int y) { layers_x(L, p, y, true, true, true); }
+static void layers_plain_lp(lines *L, int p, int y) { layers_x(L, p, y, false, false, true); } /* a sky or a sea: no window, no blend */
+static void layers_lp(lines *L, int p, int y) { layers_x(L, p, y, L->win, F.track, true); } /* (the rest, rare: one build, its ways chosen as it runs) */
 
 /* ------------------------------------------------------------------ the frame */
 
@@ -558,8 +555,7 @@ static void line(lines *L, int y, uint16_t *out) {
     L->win = PPU.win.on[0] || PPU.win.on[1] || PPU.win.obj_on;
     if (L->win) windows(L, y);
     void (*layers)(lines *, int, int) =
-        lp ? (L->win ? (F.track ? layers_win_track_lp : layers_win_lp) : (F.track ? layers_track_lp : layers_plain_lp))
-           : (L->win ? (F.track ? layers_win_track : layers_win) : (F.track ? layers_track : layers_plain));
+        lp ? (!L->win && !F.track ? layers_plain_lp : layers_lp) : (L->win ? (F.track ? layers_win_track : layers_win) : (F.track ? layers_track : layers_plain));
     for (int p = 3; p >= 0; p--) layers(L, p, y);
 
     int ea = PPU.fx.eva, eb = PPU.fx.evb, ey = PPU.fx.evy;
