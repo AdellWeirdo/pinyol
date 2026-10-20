@@ -152,5 +152,6 @@ scans: 35 a minute and 61.0 ticks a second (the game 2.4 % fast). Fewer, not non
 `horizonte` locked and calibrated: 59.4-59.6 fps, panel 59.97 Hz, no frame over 20 ms in a minute. One step of RTN is 0.14 Hz, and a cold
 panel just flashed can time 61.24-61.25 Hz at the start, past the 61.23 where 1A9h is nearer: so the perf line also trims it
 (`display_trim_rate`, its scans over at least 2 s, when they are 0.1 Hz off). Seen once: 1A9h at the start, 59.90 Hz in the first window,
-1A8h from then on and 59.98-60.03 Hz for 90 s; the menu, 17 slow frames a minute.
+1A8h from then on and 59.98-60.03 Hz for 90 s; the menu, 17 slow frames a minute. Watched on the screen (the v0.3.0 firmware, booted with no
+microSD): no flicker in the first seconds, when the trim rewrites RTN.
 
