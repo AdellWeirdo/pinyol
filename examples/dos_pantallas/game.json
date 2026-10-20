@@ -1,0 +1,9 @@
+{
+  "id": "dos_pantallas",
+  "title": "Dos pantallas",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "screens": 2,
+  "author": "",
+  "description": "Como la DS: abajo, el mapa táctil con cinco figuras (toca la más cercana, lánzala con un golpe del dedo); arriba, una vista cercana de la elegida. La cruz tiene prioridad sobre el dedo."
+}

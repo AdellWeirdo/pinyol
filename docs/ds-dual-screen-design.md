@@ -44,7 +44,7 @@ A is the one that feels like a DS; C is the cheap first step that proves the mod
 1. **Built (`screens` in game.json, `screen(n)`, `tests/dual.script`).** Layout C on SDL and headless: `screens` in `game.json`, `screen(n)`, the PPU context, two world buffers, `shot` of both. Proves 1-4 with no platform change.
 2. Layout A and the size query, in SDL, web and libretro.
 3. Touch mapping and `pen()` in screen-local pixels, with `tests/*.script` (`tap`, `drag` already exist) on the bottom screen and a tap on the top one that does nothing.
-4. An example (`examples/dos_pantallas`): map above, `lib/pointer.lua` below.
+4. **Built:** `examples/dos_pantallas` (a close view above, the touch map and `lib/pointer.lua` below).
 5. Firmware, with the board in hand.
 
 ## What it costs

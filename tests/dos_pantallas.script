@@ -1,0 +1,22 @@
+# examples/dos_pantallas: a tap on the bottom map picks the nearest figure, a flick sends it, the cross beats the flick.
+new
+tick 2
+expect_lua sel == 1
+tap 310 120
+tick 2
+expect_lua sel == 2
+tap 322 118
+tick 2
+expect_lua sel == 2
+tap 100 100
+tick 2
+expect_lua sel == 2
+shot dos_pick
+swipe 350 180 410 180
+tick 30
+expect_lua sel == 3 and units[3].x > 120
+shot dos_flick
+hold RIGHT 10
+tick 2
+expect_lua units[3].vx == 0
+expect_ok
