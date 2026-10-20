@@ -1,0 +1,8 @@
+{
+  "id": "combate",
+  "title": "Hierba Alta",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "description": "Un campo de hierba alta, enemigos escondidos y combates por turnos: destello, ondulación, mosaico e iris con los efectos del propio PPU.",
+  "subtitle": "RPG por turnos · scene, line_window, mosaico, spr_mat"
+}

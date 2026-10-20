@@ -200,7 +200,7 @@ examined.
 | 9 | Other racing | none | MISSING | top-down or OutRun-style scanline road; low priority |
 | 10 | FPS / software 3D | laberinto, museo_nocturno (raycast), inventos (3D toy) | COVERED | |
 | 11 | Top-down action-adventure | aldea (talk, chest), hola (data adventure) | PARTIAL | no combat, dungeon, keys/items loop, boss, or cave lighting |
-| 12 | JRPG | aldea (overworld/dialogue only); control (story lib) | MISSING | battle scene, encounters, menus, party data, transitions |
+| 12 | JRPG | combate (meadow, encounters, fight by turns, party saved); aldea (dialogue) | PARTIAL | no shops, equipment, status effects, story or link trade; one spell each |
 | 13 | Tactics | none (`grid` has only `tests/grid.script`) | MISSING | |
 | 14 | Real-time grid battler | none | MISSING | |
 | 15 | Roguelike | none | MISSING | |
@@ -318,3 +318,21 @@ https://www.xda-developers.com/how-quake-ported-game-boy-advance/. Pokemon RTC: 
 (search).
 pinyol: `docs/lua.md`, `src/ppu.h`, `src/ppu.c`, `src/lua_game.c`, `docs/hardware.md`, `README.md`, each
 `examples/*/main.lua` header, `tests/` listing.
+
+## 7. What building the JRPG showed (`examples/combate`)
+
+The ranked list expected per-line effects, `scene` and the 480 x 320 menus to be where a JRPG would find gaps. What it found:
+
+- **`line_window`, `window`/`window_out`, `line_scroll`, `mosaic`, `fade`, `spr_mat` all work together** (a flash, a ripple, a blocky screen and an iris
+  closing on the hero, then a fight). Nothing in the engine had to change. On the console the meadow is 60 fps, the swirl's second 47-52,
+  the fight 59.5-59.8.
+- **`DOUBLE` costs four times the pixels**: three enemies of 64 x 64 drawn in a 128 x 128 area took the fight from 59.6 to about 40 fps
+  (render 15.4 to 23 ms). It is now only on while an enemy spins away. `docs/lua.md` says it.
+- **`scene.go` leaves no effect behind**: `tests/combate.script` compares the meadow's frame before a fight and after it (same party on the screen) and
+  they are the same bytes; the game still resets the PPU's effects when each scene begins (`ppu.lua`), and a mutant that does not is caught by that comparison.
+- **Bugs in the game, found by playing whole fights with an autopilot** (not the engine's): the last enemy falling in the middle of a turn skipped the victory
+  check and sent the player back to a menu with nothing to hit; the menu's down arrow moved one entry instead of the other row; the theme's panel is
+  parchment, where white letters do not read (the game draws its own dark box, `ui.lua`).
+- **For script tests**: `#` starts a comment anywhere in a line of a `.script` (not only at its start), so `#t` in an `expect_lua` is cut off; use
+  `t[3] ~= nil` or `select`. A script line is also limited in length.
+

@@ -327,6 +327,9 @@ add_test(NAME physics_drive COMMAND $<TARGET_FILE:pinyol_headless> --game ${CMAK
   --saves ${CMAKE_BINARY_DIR}/saves_drive --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/drive.script)
 add_test(NAME pinball COMMAND $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/pinball
   --saves ${CMAKE_BINARY_DIR}/saves_pinball --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/pinball.script)
+add_test(NAME combate COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_combate && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/combate \
+  --saves ${CMAKE_BINARY_DIR}/saves_combate --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/combate.script >/dev/null && \
+  cmp ${CMAKE_BINARY_DIR}/saves_combate/leak_a.ppm ${CMAKE_BINARY_DIR}/saves_combate/leak_b.ppm")
 add_test(NAME linefx_crc COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/linefx \
   --saves ${CMAKE_BINARY_DIR}/saves_linefx_crc --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/linefx.script \
   --crc ${CMAKE_BINARY_DIR}/linefx.crc >/dev/null && test $(sort -u ${CMAKE_BINARY_DIR}/linefx.crc | wc -l) -eq 2")

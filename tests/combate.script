@@ -1,0 +1,75 @@
+# combate: the rules (a hit is one at least, the faster goes first, a victory raises levels), then whole fights played by an autopilot
+# that presses A: the meadow, the swirl's effects, the fight, the win, the meadow again as it was (leak.sh compares the frames
+# before and after); a lost fight sends the party back to the title with its life; a flight with the whole party; a saved game
+# that the title continues.
+new
+tick 5
+lua R = require("rules"); S = require("scene"); real = {btnp = btnp}
+expect_lua R.damage(1, 9, 1, false) == 1 and R.damage(10, 3, 2, true, function() return 0 end) == 20 and R.damage(10, 3, 1, false, function() return 0 end) == 7
+expect_lua R.order({{side = "enemy", i = 1, spd = 5}, {side = "party", i = 2, spd = 5}, {side = "party", i = 1, spd = 9}})[1].i == 1 and R.order({{side = "enemy", i = 1, spd = 5}, {side = "party", i = 2, spd = 5}})[1].side == "party"
+expect_lua select(2, R.award({xp = 0, lv = 1, maxhp = 10, maxmp = 2, atk = 1, def = 1, spd = 1, hp = 3, mp = 0}, 30)) == 2
+expect_lua R.award({xp = 0, lv = 1, maxhp = 10, maxmp = 2, atk = 1, def = 1, spd = 1, hp = 3, mp = 0}, 8).hp == 15
+expect_lua R.encounter("east", function(a, b) return b end)[3] ~= nil and R.encounter("east", function(a, b) return b end)[4] == nil and R.encounter("west", function(a, b) return a end)[1].hp == 18
+# the title, then the meadow
+expect_lua S.top() == require("title")
+press A
+tick 60
+expect_lua S.top() == require("field") and S.depth() == 1 and game.wins == 0
+# the party's sheet is an overlay: the meadow stays under it
+press START
+tick 3
+expect_lua S.depth() == 2 and S.top() == require("status")
+press START
+tick 3
+expect_lua S.depth() == 1 and S.top() == require("field")
+lua kept = {}; for i, m in ipairs(game.party) do kept[i] = {}; for k, v in pairs(m) do kept[i][k] = v end end
+shot leak_a
+# a fight with the autopilot's A: the swirl first
+lua require("field").encounter("west")
+tick 5
+expect_lua S.depth() == 2 and S.top() == require("swirl")
+tick 80
+expect_lua S.depth() == 1 and S.top() == require("battle")
+lua btnp = function(n) return n == "a" and ticks() % 4 == 0 end
+lua bad = 0
+lua local u = _update; function _update() u(); for _, m in ipairs(game.party) do if m.hp < 0 or m.hp > m.maxhp or m.mp < 0 then bad = bad + 1 end end if lost_wait and S.top() == require("title") then btnp = real.btnp; title_seen = true; lost_wait = false end end
+tick 1500
+expect_lua S.top() == require("field") and S.depth() == 1
+expect_lua game.wins == 1 and bad == 0 and game.party[1].xp + game.party[1].lv > 1
+expect_lua stored("save").wins == 1 and stored("save").party[2] ~= nil and stored("save").party[3] == nil
+# the meadow as it was: the same party on the screen, and no window, mosaic or fade left by the fight
+lua btnp = real.btnp; game.party = kept
+tick 40
+shot leak_b
+# a fight that is lost: a golem that kills and cannot be killed
+lua R.ZONES.east = {"golem"}; R.ENEMIES.golem.hp = 9999; R.ENEMIES.golem.atk = 99; R.ENEMIES.golem.spd = 20
+lua require("field").encounter("east")
+tick 80
+expect_lua S.top() == require("battle")
+lua lost_wait = true; btnp = function(n) return n == "a" and ticks() % 4 == 0 end
+tick 1500
+expect_lua title_seen and S.top() == require("title") and game.party[1].hp == game.party[1].maxhp and game.party[2].lv == 1
+# the title offers the game saved by the win, and rests on "Continuar"; A takes it
+lua btnp = real.btnp
+expect_lua stored("save").wins == 1
+press A
+tick 60
+expect_lua S.top() == require("field") and game.wins == 1
+# flight: with the chance of 1 the whole party gets away
+lua R.flee_chance = function() return 1 end; R.ZONES.west = {"slime"}
+lua require("field").encounter("west")
+tick 125
+expect_lua S.top() == require("battle")
+press DOWN
+press RIGHT
+press A
+tick 2
+press DOWN
+press RIGHT
+press A
+tick 140
+lua btnp = function(n) return n == "a" and ticks() % 4 == 0 end
+tick 200
+lua btnp = real.btnp
+expect_lua S.top() == require("field") and game.wins == 1
+expect_ok
