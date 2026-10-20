@@ -12,6 +12,13 @@ expect_lua load("return 1 + 1")() == 2
 expect_lua_error require("../../etc/passwd")
 expect_lua_error spin()
 expect_lua_error escape()
+expect_lua_error tailspin()
+expect_lua_error forspin()
+expect_lua_error genspin()
+expect_lua_error repspin()
+expect_lua_error gotospin()
+expect_lua_error cospin()
+expect_lua type(busy()) == "number"
 expect_lua helper_value() == 42
 expect_lua_error hog()
 lua store("best", 1234)

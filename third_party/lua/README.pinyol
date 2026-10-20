@@ -1,3 +1,5 @@
 Lua 5.4.9 from https://www.lua.org/ftp/lua-5.4.9.tar.gz (sha256 2335b6c5...b8e6), library files only:
 no lua.c, luac.c, linit.c, liolib.c, loslib.c, loadlib.c or ldblib.c (the sandbox opens only base, coroutine,
-table, string, math and utf8). One change: luaconf.h lets the build set LUA_32BITS.
+table, string, math and utf8). Two changes: luaconf.h lets the build set LUA_32BITS; and lvm.c counts a budget
+(luai_budget, with LUA_PINYOL_BUDGET defined) on every jump, numeric and generic for turn, call and tail call, for the
+engine's limit on a call that never returns (src/lua_game.c), which a count hook made the VM pay for on every instruction.

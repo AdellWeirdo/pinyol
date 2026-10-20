@@ -485,5 +485,34 @@ The list expected `scene.go` hygiene, the full reset of the picture between game
   A floor's arrival held a tick 166 ms (every cell of both maps written, the grid set cell by cell); with the maps loaded again, only
   what is open written, the grid made all wall and only the open cells set, 50-53 ms, behind a "Piso 2 de 5" card on black, as the
   Mystery Dungeons put between floors, where a long tick is not seen. Each Lua call there is microseconds (6,144 `mget`+`mset` pairs,
-  about 40 ms): a game counts its calls per frame on the console, not its lines.
+  about 40 ms): a game counts its calls per frame on the console, not its lines. Half of that was the engine's, and is gone (section 14):
+  with it, a floor's arrival is under 40 ms and the run 24 frames over 20 ms instead of 34.
+
+## 14. The Lua VM ran at half its speed on the console, and why
+
+What `isla` and `sima` showed (a Lua call costing microseconds) was measured with a game of nothing but loops (`_update` running one
+operation 2,000 times a tick; the perf line's mean less the empty one's), on the board:
+
+| 2,000 of | before | no hook at all | budget in the VM (now) |
+|---|---|---|---|
+| empty `for` turns | 0.70 ms | 0.33 | 0.41 |
+| `s = s + i` | 1.37 | 0.67 | 0.76 |
+| a table write | 3.29 | 1.57 | 1.64 |
+| a global table's field | 2.77 | 1.75 | 1.84 |
+| a Lua function call | 4.97 | 1.94 | 2.07 |
+| a C function call (`math.abs`) | 4.13 | 2.38 | 2.54 |
+| `mget` | 6.69 | 4.26 | 4.40 |
+| 200 tables made | 3.48 | 3.29 | 3.33 |
+
+The cause was the sandbox's guard against a call that never returns: a count hook every 1,000 instructions. With any count hook set,
+Lua 5.4's VM calls `luaG_traceexec` before every instruction (it only decrements the count and returns): on a computer a quarter slower
+(the same loops, 128 ms against 102), on the console half. The budget is now counted by the VM itself (`luai_budget` in
+`third_party/lua/lvm.c`, five lines: every jump, numeric and generic `for` turn, call and tail call, so no endless loop escapes it), and
+only when it is spent is the count hook set, to raise the error where the VM has saved its place, as before. It stays deterministic (the
+tests repeat), and every kind of endless loop is in `tests/sandbox.script` (`while`, `repeat`, `goto`, numeric and generic `for`, a tail
+call, `pcall` and coroutines in a loop); with the count taken out of the jumps they hang. On the console an endless loop still ends in
+"the script ran too long". Games: `isla`'s `_draw` 2.48 to 2.09 ms; `sima`'s `_update` 0.58 to 0.46.
+
+What is left is the VM's own cost here (about 50 cycles a `for` turn, its stack and tables living in PSRAM, and 17 µs to make a table): a frame of a few
+thousand Lua operations is a few milliseconds.
 

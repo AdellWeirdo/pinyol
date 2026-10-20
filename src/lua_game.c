@@ -2,7 +2,7 @@
  * and shapes at the screen's full resolution over it. The engine calls _init() once, _update() every tick (60 Hz)
  * and _draw() before each frame; docs/lua.md lists the API.
  *
- * The script runs in a sandbox: a memory quota, an instruction budget per call (an endless loop ends in an error,
+ * The script runs in a sandbox: a memory quota, a budget of jumps and calls per call (an endless loop ends in an error,
  * not a frozen console), source chunks only (never bytecode), no io/os/debug/package, and require() reads .lua
  * files from the game's own folder. Lua is built with 32-bit numbers everywhere, so a game behaves the same on the
  * console, the desktop and the web. */
@@ -22,7 +22,7 @@
 
 #define MEM_QUOTA_KB 4096          /* game.json "lua_memory_kb" can ask for up to MEM_MAX_KB */
 #define MEM_MAX_KB 6144
-#define CALL_BUDGET 20000000L      /* VM instructions per _init/_update/_draw call before it is stopped */
+#define CALL_BUDGET 20000000L      /* jumps, loop turns and calls per _init/_update/_draw call before it is stopped */
 #define MAX_SHEETS 96
 #define MAX_TILEMAPS 24
 
@@ -33,7 +33,8 @@ static bool blank;          /* the world this frame is the backdrop alone (ppu_b
 static uint16_t backdrop;
 static struct { uint64_t update, draw, ppu; uint32_t ppu_max; int ticks, frames; } acc; /* since v2_timing */
 static size_t mem_used, mem_quota;
-static long budget;
+extern long pinyol_budget; /* counted down by the VM on jumps, loop turns and calls (third_party/lua/lvm.c, luai_budget) */
+extern void (*pinyol_budget_over)(lua_State *L);
 static char error[320];
 static bool failed;
 
@@ -195,15 +196,18 @@ static void *alloc(void *ud, void *p, size_t osize, size_t nsize) {
 
 static void hook(lua_State *L, lua_Debug *ar) {
     (void)ar;
-    if ((budget -= 1000) >= 0) return;
     /* Over: from now on every instruction fails, so a pcall in a loop cannot catch the error and carry on. */
     lua_sethook(L, hook, LUA_MASKCOUNT, 1);
     luaL_error(L, "the script ran too long without returning (an endless loop?)");
 }
 
-static void arm(void) { /* a fresh budget for one call from the engine */
-    budget = CALL_BUDGET;
-    lua_sethook(Ls, hook, LUA_MASKCOUNT, 1000);
+/* The VM ran out of the budget (in this thread: a coroutine too). The count hook, set only now, raises the error at the next
+ * instruction, where the VM has saved its place. While the budget stays spent every jump in any thread comes here again. */
+static void over(lua_State *L) { lua_sethook(L, hook, LUA_MASKCOUNT, 1); }
+
+static void arm(void) { /* a fresh budget for one call from the engine, and no hook: the VM runs at its full speed */
+    pinyol_budget = CALL_BUDGET;
+    lua_sethook(Ls, NULL, 0, 0);
 }
 
 static int msgh(lua_State *L) { /* the error with where it happened */
@@ -1410,7 +1414,7 @@ bool v2_load(void) {
      * the incremental default let it pile up into cycles whose steps cost a whole scan on the console (examples/isla: 96 frames of
      * 32 ms a minute, 58 fps; generational, 7 in 40 s, 59.8 fps, the same memory). Out of memory, Lua still collects in full first. */
     lua_gc(Ls, LUA_GCGEN, 0, 0);
-    lua_sethook(Ls, hook, LUA_MASKCOUNT, 1000);
+    pinyol_budget_over = over;
     static const luaL_Reg libs[] = {{LUA_GNAME, luaopen_base}, {LUA_COLIBNAME, luaopen_coroutine},
                                     {LUA_TABLIBNAME, luaopen_table}, {LUA_STRLIBNAME, luaopen_string},
                                     {LUA_MATHLIBNAME, luaopen_math}, {LUA_UTF8LIBNAME, luaopen_utf8}};

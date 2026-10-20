@@ -1093,7 +1093,20 @@ void luaV_finishOp (lua_State *L) {
 ** Execute a jump instruction. The 'updatetrap' allows signals to stop
 ** tight loops. (Without it, the local copy of 'trap' could never change.)
 */
-#define dojump(ci,i,e)	{ pc += GETARG_sJ(i) + e; updatetrap(ci); }
+/*
+** pinyol: a budget of jumps, loop turns and calls for each call from the engine, counted here instead of by a count hook (with
+** any count hook set, the VM calls luaG_traceexec before every instruction: half its speed on the console). Over it, the engine
+** sets the count hook and the error comes from there (README.pinyol). Without LUA_PINYOL_BUDGET, nothing.
+*/
+#if defined(LUA_PINYOL_BUDGET)
+long pinyol_budget = 0x7fffffff;
+void (*pinyol_budget_over) (lua_State *L) = NULL;
+#define luai_budget(L)	{ if (l_unlikely(--pinyol_budget < 0) && pinyol_budget_over) pinyol_budget_over(L); }
+#else
+#define luai_budget(L)	((void)0)
+#endif
+
+#define dojump(ci,i,e)	{ pc += GETARG_sJ(i) + e; luai_budget(L); updatetrap(ci); }
 
 
 /* for test instructions, execute the jump instruction that follows it */
@@ -1681,6 +1694,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_CALL) {
         StkId ra = RA(i);
         CallInfo *newci;
+        luai_budget(L);
         int b = GETARG_B(i);
         int nresults = GETARG_C(i) - 1;
         if (b != 0)  /* fixed number of arguments? */
@@ -1702,6 +1716,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
         int nparams1 = GETARG_C(i);
         /* delta is virtual 'func' - real 'func' (vararg functions) */
         int delta = (nparams1) ? ci->u.l.nextraargs + nparams1 : 0;
+        luai_budget(L);
         if (b != 0)
           L->top.p = ra + b;
         else  /* previous instruction set top */
@@ -1805,6 +1820,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
         }
         else if (floatforloop(ra))  /* float loop */
           pc -= GETARG_Bx(i);  /* jump back */
+        luai_budget(L);
         updatetrap(ci);  /* allows a signal to break the loop */
         vmbreak;
       }
@@ -1835,6 +1851,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
         /* push function, state, and control variable */
         memcpy(ra + 4, ra, 3 * sizeof(*ra));
         L->top.p = ra + 4 + 3;
+        luai_budget(L);
         ProtectNT(luaD_call(L, ra + 4, GETARG_C(i)));  /* do the call */
         updatestack(ci);  /* stack may have changed */
         i = *(pc++);  /* go to next instruction */

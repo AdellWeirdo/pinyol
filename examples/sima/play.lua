@@ -130,7 +130,7 @@ function P.update()
   local still = slide(r.hero)
   for _, m in ipairs(r.monsters) do still = slide(m) and still end
   if card then -- "Piso 2 de 5" on black, as the Mystery Dungeons put between floors: the floor is made under it (on the console,
-    -- with the maps written, some 50 ms: a tick that long is not seen while the card stays)
+    -- with the maps written, under 40 ms: a tick that long is not seen while the card stays)
     if card.due then
       card.due = false
       R.descend(r)

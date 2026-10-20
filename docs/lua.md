@@ -828,7 +828,7 @@ A game downloaded from the community cannot harm the console:
 - 4 MB of memory for the script (`"lua_memory_kb"` in game.json, up to 6144); past it, "not enough memory".
 - The garbage collector runs in Lua's generational mode: tables made and dropped in the same frame (a list of sprites
   to sort, a vector) are collected young and cheaply, not left to pile up into a pause that costs a frame.
-- A call (`_init`, `_update`, `_draw`) that runs 20 million VM instructions without returning is stopped: an
+- A call (`_init`, `_update`, `_draw`) that makes 20 million jumps, loop turns or calls without returning is stopped: an
   endless loop becomes an error, not a frozen console.
 - No `io`, `os`, `debug` or `package`; `load` takes source text only, never bytecode; `require` only reads `.lua`
   files inside the game folder.

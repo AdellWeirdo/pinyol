@@ -35,6 +35,7 @@ target_compile_definitions(lua PUBLIC LUA_32BITS=1)
 # The same string hashes every run and on every platform, so pairs() walks a table in the same order: tests repeat,
 # and consoles playing together over link compute the same thing
 target_compile_definitions(lua PRIVATE "luai_makeseed=0x6e703264u+0*sizeof") # used as luai_makeseed(L)
+target_compile_definitions(lua PRIVATE LUA_PINYOL_BUDGET) # lvm.c counts the engine's budget (third_party/lua/README.pinyol)
 target_compile_options(lua PRIVATE ${SAN})
 
 # Portable engine core: no SDL/ESP headers allowed in src/.
