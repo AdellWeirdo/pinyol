@@ -1,9 +1,9 @@
 -- Cirera: the console's game list, made with pinyol, as pinyol's brand manual says (ink 70 %, paper 20 %, cherry and
 -- gold 10 %; Jersey 15 for titles, Silkscreen for labels; the logo whole, with its clear space, never stretched).
 -- When the console wakes, pinyol's logo builds itself (frames drawn for it: the seed falls, lands in a puff of dust and
--- sprouts; the word comes in from the right as a streak of light and settles), "Cirera · firmware" under it, a
--- four-note chime; then the games as covers in a row, the chosen one big in the middle. Moving slides the row, a soft
--- tick a step; the chosen cover bobs, a light crosses it when it lands, the background takes a little of its colour.
+-- sprouts; the word comes in from the right as a streak of light and settles), "POWERED BY" over it, a four-note
+-- chime; then the games as covers in a row, the chosen one big in the middle. Moving slides the row, a soft tick a
+-- step; the chosen cover bobs, a light crosses it when it lands, the background takes a little of its colour.
 -- A plays it: the cover sinks under the finger, then grows to fill the screen. B asks before switching off (MENU is
 -- START in a game with no bag: game.c). Back from a game the list opens on it, without the intro.
 -- The games and their covers come from the console (console_games, console_cover); a game without one gets a card.
@@ -17,7 +17,6 @@ local CARDS = {0x7A2E3A, 0x2E5A7A, 0x3A7A4E, 0x7A5E2E, 0x5A3A7A, 0x2E7A72} -- a 
 
 state, sel, GAMES = "intro", 1, {} -- (global: tests/cirera.script)
 local tick, pos, bg, shine, press, zoom, asking, enter = 0, 1, INK, 0, 0, 0, false, 0
-local version = console_version and console_version() or ""
 local slot_of, slot_game, slot_used, loaded = {}, {}, {}, 0
 
 local function mix(a, b, k) -- two 0xRRGGBB colours, k = 0 is a, 1 is b
@@ -43,7 +42,6 @@ function _init()
   sel = last or 1
   pos = sel
   SLOTS = math.min(SLOTS, math.max(1, #GAMES))
-  version = version:match("^v?(%d+%.%d+%.%d+)") or version:sub(1, 12) -- "0.1.0", as the manual shows it
   if not cold then state, enter = "list", 1 end -- back from a game: straight to its cover
 end
 
@@ -119,9 +117,9 @@ local function draw_intro()
   draw_sky(mix(0x000000, INK, math.min(1, tick / 16)))
   local up = tick > 140 and ease_in(math.min(1, (tick - 140) / 30)) or 0 -- then up and away, for the list
   draw_logo(LOGO.x, LOGO.y - 260 * up, math.min(tick, 140))
-  if tick >= 104 and up == 0 then -- the console and its firmware, a seed's height under the logo
-    local line = "CIRERA" .. (version ~= "" and ("  ·  FIRMWARE " .. version:upper()) or "")
-    text(line, 240, 282, {font = "label", align = "center", color = mix(INK, DIM, math.min(1, (tick - 104) / 20))})
+  if tick >= 104 then -- "POWERED BY" over it, as every game's careta has it (src/splash.c), and away with it
+    text("POWERED BY", 240, LOGO.y - 20 - 260 * up, {font = "label", align = "center",
+                                                      color = mix(INK, DIM, math.min(1, (tick - 104) / 16))})
   end
 end
 
