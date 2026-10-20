@@ -43,5 +43,4 @@ Left out on purpose: sample averaging (the Cirera's panel is capacitive and not 
 ## Next steps (not built)
 
 1. Widgets: touch button, slider, scroll list, on `lib/keyboard.lua`'s hit tests, with one focus for the D-pad and the finger.
-2. `examples/stylus`: draw a path, recognise shapes, drag an object; also a screen to look at.
-3. A second screen: the PPU is one global (`src/ppu.h`); two stacked 256x192 screens would need it as a context, `game_render` composing both, and the touch mapped to the lower one. The Cirera's panel is physically portrait (the firmware rotates it), which suits two stacked screens: check `docs/hardware.md`.
+2. A second screen: designed in [ds-dual-screen-design.md](ds-dual-screen-design.md), not built.
