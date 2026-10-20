@@ -1,0 +1,63 @@
+# Tuning the timing: taps 6 ticks (0.1 s) after every bass drum give an offset near +100 ms, kept for the next
+# game; the pause stops the song and START brings it back in the bar it stopped in.
+new
+tick 2
+tap 240 274
+expect_lua state == "calib"
+# the metronome starts on the button's lift (tick 2): beat k at tick 2.7 + 32.14 k; every tap 6 ticks late
+tick 38
+tap 240 200
+tick 30
+tap 240 200
+tick 30
+tap 240 200
+tick 30
+tap 240 200
+tick 30
+tap 240 200
+tick 31
+tap 240 200
+tick 30
+tap 240 200
+tick 30
+tap 240 200
+tick 30
+tap 240 200
+tick 30
+tap 240 200
+tick 30
+tap 240 200
+tick 30
+tap 240 200
+tick 31
+tap 240 200
+tick 30
+tap 240 200
+tick 2
+expect_lua calib.result ~= nil and calib.result > 0.07 and calib.result < 0.13
+expect_lua math.abs(stored("offset", 0) - calib.result) < 0.0001
+shot aj_calib
+tap 240 200
+tick 2
+expect_lua state == "title"
+# the pause: START stops the song where it is; START again plays on from the start of that bar
+tap 100 100
+expect_lua state == "play"
+tick 200
+lua bar0 = require("song").bar
+press START
+tick 2
+expect_lua state == "pause" and not studio.playing()
+shot aj_pause
+tick 60
+expect_lua state == "pause"
+press START
+tick 20
+expect_lua state == "play" and studio.playing() and require("song").bar == bar0
+# Salir from the pause goes back to the title
+press START
+tick 2
+tap 300 192
+tick 2
+expect_lua state == "title" and not studio.playing()
+expect_ok

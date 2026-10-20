@@ -127,6 +127,27 @@ end
 
 function M.stop() studio.stop(); M.done = true end
 
+-- The bass drum on every beat, alone, for tapping along (the calibration); song.offset_now() reads it.
+function M.metronome()
+  studio.stop()
+  studio.tempo(M.BPM, 50)
+  studio.length(16)
+  studio.track(1, {sound = "BOMBO", gain = 0.9})
+  studio.steps(1, {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0})
+  for t = 2, 3 do studio.steps(t, {}) end
+  for t = 4, 5 do studio.notes(t, {}) end
+  M.done = false
+  studio.play()
+end
+
+-- Seconds from the nearest beat the player hears now: positive is after it (a tap that comes late), nil when silent.
+function M.offset_now()
+  local step, frac = studio.pos()
+  if not step then return nil end
+  local beat = (step - 1 + frac) / 4
+  return ((beat + 0.5) % 1 - 0.5) * M.SEC_PER_BEAT
+end
+
 -- From bar `bar` (0-based) on, as if the song had got there: for tests and, later, practising a section.
 function M.jump(bar)
   studio.stop()

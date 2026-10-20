@@ -5,7 +5,8 @@ local M = {}
 local FEET = 205
 local LIFT_FEET = 200                      -- the lift's floor, a little higher
 local PERSON_AX, PERSON_AY = 60, 109       -- SPR_PERSONA's feet in its 120x112 frame
-local BAND_AX, BAND_AY = 52, 103           -- SPR_BANDA's, 104x104
+local BAND_AX, BAND_AY = 75, 113           -- SPR_BANDA's feet in its 150x116 frames
+local BAND = {packed = 0, march = 1, fanfare = 2, cheer = 3}
 local POSE = {sit = 0, stand = 1, walk = 2, doubt = 3, knock = 4}
 local DOOR = {x = 398, y = 70, w = 57, h = 122}
 
@@ -43,8 +44,13 @@ function M.draw(beat, energy, hop, enter)
   end
   local bx, bfeet, shown = band_at(beat)
   if shown then
+    local pose = beat < 12 and BAND.packed or beat < 80 and BAND.march or BAND.fanfare
     local jump = math.floor(swing * (2 + 4 * energy))
-    img("SPR_BANDA", math.floor(bx) - BAND_AX, math.floor(bfeet) - BAND_AY - jump)
+    if enter then -- the end: they cheer as much as the player encouraged
+      pose = energy >= 0.4 and BAND.cheer or BAND.march
+      jump = math.floor(math.abs(math.sin(enter * 12)) * (2 + 10 * energy))
+    end
+    img("SPR_BANDA", math.floor(bx) - BAND_AX, math.floor(bfeet) - BAND_AY - jump, {frame = pose})
   end
   local px, pose = person_at(beat)
   local lift = hop > 0 and math.floor(hop / 3) or 0

@@ -1,7 +1,7 @@
 -- La Charanga de Emergencia · episodio 1, «La entrevista»: a rhythm game for the touch screen. A band in red waistcoats
 -- bursts out of a lift to see a nervous candidate to the interview's door; the player taps and follows its beat.
 -- song.lua: the music and its clock (studio.pos); chart.lua: what to play; scene.lua: the corridor; es.lua: the texts.
--- Globals the tests read: state, notes, stats, energy.
+-- Globals the tests read: state, notes, stats, energy, calib.
 local pointer = require("pointer")
 local particles = require("particles")
 local song = require("song")
@@ -23,6 +23,13 @@ local hop = 0          -- ticks the candidate jumps for joy
 local last_beat = 0
 local enter_t = 0
 local again = {x = 180, y = 250, w = 120, h = 44}
+local calib_btn = {x = 160, y = 254, w = 160, h = 40}           -- on the title: tune the timing
+local resume_btn = {x = 130, y = 170, w = 100, h = 44}          -- in the pause
+local quit_btn = {x = 250, y = 170, w = 100, h = 44}
+local CALIB_TAPS, CALIB_WARMUP = 12, 2  -- taps measured, after the first ones (the ear finds the beat)
+calib = nil                             -- {taps = {...}, result} while tuning (global: the tests read it)
+local paused_bar                        -- the bar the song stopped in
+local touch_in                          -- the screen the finger went down on: a touch only counts on its own screen
 
 local function window_beats(sec) return sec / song.SEC_PER_BEAT end
 
@@ -132,9 +139,43 @@ end
 
 function _init()
   song.init()
+  chart.OFFSET = stored("offset", 0)
+end
+
+local function median(t)
+  local s = {}
+  for i, v in ipairs(t) do s[i] = v end
+  table.sort(s)
+  local n = #s
+  return n % 2 == 1 and s[(n + 1) // 2] or (s[n // 2] + s[n // 2 + 1]) / 2
+end
+
+local function update_calib() -- taps on the bass drum's beat: their median distance to it is the player's offset
+  pointer.update()
+  if calib.result then
+    if pointer.began or btnp("a") or btnp("b") then studio.stop(); state = "title" end -- (a new touch: the last tap's lift is not one)
+    return
+  end
+  if btnp("b") then studio.stop(); state = "title" return end
+  if pointer.began or btnp("a") then
+    local d = song.offset_now()
+    if d then
+      calib.seen = calib.seen + 1
+      if calib.seen > CALIB_WARMUP then calib.taps[#calib.taps + 1] = d end
+      sfx("GOLPE", 0.5)
+    end
+    if #calib.taps >= CALIB_TAPS then
+      local v = math.max(-0.25, math.min(0.25, median(calib.taps)))
+      calib.result, chart.OFFSET = v, v
+      store("offset", v)
+      studio.stop()
+    end
+  end
 end
 
 function _update()
+  pointer.update()
+  if pointer.began then touch_in = state end
   fx:update()
   for i = #popups, 1, -1 do
     popups[i].age = popups[i].age + 1
@@ -143,15 +184,36 @@ function _update()
   if hop > 0 then hop = hop - 1 end
   if state == "title" then
     pointer.update()
-    if pointer.tapped or btnp("a") or btnp("start") then start() end
+    if (pointer.pressed(calib_btn) and touch_in == "title") or btnp("c") then
+      calib, state = {taps = {}, seen = 0}, "calib"
+      song.metronome()
+    elseif (pointer.tapped and touch_in == "title") or btnp("a") or btnp("start") then
+      start()
+    end
+  elseif state == "calib" then
+    update_calib()
   elseif state == "play" then
-    update_play()
+    if btnp("start") then -- the pause: the song stops; it comes back from the start of the bar it was in
+      paused_bar, state = song.bar, "pause"
+      studio.stop()
+    else
+      update_play()
+    end
+  elseif state == "pause" then
+    pointer.update()
+    if (pointer.pressed(resume_btn) and touch_in == "pause") or btnp("start") or btnp("a") then
+      song.jump(paused_bar)
+      state = "play"
+    elseif (pointer.pressed(quit_btn) and touch_in == "pause") or btnp("b") then
+      song.stop()
+      state = "title"
+    end
   elseif state == "enter" then
     enter_t = enter_t + 1
     if enter_t >= ENTER_TICKS then state = "result" end
   elseif state == "result" then
     pointer.update()
-    if pointer.pressed(again) or btnp("a") or btnp("start") then start() end
+    if (pointer.pressed(again) and touch_in == "result") or btnp("a") or btnp("start") then start() end
   end
 end
 
@@ -195,6 +257,37 @@ local function draw_title()
   text(T.episode, SCREEN_W // 2, 134, {font = FONT, color = 0x3A2A1E, align = "center"})
   text(T.how, SCREEN_W // 2, 162, {font = FONT, color = 0x5A4A3E, align = "center", width = 360})
   if (ticks() // 30) % 2 == 0 then text(T.start, SCREEN_W // 2, 210, {font = FONT, color = 0xC0392B, align = "center"}) end
+  plate(calib_btn.x, calib_btn.y, calib_btn.w, calib_btn.h, 0x3C7DDB)
+  text(T.calibrate, calib_btn.x + calib_btn.w // 2, calib_btn.y + 8, {font = FONT, color = 0xFFFFFF, align = "center"})
+end
+
+local function draw_calib()
+  scene.draw(0, 0.5, 0)
+  shade(0, 0, SCREEN_W, SCREEN_H)
+  panel(50, 60, 380, 210)
+  text(T.calib_title, SCREEN_W // 2, 76, {font = FONT_BIG, color = 0x3C7DDB, align = "center"})
+  if calib.result then
+    text(string.format(T.calib_result, math.floor(calib.result * 1000 + 0.5)), SCREEN_W // 2, 140,
+         {font = FONT, color = 0x3A2A1E, align = "center"})
+    text(T.calib_done, SCREEN_W // 2, 200, {font = FONT, color = 0xC0392B, align = "center"})
+    return
+  end
+  text(T.calib_how, SCREEN_W // 2, 124, {font = FONT, color = 0x3A2A1E, align = "center", width = 340})
+  local step = studio.pos()
+  local on = step and (step - 1) % 4 == 0 -- the drum's beat, lit
+  circ(SCREEN_W // 2, 200, on and 26 or 20, on and 0xD9434F or 0x8A3A40)
+  text(string.format(T.calib_count, #calib.taps, CALIB_TAPS), SCREEN_W // 2, 232, {font = FONT_SMALL, color = 0x5A4A3E,
+                                                                                    align = "center"})
+end
+
+local function draw_pause()
+  shade(0, 0, SCREEN_W, SCREEN_H)
+  panel(110, 100, 260, 130)
+  text(T.pause, SCREEN_W // 2, 114, {font = FONT_BIG, color = 0x3A2A1E, align = "center"})
+  plate(resume_btn.x, resume_btn.y, resume_btn.w, resume_btn.h, 0x3DB55A)
+  text(T.resume, resume_btn.x + resume_btn.w // 2, resume_btn.y + 10, {font = FONT, color = 0xFFFFFF, align = "center"})
+  plate(quit_btn.x, quit_btn.y, quit_btn.w, quit_btn.h, 0xC0392B)
+  text(T.quit, quit_btn.x + quit_btn.w // 2, quit_btn.y + 10, {font = FONT, color = 0xFFFFFF, align = "center"})
 end
 
 local function draw_result()
@@ -212,11 +305,13 @@ end
 function _draw()
   cls(0)
   if state == "title" then return draw_title() end
-  local b = state == "play" and last_beat or song.BARS * 4
-  local enter = state ~= "play" and math.min(1, enter_t / ENTER_TICKS) or nil
+  if state == "calib" then return draw_calib() end
+  local playing = state == "play" or state == "pause"
+  local b = playing and last_beat or song.BARS * 4
+  local enter = not playing and math.min(1, enter_t / ENTER_TICKS) or nil
   scene.draw(b, energy, hop, enter)
   text(T.door, scene.DOOR.x + scene.DOOR.w // 2, 52, {font = FONT_SMALL, color = 0x3A2A1E, align = "center"})
-  if state == "play" then
+  if playing then
     for i = #notes, 1, -1 do draw_note(notes[i], b) end -- the earliest on top
     for _, c in ipairs(CAPTIONS) do
       if b >= c[1] and b < c[2] then
@@ -230,4 +325,5 @@ function _draw()
   end
   scene.meter(energy, T.meter)
   if state == "result" then draw_result() end
+  if state == "pause" then draw_pause() end
 end

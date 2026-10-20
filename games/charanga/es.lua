@@ -23,4 +23,12 @@ return {
   },
   again = "Otra vez",
   pause = "Pausa",
+  resume = "Seguir",
+  quit = "Salir",
+  calibrate = "Ajustar ritmo",
+  calib_title = "Ajustar el ritmo",
+  calib_how = "Toca la pantalla (o A) a la vez que suena el bombo.",
+  calib_count = "%d de %d",
+  calib_result = "Tu compensación: %+d ms",
+  calib_done = "Listo",
 }

@@ -24,7 +24,9 @@ PINYOL = Path(os.environ.get("PINYOL", HERE.parents[1]))
 
 PERSON_BODY = 100              # the protagonist standing, head to feet
 PERSON_FRAME = (120, 112)      # each pose's frame; feet at the bottom middle (anchor 60,109)
-BAND_BODY = 104                # the band, tallest raised hand to feet
+BAND_BODY = 104                # the band marching, tallest raised hand to feet
+BAND_FRAME = (150, 116)        # each band pose's frame; feet at the bottom middle (anchor 75,113)
+BAND_POSES = 4                 # apiñados, desfilan, fanfarria, celebran
 POSES = 5                      # sentada, de pie, avanza, duda, llama
 
 
@@ -33,6 +35,18 @@ def solid(img: Image.Image) -> Image.Image:
     img = img.convert("RGBA")
     a = img.getchannel("A").point(lambda v: 255 if v >= 128 else 0)
     img.putalpha(a)
+    return img
+
+
+def no_pockets(img: Image.Image, below: float = 0.6) -> Image.Image:
+    """The painted checkerboard left between legs (it does not touch the border, so --key-bg keeps it): light grey with
+    no colour, only in the frame's lower part, where there are no white shirts; the drum's skin is cream, it stays."""
+    px = img.load()
+    for y in range(int(img.height * below), img.height):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            if a and min(r, g, b) > 170 and max(r, g, b) - min(r, g, b) < 18:
+                px[x, y] = (0, 0, 0, 0)
     return img
 
 
@@ -55,9 +69,26 @@ def background() -> None:
 
 
 def band() -> None:
-    img = fit(Image.open(RAW / "charanga.png"), BAND_BODY)
-    img.save(ART / "banda.png")
-    convert(ART / "banda.png", "SPR_BANDA", "--packed")  # anchor: bottom middle
+    """The band's poses, fitted to the marching one (the reference): without the sheet, that one four times."""
+    body = fit(Image.open(RAW / "charanga.png"), BAND_BODY)
+    w, h = BAND_FRAME
+    like = Image.new("RGBA", BAND_FRAME, (0, 0, 0, 0))
+    like.paste(body, ((w - body.width) // 2, h - 3 - body.height), body)
+    like.save(ART / "banda_idle.png")
+    frames = [like] * BAND_POSES
+    poses = RAW / "charanga_poses.png"
+    if poses.exists():
+        tmp = ART / "banda_poses"
+        tmp.mkdir(exist_ok=True)
+        subprocess.run([sys.executable, str(PINYOL / "tools" / "fit_sprite.py"), str(poses), str(tmp), "--like",
+                        str(ART / "banda_idle.png"), "--split", str(BAND_POSES), "--scale-frame", "1",
+                        "--key-bg", "--keep-main"], check=True)  # (the sheet came with a checkerboard painted in, no alpha)
+        frames = [no_pockets(solid(Image.open(p))) for p in sorted(tmp.glob("*.png"))][:BAND_POSES]
+    strip = Image.new("RGBA", (w * BAND_POSES, h), (0, 0, 0, 0))
+    for i, f in enumerate(frames):
+        strip.paste(f, (i * w, 0), f)
+    strip.save(ART / "banda.png")
+    convert(ART / "banda.png", "SPR_BANDA", "--frames", str(BAND_POSES), "--anchor", f"{w // 2},{h - 3}", "--packed")
 
 
 def idle() -> Path:

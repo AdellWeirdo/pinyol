@@ -9,6 +9,9 @@ energía de la escena y del cierre. Vertical slice: un episodio de un minuto.
 - **Dedo**: toca cada círculo numerado cuando su aro se cierre sobre él. En un camino amarillo, toca su inicio a
   tiempo y sigue la bola con el dedo hasta el final.
 - **Botones**: A toca la nota que toca en ese momento y, mantenido, sigue un camino; A o START empiezan y repiten.
+- **Pausa**: START para la música; START o «Seguir» la reanudan desde el principio del compás; «Salir» vuelve a la portada.
+- **Ajustar ritmo** (portada, o C): suena el bombo y tocas a la vez; la mediana de 12 toques es tu compensación, guardada
+  para las siguientes partidas (`chart.OFFSET`).
 
 ## Estructura
 
@@ -21,6 +24,7 @@ energía de la escena y del cierre. Vertical slice: un episodio de un minuto.
 | `es.lua` | todos los textos visibles (para traducir: una copia con las mismas claves) |
 | `art.py` | `raw/` (imágenes generadas) → `art/` → `assets/`; `raw/prompts.txt` guarda cada prompt |
 | `tests/charanga.script` | portada, acierto, fallo, botón A, camino, final, resultado y reintento |
+| `tests/ajustes.script` | la calibración (toques 0,1 s tarde dan unos +100 ms, guardados) y la pausa |
 
 El reloj es el del secuenciador (`studio.pos()`, que ya descuenta lo que espera en el altavoz), no ticks acumulados.
 `chart.OFFSET` suma una compensación en segundos para todas las notas.
