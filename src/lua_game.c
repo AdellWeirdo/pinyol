@@ -1483,10 +1483,11 @@ bool v2_load(void) {
     if (jint(G.game, "screens", 1) == 2) { /* two screens: the top is G.world, the bottom's picture and parked state are here */
         parked = calloc(2, sizeof *parked);
         world2 = calloc((size_t)WORLD_W * WORLD_H, sizeof *world2);
-        if (!parked || !world2) {
+        if (!parked || !world2 || !ppu_select(1)) {
             fail("start", "no memory for two screens");
             return false;
         }
+        ppu_select(0);
         screens = 2;
     }
     int kb = jint(G.game, "lua_memory_kb", MEM_QUOTA_KB);
