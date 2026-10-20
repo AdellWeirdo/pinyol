@@ -11,9 +11,12 @@
 -- Finger: a tap on a button presses it or on a list item picks it; a slider follows a finger that went down on it; a
 -- list scrolls as a finger drags it. D-pad: up and down move the focus between widgets (in a list, between its items
 -- first); A presses the focused button or picks the list's item; left and right move a slider by its step. The focus
--- ring shows only after the d-pad was used, and goes when a finger touches. Not here: momentum after a flick.
+-- ring shows only after the d-pad was used, and goes when a finger touches. A list lifted while moving goes on and
+-- slows (M.FRICTION), and a finger on it stops it.
 local pointer = require("pointer")
 local M = {}
+M.FRICTION = 0.94  -- a list's speed kept each tick after a lift
+M.COAST = 2        -- pixels a tick a list must be going at the lift to coast
 local UI = {}
 UI.__index = UI
 
@@ -28,7 +31,7 @@ end
 
 local function add(self, kind, w)
   w.kind = kind
-  if kind == "list" then w.scroll, w.sel, w.row_h = 0, w.sel or 1, w.row_h or 28 end
+  if kind == "list" then w.scroll, w.sel, w.row_h, w.fling = 0, w.sel or 1, w.row_h or 28, 0 end
   if kind == "slider" then w.step, w.min, w.max, w.value = w.step or 1, w.min or 0, w.max or 10, w.value or w.min or 0 end
   self.items[#self.items + 1] = w
   return w
@@ -71,12 +74,19 @@ local function show_sel(w) -- scroll so the d-pad's choice is in view
 end
 
 function UI:update()
+  for _, w in ipairs(self.items) do -- a list lifted while moving goes on, slowing
+    if w.kind == "list" and w.fling ~= 0 and self.grab ~= w then
+      local to = clamp(w.scroll + w.fling, 0, max_scroll(w))
+      w.fling = (to == w.scroll + w.fling and math.abs(w.fling) > 0.3) and w.fling * M.FRICTION or 0
+      w.scroll = to
+    end
+  end
   if pointer.began then -- a finger went down: the widget under it is grabbed, and has the focus
     self.pad = false
     for i = #self.items, 1, -1 do
       local w = self.items[i]
       if inside(w, pointer.x, pointer.y) then
-        self.grab, self.focus, self.moved = w, i, 0
+        self.grab, self.focus, self.moved, w.fling = w, i, 0, 0
         break
       end
     end
@@ -93,6 +103,7 @@ function UI:update()
     local clicked = pointer.tapped or (g.kind == "list" and self.moved < pointer.SLOP) -- (a list is picked by a slow tap too)
     if clicked and inside(g, pointer.x, pointer.y) then press(g, pointer.x, pointer.y) end
     if g.kind == "slider" then set_slider(g, g.min + (pointer.x - g.x) / g.w * (g.max - g.min)) end
+    if g.kind == "list" and math.abs(pointer.vy) >= M.COAST then g.fling = -pointer.vy end
     self.grab = nil
   end
   if not pointer.down and not self.grab then self:pad_keys() end

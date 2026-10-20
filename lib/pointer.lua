@@ -6,7 +6,8 @@
 --     pointer.down, pointer.x, pointer.y         -- the finger now, in the screen's 480x320 pixels (as text() uses)
 --     pointer.began, pointer.tapped, pointer.long, pointer.released   -- true on the one tick it happens (began: it went down)
 --     pointer.dragging, pointer.dx, pointer.dy   -- moved past the slop since it went down; the move since last tick
---     pointer.flick                              -- on lift, a fast short stroke: {dx, dy, dir = "up"|"down"|"left"|"right"}
+--     pointer.flick                              -- on lift, a fast short stroke: {dx, dy, vx, vy, dir = "up"|"down"|"left"|"right"}
+--     pointer.vx, pointer.vy                     -- on every lift, pixels a tick the finger was going (0 when it stopped first)
 --     pointer.stroke                             -- the points of the stroke going on; pointer.last on lift
 --   pointer.pressed(item)                        -- true when that {x, y, w, h} was tapped
 --   pointer.pick(items, x, y)                    -- the item ({x, y, w, h}) nearest (x, y), each at least 40 px to hit
@@ -28,7 +29,7 @@ local sx, sy, held, still
 M.down, M.x, M.y, M.dx, M.dy, M.stroke, M.last = false, 0, 0, 0, 0, nil, nil
 
 local function reset_events()
-  M.began, M.tapped, M.long, M.released, M.flick = false, false, false, false, nil
+  M.began, M.tapped, M.long, M.released, M.flick, M.vx, M.vy = false, false, false, false, nil, 0, 0
 end
 
 function M.update()
@@ -56,9 +57,10 @@ function M.update()
     local a, b = pts[#pts - n + 1], pts[#pts]
     if a and not still and n > 1 then
       local dx, dy = b[1] - a[1], b[2] - a[2]
+      M.vx, M.vy = dx / (n - 1), dy / (n - 1) -- on every lift: what a list goes on with
       if math.sqrt(dx * dx + dy * dy) / (n - 1) >= M.FLICK_SPEED then
         local dir = math.abs(dx) > math.abs(dy) and (dx > 0 and "right" or "left") or (dy > 0 and "down" or "up")
-        M.flick = {dx = dx, dy = dy, dir = dir}
+        M.flick = {dx = dx, dy = dy, dir = dir, vx = M.vx, vy = M.vy}
       end
     end
   end

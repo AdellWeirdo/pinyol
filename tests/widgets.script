@@ -25,6 +25,19 @@ expect_lua l.scroll > 40 and picked == "uno"
 tap 100 150
 tick 2
 expect_lua picked ~= "uno"
+# a fast swipe up lets go while moving: the list goes on, slows and stops
+lua l.scroll = 0
+swipe 100 200 100 150 6
+tick 1
+lua at_lift = l.scroll
+tick 40
+expect_lua l.scroll > at_lift + 10 and l.scroll <= 84
+tick 100
+lua rest = l.scroll
+tick 20
+expect_lua l.scroll == rest
+tap 100 150
+tick 2
 shot widgets_touch
 tap 60 40
 tick 2
