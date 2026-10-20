@@ -1059,7 +1059,7 @@ bool save_file_atomic(const char *p, const char *txt) {
 
 /* The C library's clock: the offset is worked out from the local and the UTC breakdowns of the same moment, with no
  * extension (tm_gmtoff is not everywhere). A year before 2020 is taken as a clock that was never set. */
-__attribute__((weak)) bool hal_clock(int64_t *unix, int *offset_min) {
+__attribute__((weak)) bool hal_clock(int64_t *utc_s, int *offset_min) {
     time_t t = time(NULL);
     struct tm lt, gt;
     const struct tm *l = localtime(&t);
@@ -1070,24 +1070,24 @@ __attribute__((weak)) bool hal_clock(int64_t *unix, int *offset_min) {
     gt = *g;
     int days = lt.tm_yday - gt.tm_yday;
     if (lt.tm_year != gt.tm_year) days = lt.tm_year > gt.tm_year ? 1 : -1; /* (across new year) */
-    *unix = (int64_t)t;
+    *utc_s = (int64_t)t;
     *offset_min = days * 1440 + (lt.tm_hour - gt.tm_hour) * 60 + (lt.tm_min - gt.tm_min);
     return lt.tm_year + 1900 >= 2020;
 }
 
-static struct { bool on, known; int64_t unix; int offset; } forced;
-void clock_force(bool on, bool known, int64_t unix, int offset_min) { forced.on = on, forced.known = known, forced.unix = unix, forced.offset = offset_min; }
+static struct { bool on, known; int64_t utc_s; int offset; } forced;
+void clock_force(bool on, bool known, int64_t utc_s, int offset_min) { forced.on = on, forced.known = known, forced.utc_s = utc_s, forced.offset = offset_min; }
 
 /* clock() -> {year, month, day, hour, min, sec, wday (1 Monday .. 7 Sunday), yday (1..366), days, offset}, the local date and time;
  * nil when the machine does not know it. days counts from 1970-01-01 (local): the time between two sessions, in a 32-bit Lua (the console's)
  * that seconds since 1970 would overflow in 2038. The civil date from the days since 1970 (H. Hinnant's days_from_civil, backwards). */
 static int l_clock(lua_State *L) {
-    int64_t unix = 0;
+    int64_t utc_s = 0;
     int off = 0;
-    bool known = forced.on ? forced.known : hal_clock(&unix, &off);
-    if (forced.on) unix = forced.unix, off = forced.offset;
+    bool known = forced.on ? forced.known : hal_clock(&utc_s, &off);
+    if (forced.on) utc_s = forced.utc_s, off = forced.offset;
     if (!known) return lua_pushnil(L), 1;
-    int64_t local = unix + (int64_t)off * 60;
+    int64_t local = utc_s + (int64_t)off * 60;
     int64_t days = local >= 0 ? local / 86400 : -((-local + 86399) / 86400), secs = local - days * 86400;
     int64_t z = days + 719468, era = (z >= 0 ? z : z - 146096) / 146097;
     int64_t doe = z - era * 146097, yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;

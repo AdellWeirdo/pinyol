@@ -57,7 +57,7 @@ void game_tick(const hal_input *in);
 void game_render(uint16_t *native); /* SCREEN_W x SCREEN_H RGB565 */
 bool game_quit_requested(void);
 bool save_file_atomic(const char *path, const char *txt); /* a game's saves, never half-written (hal_save's work) */
-void clock_force(bool on, bool known, int64_t unix, int offset_min); /* scripts: a clock of their own (on), or the real one */
+void clock_force(bool on, bool known, int64_t utc_s, int offset_min); /* scripts: a clock of their own (on), or the real one */
 void audio_mix(int16_t *out, int n); /* AUDIO_HZ mono; caller holds the audio lock */
 void audio_mix_stereo(int16_t *out, int n); /* the same as left, right, left, right...: 2 n samples; panned sounds are placed */
 int script_run(const char *path, void (*frame)(void)); /* 0 = all expectations passed */

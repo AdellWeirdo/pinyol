@@ -133,11 +133,11 @@ static void make_parents(const char *file) { /* the folders a file's path goes t
 static RTC_NOINIT_ATTR int32_t clock_offset, clock_magic;
 #define CLOCK_MAGIC 0x434C4B31 /* "CLK1" */
 
-bool hal_clock(int64_t *unix, int *offset_min) {
+bool hal_clock(int64_t *utc_s, int *offset_min) {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     if (clock_magic != CLOCK_MAGIC || tv.tv_sec < 1577836800) return false; /* (before 2020: never set) */
-    *unix = (int64_t)tv.tv_sec, *offset_min = (int)clock_offset;
+    *utc_s = (int64_t)tv.tv_sec, *offset_min = (int)clock_offset;
     return true;
 }
 
@@ -145,14 +145,14 @@ bool hal_clock(int64_t *unix, int *offset_min) {
 static void command(const char *cmd) {
     char id[32];
     long bytes = 0;
-    long long unix = 0;
+    long long utc_s = 0;
     int offset = 0;
     if (!strcmp(cmd, "hello")) {
         say("hello 2 %s %llu", storage_card() ? "card" : "flash", (unsigned long long)(free_bytes() / 1024));
-    } else if (sscanf(cmd, "time %lld %d", &unix, &offset) == 2) {
-        if (unix < 1577836800 || offset < -14 * 60 || offset > 14 * 60) say("err not a time this console can take");
+    } else if (sscanf(cmd, "time %lld %d", &utc_s, &offset) == 2) {
+        if (utc_s < 1577836800 || offset < -14 * 60 || offset > 14 * 60) say("err not a time this console can take");
         else {
-            struct timeval tv = {.tv_sec = (time_t)unix};
+            struct timeval tv = {.tv_sec = (time_t)utc_s};
             settimeofday(&tv, NULL);
             clock_offset = offset, clock_magic = CLOCK_MAGIC;
             say("ok");
