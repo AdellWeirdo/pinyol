@@ -1,0 +1,8 @@
+{
+  "asset": "FOG",
+  "type": "tilemap",
+  "tiles": 3,
+  "map_w": 96,
+  "map_h": 66,
+  "palette": "WORLD"
+}

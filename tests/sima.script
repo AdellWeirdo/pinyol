@@ -1,0 +1,67 @@
+# sima: every floor of twenty runs is one piece (each open cell reached from the start, the stairs among them), its monsters and things on
+# floor away from the start; the same seed makes the same floor and another seed another; walls cut the hero's sight; a blow, a monster
+# that comes and one that bites, a potion, a death that ends the run; the stairs and the amulet; the fog in BG0 is what the hero sees and
+# has seen, cell by cell, after every turn (written only where it changed); the day's chasm is seeded with the day; and a whole run played
+# by a bot that walks to the stairs (grid:path), five floors down to the amulet, with the best kept.
+clock 1767225600 60
+new
+tick 3
+lua D = require("dungeon"); R = require("run"); K = D.key
+lua function whole(d) local open, got = 0, 0 local seen = D.reach(d, d.start[1], d.start[2]) for i = 1, D.W * D.H do if d.cells[i] ~= D.WALL then open = open + 1 if seen[i] then got = got + 1 end end end return open == got and seen[K(d.exit[1], d.exit[2])] end
+lua function placed(d) for _, list in ipairs({d.monsters, d.items}) do for _, m in ipairs(list) do if d.cells[K(m.x, m.y)] ~= D.FLOOR or (m.x == d.start[1] and m.y == d.start[2]) then return false end end end return true end
+lua bad = 0; for seed = 1, 20 do for f = 1, 5 do local d = D.generate(seed, f) if not (whole(d) and placed(d) and D.at(d, d.exit[1], d.exit[2]) == (f == 5 and D.AMULET or D.STAIRS)) then bad = bad + 1 end end end
+expect_lua bad == 0
+lua function flat(d) return table.concat(d.cells) end
+expect_lua flat(D.generate(7, 3)) == flat(D.generate(7, 3)) and flat(D.generate(7, 3)) ~= flat(D.generate(8, 3))
+# sight: an open field, and a wall in the way
+lua F = {cells = {}}; for i = 1, D.W * D.H do F.cells[i] = D.FLOOR end
+expect_lua R.fov(F, 10, 10, 6)[K(14, 10)] and R.fov(F, 10, 10, 6)[K(10, 16)] and not R.fov(F, 10, 10, 6)[K(17, 10)]
+lua F.cells[K(12, 10)] = D.WALL; V = R.fov(F, 10, 10, 6)
+expect_lua V[K(12, 10)] and not V[K(14, 10)] and V[K(14, 12)]
+# a run: the hero sees where it starts; a rat in its way takes blows until it falls
+lua r = R.new(5); hx, hy = r.hero.x, r.hero.y
+expect_lua r.floor == 1 and r.visible[K(hx, hy)] and r.seen[K(hx, hy)] and r.hero.hp == 20
+lua function open_side() for _, d in ipairs({"right", "left", "down", "up"}) do local s = R.DIRS[d] if D.open(r.d, hx + s[1], hy + s[2]) then return d, hx + s[1], hy + s[2] end end end
+lua dir, ox, oy = open_side(); r.monsters = {{kind = "rata", x = ox, y = oy, hp = 4, awake = false}}; r.hero.hp = 100; r.hero.max = 100
+expect_lua R.act(r, {dir = dir}) == "hit" and r.monsters[1] == nil or r.monsters[1].hp < 4
+lua for i = 1, 5 do if r.monsters[1] then R.act(r, {dir = dir}) end end
+expect_lua r.monsters[1] == nil and r.kills == 1 and r.hero.hp < 100
+# one that has seen the hero comes a cell a turn, down the distance field; next to it, it bites
+lua q = R.new(5); q.d = {cells = {}, exit = {0, 0}}; for i = 1, D.W * D.H do q.d.cells[i] = D.FLOOR end; q.grid = grid(D.W, D.H); q.hero.x, q.hero.y = 10, 10
+lua q.monsters = {{kind = "rata", x = 14, y = 10, hp = 4, awake = true}}; R.act(q, {rest = true})
+expect_lua q.monsters[1].x == 13 and q.monsters[1].y == 10 and q.hero.hp == 20
+lua r.hero.hp = 20; r.hero.max = 20; r.monsters = {{kind = "esqueleto", x = ox, y = oy, hp = 9, awake = true}}
+lua m = r.monsters[1]; R.act(r, {rest = true})
+expect_lua r.hurt and r.hero.hp < 20 and m.x == ox and m.y == oy
+# a potion: eight back, never past the most
+lua r.monsters = {}; r.hero.hp = 5; r.hero.potions = 1
+expect_lua R.act(r, {potion = true}) == "potion" and r.hero.hp == 13 and r.hero.potions == 0 and R.act(r, {potion = true}) == nil
+# a death ends the run: no more turns
+lua r.hero.hp = 1; r.monsters = {{kind = "esqueleto", x = ox, y = oy, hp = 9, awake = true}}; R.act(r, {rest = true})
+expect_lua r.dead and r.hero.hp == 0 and R.act(r, {rest = true}) == nil
+# the stairs take the hero down; on the last floor the amulet ends the run won
+lua r = R.new(5); function beside(r) local ex, ey = r.d.exit[1], r.d.exit[2] for d, s in pairs(R.DIRS) do if D.open(r.d, ex - s[1], ey - s[2]) then r.hero.x, r.hero.y = ex - s[1], ey - s[2] r.monsters = {} return d end end end
+expect_lua R.act(r, {dir = beside(r)}) == "descend" and r.floor == 2 and r.hero.x == r.d.start[1]
+lua r.floor = 4; R.descend(r)
+expect_lua r.floor == 5 and R.act(r, {dir = beside(r)}) == "won" and r.won and R.act(r, {rest = true}) == nil
+# the game: the day's chasm is offered (the clock knows the date) and seeded with the day
+expect_lua require("scene").top() == require("title")
+press DOWN
+press A
+tick 30
+lua P = require("play"); I = require("index"); r = game.r
+expect_lua require("scene").top() == P and game.daily and r.seed == clock().days and r.seed == 20454
+# the fog: clear where the hero sees, a checker where it saw, dark elsewhere, in the map of BG0 cell by cell; the floor in BG1
+lua FOGS = {[0] = I.fog.clear[1], I.fog.seen[1], I.fog.dark[1]}; function fog_ok() local bad = 0 for y = 0, D.H - 1 do for x = 0, D.W - 1 do local k = K(x, y) local f = r.visible[k] and 0 or r.seen[k] and 1 or 2 if mget(0, 2 * x, 2 * y) ~= FOGS[f] then bad = bad + 1 end end end return bad end
+expect_lua fog_ok() == 0 and mget(0, 2 * r.hero.x, 2 * r.hero.y) == 0 and mget(0, 0, 0) == I.fog.dark[1]
+expect_lua mget(1, 0, 0) == I.cells.wall[1] and mget(1, 2 * r.hero.x, 2 * r.hero.y) == I.cells.floor[1] or mget(1, 2 * r.hero.x, 2 * r.hero.y) == I.cells.crack[1]
+# a bot: each turn one step along grid:path to the stairs (into a monster in the way, a blow), with a hero that does not die; after
+# every turn the fog in the map is still what the run says
+lua r.hero.hp = 999; r.hero.max = 999; fog_bad = 0; turns = 0
+lua game.input = function() if P.busy() then return nil end local rr = game.r if rr.won or rr.dead then return nil end if rr ~= r then r = rr end if turns > 0 then fog_bad = fog_bad + fog_ok() end turns = turns + 1 local p = rr.grid:path(rr.hero.x, rr.hero.y, rr.d.exit[1], rr.d.exit[2]) if not p then return {rest = true} end local s = p[1] local dx, dy = s[1] - rr.hero.x, s[2] - rr.hero.y return {dir = dx > 0 and "right" or dx < 0 and "left" or dy > 0 and "down" or "up"} end
+tick 3000
+expect_lua game.r.won and game.r.floor == 5 and fog_bad == 0 and stored("best") == 5 and stored("wins") == 1
+lua print("bot turns", turns)
+press A
+tick 30
+expect_lua require("scene").top() == require("title")

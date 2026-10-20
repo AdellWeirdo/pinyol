@@ -1,0 +1,8 @@
+{
+  "asset": "DUNGEON",
+  "type": "tilemap",
+  "tiles": 15,
+  "map_w": 96,
+  "map_h": 66,
+  "palette": "WORLD"
+}

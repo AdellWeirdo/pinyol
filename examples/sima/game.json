@@ -1,0 +1,8 @@
+{
+  "id": "sima",
+  "title": "Sima",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "description": "Un roguelike por turnos: cinco pisos hechos con la semilla de la bajada, niebla de lo no visto, monstruos que te persiguen y el amuleto al fondo.",
+  "subtitle": "Roguelike · pisos generados, niebla en un fondo, grid:distances"
+}

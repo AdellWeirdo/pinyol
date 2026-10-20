@@ -1,0 +1,12 @@
+{
+  "asset": "AMULETO",
+  "type": "sprite",
+  "format": "idx8",
+  "w": 16,
+  "h": 16,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "palette": "OBJ"
+}

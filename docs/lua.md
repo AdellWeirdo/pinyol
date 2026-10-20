@@ -832,7 +832,10 @@ A game downloaded from the community cannot harm the console:
   endless loop becomes an error, not a frozen console.
 - No `io`, `os`, `debug` or `package`; `load` takes source text only, never bytecode; `require` only reads `.lua`
   files inside the game folder.
-- `math.random` starts from the same seed every run, so a game and its tests repeat exactly; `math.randomseed(n)` sets another.
+- `math.random` starts from the same seed every run, so a game and its tests repeat exactly; `math.randomseed(n)` sets another. A game that wants
+  a new world each time seeds it with `ticks()` when the player first presses a button (a person never presses on the same tick twice, a
+  test always does: `examples/sima`), or with `clock().days` for one world a day for everyone. `math.randomseed()` with nothing seeds
+  from the machine's time, which the tests cannot repeat.
 
 ## Testing
 

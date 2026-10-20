@@ -203,7 +203,7 @@ examined.
 | 12 | JRPG | combate (meadow, encounters, fight by turns, party saved); aldea (dialogue) | PARTIAL | no shops, equipment, status effects, story or link trade; one spell each |
 | 13 | Tactics | tablero | PARTIAL | one 15 x 10 field, no side-view battle scene, fog, army palettes or link arena |
 | 14 | Real-time grid battler | none | MISSING | |
-| 15 | Roguelike | none | MISSING | |
+| 15 | Roguelike | sima (five generated floors, fog, a chasing crowd on one distance field, the day's seed) | PARTIAL | no inventory beyond potions, no hunger, traps or allies, no saved run |
 | 16 | Puzzle | puzle (sliding), ladrillos (breakout) | PARTIAL | falling blocks, match-3, rotating-stick maze missing |
 | 17 | Pinball | pinball | PARTIAL | one table: no scrolling, bonus fields or multi-ball; flippers use `w:drive` |
 | 18 | Rhythm | control (cuts on the beat of a theme), sonidos | PARTIAL | no rhythm game proper; `studio.*` unused by examples |
@@ -454,4 +454,34 @@ The list expected `scene.go` hygiene, the full reset of the picture between game
 - **Not tried**: a map with more standing things than the 128 sprites (a bigger island would need culling by the camera, which `view.lua` does, and
   columns merged into the ground picture where nothing can pass behind them), and the occluding parts of the ground on a second background layer, the
   other way GBA isometric games split a scene.
+
+## 13. What building the roguelike showed (`examples/sima`)
+
+- **Seeding needs no engine call, only a habit, now written down** (`docs/lua.md`, Limits): the run's seed is the `ticks()` at which A was
+  pressed on the title, the old trick of GBA games that counted frames until START. A person never presses on the same tick twice; a test
+  always does, so its runs repeat. The day's chasm is seeded with `clock().days` (offered only when `clock()` knows the date), and each floor
+  with the run's seed and its number, so a floor is the same whenever it is made. `math.randomseed()` with nothing would seed from the time
+  and break the tests' repeats.
+- **The fog of war is a second background, no primitive**: BG0 over the sprites (`prio = 0`), its map all dark, a checker of dark over what
+  was seen (the items under it show dimmed) and clear where the hero sees. For each floor both maps are loaded again (`bg()` copies the
+  asset's map: all rock and all dark at once, in C) and only what is not plain rock, and the cells the hero sees, are written with `mset`;
+  after a turn, only the fog's cells that came into sight or left it. The tests read the map back with `mget` after every turn of a whole
+  run and find it the same as the run's own sight; a fog that was not updated, or only half of it, fails it.
+- **Which tiles a kind of cell is**: `png2asset --tiles` numbers tiles as it first meets them, flipped copies folded in (an entry may be
+  `5 | 0x400`), so `art.py` draws one cell of each kind in the map's first row and reads their four entries back from the `.map` it made,
+  into `index.lua`. A game that writes a map by `mset` needs that; a tool that printed them would save the step.
+- **One distance field moves the whole crowd**: each turn `grid:distances` from the hero over the floor, and every awake monster takes
+  `descend`; the bats half the time go anywhere instead. Sight is a circle of six cells cut by walls (Bresenham to each), in Lua, once a turn.
+- **The design is checked, not only played**: twenty runs of five floors are each one piece (every open cell reached from the start, the
+  stairs among them), the same seed makes the same floor, and a bot walking to the stairs along `grid:path` plays a whole run in 263 turns,
+  to the amulet, with the best floor and the wins kept.
+- **On the console the cost was all the game's Lua, and three habits fixed it** (measured by putting each piece in `_update` for a
+  window and reading the perf line's mean): sight with Bresenham worked out every turn, 8 ms a look, and it was looked twice a turn;
+  rays worked out once and walked, 2.1 ms, once. The fog over a 17 x 17 square, 2.4 ms; by the difference of two sights, 0.35. One
+  `grid:distances` over 48 x 32, 1.4 ms. With the turn still in one tick, almost every step was a 24-27 ms frame (about 290 in a run);
+  with the hero's half and the monsters' half a tick apart (the step slides for four), 34 over 20 ms in a whole run of 261 turns, 59.8 fps.
+  A floor's arrival held a tick 166 ms (every cell of both maps written, the grid set cell by cell); with the maps loaded again, only
+  what is open written, the grid made all wall and only the open cells set, 50-53 ms, behind a "Piso 2 de 5" card on black, as the
+  Mystery Dungeons put between floors, where a long tick is not seen. Each Lua call there is microseconds (6,144 `mget`+`mset` pairs,
+  about 40 ms): a game counts its calls per frame on the console, not its lines.
 
