@@ -1,0 +1,8 @@
+{
+  "asset": "FIELD",
+  "type": "tilemap",
+  "tiles": 22,
+  "map_w": 30,
+  "map_h": 20,
+  "palette": "WORLD"
+}

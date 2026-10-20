@@ -201,7 +201,7 @@ examined.
 | 10 | FPS / software 3D | laberinto, museo_nocturno (raycast), inventos (3D toy) | COVERED | |
 | 11 | Top-down action-adventure | aldea (talk, chest), hola (data adventure) | PARTIAL | no combat, dungeon, keys/items loop, boss, or cave lighting |
 | 12 | JRPG | combate (meadow, encounters, fight by turns, party saved); aldea (dialogue) | PARTIAL | no shops, equipment, status effects, story or link trade; one spell each |
-| 13 | Tactics | none (`grid` has only `tests/grid.script`) | MISSING | |
+| 13 | Tactics | tablero | PARTIAL | one 15 x 10 field, no side-view battle scene, fog, army palettes or link arena |
 | 14 | Real-time grid battler | none | MISSING | |
 | 15 | Roguelike | none | MISSING | |
 | 16 | Puzzle | puzle (sliding), ladrillos (breakout) | PARTIAL | falling blocks, match-3, rotating-stick maze missing |
@@ -335,4 +335,21 @@ The ranked list expected per-line effects, `scene` and the 480 x 320 menus to be
   parchment, where white letters do not read (the game draws its own dark box, `ui.lua`).
 - **For script tests**: `#` starts a comment anywhere in a line of a `.script` (not only at its start), so `#t` in an `expect_lua` is cut off; use
   `t[3] ~= nil` or `select`. A script line is also limited in length.
+
+## 8. What building the tactics game showed (`examples/tablero`)
+
+`grid` had only a script test; this is its first game. What it found:
+
+- **`grid` is enough for the genre as it stands** and nothing in the engine changed: `g:reach` for a unit's moves, `g:path` for the walk it
+  animates, `g:distances` (one search from all the enemies) for the AI's "nearest", and a `g:layer()` filled by `l:add` as the danger map.
+  On the console 25 s of the AI playing itself (four units deciding each turn, a danger map after each blow) had no slow tick but the two
+  scene loads, at 60 fps with `_update` at 0.3-0.8 ms on average.
+- **Units that block** are the one thing `grid` does not know: the enemy is a wall for a unit's move, its own side is not (but cannot be stood on).
+  The game builds a grid for the unit's move with the enemy's cells set to 0 (`rules.cost_grid`), 150 `g:set` calls on this field. On a 64 x 64 one
+  that would be 4096 a call: a temporary wall (`g:block(x, y)` and back) or a copy of a grid is what a big map would want. Not measured.
+- **Highlights on a second layer** work and are cheap: `mset(1, tx, ty, tile)` four tiles a cell, only the cells painted last time cleared,
+  blended over the ground with `blend(BG1, BG2, 7, 9)`. The picture that makes the layer carries the swatches in its top row and the game
+  reads their tile numbers with `mget` and empties the layer when it begins.
+- **For script tests** `#` is a comment anywhere in a line (the same as `combate` found): a counting helper (`cnt`) in the script's first line
+  does what `#t` cannot.
 
