@@ -1,12 +1,12 @@
-# La entrevista, end to end: the title starts it on a tap; a tap on its beat is a hit, none a miss, A plays a note too;
+# La entrevista, end to end: the title starts it on a level's sign (Pasacalles); a tap on its beat is a hit, none a miss, A plays a note too;
 # a drag followed with the finger; the song ends, the candidate enters, the result offers another go.
 # In headless the song's beat 0 comes 1.7 ticks after the start tap, a beat every 32.14 ticks (112 BPM).
 new
 tick 2
 shot ch_title
 expect_lua state == "title"
-tap 240 160
-expect_lua state == "play"
+tap 240 214
+expect_lua state == "play" and level == 2
 # beat 4 (tick 130): the first target, at (170, 262), tapped on time (its ring closing, shown 17 ticks before)
 tick 110
 shot ch_ring

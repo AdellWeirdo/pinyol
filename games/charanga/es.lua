@@ -3,7 +3,8 @@
 return {
   title = "La Charanga de Emergencia",
   episode = "Episodio 1 · La entrevista",
-  start = "Toca la pantalla o pulsa A para empezar",
+  levels = {"Ensayo", "Pasacalles", "¡A reventar!"},
+  level_names = {"Ensayo", "Pasacalles", "La plaza a reventar"},
   how = "Toca cada círculo cuando su aro se cierre. Sigue la bola con el dedo.",
   door = "ENTREVISTA",
   meter = "ÁNIMO",

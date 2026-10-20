@@ -2,7 +2,7 @@
 # game; the pause stops the song and START brings it back in the bar it stopped in.
 new
 tick 2
-tap 240 274
+tap 240 282
 expect_lua state == "calib"
 # the metronome starts on the button's lift (tick 2): beat k at tick 2.7 + 32.14 k; every tap 6 ticks late
 tick 38
@@ -41,7 +41,7 @@ tap 240 200
 tick 2
 expect_lua state == "title"
 # the pause: START stops the song where it is; START again plays on from the start of that bar
-tap 100 100
+tap 240 214
 expect_lua state == "play"
 tick 200
 lua bar0 = require("song").bar

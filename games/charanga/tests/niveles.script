@@ -1,0 +1,26 @@
+# Difficulty: Ensayo has fewer notes and wider windows, La plaza a reventar more and narrower; the song is the same.
+# The level chosen is kept for the next game; the cross chooses one on the title.
+new
+tick 2
+tap 110 214
+expect_lua state == "play" and level == 1 and stored("level", 0) == 1
+lua n1, g1 = rawlen(notes), require("chart").GOOD
+lua debug_skip(27)
+tick 400
+expect_lua state == "result"
+press A
+tick 2
+expect_lua level == 1
+lua n2 = rawlen(require("chart").notes(2)); n3 = rawlen(require("chart").notes(3))
+expect_lua n1 < n2 and n2 < n3
+lua require("chart").use(3)
+expect_lua require("chart").GOOD < g1 and require("chart").APPROACH < 2
+# the title again: right, right is La plaza a reventar, A starts it
+lua require("song").stop(); state = "title"
+press RIGHT
+press RIGHT
+press A
+tick 2
+expect_lua state == "play" and level == 3 and rawlen(notes) == n3
+shot niv_plaza
+expect_ok

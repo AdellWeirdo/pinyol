@@ -10,7 +10,6 @@ local scene = require("scene")
 local T = require("es")
 
 local R = 24                            -- a target's radius (48 px across: a fingertip, docs/ds-touch-research.md)
-local FOLLOW = 46                       -- how far the finger may be from a drag's ball and still follow it
 local COLOURS = {0x3DB55A, 0x3C7DDB, 0xD9434F, 0x9B4DD6}
 local CAPTIONS = {{48, 51, "doubt"}, {76, 79, "push"}, {108, 111, "knock"}}
 local ENTER_TICKS = 100                 -- the walk through the door, after the song
@@ -23,7 +22,9 @@ local hop = 0          -- ticks the candidate jumps for joy
 local last_beat = 0
 local enter_t = 0
 local again = {x = 180, y = 250, w = 120, h = 44}
-local calib_btn = {x = 160, y = 254, w = 160, h = 40}           -- on the title: tune the timing
+local calib_btn = {x = 160, y = 262, w = 160, h = 40}           -- on the title: tune the timing
+local level_btns = {{x = 54, y = 194, w = 120, h = 40}, {x = 180, y = 194, w = 120, h = 40}, {x = 306, y = 194, w = 120, h = 40}}
+level = 2                               -- the difficulty chosen (global: the tests read it)
 local resume_btn = {x = 130, y = 170, w = 100, h = 44}          -- in the pause
 local quit_btn = {x = 250, y = 170, w = 100, h = 44}
 local CALIB_TAPS, CALIB_WARMUP = 12, 2  -- taps measured, after the first ones (the ear finds the beat)
@@ -38,8 +39,11 @@ local function play_beat() -- the beat as judged: the song's, less the player's 
   return b and b - chart.OFFSET / song.SEC_PER_BEAT
 end
 
-local function start()
-  notes = chart.notes()
+local function start(lv)
+  level = lv or level
+  store("level", level)
+  chart.use(level)
+  notes = chart.notes(level)
   for i, n in ipairs(notes) do n.colour = COLOURS[(i - n.n) % #COLOURS + 1] end
   stats = {perfect = 0, good = 0, miss = 0, total = #notes}
   energy, popups, hop, enter_t, last_beat = 0.5, {}, 0, 0, 0
@@ -114,7 +118,7 @@ local function update_play()
     if n.drag and n.following and not n.state then -- following: is the finger (or A, held) on the ball?
       if b >= n.t then
         local bx, by = ball(n, b)
-        local on = (pointer.down and (pointer.x - bx) ^ 2 + (pointer.y - by) ^ 2 <= FOLLOW ^ 2) or btn("a")
+        local on = (pointer.down and (pointer.x - bx) ^ 2 + (pointer.y - by) ^ 2 <= chart.FOLLOW ^ 2) or btn("a")
         n.samples, n.inside = n.samples + 1, n.inside + (on and 1 or 0)
       end
       if b >= n.t2 then
@@ -140,6 +144,7 @@ end
 function _init()
   song.init()
   chart.OFFSET = stored("offset", 0)
+  level = stored("level", 2)
 end
 
 local function median(t)
@@ -187,8 +192,13 @@ function _update()
     if (pointer.pressed(calib_btn) and touch_in == "title") or btnp("c") then
       calib, state = {taps = {}, seen = 0}, "calib"
       song.metronome()
-    elseif (pointer.tapped and touch_in == "title") or btnp("a") or btnp("start") then
-      start()
+    else -- a level's sign starts it; the cross chooses one, A starts it
+      for i, b in ipairs(level_btns) do
+        if pointer.pressed(b) and touch_in == "title" then return start(i) end
+      end
+      if btnp("left") then level = math.max(1, level - 1) end
+      if btnp("right") then level = math.min(3, level + 1) end
+      if btnp("a") or btnp("start") then start() end
     end
   elseif state == "calib" then
     update_calib()
@@ -240,7 +250,7 @@ local function draw_note(n, b)
   if n.drag and b >= n.t then
     local bx, by = ball(n, b)
     circ(bx, by, 14, n.following and 0xFFE070 or 0xA08840)
-    circ(bx, by, FOLLOW, 0xFFFFFF, false)
+    circ(bx, by, chart.FOLLOW, 0xFFFFFF, false)
   else
     circ(n.x, n.y, R, n.colour)
     circ(n.x, n.y, R, 0xFFFFFF, false)
@@ -252,11 +262,15 @@ end
 local function draw_title()
   scene.draw(0, 0.5, 0)
   shade(0, 0, SCREEN_W, SCREEN_H)
-  panel(40, 70, 400, 170)
-  text(T.title, SCREEN_W // 2, 88, {font = FONT_BIG, color = 0xC0392B, align = "center"})
-  text(T.episode, SCREEN_W // 2, 134, {font = FONT, color = 0x3A2A1E, align = "center"})
-  text(T.how, SCREEN_W // 2, 162, {font = FONT, color = 0x5A4A3E, align = "center", width = 360})
-  if (ticks() // 30) % 2 == 0 then text(T.start, SCREEN_W // 2, 210, {font = FONT, color = 0xC0392B, align = "center"}) end
+  panel(40, 56, 400, 194)
+  text(T.title, SCREEN_W // 2, 66, {font = FONT_BIG, color = 0xC0392B, align = "center"})
+  text(T.episode, SCREEN_W // 2, 110, {font = FONT, color = 0x3A2A1E, align = "center"})
+  text(T.how, SCREEN_W // 2, 144, {font = FONT, color = 0x5A4A3E, align = "center", width = 360})
+  for i, b in ipairs(level_btns) do
+    if i == level then rect(b.x - 3, b.y - 3, b.w + 6, b.h + 6, 0xF2C94C) end
+    plate(b.x, b.y, b.w, b.h, ({0x3DB55A, 0xC0392B, 0x9B4DD6})[i])
+    text(T.levels[i], b.x + b.w // 2, b.y + 10, {font = FONT, color = 0xFFFFFF, align = "center"})
+  end
   plate(calib_btn.x, calib_btn.y, calib_btn.w, calib_btn.h, 0x3C7DDB)
   text(T.calibrate, calib_btn.x + calib_btn.w // 2, calib_btn.y + 8, {font = FONT, color = 0xFFFFFF, align = "center"})
 end
@@ -296,7 +310,8 @@ local function draw_result()
   local grade = pct >= 85 and 1 or pct >= 60 and 2 or 3
   panel(50, 60, 380, 240)
   text(T.result_title, SCREEN_W // 2, 76, {font = FONT_BIG, color = 0x2E7D32, align = "center"})
-  text(string.format(T.result_hits, hits, stats.total, pct), SCREEN_W // 2, 124, {font = FONT, color = 0x3A2A1E, align = "center"})
+  text(T.level_names[level] .. " · " .. string.format(T.result_hits, hits, stats.total, pct), SCREEN_W // 2, 124,
+       {font = FONT, color = 0x3A2A1E, align = "center"})
   text(T.grade[grade], SCREEN_W // 2, 160, {font = FONT, color = 0x5A4A3E, align = "center", width = 340})
   plate(again.x, again.y, again.w, again.h, 0xC0392B)
   text(T.again, again.x + again.w // 2, again.y + 10, {font = FONT, color = 0xFFFFFF, align = "center"})
