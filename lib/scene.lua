@@ -11,6 +11,9 @@
 --   scene.go(title)                         -- in _init
 --   function _update() scene.update() end   function _draw() scene.draw() end
 --
+-- scene.clean() puts back what a scene may leave on the picture and the sound: fade, blend, windows (and their per-line spans), mosaic, per-line
+-- tables, hidden layers, the synthesised voices, the LED (clip and camera are one drawing's, the engine resets them). scene.go(s, args, {clean = true}) does it as it changes scene, for
+-- a game of many small ones (microgames) where each plays with those and none should find the last one's.
 -- scene.go(s, args, {fade, transition}) empties the stack for s (the sprites of the scenes leaving are taken away: spr_clear,
 -- and juice's tweens, timers and scripts stop: a cutscene of the level does not go on in the title);
 -- scene.push(s, args) puts s on top; scene.pop(result) goes back, the scene under it gets resume(result).
@@ -25,6 +28,7 @@ local function apply(p)
   if p.kind == "go" then
     while #stack > 0 do call(table.remove(stack), "leave") end
     if spr_clear then spr_clear() end
+    if p.clean then M.clean() end
     if ok_juice then juice.reset() end
     stack[1] = p.scene
     call(p.scene, "enter", p.args)
@@ -38,9 +42,21 @@ local function apply(p)
   end
 end
 
+function M.clean()
+  line_off()
+  fx_off()
+  window_off(0)
+  window_off(1)
+  objwindow(nil)
+  mosaic(1, 1, 1, 1)
+  show(ALL)
+  for v = 0, 3 do tone(v) end
+  led()
+end
+
 function M.go(s, args, opts)
   assert(type(s) == "table", "scene.go: a scene is a table")
-  local p = {kind = "go", scene = s, args = args}
+  local p = {kind = "go", scene = s, args = args, clean = opts and opts.clean}
   local secs = opts and opts.fade or 0
   if secs > 0 then fading = {p = p, len = math.max(1, math.floor(secs * 30 + 0.5)), t = 0, opts = opts} -- out, then in
   else pending = p end
