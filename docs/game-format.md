@@ -181,7 +181,7 @@ or with J on desktop. Touch works on every screen.
 
 | Key | Type | Default | What it does |
 |---|---|---|---|
-| `title` | string | none | Title-screen text when there is no `LOGO` asset; console game list. |
+| `title` | string | none | Title-screen text when there is no `LOGO` asset; console game list. Before the title screen, every game shows the engine's careta, POWERED BY PINYOL (3 s; docs/lua.md, "The careta"). |
 | `subtitle` | string | `""` | Plate on the title screen; second line in the console game list. |
 | `tagline` | string | none | Caption at the bottom of the title screen. |
 | `end_text` | string | `"Fin"` | End-screen line when the current chapter has no `end_text`. |

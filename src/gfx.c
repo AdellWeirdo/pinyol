@@ -125,11 +125,8 @@ static inline unsigned index_at(const uint8_t *ids, int j, int bpp) {
 
 /* A packed picture's file, checked whole: every column's runs inside the picture and the file, so drawing it needs no
  * checks. False (the asset a placeholder) when anything is off. */
-static bool load_packed(asset *a) {
-    char path[384];
-    long len = 0;
-    snprintf(path, sizeof path, "%s/assets/%s.pk", G.game_dir, a->id);
-    uint8_t *pk = (uint8_t *)read_picture(path, &len, a);
+/* A packed picture's file, checked whole against a's geometry; NULL if it is good, then a points into it. */
+static const char *pk_take(asset *a, uint8_t *pk, long len) {
     const char *why = NULL;
     if (!pk || len < 16 || memcmp(pk, "NP2K", 4) || pk[4] != 1 || (pk[5] != 4 && pk[5] != 8)) why = "not a packed picture";
     unsigned ncol = why ? 0 : rd16(pk + 6), w = why ? 0 : rd16(pk + 8), h = why ? 0 : rd16(pk + 10), nf = why ? 0 : rd16(pk + 12);
@@ -161,15 +158,40 @@ static bool load_packed(asset *a) {
             q += 4 + (pk[5] == 8 ? n : (n + 1) / 2);
         }
     }
+    if (why) return why;
+    a->pk = pk, a->bpp = pk[5], a->pal = (const uint16_t *)(pk + 16), a->cols = (const uint32_t *)(pk + table);
+    a->pk_opaque = opaque;
+    return NULL;
+}
+
+static bool load_packed(asset *a) {
+    char path[384];
+    long len = 0;
+    snprintf(path, sizeof path, "%s/assets/%s.pk", G.game_dir, a->id);
+    uint8_t *pk = (uint8_t *)read_picture(path, &len, a);
+    const char *why = pk_take(a, pk, len);
     if (why) {
         hal_log("asset %s: %s", a->id, why);
         free(pk);
         return false;
     }
-    a->pk = pk, a->bpp = pk[5], a->pal = (const uint16_t *)(pk + 16), a->cols = (const uint32_t *)(pk + table);
-    a->pk_opaque = opaque;
     a->bytes = (size_t)len, pic_bytes += a->bytes;
     return true;
+}
+
+/* A packed picture built into the engine (pinyol_splash: the careta's), outside the game's pictures: never let go,
+ * never freed, never one of the game's ids. */
+bool gfx_asset_builtin(asset *a, const pinyol_pic_entry *e) {
+    memset(a, 0, sizeof *a);
+    snprintf(a->id, sizeof a->id, "%s", e->name);
+    cJSON *meta = cJSON_Parse(e->meta);
+    a->w = jint(meta, "w", 0), a->h = jint(meta, "h", 0), a->frames = jint(meta, "frames", 1);
+    a->ax = jai(jget(meta, "anchor"), 0, a->w / 2), a->ay = jai(jget(meta, "anchor"), 1, a->h - 1);
+    cJSON_Delete(meta);
+    a->pinned = true;
+    const char *why = a->w > 0 && a->h > 0 && a->frames > 0 ? pk_take(a, (uint8_t *)e->pk, (long)e->len) : "no meta";
+    if (why) hal_log("built-in picture %s: %s", e->name, why), placeholder(a, a->w > 0 ? a->w : 16, a->h > 0 ? a->h : 16, 1);
+    return !why;
 }
 
 static bool load_asset(asset *a) {

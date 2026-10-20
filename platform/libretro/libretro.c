@@ -340,7 +340,7 @@ RETRO_API bool retro_load_game(const struct retro_game_info *game) {
     desc[PAD_N] = (struct retro_input_descriptor){0};
     env_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
     if (!open_content(game->path)) return false;
-    cfg = (bp_config){game_dir, save_dir[0] ? save_dir : NULL};
+    cfg = (bp_config){game_dir, save_dir[0] ? save_dir : NULL, false};
     frames = 0;
     if (!game_init(&cfg)) return hal_log("%s: game folder incomplete", game_dir), game_shutdown(), false;
     return true;

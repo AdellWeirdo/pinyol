@@ -26,6 +26,7 @@
 #define MAX_TILEMAPS 24
 
 static lua_State *Ls;
+static int splash_ref = LUA_NOREF; /* the game's careta (splash.lua): its table, while it plays */
 static uint32_t us_update, us_draw, us_ppu; /* the last tick's _update, the last frame's _draw and picture (perf()) */
 static bool blank;          /* the world this frame is the backdrop alone (ppu_blank): drawn as a fill */
 static uint16_t backdrop;
@@ -1139,6 +1140,117 @@ static int l_stored(lua_State *L) {
     return 1;
 }
 
+/* ------------------------------------------------------------------ the careta (splash.c, docs/lua.md) */
+
+/* powered_by(x, y) -> w, h: in the game's careta, where the seal "POWERED BY PINYOL" goes this frame (its top-left
+ * corner; kept whole on the screen). The engine draws it over everything, wherever it is put. Its size either way. */
+static int l_powered_by(lua_State *L) {
+    int w = 0, h = 0;
+    splash_seal_size(&w, &h);
+    if (!lua_isnoneornil(L, 1)) {
+        lua_Number x = luaL_checknumber(L, 1), y = luaL_checknumber(L, 2);
+        x = x < -SCREEN_W ? -SCREEN_W : x > SCREEN_W ? SCREEN_W : x; /* (whole on the screen anyway: splash.c) */
+        y = y < -SCREEN_H ? -SCREEN_H : y > SCREEN_H ? SCREEN_H : y;
+        if (splash_own()) splash_place((int)x, (int)y);
+    }
+    lua_pushinteger(L, w), lua_pushinteger(L, h);
+    return 2;
+}
+
+static void own_splash_failed(const char *why) { /* the engine's careta instead, and the game's let go */
+    hal_log("lua careta: %s (the engine's careta instead)", why ? why : "error");
+    if (splash_ref != LUA_NOREF) luaL_unref(Ls, LUA_REGISTRYINDEX, splash_ref);
+    splash_ref = LUA_NOREF;
+    ppu_reset();
+    splash_own_failed();
+}
+
+/* The careta's update(t) or draw(t); *done: what update said. False if it failed (the engine's careta from now on). */
+static bool splash_call(const char *fn, int t, bool *done) {
+    lua_pushcfunction(Ls, msgh);
+    lua_rawgeti(Ls, LUA_REGISTRYINDEX, splash_ref);
+    lua_getfield(Ls, -1, fn);
+    lua_remove(Ls, -2);
+    if (!lua_isfunction(Ls, -1)) { /* none: it draws nothing, or it is done as soon as it may be */
+        lua_pop(Ls, 2);
+        if (done) *done = true;
+        return true;
+    }
+    lua_pushinteger(Ls, t);
+    arm();
+    int rc = lua_pcall(Ls, 1, 1, -3);
+    draw_flush();
+    if (rc != LUA_OK) {
+        char why[256];
+        snprintf(why, sizeof why, "%s: %s", fn, lua_tostring(Ls, -1));
+        lua_pop(Ls, 2);
+        own_splash_failed(why);
+        return false;
+    }
+    if (done) *done = lua_toboolean(Ls, -1);
+    lua_pop(Ls, 2);
+    return true;
+}
+
+/* game.json "splash", or splash.lua when the game has one: read and compiled always (a mistake in it fails
+ * --validate), run only when the careta plays. Its table becomes the careta; an error running it, the engine's. */
+static bool splash_load(void) {
+    const char *file = jstr(G.game, "splash") ? jstr(G.game, "splash") : "splash.lua";
+    if (!safe_name(file)) return fail("start", "game.json \"splash\" is not a file name in the game folder"), false;
+    char path[384];
+    snprintf(path, sizeof path, "%s/%s", G.game_dir, file);
+    FILE *f = jstr(G.game, "splash") ? NULL : fopen(path, "rb"); /* (game_has may say yes when it is not sure) */
+    if (!jstr(G.game, "splash") && !f) return true; /* none: the engine's */
+    if (f) fclose(f);
+    long len = 0;
+    char *src = read_file(path, &len);
+    if (!src) return fail(file, "cannot read it"), false;
+    char name[96];
+    snprintf(name, sizeof name, "@%s", file);
+    int rc = luaL_loadbufferx(Ls, src, (size_t)len, name, "t");
+    free(src);
+    if (rc != LUA_OK) {
+        fail(file, lua_tostring(Ls, -1));
+        lua_settop(Ls, 0);
+        return false;
+    }
+    if (!splash_on()) return lua_settop(Ls, 0), true;
+    lua_pushcfunction(Ls, msgh);
+    lua_insert(Ls, -2);
+    arm();
+    rc = lua_pcall(Ls, 0, 1, 1);
+    if (rc != LUA_OK) hal_log("lua careta: %s (the engine's careta instead)", lua_tostring(Ls, -1));
+    else if (!lua_istable(Ls, -1)) hal_log("lua careta: %s gives no table {update, draw} (the engine's careta instead)", file);
+    else {
+        lua_pushvalue(Ls, -1);
+        splash_ref = luaL_ref(Ls, LUA_REGISTRYINDEX);
+        splash_own_begin();
+    }
+    lua_settop(Ls, 0);
+    return true;
+}
+
+bool v2_splash_update(int t) {
+    if (!Ls || splash_ref == LUA_NOREF) return true;
+    clip_tick(); /* (a careta may be a film: clips on canvases) */
+    input_state keep = G.in; /* no button reaches it: it cannot be skipped */
+    memset(&G.in, 0, sizeof G.in);
+    bool done = false;
+    splash_call("update", t, &done);
+    G.in = keep;
+    return done;
+}
+
+void v2_splash_end(void) {
+    if (!Ls) return;
+    if (splash_ref != LUA_NOREF) { /* the game's careta used the PPU: the game starts with it as new */
+        luaL_unref(Ls, LUA_REGISTRYINDEX, splash_ref);
+        splash_ref = LUA_NOREF;
+        ppu_reset();
+    }
+    call("_init", 0);
+}
+
 static void api(lua_State *L) {
     static const luaL_Reg F[] = {
         {"btn", l_btn}, {"btnp", l_btnp}, {"btnr", l_btnr}, {"btnt", l_btnt}, {"btnb", l_btnb}, {"touch", l_touch}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
@@ -1151,7 +1263,7 @@ static void api(lua_State *L) {
         {"window", l_window}, {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow},
         {"mosaic", l_mosaic}, {"noise", l_noise},
         {"quit", l_quit}, {"perf", l_perf}, {"store", l_store}, {"stored", l_stored}, {"load", l_load}, {"log", l_log},
-        {"print", l_log}, {"require", l_require}, {"file", l_file}, {NULL, NULL}};
+        {"print", l_log}, {"require", l_require}, {"file", l_file}, {"powered_by", l_powered_by}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);
     draw_register(L); /* text, shapes, pictures, canvases: lua_draw.c */
@@ -1186,6 +1298,7 @@ void v2_free(void) {
     device_reset();
     if (Ls) lua_close(Ls);
     Ls = NULL;
+    splash_ref = LUA_NOREF;
     assets_free();
     hal_save_flush(); /* a save still on its way is written before the game goes */
     cJSON_Delete(store);
@@ -1257,6 +1370,8 @@ bool v2_load(void) {
         return false;
     }
     lua_settop(Ls, 0);
+    if (!splash_load()) return false;
+    if (splash_on()) return true; /* _init after the careta (v2_splash_end) */
     return call("_init", 0);
 }
 
@@ -1280,7 +1395,8 @@ void v2_draw_world(void) {
     meter_frame();
     draw_frame_begin();
     uint32_t t = hal_micros();
-    call("_draw", 0);
+    if (splash_own()) splash_frame_begin(), splash_call("draw", splash_ticks(), NULL); /* the game's careta */
+    else call("_draw", 0);
     uint32_t u = hal_micros();
     if (!(blank = ppu_blank(&backdrop))) ppu_render(G.world); /* nothing of the world shown: one colour, not worked out */
     us_draw = u - t, us_ppu = hal_micros() - u;

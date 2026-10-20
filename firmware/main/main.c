@@ -350,14 +350,14 @@ static void fatal_screen(void) { /* no card and no flash games: a plain dark red
     display_submit(frame);
 }
 
-static bool start_game(const launcher_game *g) {
+static bool start_game(const launcher_game *g, bool splash) { /* splash: the careta first (src/splash.c) */
     static char save_dir[112];
     snprintf(save_dir, sizeof save_dir, "%s/saves", g->dir);
     if (!strncmp(g->dir, "/flash/", 7) && storage_card()) { /* writing the flash stalls both cores for an erase */
         mkdir("/sdcard/saves", 0755);                       /* (~0.3 s): a flash game saves on the card if there is one */
         snprintf(save_dir, sizeof save_dir, "/sdcard/saves/%s", g->id);
     }
-    bp_config cfg = {g->dir, save_dir}; /* both outlive the game: the list is static */
+    bp_config cfg = {g->dir, save_dir, !splash}; /* both outlive the game: the list is static */
     int64_t t0 = esp_timer_get_time();
     switch_req = false;
     if (!game_init(&cfg)) {
@@ -407,7 +407,7 @@ static void run_tests(const launcher_game *g, int n) {
             for (int j = 0; j < k; j++) {
                 char path[128];
                 snprintf(path, sizeof path, "%s/%s", dir, names[j]);
-                if (!start_game(&g[i])) {
+                if (!start_game(&g[i], false)) { /* (a script counts its ticks from _init) */
                     failed++;
                     continue;
                 }
@@ -461,7 +461,7 @@ static void bench_play(void) {
     if (in) fclose(in);
     if (!out) return;
     fclose(out);
-    bp_config cfg = {dir, "/sdcard/pinyol_bench_saves"};
+    bp_config cfg = {dir, "/sdcard/pinyol_bench_saves", true}; /* (measured from _init: no careta) */
     if (!game_init(&cfg)) return;
     hal_log("BENCH play %s at %d ticks a frame", name, TICKS_PER_FRAME);
     perf = (typeof(perf)){.since = esp_timer_get_time()};
@@ -481,7 +481,7 @@ static int menu_choose(void) {
     snprintf(m.id, sizeof m.id, "%s", CONSOLE_MENU_ID);
     snprintf(m.dir, sizeof m.dir, "%s", launcher_menu_dir());
     launch_id[0] = 0;
-    if (!start_game(&m)) return MENU_FAILED;
+    if (!start_game(&m, false)) return MENU_FAILED; /* (the menu builds pinyol's logo itself) */
     play();
     bool failed = layer_top() == L_ERROR;
     game_shutdown();
@@ -559,7 +559,7 @@ void app_main(void) {
         }
         if (i < 0) power_off();
         played = i;
-        if (!start_game(&games[i])) { /* a broken folder: said on screen, then the list again */
+        if (!start_game(&games[i], true)) { /* a broken folder: said on screen, then the list again */
             launcher_message(frames[0], "No se puede abrir este juego", -1);
             vTaskDelay(pdMS_TO_TICKS(2000));
             continue;

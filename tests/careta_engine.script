@@ -1,0 +1,12 @@
+# The engine's own careta on a game without one (run with --splash): 3 s (180 ticks), then
+# _init; no button skips it (press: 2 ticks).
+tick 1
+expect_lua not started
+tick 119
+press A
+shot careta_engine_logo
+tick 57
+expect_lua not started
+tick 1
+expect_lua started
+expect_ok
