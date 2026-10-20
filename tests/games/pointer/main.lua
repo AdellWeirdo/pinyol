@@ -33,3 +33,11 @@ function _update()
   if pointer.flick then flick = pointer.flick end
 end
 function _draw() cls(0) end
+-- two fingers: the last pinch seen, the most fingers, the middle's path
+pinch_seen, most, moved2 = nil, 0, 0
+local base_update = _update
+function _update()
+  base_update()
+  most = math.max(most, pointer.fingers)
+  if pointer.pinch then pinch_seen = pointer.pinch; moved2 = moved2 + pointer.pinch.dx end
+end

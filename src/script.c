@@ -13,7 +13,7 @@ static char fail_msg[256];
 #define FAIL(...) do { snprintf(fail_msg, sizeof fail_msg, __VA_ARGS__); return false; } while (0)
 
 static bool tick_input(uint16_t held, bool touch, int px, int py) {
-    hal_input in = {held, touch, (int16_t)px, (int16_t)py};
+    hal_input in = {.held = held, .touch = touch, .px = (int16_t)px, .py = (int16_t)py};
     game_tick(&in);
     /* A Lua game stopped on an error stays frozen, and what the script checks after it could still hold: the script fails
      * on the tick it stopped, with the game's own message (not only where it says expect_ok). */
@@ -27,6 +27,15 @@ static bool tick_input(uint16_t held, bool touch, int px, int py) {
 }
 
 static bool tick(uint16_t held) { return tick_input(held, false, 0, 0); }
+
+static bool tick_two(int x1, int y1, int x2, int y2) { /* two fingers down for one tick */
+    hal_input in = {.touch = true, .px = (int16_t)x1, .py = (int16_t)y1, .points = 2, .x = {(int16_t)x1, (int16_t)x2},
+                    .y = {(int16_t)y1, (int16_t)y2}};
+    game_tick(&in);
+    if (v2_error()) FAIL("the game stopped on an error: %s", v2_error());
+    if (frame_cb) frame_cb();
+    return true;
+}
 static int pace; /* "pace N": idle ticks after every press, to record a run at a human (reading) speed */
 static int read_cps; /* "read CPS": each line waits as long as reading it takes (a duration run) */
 static const char *last_read;
@@ -366,6 +375,26 @@ static bool run_line(char *cmd, char *arg) {
         if (n < 1) n = 1;
         for (int i = 0; i <= n; i++)
             if (!tick_input(0, true, x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n)) return false;
+        return tick(0);
+    }
+    if (!strcmp(cmd, "pinch")) { /* pinch CX CY D1 D2 [TICKS]: two fingers on a level line round (CX, CY), D1 apart going
+        * to D2 (closer: a pinch; further: a spread), then both lift; 30 ticks unless said */
+        int cx, cy, d1, d2, n = 30;
+        if (sscanf(arg, "%d %d %d %d %d", &cx, &cy, &d1, &d2, &n) < 4) FAIL("pinch CX CY D1 D2 [TICKS]");
+        if (n < 1) n = 1;
+        for (int i = 0; i <= n; i++) {
+            int h = (d1 + (d2 - d1) * i / n) / 2;
+            if (!tick_two(cx - h, cy, cx + h, cy)) return false;
+        }
+        return tick(0);
+    }
+    if (!strcmp(cmd, "drag2")) { /* drag2 X1 Y1 X2 Y2 DX DY [TICKS]: two fingers at (X1, Y1) and (X2, Y2) move together
+        * by (DX, DY), then lift; 30 ticks unless said */
+        int x1, y1, x2, y2, dx, dy, n = 30;
+        if (sscanf(arg, "%d %d %d %d %d %d %d", &x1, &y1, &x2, &y2, &dx, &dy, &n) < 6) FAIL("drag2 X1 Y1 X2 Y2 DX DY [TICKS]");
+        if (n < 1) n = 1;
+        for (int i = 0; i <= n; i++)
+            if (!tick_two(x1 + dx * i / n, y1 + dy * i / n, x2 + dx * i / n, y2 + dy * i / n)) return false;
         return tick(0);
     }
     if (!strcmp(cmd, "hold")) {

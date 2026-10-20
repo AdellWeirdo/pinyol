@@ -9,6 +9,9 @@
 --     pointer.flick                              -- on lift, a fast short stroke: {dx, dy, vx, vy, dir = "up"|"down"|"left"|"right"}
 --     pointer.vx, pointer.vy                     -- on every lift, pixels a tick the finger was going (0 when it stopped first)
 --     pointer.stroke                             -- the points of the stroke going on; pointer.last on lift
+--     pointer.fingers                            -- how many fingers are down (touches(): the console's panel takes 5)
+--     pointer.pinch                              -- while two are down: {scale, angle, cx, cy, dx, dy}: their distance and
+--                                                -- turn since the second landed, their middle and how it moved this tick
 --   pointer.pressed(item)                        -- true when that {x, y, w, h} was tapped
 --   pointer.pick(items, x, y)                    -- the item ({x, y, w, h}) nearest (x, y), each at least 40 px to hit
 --   pointer.simplify(points, eps)                -- fewer points keeping the shape (Ramer-Douglas-Peucker)
@@ -26,6 +29,7 @@ M.MIN_TARGET = 40  -- pixels: a smaller target is hit as if it were this big (a 
 M.MIN_SCORE = 0.7  -- a recognised shape below this is "nothing" (nil)
 
 local sx, sy, held, still, seen -- seen: the tick update last ran
+local base, two -- the pinch's start {d, a}; two: a second finger came down during this stroke (no tap, no flick)
 M.down, M.x, M.y, M.dx, M.dy, M.stroke, M.last = false, 0, 0, 0, 0, nil, nil
 
 local function reset_events()
@@ -41,7 +45,7 @@ function M.update()
   if tapped then
     M.began = true
     sx, sy, held, still = x, y, 0, true
-    M.stroke, M.dragging = {{x, y}}, false
+    M.stroke, M.dragging, two = {{x, y}}, false, false
   elseif down and M.stroke then
     held = held + 1
     M.dx, M.dy = x - M.x, y - M.y
@@ -54,10 +58,10 @@ function M.update()
   if released and M.stroke then
     local pts = M.stroke
     M.released, M.last, M.stroke, M.dragging = true, pts, nil, false
-    if still and held < M.LONG then M.tapped = true end
+    if still and held < M.LONG and not two then M.tapped = true end
     local n = math.min(#pts, 5) -- the last few ticks' speed
     local a, b = pts[#pts - n + 1], pts[#pts]
-    if a and not still and n > 1 then
+    if a and not still and not two and n > 1 then
       local dx, dy = b[1] - a[1], b[2] - a[2]
       M.vx, M.vy = dx / (n - 1), dy / (n - 1) -- on every lift: what a list goes on with
       if math.sqrt(dx * dx + dy * dy) / (n - 1) >= M.FLICK_SPEED then
@@ -68,6 +72,26 @@ function M.update()
   end
   if down or tapped then M.x, M.y = x, y end
   M.down = down
+  M.pinch_update()
+end
+
+function M.pinch_update() -- (part of update)
+  local t = touches()
+  M.fingers = #t
+  if #t < 2 then
+    M.pinch, base = nil, nil
+    return
+  end
+  local a, b = t[1], t[2]
+  local d, ang = math.sqrt((b[1] - a[1]) ^ 2 + (b[2] - a[2]) ^ 2), math.atan(b[2] - a[2], b[1] - a[1])
+  local cx, cy = (a[1] + b[1]) / 2, (a[2] + b[2]) / 2
+  if not base then
+    base, two, still, M.dragging = {d = math.max(d, 1), a = ang}, true, false, false
+    M.pinch = {scale = 1, angle = 0, cx = cx, cy = cy, dx = 0, dy = 0}
+    return
+  end
+  local turn = (ang - base.a + math.pi) % (2 * math.pi) - math.pi
+  M.pinch = {scale = d / base.d, angle = turn, cx = cx, cy = cy, dx = cx - M.pinch.cx, dy = cy - M.pinch.cy}
 end
 
 function M.pick(items, x, y)

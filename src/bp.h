@@ -646,6 +646,8 @@ typedef struct {
     uint16_t held, pressed;
     bool touch, tap, release;
     int px, py;
+    int points;               /* fingers down (touches()), in the same pixels as px, py */
+    int x[HAL_POINTS], y[HAL_POINTS];
 } input_state;
 
 typedef struct {

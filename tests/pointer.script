@@ -35,4 +35,14 @@ lua zig = {} for i = 0, 4 do zig[#zig + 1] = {80 + i * 70, (i % 2) * 120 + 60} e
 expect_lua pointer.recognize(jitter(poly(zig, true), 2)) == "zigzag"
 # too short or too few points are nothing
 expect_lua pointer.recognize({{1, 1}, {2, 2}}) == nil
+# two fingers (touches()): a spread doubles the distance, no tap and no flick on the lift; moved together, the middle goes with them
+lua taps0, flick = taps, nil
+pinch 240 160 100 200 20
+tick 2
+expect_lua most == 2 and math.abs(pinch_seen.scale - 2) < 0.05 and math.abs(pinch_seen.angle) < 0.01
+expect_lua taps == taps0 and flick == nil and pointer.pinch == nil and pointer.fingers == 0
+lua moved2 = 0
+drag2 100 100 200 100 120 0 30
+tick 2
+expect_lua math.abs(moved2 - 120) < 1 and math.abs(pinch_seen.scale - 1) < 0.01 and taps == taps0
 expect_ok

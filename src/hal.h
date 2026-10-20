@@ -18,10 +18,14 @@ enum {
     ACT_QUIT = 1 << 10, /* desktop window close */
 };
 
+#define HAL_POINTS 5 /* fingers followed at once (the console's ST77922 reports up to 5) */
 typedef struct {
     uint16_t held;  /* ACT_* bits currently down */
     bool touch;     /* finger / mouse button down */
     int16_t px, py; /* pointer in native 480x320 coordinates */
+    /* every finger down, the first being px, py; a platform that leaves points at 0 has one finger (touch, px, py) */
+    uint8_t points;
+    int16_t x[HAL_POINTS], y[HAL_POINTS];
 } hal_input;
 
 void hal_log(const char *fmt, ...);

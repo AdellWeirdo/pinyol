@@ -198,6 +198,15 @@ void game_tick(const hal_input *in) {
         px -= DUAL_X(1), py -= DUAL_Y;
         if (px < 0 || py < 0 || px >= WORLD_W || py >= WORLD_H) touch = false;
     }
+    G.in.points = 0; /* every finger, the first as above; two screens: only those on the bottom one, in its pixels */
+    for (int i = 0; i < (in->points ? in->points : in->touch) && i < HAL_POINTS; i++) {
+        int x = in->points ? in->x[i] : in->px, y = in->points ? in->y[i] : in->py;
+        if (G.v2 && v2_dual()) {
+            x -= DUAL_X(1), y -= DUAL_Y;
+            if (x < 0 || y < 0 || x >= WORLD_W || y >= WORLD_H) continue;
+        }
+        G.in.x[G.in.points] = x, G.in.y[G.in.points] = y, G.in.points++;
+    }
     G.in.tap = touch && !G.in.touch;
     G.in.release = !touch && G.in.touch;
     G.in.touch = touch;

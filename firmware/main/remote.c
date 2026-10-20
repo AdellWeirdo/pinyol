@@ -50,10 +50,10 @@ void remote_line(const char *cmd) {
         if (!v2_run(cmd + 4, false, msg, sizeof msg)) hal_log("remote: lua failed: %s", msg);
         return;
     }
-    if (sscanf(cmd, "tap %d %d", &x, &y) == 2) inject = (hal_input){0, true, (int16_t)x, (int16_t)y}, hold = HOLD;
+    if (sscanf(cmd, "tap %d %d", &x, &y) == 2) inject = (hal_input){.touch = true, .px = (int16_t)x, .py = (int16_t)y}, hold = HOLD;
     else if (sscanf(cmd, "key %7s %d", k, &n) >= 1) {
         for (size_t i = 0; i < sizeof keys / sizeof keys[0]; i++)
-            if (!strcmp(k, keys[i].name)) inject = (hal_input){keys[i].act, false, 0, 0}, hold = n < 1 ? 1 : n > 600 ? 600 : n;
+            if (!strcmp(k, keys[i].name)) inject = (hal_input){.held = keys[i].act}, hold = n < 1 ? 1 : n > 600 ? 600 : n;
     } else if (!strcmp(cmd, "shot")) shot();
     else return;
     hal_log("remote: %s", cmd);

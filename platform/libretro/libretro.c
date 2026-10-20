@@ -360,6 +360,12 @@ static hal_input read_input(void) {
     long x = input_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X) + 0x7fff; /* -0x7fff..0x7fff */
     long y = input_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y) + 0x7fff;
     in.px = (int16_t)(x * (SCREEN_W - 1) / 0xfffe), in.py = (int16_t)(y * (SCREEN_H - 1) / 0xfffe);
+    for (unsigned i = 0; i < HAL_POINTS && input_cb(0, RETRO_DEVICE_POINTER, i, RETRO_DEVICE_ID_POINTER_PRESSED); i++) {
+        long fx = input_cb(0, RETRO_DEVICE_POINTER, i, RETRO_DEVICE_ID_POINTER_X) + 0x7fff;
+        long fy = input_cb(0, RETRO_DEVICE_POINTER, i, RETRO_DEVICE_ID_POINTER_Y) + 0x7fff;
+        in.x[i] = (int16_t)(fx * (SCREEN_W - 1) / 0xfffe), in.y[i] = (int16_t)(fy * (SCREEN_H - 1) / 0xfffe);
+        in.points = (uint8_t)(i + 1); /* every finger the frontend reports, the first being the one above */
+    }
     return in;
 }
 

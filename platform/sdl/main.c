@@ -355,6 +355,20 @@ static hal_input poll_input(void) {
     in.px = (int16_t)lx;
     in.py = (int16_t)ly;
 #endif
+    in.points = in.touch, in.x[0] = in.px, in.y[0] = in.py;
+#ifdef __EMSCRIPTEN__
+    if (SDL_GetNumTouchDevices() > 0) { /* a phone's fingers, the first being the mouse SDL makes of it */
+        SDL_TouchID dev = SDL_GetTouchDevice(0); /* ponytail: one touch device; not yet tried on a phone */
+        int n = SDL_GetNumTouchFingers(dev);
+        for (int i = 0; i < n && i < HAL_POINTS; i++) {
+            SDL_Finger *f = SDL_GetTouchFinger(dev, i);
+            if (f) in.x[i] = (int16_t)(f->x * SCREEN_W), in.y[i] = (int16_t)(f->y * SCREEN_H), in.points = (uint8_t)(i + 1);
+        }
+    }
+#else
+    if (in.touch && (SDL_GetModState() & KMOD_ALT)) /* Alt and a click: a second finger mirrored round the middle (a pinch) */
+        in.points = 2, in.x[1] = (int16_t)(SCREEN_W - 1 - in.px), in.y[1] = (int16_t)(SCREEN_H - 1 - in.py);
+#endif
     return in;
 }
 

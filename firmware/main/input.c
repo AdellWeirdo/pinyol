@@ -92,14 +92,24 @@ static void poll_touch(hal_input *in) {
     } else if (info & 0x08) { /* a new report, about every 16 ms while touched; on release one with no valid point */
         last_touch.touch = false;
         /* all points: read only the first and the controller keeps that report latched, a finger that never lifts */
-        if (touch_read(0x0014, p, 7 * touch_points) && (p[0] & 0x80)) {
-            int tx = (p[0] & 0x3F) << 8 | p[1], ty = (p[2] & 0x3F) << 8 | p[3];
-            last_touch = (hal_input){0, true, (int16_t)ty, (int16_t)(319 - tx)};
+        if (touch_read(0x0014, p, 7 * touch_points)) {
+            last_touch.points = 0;
+            for (int k = 0; k < touch_points && last_touch.points < HAL_POINTS; k++) { /* each point as the first is laid out */
+                const uint8_t *q = p + 7 * k; /* ponytail: the other points' layout taken to be the first's, not yet tried on the board */
+                if (!(q[0] & 0x80)) continue;
+                int tx = (q[0] & 0x3F) << 8 | q[1], ty = (q[2] & 0x3F) << 8 | q[3];
+                last_touch.x[last_touch.points] = (int16_t)ty, last_touch.y[last_touch.points] = (int16_t)(319 - tx);
+                last_touch.points++;
+            }
+            if (last_touch.points)
+                last_touch.touch = true, last_touch.px = last_touch.x[0], last_touch.py = last_touch.y[0];
         }
     }
     in->touch = last_touch.touch;
     in->px = last_touch.px;
     in->py = last_touch.py;
+    in->points = last_touch.touch ? last_touch.points : 0;
+    for (int i = 0; i < in->points; i++) in->x[i] = last_touch.x[i], in->y[i] = last_touch.y[i];
 }
 
 hal_input input_poll(void) {
