@@ -3,6 +3,8 @@
 # and line buffers (ppu.c, ~10 KB, read for every pixel) stay inside. The PPU's code (~12 KB) runs from IRAM: it is
 # the hottest loop on the console, and from flash it fought the Lua VM for the instruction cache. The studio's
 # effects (studio_fx.c: the plate's 16-bit buffers, ~18 KB, touched twelve times a sample) are kept inside the same way.
+# The PPU's two line-palette builds (layers_lp, layers_plain_lp: ~9 KB, only for a game that calls line_pal) run from
+# flash: inside, the radio (link) had no internal RAM left to start.
 [scheme:ppu_inside]
 entries:
     text -> iram0_text
@@ -16,4 +18,6 @@ entries:
     * (extram_bss)
     game (default)
     ppu (ppu_inside)
+    ppu:layers_lp (default)
+    ppu:layers_plain_lp (default)
     studio_fx (ppu_inside)

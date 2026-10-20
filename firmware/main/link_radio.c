@@ -51,8 +51,12 @@ bool hal_link_open(void) {
     esp_err_t e = esp_event_loop_create_default(); /* the radio's driver reports to it */
     if (e != ESP_OK && e != ESP_ERR_INVALID_STATE) return false;
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    if (esp_wifi_init(&cfg) != ESP_OK) {
-        hal_log("link: the radio did not start");
+    esp_err_t w = esp_wifi_init(&cfg);
+    if (w != ESP_OK) { /* what it lacked: the driver wants internal RAM, which the games share */
+        hal_log("link: the radio did not start (%s; internal RAM %u KB free, largest block %u KB)", esp_err_to_name(w),
+                (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
+                (unsigned)(heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL) / 1024));
+        heap_caps_print_heap_info(MALLOC_CAP_INTERNAL); /* each region: where the RAM went */
         return false;
     }
     esp_now_peer_info_t all = {.channel = CHANNEL, .ifidx = WIFI_IF_STA, .encrypt = false};
