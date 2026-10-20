@@ -383,6 +383,13 @@ The list expected `scene.go` hygiene, the full reset of the picture between game
 - **Using it costs about a thousand cycles a line** (a copy of the palettes each core makes once a frame, then a patch and a restore of the entries a line changes),
   mostly the line tables being in PSRAM: 160 lines with both palettes, 8 + 8 entries, over 4 layers and 128 sprites, are 4.39 M cycles against 4.08 M without.
   Whether that is memory latency was not settled (the measurement that would have told, with the tables in internal RAM, was not run).
+  On a real scene it does not matter: `horizonte` with the animation paused draws its frame in 5.25 ms of the renderer's "world" with a palette on
+  every line against 5.15 ms flat, 60 fps either way.
+- **The game's own colour code was the cost, not the engine's**: the first `horizonte` ran at 14 fps on the console, with `_draw` at 52 ms, because each of the
+  160 lines made tables of Lua for its colours (`mix` returned a table) and called `math.floor` and `math.min` seven times a colour; on the console each call into C and each
+  table made is paid for. Written with numbers in tables made once, `rgb` taking the fractions, and the line tables repainted only when the colours move
+  (they stay until `line_off`) and a part of the sky each frame, it runs at 55 fps with everything on (the sea's shimmer, sixty lines of colour a frame, is the part
+  that remains), 59 without it and 60 flat. A game that writes a palette per line should do the same.
 - **Backdrop gradients with `line_backdrop` do not need it**; a tile art that is made of a few palette entries does: the sky of `horizonte` is one colour in
   the art and a hundred on the screen, the sea three, the boat's sail and the sun a gradient each, and a flat comparison (A) shows what is lost.
 - **A property test, not only goldens**: `tests/ppu_linepal_test.c` checks every pixel of lines that replace entries in each reader of the palette (tiles,

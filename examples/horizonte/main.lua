@@ -7,31 +7,34 @@ local ui = require("ui")
 
 phase, per_line, shimmer, paused, hud = 0.18, true, true, false, true -- (globals: the tests look at them)
 
-local KEYS = { -- the day, by p from 0 (noon) to 1 (night): the sky at the top and at the horizon, the cloud, the sea and the sun
-  {0.00, top = {60, 135, 235}, hor = {175, 215, 250}, cloud = {255, 255, 255}, sea = {44, 108, 200}, sun = {255, 250, 205}},
-  {0.45, top = {80, 120, 220}, hor = {250, 205, 150}, cloud = {255, 240, 225}, sea = {58, 100, 190}, sun = {255, 225, 140}},
-  {0.60, top = {70, 55, 140}, hor = {255, 120, 70}, cloud = {255, 190, 150}, sea = {110, 70, 120}, sun = {255, 150, 80}},
-  {0.78, top = {16, 18, 66}, hor = {110, 52, 112}, cloud = {170, 120, 150}, sea = {40, 36, 90}, sun = {255, 90, 50}},
-  {1.00, top = {5, 8, 30}, hor = {22, 30, 86}, cloud = {90, 100, 150}, sea = {8, 18, 58}, sun = {255, 90, 50}},
+-- The day, by p from 0 (noon) to 1 (night): each key is p and then fifteen numbers: the sky at the top (r, g, b), at the horizon, the cloud, the sea, the sun.
+-- Everything here is numbers in tables made once: a table made for each of the hundred and sixty lines, every frame, is what a console's collector cannot keep up with.
+local KEYS = {
+  {0.00, 60, 135, 235, 175, 215, 250, 255, 255, 255, 44, 108, 200, 255, 250, 205},
+  {0.45, 80, 120, 220, 250, 205, 150, 255, 240, 225, 58, 100, 190, 255, 225, 140},
+  {0.60, 70, 55, 140, 255, 120, 70, 255, 190, 150, 110, 70, 120, 255, 150, 80},
+  {0.78, 16, 18, 66, 110, 52, 112, 170, 120, 150, 40, 36, 90, 255, 90, 50},
+  {1.00, 5, 8, 30, 22, 30, 86, 90, 100, 150, 8, 18, 58, 255, 90, 50},
 }
 local SKY_LINES, SEA_FROM, BOAT_H, SUN_R = 100, 100, 28, 20
+local D = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} -- the colours at this p: filled in place by day()
+local floor, min, sin, sqrt = math.floor, math.min, math.sin, math.sqrt
 
-local function lerp(a, b, k) return a + (b - a) * k end
-local function mix(a, b, k) return {lerp(a[1], b[1], k), lerp(a[2], b[2], k), lerp(a[3], b[3], k)} end
-local function col(c, f) f = f or 1 return rgb(math.min(255, math.floor(c[1] * f)), math.min(255, math.floor(c[2] * f)), math.min(255, math.floor(c[3] * f))) end
+local pk = rgb -- (a colour from numbers: none of the mixes here goes past 255, and rgb takes the fractions: one call, not seven)
 
-local function day(p) -- the colours at p: between the two keys it lies between
+local function day(p)
+  local a, b = KEYS[#KEYS - 1], KEYS[#KEYS]
   for i = 1, #KEYS - 1 do
-    local a, b = KEYS[i], KEYS[i + 1]
-    if p <= b[1] then
-      local k = (p - a[1]) / (b[1] - a[1])
-      return {top = mix(a.top, b.top, k), hor = mix(a.hor, b.hor, k), cloud = mix(a.cloud, b.cloud, k), sea = mix(a.sea, b.sea, k), sun = mix(a.sun, b.sun, k)}
-    end
+    if p <= KEYS[i + 1][1] then a, b = KEYS[i], KEYS[i + 1] break end
   end
-  return KEYS[#KEYS]
+  local k = (p - a[1]) / (b[1] - a[1])
+  for j = 1, 15 do D[j] = a[j + 1] + (b[j + 1] - a[j + 1]) * k end
 end
 
 local boat_sh, sun_sh, time_
+local last_key, last_sy, last_per_line, last_shimmer
+local sky_row, sail_row, SKY_STEP = 0, 0, 20
+
 function _init()
   palette("WORLD")
   palette("OBJ", true)
@@ -45,48 +48,69 @@ end
 local function sun_pos(p) -- the sun's centre, or nil once it is down
   if p > 0.66 then return nil end
   local k = p / 0.66
-  return 36 + 150 * k, 100 - 76 * math.cos(k * math.pi / 2) + 0 * k -- up high at noon, on the horizon at the end
+  return 36 + 150 * k, 100 - 76 * math.cos(k * math.pi / 2) -- up high at noon, on the horizon at the end
 end
 
-local function paint_flat(d)
-  pal(I.bg.sky, col(mix(d.top, d.hor, 0.5)))
-  pal(I.bg.cloud, col(d.cloud))
-  pal(I.bg.shade, col(d.cloud, 0.85))
-  pal(I.bg.hills, col(d.hor, 0.4))
-  for i = 0, 2 do pal(I.bg.sea1 + i, col(d.sea, 0.92 + 0.08 * i)) end
-  pal(I.obj.sail, col({245, 240, 230}), "obj")
-  pal(I.obj.core, col(d.sun), "obj")
-  pal(I.obj.glow1, col(d.sun, 0.9), "obj")
-  pal(I.obj.glow2, col(d.sun, 0.75), "obj")
-end
-
-local function paint_lines(d, sx, sy, bx, by)
-  for y = 0, SKY_LINES - 1 do
-    local k = y / (SKY_LINES - 1)
-    local sky = mix(d.top, d.hor, k ^ 1.5)
-    local cloud = mix(d.cloud, d.hor, k * 0.55) -- the clouds are lit from below
-    line_pal(y, I.bg.sky, col(sky), col(cloud), col(cloud, 0.82 - 0.1 * (1 - k)), col(mix(d.hor, {10, 12, 30}, 0.6)))
+local function paint_flat()
+  pal(I.bg.sky, pk((D[1] + D[4]) / 2, (D[2] + D[5]) / 2, (D[3] + D[6]) / 2))
+  pal(I.bg.cloud, pk(D[7], D[8], D[9]))
+  pal(I.bg.shade, pk(D[7] * 0.85, D[8] * 0.85, D[9] * 0.85))
+  pal(I.bg.hills, pk(D[4] * 0.4, D[5] * 0.4, D[6] * 0.4))
+  for i = 0, 2 do
+    local f = 0.92 + 0.08 * i
+    pal(I.bg.sea1 + i, pk(D[10] * f, D[11] * f, D[12] * f))
   end
-  local sun_up = sx ~= nil
+  pal(I.obj.sail, rgb(245, 240, 230), "obj")
+  pal(I.obj.core, pk(D[13], D[14], D[15]), "obj")
+  pal(I.obj.glow1, pk(D[13] * 0.9, D[14] * 0.9, D[15] * 0.9), "obj")
+  pal(I.obj.glow2, pk(D[13] * 0.75, D[14] * 0.75, D[15] * 0.75), "obj")
+end
+
+-- the sky and its clouds and hills: a line each, from `from` to `to` (the tables stay until line_off, so a few lines a frame are enough)
+local function paint_sky(from, to)
+  local tr, tg, tb, hr, hg, hb, cr, cg, cb = D[1], D[2], D[3], D[4], D[5], D[6], D[7], D[8], D[9]
+  local hill = pk(hr * 0.4 + 6, hg * 0.4 + 7, hb * 0.4 + 18)
+  for y = from, to do
+    local k = y / (SKY_LINES - 1)
+    local kk = k * sqrt(k) -- k to the 1.5
+    local m = k * 0.55     -- the clouds are lit from below
+    local r, g, b = cr + (hr - cr) * m, cg + (hg - cg) * m, cb + (hb - cb) * m
+    local sh = 0.72 + 0.1 * k
+    line_pal(y, I.bg.sky, pk(tr + (hr - tr) * kk, tg + (hg - tg) * kk, tb + (hb - tb) * kk), pk(r, g, b), pk(r * sh, g * sh, b * sh), hill)
+  end
+end
+
+local function paint_sea(sun_up, sy)
+  local sr, sg, sb, nr, ng, nb = D[10], D[11], D[12], D[13], D[14], D[15]
+  local up = shimmer and sun_up
+  local reach = up and min(1, (112 - sy) / 40 + 0.4) or 0
   for y = SEA_FROM, 159 do
     local depth = (y - SEA_FROM) / 59
-    local c1, c2, c3 = col(d.sea, 0.92), col(d.sea, 1.0), col(d.sea, 1.08)
-    if shimmer and sun_up then
-      local glint = math.max(0, math.sin(y * 0.85 + time_ * 0.07)) * (1 - depth * 0.55) * math.min(1, (112 - sy) / 40 + 0.4)
-      c1, c2, c3 = col(mix(d.sea, d.sun, glint * 0.7), 0.92), col(mix(d.sea, d.sun, glint * 0.85)), col(mix(d.sea, d.sun, glint * 0.55), 1.08)
-    end
-    line_pal(y, I.bg.sea1, c1, c2, c3)
+    local glint = up and math.max(0, sin(y * 0.85 + time_ * 0.07)) * (1 - depth * 0.55) * reach or 0
+    local g1, g2, g3 = glint * 0.7, glint * 0.85, glint * 0.55
+    line_pal(y, I.bg.sea1,
+      pk((sr + (nr - sr) * g1) * 0.92, (sg + (ng - sg) * g1) * 0.92, (sb + (nb - sb) * g1) * 0.92),
+      pk(sr + (nr - sr) * g2, sg + (ng - sg) * g2, sb + (nb - sb) * g2),
+      pk((sr + (nr - sr) * g3) * 1.08, (sg + (ng - sg) * g3) * 1.08, (sb + (nb - sb) * g3) * 1.08))
   end
-  for y = by, by + BOAT_H - 1 do -- the sail: lit by the sun's colour, darker towards the water
-    local k = (y - by) / BOAT_H
-    line_pal_obj(y, I.obj.sail, col(mix({250, 246, 238}, d.hor, 0.55 * (1 - k * 0.4)), 1 - 0.25 * k))
+end
+
+local BOAT_TOP = 110 -- the boat bobs between 110 and 114: the sail's rows are the ones from 110 to 142, a fixed range
+
+local function paint_sail(from, to) -- the sail: lit by the sun's colour, darker towards the water
+  local hr, hg, hb = D[4], D[5], D[6]
+  for y = from, to do
+    local k = (y - BOAT_TOP) / (BOAT_H + 4)
+    local m, f = 0.55 * (1 - k * 0.4), 1 - 0.25 * k
+    line_pal_obj(y, I.obj.sail, pk((250 + (hr - 250) * m) * f, (246 + (hg - 246) * m) * f, (238 + (hb - 238) * m) * f))
   end
-  if sun_up then
-    for y = math.max(0, sy - SUN_R), math.min(159, sy + SUN_R - 1) do -- the sun, redder as it goes down, a gradient of its own
-      local k = (y - (sy - SUN_R)) / (2 * SUN_R)
-      local c = mix(d.sun, {255, 70, 40}, k * (0.3 + 0.5 * (sy / 100)))
-      line_pal_obj(y, I.obj.core, col(c), col(c, 0.92), col(c, 0.8))
-    end
+end
+
+local function paint_sun(sy) -- the sun, redder as it goes down, a gradient of its own
+  for y = math.max(0, sy - SUN_R), min(159, sy + SUN_R - 1) do
+    local k = (y - (sy - SUN_R)) / (2 * SUN_R) * (0.3 + 0.5 * (sy / 100))
+    local r, g, b = D[13] + (255 - D[13]) * k, D[14] + (70 - D[14]) * k, D[15] + (40 - D[15]) * k
+    line_pal_obj(y, I.obj.core, pk(r, g, b), pk(r * 0.92, g * 0.92, b * 0.92), pk(r * 0.8, g * 0.8, b * 0.8))
   end
 end
 
@@ -101,18 +125,33 @@ end
 
 function _draw()
   local p = phase < 1 and phase or 2 - phase -- noon, then dusk, then night, and back
-  local d = day(p)
+  day(p)
   local sx, sy = sun_pos(p)
-  local bx, by = 150, math.floor(112 + 2 * math.sin(time_ / 22))
-  scroll(3, math.floor(time_ * 0.15), 0)
+  sy = sy and floor(sy)
+  local bx, by = 150, floor(112 + 2 * sin(time_ / 22))
+  scroll(3, floor(time_ * 0.15), 0)
   if per_line then
-    paint_lines(d, sx, sy and math.floor(sy), bx, by)
+    local key = floor(p * 512)
+    local fresh = not last_per_line -- just turned on: all of it, once; then a part of the sky and the sail each frame, round and round
+    if fresh then
+      paint_sky(0, SKY_LINES - 1)
+      paint_sail(BOAT_TOP, BOAT_TOP + BOAT_H + 3)
+    else
+      paint_sky(sky_row, sky_row + SKY_STEP - 1)
+      sky_row = (sky_row + SKY_STEP) % SKY_LINES
+      paint_sail(BOAT_TOP + sail_row, BOAT_TOP + sail_row + 8)
+      sail_row = (sail_row + 9) % (BOAT_H + 4)
+    end
+    if shimmer or fresh or last_shimmer ~= shimmer or key ~= last_key then paint_sea(sx ~= nil, sy) end
+    if sx and (fresh or key ~= last_key or sy ~= last_sy) then paint_sun(sy) end
+    last_key, last_sy = key, sy
   else
     line_off()
-    paint_flat(d)
+    paint_flat()
   end
+  last_per_line, last_shimmer = per_line, shimmer
   spr(0, boat_sh, 0, bx, by, prio(0))
-  if sx then spr(1, sun_sh, 0, math.floor(sx - SUN_R), math.floor(sy - SUN_R), prio(2)) else spr_off(1) end
+  if sx then spr(1, sun_sh, 0, floor(sx - SUN_R), floor(sy - SUN_R), prio(2)) else spr_off(1) end
   if hud then
     ui.box(8, 8, 330, 52)
     text(string.format("HORIZONTE   %s", p < 0.3 and "mediodía" or p < 0.7 and "atardecer" or "noche"), 18, 16, {font = "bold", color = ui.SEL})
