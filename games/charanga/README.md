@@ -49,4 +49,4 @@ uv run --with pyserial tools/send_game.py games/charanga   # a la consola por US
 - **Sin hacer**: selección de dificultad (Ensayo,
   Pasacalles, La plaza a reventar), la nota circular, más episodios.
 - **Probado**: simulador headless (el test pasa). En la Cirera física (2026-10-20): arranca y la portada va a 59 fps
-  sin errores; jugada a mano por Pau la primera versión. La calibración y la pausa solo están probadas en headless.
+  sin errores; jugada a mano por Pau: los golpes, los caminos y la calibración se sienten a tiempo.
