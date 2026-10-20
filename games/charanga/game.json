@@ -1,0 +1,8 @@
+{
+  "id": "charanga",
+  "title": "La Charanga de Emergencia",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "Pau Avila",
+  "description": "Una charanga sale de un ascensor y acompaña a una persona nerviosa hasta la puerta de su entrevista. Toca al ritmo y sigue la música con el dedo."
+}

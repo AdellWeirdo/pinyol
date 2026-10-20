@@ -1,0 +1,233 @@
+-- La Charanga de Emergencia · episodio 1, «La entrevista»: a rhythm game for the touch screen. A band in red waistcoats
+-- bursts out of a lift to see a nervous candidate to the interview's door; the player taps and follows its beat.
+-- song.lua: the music and its clock (studio.pos); chart.lua: what to play; scene.lua: the corridor; es.lua: the texts.
+-- Globals the tests read: state, notes, stats, energy.
+local pointer = require("pointer")
+local particles = require("particles")
+local song = require("song")
+local chart = require("chart")
+local scene = require("scene")
+local T = require("es")
+
+local R = 24                            -- a target's radius (48 px across: a fingertip, docs/ds-touch-research.md)
+local FOLLOW = 46                       -- how far the finger may be from a drag's ball and still follow it
+local COLOURS = {0x3DB55A, 0x3C7DDB, 0xD9434F, 0x9B4DD6}
+local CAPTIONS = {{48, 51, "doubt"}, {76, 79, "push"}, {108, 111, "knock"}}
+local ENTER_TICKS = 100                 -- the walk through the door, after the song
+local FONT_BIG, FONT, FONT_SMALL = "comic_beatemup_title", "comic_beatemup_body", "comic_beatemup_small"
+
+state, notes, stats, energy = "title", {}, {}, 0.5
+local fx = particles.new()
+local popups = {}      -- {x, y, text, colour, age}
+local hop = 0          -- ticks the candidate jumps for joy
+local last_beat = 0
+local enter_t = 0
+local again = {x = 180, y = 250, w = 120, h = 44}
+
+local function window_beats(sec) return sec / song.SEC_PER_BEAT end
+
+local function play_beat() -- the beat as judged: the song's, less the player's offset
+  local b = song.beat()
+  return b and b - chart.OFFSET / song.SEC_PER_BEAT
+end
+
+local function start()
+  notes = chart.notes()
+  for i, n in ipairs(notes) do n.colour = COLOURS[(i - n.n) % #COLOURS + 1] end
+  stats = {perfect = 0, good = 0, miss = 0, total = #notes}
+  energy, popups, hop, enter_t, last_beat = 0.5, {}, 0, 0, 0
+  song.start()
+  song.set_energy(energy)
+  state = "play"
+end
+
+local function cheer(n, grade)
+  local good = grade ~= "miss"
+  stats[grade] = stats[grade] + 1
+  energy = math.max(0, math.min(1, energy + (grade == "perfect" and 0.05 or good and 0.03 or -0.07)))
+  song.set_energy(energy)
+  n.state, n.grade, n.age = good and "hit" or "miss", grade, 0
+  popups[#popups + 1] = {x = n.x, y = n.y - 34, text = T[grade], colour = good and 0xFFF2A0 or 0xFF8A80, age = 0}
+  if good then
+    sfx("GOLPE", grade == "perfect" and 0.9 or 0.6)
+    fx:burst(n.x, n.y, grade == "perfect" and 18 or 10, {speed = 3, colours = {0xFFFFFF, 0xFFE070, n.colour}, life = 22,
+                                                          size = 3, gravity = 0.08})
+    hop = 12
+  else
+    sfx("FALLO", 0.6)
+  end
+end
+
+-- The ball of a drag at beat b: along its path, from its start (at t) to its end (at t2)
+local function ball(n, b)
+  local f = math.max(0, math.min(1, (b - n.t) / (n.t2 - n.t)))
+  local p, total = n.path, 0
+  for i = 2, #p do total = total + math.sqrt((p[i][1] - p[i - 1][1]) ^ 2 + (p[i][2] - p[i - 1][2]) ^ 2) end
+  local want = f * total
+  for i = 2, #p do
+    local a, c = p[i - 1], p[i]
+    local seg = math.sqrt((c[1] - a[1]) ^ 2 + (c[2] - a[2]) ^ 2)
+    if want <= seg then return a[1] + (c[1] - a[1]) * want / seg, a[2] + (c[2] - a[2]) * want / seg end
+    want = want - seg
+  end
+  return p[#p][1], p[#p][2]
+end
+
+local function judge_tap(b, x, y) -- a finger down at (x, y), or A (x nil): the note it plays, if any
+  local good = window_beats(chart.GOOD)
+  local best, bd
+  for _, n in ipairs(notes) do
+    if not n.state and not n.following and math.abs(n.t - b) <= good then
+      local near = not x or (x - n.x) ^ 2 + (y - n.y) ^ 2 <= (R + 16) ^ 2 -- a little past the circle still counts
+      if near and (not bd or math.abs(n.t - b) < bd) then best, bd = n, math.abs(n.t - b) end
+    end
+  end
+  if not best then return end
+  if best.drag then -- a drag starts with its first touch: from now on the ball is followed
+    best.following, best.inside, best.samples = true, 0, 0
+    return
+  end
+  cheer(best, bd <= window_beats(chart.PERFECT) and "perfect" or "good")
+end
+
+local function update_play()
+  pointer.update()
+  song.update()
+  for _, n in ipairs(notes) do if n.state then n.age = n.age + 1 end end
+  local b = play_beat()
+  if not b then
+    if song.done then state, enter_t = "enter", 0 end
+    return
+  end
+  last_beat = b
+  if pointer.began then judge_tap(b, pointer.x, pointer.y) end
+  if btnp("a") then judge_tap(b) end
+  local late = window_beats(chart.GOOD)
+  for _, n in ipairs(notes) do
+    if n.drag and n.following and not n.state then -- following: is the finger (or A, held) on the ball?
+      if b >= n.t then
+        local bx, by = ball(n, b)
+        local on = (pointer.down and (pointer.x - bx) ^ 2 + (pointer.y - by) ^ 2 <= FOLLOW ^ 2) or btn("a")
+        n.samples, n.inside = n.samples + 1, n.inside + (on and 1 or 0)
+      end
+      if b >= n.t2 then
+        local k = n.samples > 0 and n.inside / n.samples or 0
+        n.x, n.y = n.path[#n.path][1], n.path[#n.path][2]
+        cheer(n, k >= 0.75 and "perfect" or k >= 0.45 and "good" or "miss")
+      end
+    elseif not n.state and not n.following and b > n.t + late then
+      cheer(n, "miss")
+    end
+  end
+  if song.done or b >= song.BARS * 4 then song.stop(); state, enter_t = "enter", 0 end
+end
+
+-- Tests: the song from bar `bar` (0-based); the notes before it are left out of the score.
+function debug_skip(bar)
+  song.jump(bar)
+  for _, n in ipairs(notes) do
+    if not n.state and n.t < bar * 4 then n.state, n.age = "skip", 99; stats.total = stats.total - 1 end
+  end
+end
+
+function _init()
+  song.init()
+end
+
+function _update()
+  fx:update()
+  for i = #popups, 1, -1 do
+    popups[i].age = popups[i].age + 1
+    if popups[i].age > 30 then table.remove(popups, i) end
+  end
+  if hop > 0 then hop = hop - 1 end
+  if state == "title" then
+    pointer.update()
+    if pointer.tapped or btnp("a") or btnp("start") then start() end
+  elseif state == "play" then
+    update_play()
+  elseif state == "enter" then
+    enter_t = enter_t + 1
+    if enter_t >= ENTER_TICKS then state = "result" end
+  elseif state == "result" then
+    pointer.update()
+    if pointer.pressed(again) or btnp("a") or btnp("start") then start() end
+  end
+end
+
+local function draw_note(n, b)
+  local ahead = n.t - b
+  if n.state then -- its answer fades out where it was
+    if (n.age or 0) < 14 then circ(n.x, n.y, R + (n.age or 0), n.state == "hit" and 0xFFFFFF or 0x804040, false) end
+    return
+  end
+  if ahead > chart.APPROACH or (n.drag and b > n.t2) then return end
+  if n.drag then
+    local p = n.path
+    for i = 2, #p do
+      for o = -3, 3 do line(p[i - 1][1], p[i - 1][2] + o, p[i][1], p[i][2] + o, 0xF2C94C) end
+    end
+    circ(p[#p][1], p[#p][2], 10, 0xF2C94C)
+  end
+  if ahead > 0 then -- the ring closes on the beat
+    local r = R + math.floor(R * 2 * ahead / chart.APPROACH)
+    circ(n.x, n.y, r, n.colour, false)
+    circ(n.x, n.y, r + 1, 0xFFFFFF, false)
+    circ(n.x, n.y, r + 2, n.colour, false)
+  end
+  if n.drag and b >= n.t then
+    local bx, by = ball(n, b)
+    circ(bx, by, 14, n.following and 0xFFE070 or 0xA08840)
+    circ(bx, by, FOLLOW, 0xFFFFFF, false)
+  else
+    circ(n.x, n.y, R, n.colour)
+    circ(n.x, n.y, R, 0xFFFFFF, false)
+    circ(n.x, n.y, R - 1, 0xFFFFFF, false)
+    text(tostring(n.n), n.x, n.y - 13, {font = FONT_BIG, color = 0xFFFFFF, align = "center", shadow = 0x202020})
+  end
+end
+
+local function draw_title()
+  scene.draw(0, 0.5, 0)
+  shade(0, 0, SCREEN_W, SCREEN_H)
+  panel(40, 70, 400, 170)
+  text(T.title, SCREEN_W // 2, 88, {font = FONT_BIG, color = 0xC0392B, align = "center"})
+  text(T.episode, SCREEN_W // 2, 134, {font = FONT, color = 0x3A2A1E, align = "center"})
+  text(T.how, SCREEN_W // 2, 162, {font = FONT, color = 0x5A4A3E, align = "center", width = 360})
+  if (ticks() // 30) % 2 == 0 then text(T.start, SCREEN_W // 2, 210, {font = FONT, color = 0xC0392B, align = "center"}) end
+end
+
+local function draw_result()
+  local hits = stats.perfect + stats.good
+  local pct = stats.total > 0 and math.floor(100 * hits / stats.total + 0.5) or 0
+  local grade = pct >= 85 and 1 or pct >= 60 and 2 or 3
+  panel(50, 60, 380, 240)
+  text(T.result_title, SCREEN_W // 2, 76, {font = FONT_BIG, color = 0x2E7D32, align = "center"})
+  text(string.format(T.result_hits, hits, stats.total, pct), SCREEN_W // 2, 124, {font = FONT, color = 0x3A2A1E, align = "center"})
+  text(T.grade[grade], SCREEN_W // 2, 160, {font = FONT, color = 0x5A4A3E, align = "center", width = 340})
+  plate(again.x, again.y, again.w, again.h, 0xC0392B)
+  text(T.again, again.x + again.w // 2, again.y + 10, {font = FONT, color = 0xFFFFFF, align = "center"})
+end
+
+function _draw()
+  cls(0)
+  if state == "title" then return draw_title() end
+  local b = state == "play" and last_beat or song.BARS * 4
+  local enter = state ~= "play" and math.min(1, enter_t / ENTER_TICKS) or nil
+  scene.draw(b, energy, hop, enter)
+  text(T.door, scene.DOOR.x + scene.DOOR.w // 2, 52, {font = FONT_SMALL, color = 0x3A2A1E, align = "center"})
+  if state == "play" then
+    for i = #notes, 1, -1 do draw_note(notes[i], b) end -- the earliest on top
+    for _, c in ipairs(CAPTIONS) do
+      if b >= c[1] and b < c[2] then
+        text(T[c[3]], SCREEN_W // 2, 34, {font = FONT, color = 0xFFFFFF, align = "center", shadow = 0x202020})
+      end
+    end
+  end
+  fx:draw()
+  for _, p in ipairs(popups) do
+    text(p.text, p.x, p.y - p.age // 2, {font = FONT, color = p.colour, align = "center", shadow = 0x202020})
+  end
+  scene.meter(energy, T.meter)
+  if state == "result" then draw_result() end
+end

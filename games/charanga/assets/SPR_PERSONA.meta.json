@@ -1,0 +1,33 @@
+{
+  "asset": "SPR_PERSONA",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 136,
+  "w": 120,
+  "h": 112,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    60,
+    109
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 15654,
+    "as_rgb565": 134400
+  }
+}

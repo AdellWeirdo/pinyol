@@ -1,0 +1,47 @@
+# La entrevista, end to end: the title starts it on a tap; a tap on its beat is a hit, none a miss, A plays a note too;
+# a drag followed with the finger; the song ends, the candidate enters, the result offers another go.
+# In headless the song's beat 0 comes 1.7 ticks after the start tap, a beat every 32.14 ticks (112 BPM).
+new
+tick 2
+shot ch_title
+expect_lua state == "title"
+tap 240 160
+expect_lua state == "play"
+# beat 4 (tick 130): the first target, at (170, 262), tapped on time (its ring closing, shown 17 ticks before)
+tick 110
+shot ch_ring
+tick 17
+tap 170 262
+expect_lua stats.perfect + stats.good == 1 and stats.miss == 0
+shot ch_hit
+# beat 8, at (280, 262): left alone, it is missed once its window has gone
+tick 150
+expect_lua stats.miss == 1
+# beat 12 (tick 387): A plays the note on its beat
+tick 103
+press A
+tick 2
+expect_lua stats.perfect + stats.good == 2
+# the doubt's drag, beats 56 to 59: from bar 13 (beat 52), 4 beats to its start, then followed along its path
+lua debug_skip(13)
+tick 110
+shot ch_path
+tick 17
+drag 140 270 380 250 96
+tick 2
+lua d = notes[1] for _, n in ipairs(notes) do if n.drag then d = n break end end
+expect_lua d.state == "hit"
+shot ch_drag
+# the rest of the song unplayed: every note is missed, the candidate still enters and the result comes
+lua debug_skip(26)
+tick 300
+expect_lua state == "enter" or state == "result"
+shot ch_enter
+tick 120
+expect_lua state == "result" and stats.miss > 0
+shot ch_result
+# another go from the result's button
+tap 240 272
+tick 2
+expect_lua state == "play" and stats.miss == 0
+expect_ok
