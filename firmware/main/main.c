@@ -199,6 +199,14 @@ static void perf_report(void) {
             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024),
             part1_task ? (unsigned)uxTaskGetStackHighWaterMark(part1_task) : 0u);
+    static const char *const tasks[] = {"audio", "display", "saves", "power"}; /* each task's stack, its least ever unused */
+    char st[96];
+    int n = snprintf(st, sizeof st, "main %u", (unsigned)uxTaskGetStackHighWaterMark(NULL));
+    for (size_t i = 0; i < sizeof tasks / sizeof *tasks && n < (int)sizeof st; i++) {
+        TaskHandle_t h = xTaskGetHandle(tasks[i]);
+        n += snprintf(st + n, sizeof st - n, ", %s %u", tasks[i], h ? (unsigned)uxTaskGetStackHighWaterMark(h) : 0u);
+    }
+    hal_log("stacks unused (B): %s", st);
     double panel_hz = display_trim_rate();
     if (strip_us.first)
         hal_log("frame: world %.2f ms, waiting for the scan %.2f ms, strips %.2f ms (CPU, the DMA overlaps) | panel %.2f Hz",

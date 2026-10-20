@@ -344,7 +344,7 @@ void display_start_task(void) {
     pending = xQueueCreate(1, sizeof(const uint16_t *));
     idle = xSemaphoreCreateBinary();
     xSemaphoreGive(idle);
-    xTaskCreatePinnedToCore(present_task, "display", 4096, NULL, 5, NULL, 1);
+    xTaskCreatePinnedToCore(present_task, "display", 2560, NULL, 5, NULL, 1); /* 1 KB used at most */
 }
 
 bool display_flipped(void) { return flipped; }

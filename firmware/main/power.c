@@ -112,7 +112,7 @@ void power_init(void) {
     volts = read_battery();
     usb = gpio_get_level(PIN_USB);
     hal_log("power: battery %.2f V, USB %s", volts, usb ? "yes" : "no");
-    xTaskCreatePinnedToCore(power_task, "power", 3072, NULL, 2, NULL, 0);
+    xTaskCreatePinnedToCore(power_task, "power", 2048, NULL, 2, NULL, 0); /* 0.9 KB used at most */
 }
 
 float power_volts(void) { return volts; }

@@ -158,7 +158,7 @@ bool audio_out_init(i2c_master_bus_handle_t bus) {
 #endif
     gpio_hold_dis(PIN_AMP);     /* held off through deep sleep */
     vTaskDelay(pdMS_TO_TICKS(100));
-    xTaskCreatePinnedToCore(mix_task, "audio", 6144, NULL, 6, NULL, 1);
+    xTaskCreatePinnedToCore(mix_task, "audio", 4096, NULL, 6, NULL, 1); /* 1.2 KB seen used (MAQUETA's title, 2026-10-20) */
 #ifdef BP_QUIET
     hal_log("audio: ES8311 at %d Hz, amplifier off (test build)", AUDIO_HZ);
 #else

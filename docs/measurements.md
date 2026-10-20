@@ -455,3 +455,18 @@ sound, twelve voices of one looping clip:
 The reverb costs about 0.4 ms a second whatever the room (its work is the same turn for each sample; only the memory it
 touches differs: from 10 KB for Room to 63 KB for Space Echo), about as much as three voices at a pitch. A voice with an
 envelope or an ADPCM clip takes the between-two-samples path, the dearest. 
+
+## 2026-10-20 · Internal RAM and the radio
+
+The radio (link, ESP-NOW) had stopped starting on the console: `esp_wifi_init` gave `ESP_ERR_NO_MEM` with 22 KB free
+and a largest block of 12 KB. Measured on the board:
+
+- The radio takes **27 KB** of internal RAM (a probe at boot: 78 KB free -> 51 KB with ESP-NOW on).
+- Between boot and a game's start, tasks, the card and the game take ~50 KB: a game started with 19 KB free.
+- The PPU's code in IRAM had grown 18.5 KB since 2026-10-17 (the line-palette builds, the blend's tracking). Its two
+  line-palette builds now run from flash (`linker.lf`): +9 KB; horizonte's picture 4.19 -> 4.49 ms, 59.8 fps both.
+- Task stacks, the least ever unused (logged with `perf:` as `stacks unused`, MAQUETA's title the deepest seen): main
+  8.4 KB of 16, audio 4.9 of 6, display 3.1 of 4, power 2.2 of 3. Audio 6 -> 4 KB, display 4 -> 2.5, power 3 -> 2.
+- Now a game starts with 32 KB free; with the radio on, 6 KB are left (juntos plays, 59 fps). That is little: what
+  grows internal RAM again stops the radio first. `.github/workflows/firmware.yml` fails when the statics leave less
+  than 70000 bytes; the main task's 16 KB stack (8 KB seen used) is the next margin, if one is needed.
