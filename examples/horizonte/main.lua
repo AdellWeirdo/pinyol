@@ -32,7 +32,7 @@ local function day(p)
   for j = 1, 15 do D[j] = a[j + 1] + (b[j + 1] - a[j + 1]) * k end
 end
 
-local boat_sh, sun_sh, time_
+local boat_sh, sun_sh, time_, was_per_line
 
 function _init()
   palette("WORLD")
@@ -77,11 +77,11 @@ local function paint_sky()
   line_ramp(0, last, I.bg.hills, hill, hill)
 end
 
-local function paint_sea(sun_up, sy)
+local function paint_sea(sun_up, sy, all) -- every line, or (all false) half of them, the even or the odd ones in turn
   local sr, sg, sb, nr, ng, nb = D[10], D[11], D[12], D[13], D[14], D[15]
   local up = shimmer and sun_up
   local reach = up and min(1, (112 - sy) / 40 + 0.4) or 0
-  for y = SEA_FROM, 159 do
+  for y = all and SEA_FROM or SEA_FROM + time_ % 2, 159, all and 1 or 2 do
     local depth = (y - SEA_FROM) / 59
     local glint = up and math.max(0, sin(y * 0.85 + time_ * 0.07)) * (1 - depth * 0.55) * reach or 0
     local g1, g2, g3 = glint * 0.7, glint * 0.85, glint * 0.55
@@ -125,16 +125,17 @@ function _draw()
   sy = sy and floor(sy)
   local bx, by = 150, floor(112 + 2 * sin(time_ / 22))
   scroll(3, floor(time_ * 0.15), 0)
-  if per_line then
-    line_off() -- (each frame from nothing: the ramps are a few calls, and the sun moves)
+  if per_line then -- the lines' tables stay until line_off: the ramps are written again (a few calls), the sea half a frame at a time
+    local fresh = not was_per_line
     paint_sky()
     paint_sail()
     if sx then paint_sun(sy) end
-    paint_sea(sx ~= nil, sy)
+    paint_sea(sx ~= nil, sy, fresh)
   else
     line_off()
     paint_flat()
   end
+  was_per_line = per_line
   spr(0, boat_sh, 0, bx, by, prio(0))
   if sx then spr(1, sun_sh, 0, floor(sx - SUN_R), floor(sy - SUN_R), prio(2)) else spr_off(1) end
   if hud then

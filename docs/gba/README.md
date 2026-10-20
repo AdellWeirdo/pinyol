@@ -52,9 +52,9 @@ about fifteen `slow frame: 24 ms` lines every ten seconds. The game loop keeps t
 for the panel's scan (`display_wait_scan`) only when the last one started more than 3 ms before. The two clocks drift apart 61.5 - 60
 = 1.5 times a second: each time, a frame waits a whole scan (5 ms of world + 16 of waiting + 3 of strips = 24 ms) and the next ticks
 catch up two at a time, a jolt anyone can see. Fifteen in ten seconds is that number. `-DBP_TE_LOCK=ON` builds a loop that ticks once for
-each scan instead (it builds; not yet run): every frame one scan, and games 2.5 % fast, as GBA games ran at the GBA's 59.73 Hz. The
-other cure is the panel's own frame rate set to 60 Hz, in registers of the ST77922 that are not documented here. To decide: a minute
-of play logged with each firmware, counting `slow frame` lines and timing a game's clock against a phone's.
+each scan instead. Measured (baseline-ppu-board.md): 96 slow frames a minute with the timer, 35 locked, and the game 2.4 % fast
+locked: fewer, not none, so it stays off. The other cure is the panel's own frame rate set to 60 Hz, in registers of the ST77922 that
+are not documented here.
 
 Still open: the saves' retry with a card that fails (compiled and read, never run: it needs the card taken out while the game saves,
 and the firmware does not remount a card put back).
