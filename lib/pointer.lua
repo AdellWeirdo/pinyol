@@ -20,7 +20,7 @@
 --   pointer.recognize(points)                    -- "line", "circle", "triangle", "square" or "zigzag", and a score 0..1
 --
 -- Points are {x, y}. Numbers at the top are the ones to tune: the slop is how far a finger may wander and still be a tap.
--- Skipped on purpose: the DS's filter of five raw samples (the engine reads one point a tick; see docs/ds-touch-research.md)
+-- Skipped on purpose: the DS's filter of five raw samples (the Cirera's panel measured no shake: docs/ds-touch-research.md)
 -- and a left-handed flip.
 local M = {}
 

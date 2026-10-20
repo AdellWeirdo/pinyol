@@ -95,7 +95,7 @@ static void poll_touch(hal_input *in) {
         if (touch_read(0x0014, p, 7 * touch_points)) {
             last_touch.points = 0;
             for (int k = 0; k < touch_points && last_touch.points < HAL_POINTS; k++) { /* each point as the first is laid out */
-                const uint8_t *q = p + 7 * k; /* ponytail: the other points' layout taken to be the first's, not yet tried on the board */
+                const uint8_t *q = p + 7 * k; /* each point laid out as the first (tried on the board: 4 fingers at once) */
                 if (!(q[0] & 0x80)) continue;
                 int tx = (q[0] & 0x3F) << 8 | q[1], ty = (q[2] & 0x3F) << 8 | q[3];
                 last_touch.x[last_touch.points] = (int16_t)ty, last_touch.y[last_touch.points] = (int16_t)(319 - tx);

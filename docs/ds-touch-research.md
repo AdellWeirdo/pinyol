@@ -33,11 +33,17 @@ Research for touch games on pinyol (2026-10-20). Each fact has its source; what 
 | A stroke is a point list, recognised after normalising | `pointer.simplify` (Ramer-Douglas-Peucker) and `pointer.recognize`: the $1 recogniser, five shapes |
 | Touch orders yield to buttons | not in the library: a game checks `btn()` first, as the patent does |
 
-Left out on purpose: the DS's five-sample filter (it works on a burst of readings within one tick; the engine reads one point a tick, so the same idea would cost ticks of delay: not worth it until the board's noise is measured), the left-handed flip, pressure (the engine's input has none), and a second screen.
+Left out on purpose: the DS's five-sample filter (it works on a burst of readings within one tick; the engine reads one point a tick, and the Cirera's panel measured no shake at all), the left-handed flip, pressure (the engine's input has none), and a second screen.
+
+## Measured on the Cirera (2026-10-20, `examples/dedos`)
+
+- Up to 4 fingers at once seen (the controller says 5); every point's layout is the first's.
+- A finger held still: 0.0 px of shake over a second (the ST77922 seems to report the same point while a finger stays); the numbers follow the finger to the edges.
+- So the DS's five-sample filter is not needed: `lib/pointer.lua` reads the points as they come.
 
 ## Still to check
 
-- The DS panel's measured latency, and the Cirera's own noise, jitter and accuracy: only a finger on the board will say.
+- The DS panel's measured latency.
 - Nintendo's 2006 multi-touch patent application, and US8306330 (handwriting input): claims not read.
 
 ## Next steps (not built)
