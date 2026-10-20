@@ -22,7 +22,7 @@ energía de la escena y del cierre. Vertical slice: un episodio de un minuto.
 | `chart.lua` | la partitura: notas en tiempos de negra, ventanas de acierto, posiciones en pantalla |
 | `scene.lua` | el pasillo: dónde está cada personaje en cada momento, el medidor de ánimo |
 | `es.lua` | todos los textos visibles (para traducir: una copia con las mismas claves) |
-| `art.py` | `raw/` (imágenes generadas) → `art/` → `assets/`; `raw/prompts.txt` guarda cada prompt |
+| `art.py` | `art/raw/` (imágenes generadas) → `art/` → `assets/`; `art/raw/prompts.txt` guarda cada prompt. `send_game.py` no envía `art/` a la consola |
 | `tests/charanga.script` | portada, acierto, fallo, botón A, camino, final, resultado y reintento |
 | `tests/ajustes.script` | la calibración (toques 0,1 s tarde dan unos +100 ms, guardados) y la pausa |
 
@@ -34,7 +34,7 @@ El reloj es el del secuenciador (`studio.pos()`, que ya descuenta lo que espera 
 ```sh
 ./build/pinyol_sim --game games/charanga
 ./build/pinyol_headless --game games/charanga --fresh --script games/charanga/tests/charanga.script --check-strips --strict-assets
-uv run games/charanga/art.py                 # tras cambiar algo en raw/
+uv run games/charanga/art.py                 # tras cambiar algo en art/raw/
 python3 tools/pack_game.py games/charanga -o dist/
 uv run --with pyserial tools/send_game.py games/charanga   # a la consola por USB
 ```
@@ -43,9 +43,10 @@ uv run --with pyserial tools/send_game.py games/charanga   # a la consola por US
 
 - **Audio temporal**: bombo, caja y platos hechos con `sound()`, trompeta y tuba con `studio.synth`. No es la banda
   sonora final.
-- **Arte**: estilo «PlayStation y Saturn 2D» (`docs/art.md`), generado: fondo del pasillo, la charanga como grupo y cinco
-  poses de la protagonista. La charanga se anima por código (botes al compás); no tiene poses propias aún.
-- **Sin hacer**: pausa, calibración de la compensación en la propia partida, selección de dificultad (Ensayo,
+- **Arte**: estilo «PlayStation y Saturn 2D» (`docs/art.md`), generado: fondo del pasillo, cuatro poses de la charanga
+  (apiñada en el ascensor, desfilando, fanfarria y celebrando, esta solo con el ánimo a 0,4 o más) y cinco de la
+  protagonista. La hoja de la charanga vino con un damero pintado: `art.py` lo quita.
+- **Sin hacer**: selección de dificultad (Ensayo,
   Pasacalles, La plaza a reventar), la nota circular, más episodios.
 - **Probado**: simulador headless (el test pasa). En la Cirera física (2026-10-20): arranca y la portada va a 59 fps
-  sin errores; la partida con el dedo y la sincronía de oído aún no se han probado a mano.
+  sin errores; jugada a mano por Pau la primera versión. La calibración y la pausa solo están probadas en headless.

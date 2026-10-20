@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = ["pillow>=10"]
 # ///
-"""La Charanga de Emergencia's pictures: raw/ (generated, prompts in raw/prompts.txt) -> art/ (fitted) -> assets/.
+"""La Charanga de Emergencia's pictures: art/raw/ (generated, prompts in art/raw/prompts.txt) -> art/ (fitted) -> assets/.
 
     uv run art.py
 
@@ -19,7 +19,8 @@ from pathlib import Path
 from PIL import Image
 
 HERE = Path(__file__).resolve().parent
-RAW, ART, ASSETS = HERE / "raw", HERE / "art", HERE / "assets"
+ART, ASSETS = HERE / "art", HERE / "assets"
+RAW = ART / "raw"  # generated, kept under art/: send_game.py leaves art/ off the console
 PINYOL = Path(os.environ.get("PINYOL", HERE.parents[1]))
 
 PERSON_BODY = 100              # the protagonist standing, head to feet
