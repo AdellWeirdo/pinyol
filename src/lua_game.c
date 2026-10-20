@@ -427,7 +427,17 @@ static int l_touch(lua_State *L) { /* in the 240x160 world's pixels */
     lua_pushinteger(L, G.in.py / 2);
     lua_pushboolean(L, G.in.touch);
     lua_pushboolean(L, G.in.tap);
-    return 4;
+    lua_pushboolean(L, G.in.release);
+    return 5;
+}
+
+static int l_pen(lua_State *L) { /* the same finger in the screen's own 480x320 pixels (text() and shapes' space), with the lift */
+    lua_pushinteger(L, G.in.px);
+    lua_pushinteger(L, G.in.py);
+    lua_pushboolean(L, G.in.touch);
+    lua_pushboolean(L, G.in.tap);
+    lua_pushboolean(L, G.in.release);
+    return 5;
 }
 
 static int l_t(lua_State *L) { lua_pushnumber(L, (lua_Number)G.ticks / TICK_HZ); return 1; }
@@ -1344,7 +1354,7 @@ void v2_splash_end(void) {
 
 static void api(lua_State *L) {
     static const luaL_Reg F[] = {
-        {"clock", l_clock}, {"btn", l_btn}, {"btnp", l_btnp}, {"btnr", l_btnr}, {"btnt", l_btnt}, {"btnb", l_btnb}, {"touch", l_touch}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
+        {"clock", l_clock}, {"btn", l_btn}, {"btnp", l_btnp}, {"btnr", l_btnr}, {"btnt", l_btnt}, {"btnb", l_btnb}, {"touch", l_touch}, {"pen", l_pen}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
         {"pal", l_pal}, {"palette", l_palette}, {"backdrop", l_backdrop}, {"bg", l_bg}, {"scroll", l_scroll},
         {"affine", l_affine}, {"rot", l_rot}, {"mode7", l_mode7}, {"project", l_project}, {"mget", l_mget},
         {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_backdrop", l_line_backdrop}, {"line_pal", l_line_pal}, {"line_pal_obj", l_line_pal_obj}, {"line_ramp", l_line_ramp},

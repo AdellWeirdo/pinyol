@@ -1,0 +1,38 @@
+# lib/pointer.lua: a tap, a long press, a drag, a flick, the nearest target, strokes simplified and recognised.
+new
+tick 2
+tap 110 110
+tick 2
+expect_lua taps == 1 and releases == 1 and longs == 0 and drags == 0 and flick == nil
+expect_lua picked and picked.id == "small"
+tap 120 120
+tick 2
+expect_lua picked and picked.id == "small"
+touch 200 100 40
+tick 2
+expect_lua longs == 1 and taps == 2 and releases == 3
+drag 40 200 440 200 100
+tick 2
+expect_lua drags > 10 and taps == 2 and flick == nil and releases == 4
+swipe 400 100 400 20
+tick 2
+expect_lua flick and flick.dir == "up" and taps == 2
+swipe 100 100 220 100
+tick 2
+expect_lua flick.dir == "right"
+# a target smaller than a fingertip is still hit a little off; the one nearest the touch's middle wins
+expect_lua pointer.pick(targets, 100 + 5 + 14, 105) and pointer.pick(targets, 100 + 5 + 14, 105).id == "small"
+expect_lua pointer.pick(targets, 5, 5) == nil
+# strokes (helpers in main.lua: a # in a script line starts a comment): a wobbly line simplifies to its two ends
+lua wob = {} for i = 0, 40 do wob[#wob + 1] = {i * 5, 100 + (i % 2) * 1.5} end
+expect_lua count(pointer.simplify(wob, 3)) == 2
+lua line = {} for i = 0, 30 do line[#line + 1] = {50 + i * 6, 200 - i * 2.5} end
+expect_lua pointer.recognize(line) == "line"
+expect_lua pointer.recognize(jitter(ring(40, 60, 240, 160, 1.3), 2)) == "circle"
+expect_lua pointer.recognize(jitter(poly({{200, 50}, {290, 200}, {110, 200}}), 2)) == "triangle"
+expect_lua pointer.recognize(jitter(poly({{150, 50}, {300, 50}, {300, 200}, {150, 200}}), 2)) == "square"
+lua zig = {} for i = 0, 4 do zig[#zig + 1] = {80 + i * 70, (i % 2) * 120 + 60} end
+expect_lua pointer.recognize(jitter(poly(zig, true), 2)) == "zigzag"
+# too short or too few points are nothing
+expect_lua pointer.recognize({{1, 1}, {2, 2}}) == nil
+expect_ok

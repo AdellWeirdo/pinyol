@@ -1,0 +1,8 @@
+{
+  "id": "stylus",
+  "title": "Stylus",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "",
+  "description": "Un dedo o un lápiz como en la DS: dibuja un círculo, un triángulo, un cuadrado, una línea o un zigzag y lo reconoce; arrastra el cuadro; un golpe rápido muestra su dirección."
+}

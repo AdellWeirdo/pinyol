@@ -1,0 +1,16 @@
+# examples/stylus: a line is named and flicks, the block is dragged by a finger that began on it, the button clears.
+new
+tick 2
+expect_lua said == "dibuja una forma" and block.x == 60
+drag 100 60 400 80 20
+tick 2
+expect_lua said:find("nea", 1, true) ~= nil and flick == "right"
+shot stylus_line
+drag 80 250 300 200 30
+tick 2
+expect_lua block.x > 200 and block.y < 230
+tap 420 290
+tick 2
+expect_lua said == "dibuja una forma" and flick == nil
+shot stylus_cleared
+expect_ok
