@@ -426,9 +426,17 @@ ALWAYS void layers_x(lines *L, int p, int y, bool win, bool track, bool lp) {
     for (int n = PPU_BGS - 1; n >= 0; n--) {
         const ppu_bg *b = &PPU.bg[n];
         if ((b->prio & 3) != p || !(PPU.layers & (1 << n))) continue;
-        if (b->mode == BG_TILES) bg_tiles_x(L, b, n, y, win, track, lp);
-        else if (b->mode == BG_AFFINE) bg_affine_x(L, b, n, y, win, track, lp);
-        else if (b->mode == BG_BITMAP) bg_bitmap_x(L, b, n, y, win, track);
+        /* The pixel under the top one is read only where the top one is the blend's first target (or a blending sprite, which keeps
+         * its own count): a layer that is not in the first target need not keep it, a layer in it copies what it covers as it draws */
+        if (track && (PPU.fx.first & (1 << n))) {
+            if (b->mode == BG_TILES) bg_tiles_x(L, b, n, y, win, true, lp);
+            else if (b->mode == BG_AFFINE) bg_affine_x(L, b, n, y, win, true, lp);
+            else if (b->mode == BG_BITMAP) bg_bitmap_x(L, b, n, y, win, true);
+        } else {
+            if (b->mode == BG_TILES) bg_tiles_x(L, b, n, y, win, false, lp);
+            else if (b->mode == BG_AFFINE) bg_affine_x(L, b, n, y, win, false, lp);
+            else if (b->mode == BG_BITMAP) bg_bitmap_x(L, b, n, y, win, false);
+        }
     }
     for (int w = PPU_OBJS / 32 - 1; w >= 0; w--)
         for (uint32_t m = F.rows[y][w] & F.pri[p][w]; m;) {

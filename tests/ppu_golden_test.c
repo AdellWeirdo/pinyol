@@ -3,10 +3,12 @@
  * deliberate (a fidelity fix: review the picture, then `ppu_golden_test --update ppu_golden.txt`) or a regression (an
  * optimisation must keep every hash). The scenes named g* record the CURRENT behaviour, including the known
  * divergences from the GBA listed in docs/gba/audit-01-ppu.md, so each fix shows up as an intentional change.
- *   usage: ppu_golden_test golden.txt [--update] */
+ *   usage: ppu_golden_test golden.txt [--update]
+ *          ppu_golden_test --bench [scene [frames]]   the time a frame of each scene (or that one) takes, best of 5 runs */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "ppu.h"
 
@@ -326,7 +328,32 @@ static uint64_t run(const scene *s, bool again) {
     return h;
 }
 
+static double now_us(void) {
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (double)t.tv_sec * 1e6 + (double)t.tv_nsec / 1e3;
+}
+
+static int bench(const char *only, int frames) { /* (content and set-up as for the goldens; the frame's own animation is left out) */
+    for (int i = 0; i < NSCENES; i++) {
+        if (only && strcmp(S[i].name, only)) continue;
+        double best = 1e18;
+        for (int rep = 0; rep < 5; rep++) {
+            make_content(S[i].content);
+            ppu_reset(), set_palettes();
+            S[i].fn(1);
+            double t0 = now_us();
+            for (int n = 0; n < frames; n++) ppu_render(frame);
+            double us = (now_us() - t0) / frames;
+            if (us < best) best = us;
+        }
+        printf("%-24s %8.1f us a frame\n", S[i].name, best);
+    }
+    return 0;
+}
+
 int main(int argc, char **argv) {
+    if (argc > 1 && !strcmp(argv[1], "--bench")) return bench(argc > 2 ? argv[2] : NULL, argc > 3 ? atoi(argv[3]) : 200);
     if (argc < 2) return fprintf(stderr, "usage: %s golden.txt [--update]\n", argv[0]), 2;
     bool update = argc > 2 && !strcmp(argv[2], "--update");
     uint64_t got[sizeof S / sizeof *S];

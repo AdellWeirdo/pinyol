@@ -322,3 +322,19 @@ python3 make_md.py docs/gba/baseline-ppu-host.md   # regenerates this file
 
 Requires `cc` (Apple clang), `/opt/homebrew/bin/gcc-16` (`brew install gcc`), Python 3. `build.sh` reads
 `/Users/pauavila/Desktop/DEV/pinyol/np2d/src/ppu.c` in place; it does not write inside `np2d`.
+
+## Two changes measured with `ppu_golden_test --bench` (2026-10-20)
+
+`ppu_golden_test --bench [scene [frames]]` times a frame of each golden scene (best of five runs), so a change to the renderer is timed
+on exactly the scenes that judge it. Release build, a Mac; the numbers below are the best of six interleaved rounds, because a single run
+moves by up to 10 %.
+
+- **A turned sprite drawn only where its pixels fall** (`obj_line_x`): 16 turned 64 x 64 sprites 607 -> 67 us a frame with the double
+  area, 204 -> 64 without; the same frames (`g.obj-affine-turns`, recorded before the change).
+- **The pixel under the top one kept only by the blend's first target**: a layer that is not in the first target no longer copies
+  what it covers on every pixel. 4 layers + alpha + window -11.7 %, `g.stress` -6.4 %, `g.blend-sprites` -6.4 %, the rest within the
+  noise; the same frames, and two mutants of the condition fail three goldens each.
+- **Tried and left out: the three channels blended at once** (packed into 32 bits, exact to the bit when the weights add up to 16 or
+  less: 375 million pairs of colours and weights compared). On the computer it was mixed (-8 % on some scenes, +15 % on `g.alpha-kinds`,
+  whose weights pass 16), so it is not in; the console's core multiplies more slowly and may say otherwise: worth a try with `bench_ppu`.
+
