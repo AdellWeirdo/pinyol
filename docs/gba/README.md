@@ -46,6 +46,16 @@ Digests of what the real hardware did, audits of np2d against it, measurements, 
 6. **`examples/pinball` on the console** (sent over the cable, `w:drive` flippers): 59-60 fps, tick 1.7 ms, audio 4-5 %; the flippers answer the
    keys and the ball is shot from the spring. (A hint that ran past the panel's edge on the console was cut in two lines.)
 
+**The 24 ms "slow frames" in every log, diagnosed (not yet fixed on the board).** Every console log, in every game and in the menu, has
+about fifteen `slow frame: 24 ms` lines every ten seconds. The game loop keeps time with the chip's timer at 60.000 Hz
+(`firmware/main/main.c`, `play`), the panel refreshes at about 61.5 Hz (measured on 2026-10-12, `docs/progress.md`), and a frame waits
+for the panel's scan (`display_wait_scan`) only when the last one started more than 3 ms before. The two clocks drift apart 61.5 - 60
+= 1.5 times a second: each time, a frame waits a whole scan (5 ms of world + 16 of waiting + 3 of strips = 24 ms) and the next ticks
+catch up two at a time, a jolt anyone can see. Fifteen in ten seconds is that number. `-DBP_TE_LOCK=ON` builds a loop that ticks once for
+each scan instead (it builds; not yet run): every frame one scan, and games 2.5 % fast, as GBA games ran at the GBA's 59.73 Hz. The
+other cure is the panel's own frame rate set to 60 Hz, in registers of the ST77922 that are not documented here. To decide: a minute
+of play logged with each firmware, counting `slow frame` lines and timing a game's clock against a phone's.
+
 Still open: the saves' retry with a card that fails (compiled and read, never run: it needs the card taken out while the game saves,
 and the firmware does not remount a card put back).
 

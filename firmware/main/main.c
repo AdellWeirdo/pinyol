@@ -324,11 +324,30 @@ static void play(void) {
             power_off();
         }
         int64_t now = esp_timer_get_time();
+#ifdef BP_TE_LOCK
+        /* A tick for each scan the panel started since the last one (at most 4: after a stall, no running to catch up). The panel
+         * refreshes at about 61.5 Hz: with the 60 Hz timer the two drift apart 1.5 times a second, and each time a frame waits a whole
+         * scan (a 24 ms "slow frame") and two ticks run in the next. Here every frame is one scan, and the game runs 2.5 % fast. With
+         * no pulse in 50 ms (no TE wired) the timer keeps time instead. */
+        static uint32_t seen;
+        uint32_t pulses = display_te_pulses();
+        if (pulses == seen && display_wait_te(50)) pulses = display_te_pulses();
+        int due = (int)(pulses - seen);
+        seen = pulses;
+        if (due > 4) due = 4;
+        if (due <= 0) { /* no TE: the timer's way */
+            if (now < next) { vTaskDelay(1); continue; }
+            due = 1, next = now + TICK_US;
+        }
+        next = now + TICK_US;
+        for (int steps = 0; steps < due; steps++) {
+#else
         if (now < next) {
             vTaskDelay(1);
             continue;
         }
         for (int steps = 0; now >= next && steps < 4; steps++, next += TICK_US) {
+#endif
             in = input_poll();
             if (in.held != was.held || in.touch != was.touch) /* F3: every change, to check the wiring */
                 hal_log("input: buttons 0x%03x, touch %s (%d, %d)", in.held, in.touch ? "down" : "up", in.px, in.py);

@@ -36,6 +36,7 @@
 static spi_device_handle_t dev;
 static SemaphoreHandle_t te_pulse;
 static volatile int64_t te_last; /* when the panel last started a scan */
+static volatile uint32_t te_pulses; /* scans started since the start (display_te_pulses) */
 static void te_init(void);
 static uint16_t *strip_buf[2];
 static bool flipped;
@@ -176,6 +177,7 @@ void display_init(int spi_hz, bool flip) {
 static void IRAM_ATTR te_isr(void *arg) {
     (void)arg;
     te_last = esp_timer_get_time();
+    te_pulses++;
     BaseType_t woken = pdFALSE;
     xSemaphoreGiveFromISR(te_pulse, &woken);
     if (woken) portYIELD_FROM_ISR();
@@ -191,6 +193,13 @@ static void te_init(void) {
         vSemaphoreDelete(te_pulse);
         te_pulse = NULL; /* frames go out unsynchronised */
     }
+}
+
+uint32_t display_te_pulses(void) { return te_pulses; }
+
+bool display_wait_te(int timeout_ms) {
+    if (!te_pulse) return false;
+    return xSemaphoreTake(te_pulse, pdMS_TO_TICKS(timeout_ms)) == pdTRUE;
 }
 
 void display_wait_scan(void) {

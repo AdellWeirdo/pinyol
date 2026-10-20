@@ -14,6 +14,10 @@ bool display_flipped(void);
 /* Until the panel starts its next scan (TE), unless it started one moments ago: strips sent from there outrun the scan,
  * so a frame never shows half old, half new. */
 void display_wait_scan(void);
+/* The panel's scans: how many have started since the start, and a wait for the next (false: none came in timeout_ms, or there is
+ * no TE). For a game loop that keeps time with the panel (-DBP_TE_LOCK=ON, main.c). */
+uint32_t display_te_pulses(void);
+bool display_wait_te(int timeout_ms);
 void display_wait(void); /* until the presenting task is done with its frame: then the caller may send strips itself */
 /* TE (GPIO 42): one pulse per frame (vblank only) or also one per line (the init's setting). */
 void display_te_vblank_only(bool vblank_only);
