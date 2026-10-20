@@ -28,3 +28,4 @@ g.lines 995ebbb80ca19465
 g.fx-ev d6172e0d58afb8a4
 g.stress e6fbb13c31969a16
 g.reset 80a69197c1fb9325
+g.obj-affine-turns 635b44ae7fc0415d

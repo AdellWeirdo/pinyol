@@ -180,6 +180,33 @@ static void g_obj_affine(int n) {
         sprite(4 + i, 20 + 50 * i, 90, 0, 0), PPU.obj[4 + i].affine = (int8_t)i, PPU.obj[4 + i].dbl = true;
     }
 }
+/* Sprites turned and scaled every way an optimisation of the turned sprite's line could get wrong: angles that are not a multiple
+ * of 90 degrees, shrunk, grown, squashed one way, sheared, mirrored by the matrix; sizes odd and not square (a 64 x 64 read as 15 x 9
+ * and 33 x 20 by its first rows), a direct-colour sprite with its mask; off the left, the right, the top and the bottom of the screen;
+ * with and without the double area. A frame each eighth of a turn. */
+static const int16_t SIN_Q[91] = {0, 18, 36, 54, 71, 89, 107, 125, 143, 160, 178, 195, 213, 230, 248, 265, 282, 299, 316, 333, 350, 367, 384, 400, 416, 433, 449, 465, 481, 496, 512, 527, 543, 558, 573, 587, 602, 616, 630, 644, 658, 672, 685, 698, 711, 724, 737, 749, 761, 773, 784, 796, 807, 818, 828, 839, 849, 859, 868, 878, 887, 896, 904, 912, 920, 928, 935, 943, 949, 956, 962, 968, 974, 979, 984, 989, 994, 998, 1002, 1005, 1008, 1011, 1014, 1016, 1018, 1020, 1022, 1023, 1023, 1024, 1024}; /* sin of 0..90 degrees x 1024: integers, the same on every machine */
+static int isin(int d) {
+    d = ((d % 360) + 360) % 360;
+    return d <= 90 ? SIN_Q[d] : d <= 180 ? SIN_Q[180 - d] : d <= 270 ? -SIN_Q[d - 180] : -SIN_Q[360 - d];
+}
+
+static void g_obj_affine_turns(int n) {
+    static const int16_t scale[6] = {256, 160, 384, 96, 512, 256}; /* 8.8: the sprite drawn this many 256ths of its size */
+    for (int i = 0; i < 24; i++) {
+        int d = n * 45 + i * 37, c = isin(d + 90), sn = isin(d), sx = scale[i % 6], sy = i % 4 == 1 ? sx * 6 / 10 : sx;
+        int pa = c * 256 / sx, pb = sn * 256 / sx + (i % 5 == 2 ? 70 : 0), pc = -sn * 256 / sy, pd = c * 256 / sy; /* (1024 x 256 / 1024) */
+        pa /= 4, pb /= 4, pc /= 4, pd /= 4; /* to 8.8 */
+        if (i % 7 == 3) pa = -pa; /* mirrored by the matrix */
+        PPU.affine[i] = (ppu_affine){(int16_t)pa, (int16_t)pb, (int16_t)pc, (int16_t)pd};
+        int x = -20 + (i % 6) * 48 + (i / 6 == 3 ? 200 : 0), y = -14 + (i / 6) * 50;
+        PPU.obj[i] = (ppu_obj){.on = true, .x = (int16_t)x, .y = (int16_t)y, .w = 16, .h = 16, .prio = (uint8_t)(i % 4), .bank = (uint8_t)(i % 16),
+                               .affine = (int8_t)i, .dbl = i % 3 != 0, .idx = spr[i % 32]};
+        if (i % 6 == 4) PPU.obj[i].w = 15, PPU.obj[i].h = 9, PPU.obj[i].idx = big;
+        if (i % 6 == 5) PPU.obj[i].w = 33, PPU.obj[i].h = 20, PPU.obj[i].idx = big;
+        if (i == 8 || i == 20) PPU.obj[i].idx = NULL, PPU.obj[i].rgb = rgbspr, PPU.obj[i].mask = rgbmask;
+    }
+}
+
 static void g_affine_bg(int n) {
     (void)n;
     PPU.bg[2] = (ppu_bg){.mode = BG_AFFINE, .prio = 1, .wrap = true, .tiles = atiles, .ntiles = 256, .map = amap,
@@ -272,7 +299,7 @@ static const scene S[] = {
     {"fx.alpha-window", s_alpha_win, HASH_FRAMES, 'A'}, {"fx.half-blend", s_half_blend, HASH_FRAMES, 'A'},
     {"g.banks", g_banks, 1, 'A'}, {"g.nonpow2-nowrap", g_nonpow2, 1, 'A'}, {"g.ties", g_ties, 2, 'A'},
     {"g.obj-order", g_obj_order, 1, 'A'}, {"g.obj-flip-clip", g_obj_flip_clip, 1, 'A'}, {"g.obj-affine", g_obj_affine, 1, 'A'},
-    {"g.affine-bg", g_affine_bg, 1, 'A'}, {"g.bitmap", g_bitmap, 1, 'A'}, {"g.alpha-kinds", g_alpha_kinds, 8, 'A'},
+    {"g.obj-affine-turns", g_obj_affine_turns, HASH_FRAMES, 'A'}, {"g.affine-bg", g_affine_bg, 1, 'A'}, {"g.bitmap", g_bitmap, 1, 'A'}, {"g.alpha-kinds", g_alpha_kinds, 8, 'A'},
     {"g.blend-sprites", g_blend_sprites, 4, 'A'}, {"g.windows", g_windows, 4, 'A'}, {"g.window-edges", g_window_edges, 7, 'A'},
     {"g.mosaic", g_mosaic, 1, 'A'}, {"g.lines", g_lines, HASH_FRAMES, 'A'}, {"g.fx-ev", g_fx_ev, 4, 'A'},
     {"g.stress", g_stress, HASH_FRAMES, 'A'}, {"g.reset", g_reset, 1, 'A'},

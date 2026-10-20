@@ -149,7 +149,7 @@ with `|`:
 | `BLEND` | always blended over what is under it (see `blend`) |
 | `WINDOW` | not drawn: its shape becomes the object window |
 | `spr_mat(m)` | turned and scaled by matrix m, set with `mat(m, degrees, scale_x [, scale_y])` |
-| `DOUBLE` | with `spr_mat`: the drawing area is twice the size, so the turned sprite is not cut. It costs four times the pixels (on the console three 64 x 64 sprites in 128 x 128 areas took a fight from 60 to 40 fps): use it only while the sprite turns past its own edges |
+| `DOUBLE` | with `spr_mat`: the drawing area is twice the size, so the turned sprite is not cut. A turned sprite is drawn only where its pixels fall, so the larger area costs next to nothing |
 | `MOSAIC` | blocky with `mosaic()` |
 
 Sheets are indexed (`png2asset.py --indexed`) or a direct-colour runtime asset (`png2asset.py`). Frames are up to

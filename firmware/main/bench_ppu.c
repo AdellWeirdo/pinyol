@@ -95,6 +95,7 @@ typedef struct {
     int layers, sprites;
     bool affine, alpha, window, half_blend, offscreen;
     int line_pals; /* entries replaced on every line, in each palette (line_pal), 0: none */
+    bool turned;   /* the sprites turned 30 degrees, in their double area */
 } scene;
 
 static EXT_RAM_BSS_ATTR ppu_line_pal lpal_bg[PPU_H], lpal_obj[PPU_H]; /* in PSRAM, as the engine's own line tables */
@@ -125,6 +126,10 @@ static void setup(const scene *s) {
         PPU.obj[i] = (ppu_obj){.on = true, .w = 16, .h = 16, .prio = 0, .bank = (uint8_t)(i % 16), .affine = -1,
                                .hflip = i & 1, .mode = (s->half_blend && (i & 1)) ? OBJ_BLEND : OBJ_NORMAL,
                                .idx = spr + (i % 32) * 256};
+    if (s->turned) { /* 30 degrees: a sprite's double area is four times its pixels, most of them outside it */
+        PPU.affine[0] = (ppu_affine){222, 128, -128, 222};
+        for (int i = 0; i < s->sprites; i++) PPU.obj[i].affine = 0, PPU.obj[i].dbl = true;
+    }
     if (s->alpha) {
         PPU.fx.mode = FX_ALPHA;
         PPU.fx.first = PPU_BG0;
@@ -203,23 +208,24 @@ static void run_scene(const scene *s, const char *where) {
 }
 
 static const scene SCENES[] = {
-    {"clear only", 0, 0, false, false, false, false, false, 0},
-    {"1 layer", 1, 0, false, false, false, false, false, 0},
-    {"4 layers", 4, 0, false, false, false, false, false, 0},
-    {"128 sprites 16x16", 0, 128, false, false, false, false, false, 0},
-    {"1 affine layer", 0, 0, true, false, false, false, false, 0},
-    {"light: 2L+32 spr", 2, 32, false, false, false, false, false, 0},
-    {"GBA mode 0: 4L+128 spr", 4, 128, false, false, false, false, false, 0},
-    {"Mode 7: aff+1L+64 spr", 1, 64, true, false, false, false, false, 0},
-    {"Max: aff+3L+128 spr", 3, 128, true, false, false, false, false, 0},
-    {"FX: 4L+alpha+window", 4, 0, false, true, true, false, false, 0},
-    {"FX: 128 spr half OBJ_BLEND", 0, 128, false, false, false, true, false, 0},
-    {"x: 4L+alpha only", 4, 0, false, true, false, false, false, 0},
-    {"x: 4L+window only", 4, 0, false, false, true, false, false, 0},
-    {"x: 4L+128 spr half OBJ_BLEND", 4, 128, false, false, false, true, false, 0},
-    {"x: 128 sprites off-screen", 0, 128, false, false, false, false, true, 0},
-    {"x: 1 layer, 1 palette entry on every line", 1, 0, false, false, false, false, false, 1},
-    {"x: 4L+128 spr, 8+8 palette entries on every line", 4, 128, false, false, false, false, false, 8},
+    {"clear only", 0, 0, false, false, false, false, false, 0, false},
+    {"1 layer", 1, 0, false, false, false, false, false, 0, false},
+    {"4 layers", 4, 0, false, false, false, false, false, 0, false},
+    {"128 sprites 16x16", 0, 128, false, false, false, false, false, 0, false},
+    {"1 affine layer", 0, 0, true, false, false, false, false, 0, false},
+    {"light: 2L+32 spr", 2, 32, false, false, false, false, false, 0, false},
+    {"GBA mode 0: 4L+128 spr", 4, 128, false, false, false, false, false, 0, false},
+    {"Mode 7: aff+1L+64 spr", 1, 64, true, false, false, false, false, 0, false},
+    {"Max: aff+3L+128 spr", 3, 128, true, false, false, false, false, 0, false},
+    {"FX: 4L+alpha+window", 4, 0, false, true, true, false, false, 0, false},
+    {"FX: 128 spr half OBJ_BLEND", 0, 128, false, false, false, true, false, 0, false},
+    {"x: 4L+alpha only", 4, 0, false, true, false, false, false, 0, false},
+    {"x: 4L+window only", 4, 0, false, false, true, false, false, 0, false},
+    {"x: 4L+128 spr half OBJ_BLEND", 4, 128, false, false, false, true, false, 0, false},
+    {"x: 128 sprites off-screen", 0, 128, false, false, false, false, true, 0, false},
+    {"x: 1 layer, 1 palette entry on every line", 1, 0, false, false, false, false, false, 1, false},
+    {"x: 4L+128 spr, 8+8 palette entries on every line", 4, 128, false, false, false, false, false, 8, false},
+    {"x: 128 sprites 16x16 turned, double area", 0, 128, false, false, false, false, false, 0, true},
 };
 
 void bench_ppu_run(void) {

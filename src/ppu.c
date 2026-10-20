@@ -299,6 +299,24 @@ static void obj_box(const ppu_obj *o, int *x0, int *y0, int *w, int *h) {
 }
 
 /* The sprite's source pixel for screen (sx, sy), as an RGB565 colour; false where it is transparent or outside. */
+/* floor(a / b) for b > 0 */
+static inline int64_t floor_div(int64_t a, int64_t b) { return a >= 0 ? a / b : -((-a + b - 1) / b); }
+
+/* Where on screen x the source coordinate of a turned sprite, k * x + m in 512ths of a pixel (k, m from its matrix row), falls
+ * inside [lo, hi): narrows [*x0, *x1). Exact; the caller still tests each pixel, so a pixel at either end can never be lost. */
+static inline void affine_span(int64_t k, int64_t m, int64_t lo, int64_t hi, int *x0, int *x1) {
+    int64_t a, b;
+    if (k == 0) {
+        if (m < lo || m >= hi) *x1 = *x0;
+        return;
+    }
+    if (k > 0) a = floor_div(lo - m + k - 1, k), b = floor_div(hi - 1 - m, k) + 1; /* x >= ceil((lo - m) / k), x <= floor((hi - 1 - m) / k) */
+    else a = floor_div(m - (hi - 1) + (-k) - 1, -k), b = floor_div(m - lo, -k) + 1;
+    a -= 1, b += 1; /* (a pixel of margin either side: the per-pixel test decides) */
+    if (a > *x0) *x0 = (int)(a < PPU_W ? a : PPU_W);
+    if (b < *x1) *x1 = (int)(b > 0 ? b : 0);
+}
+
 static inline bool obj_pixel(const ppu_obj *o, int sx, int sy, const uint16_t *pal, uint16_t *c) {
     int u, v;
     if (o->affine >= 0) { /* from the pixel's centre, in half pixels, so an even-sized sprite turns about its middle */
@@ -351,6 +369,30 @@ ALWAYS void obj_line_x(lines *L, const ppu_obj *o, int y, bool win, bool track, 
                 uint8_t i = src[x - o->x];
                 if (i) put_obj(L, x, pal[(i + bank) & 255] | id, win, track);
             }
+        return;
+    }
+    if (o->affine >= 0 && mw == 1 && mh == 1) { /* turned, no mosaic: only the span of the line where the source falls inside the sprite,
+                                                 * its coordinates stepped by additions (as obj_pixel works them out, to the bit) */
+        const ppu_affine *A = &PPU.affine[o->affine & (PPU_AFFINES - 1)];
+        const int w = o->w, h = o->h, dy = 2 * (y - o->y) + 1 - h, k0 = 1 - w - 2 * o->x; /* dx = 2 x + k0 */
+        const int32_t mu = A->pa * k0 + A->pb * dy, mv = A->pc * k0 + A->pd * dy;  /* source u, v at x = 0, in 512ths */
+        int x0 = xa, x1 = xb;
+        affine_span(2 * A->pa, mu, -(int64_t)(w / 2) * 512, (int64_t)(w - w / 2) * 512, &x0, &x1);
+        affine_span(2 * A->pc, mv, -(int64_t)(h / 2) * 512, (int64_t)(h - h / 2) * 512, &x0, &x1);
+        if (x0 < xa) x0 = xa;
+        if (x1 > xb) x1 = xb;
+        int32_t U = mu + 2 * A->pa * x0, V = mv + 2 * A->pc * x0;
+        const int32_t su = 2 * A->pa, sv = 2 * A->pc;
+        for (int x = x0; x < x1; x++, U += su, V += sv) {
+            int u = (U >> 9) + w / 2, v = (V >> 9) + h / 2;
+            if ((unsigned)u >= (unsigned)w || (unsigned)v >= (unsigned)h) continue;
+            if (o->idx) {
+                uint8_t i = o->idx[v * w + u];
+                if (i) put_obj(L, x, opal[(i + o->bank * 16) & 255] | id, win, track);
+            } else if (o->rgb && (!o->mask || (o->mask[v * ((w + 7) / 8) + (u >> 3)] & (0x80 >> (u & 7))))) {
+                put_obj(L, x, o->rgb[v * w + u] | id, win, track);
+            }
+        }
         return;
     }
     int sy = mh > 1 ? y - y % mh : y;
