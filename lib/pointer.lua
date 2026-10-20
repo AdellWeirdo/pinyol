@@ -14,6 +14,8 @@
 --                                                -- turn since the second landed, their middle and how it moved this tick
 --   pointer.pressed(item)                        -- true when that {x, y, w, h} was tapped
 --   pointer.pick(items, x, y)                    -- the item ({x, y, w, h}) nearest (x, y), each at least 40 px to hit
+--     pointer.written                            -- the strokes of a figure, once the pen has rested WRITE_PAUSE ticks
+--   pointer.digit(strokes)                       -- 0..9 and a score 0..1 (nil below MIN_DIGIT), for pointer.written
 --   pointer.simplify(points, eps)                -- fewer points keeping the shape (Ramer-Douglas-Peucker)
 --   pointer.recognize(points)                    -- "line", "circle", "triangle", "square" or "zigzag", and a score 0..1
 --
@@ -27,13 +29,16 @@ M.LONG = 30        -- ticks held still that make a long press
 M.FLICK_SPEED = 6  -- pixels per tick over the last few ticks, at least, to be a flick
 M.MIN_TARGET = 40  -- pixels: a smaller target is hit as if it were this big (a fingertip; the DS's stylus needed less)
 M.MIN_SCORE = 0.7  -- a recognised shape below this is "nothing" (nil)
+M.WRITE_PAUSE = 30 -- ticks the pen rests before what was written is taken as one figure (Brain Age waited too)
+M.MIN_DIGIT = 0.75 -- a digit below this is nil
 
 local sx, sy, held, still, seen -- seen: the tick update last ran
+local writing, rest -- the strokes of the figure being written, and ticks since the last lift
 local base, two -- the pinch's start {d, a}; two: a second finger came down during this stroke (no tap, no flick)
 M.down, M.x, M.y, M.dx, M.dy, M.stroke, M.last = false, 0, 0, 0, 0, nil, nil
 
 local function reset_events()
-  M.began, M.tapped, M.long, M.released, M.flick, M.vx, M.vy = false, false, false, false, nil, 0, 0
+  M.began, M.tapped, M.long, M.released, M.flick, M.vx, M.vy, M.written = false, false, false, false, nil, 0, 0, nil
 end
 
 function M.update()
@@ -73,6 +78,11 @@ function M.update()
   if down or tapped then M.x, M.y = x, y end
   M.down = down
   M.pinch_update()
+  if M.released and not two then writing, rest = writing or {}, 0; writing[#writing + 1] = M.last end
+  if writing and not down then
+    rest = rest + 1
+    if rest >= M.WRITE_PAUSE then M.written, writing = writing, nil end
+  end
 end
 
 function M.pinch_update() -- (part of update)
@@ -231,6 +241,71 @@ local SHAPES = {
   square = {polygon({{0, 0}, {100, 0}, {100, 100}, {0, 100}}, true)},
   zigzag = {polygon({{0, 0}, {30, 100}, {50, 0}, {80, 100}, {100, 0}}, false)},
 }
+
+-- Digits: the strokes put end to end, in the order written, and matched without turning (a 6 is not a 9): resampled,
+-- scaled by their box's longer side, centred on the box. Templates in a 100x100 box, y down; each digit has the ways
+-- people write it, each a list of strokes.
+local function ellipse(cx, cy, rx, ry, a0, dir)
+  local p = {}
+  for k = 0, 32 do local a = a0 + dir * k / 32 * 2 * math.pi; p[#p + 1] = {cx + rx * math.cos(a), cy + ry * math.sin(a)} end
+  return p
+end
+local DIGITS = {
+  [0] = {{ellipse(50, 50, 30, 50, -math.pi / 2, -1)}, {ellipse(50, 50, 30, 50, -math.pi / 2, 1)}},
+  [1] = {{{{50, 0}, {50, 100}}}, {{{30, 20}, {50, 0}, {50, 100}}}},
+  [2] = {{{{20, 25}, {35, 5}, {55, 0}, {75, 10}, {80, 30}, {70, 50}, {20, 100}, {85, 100}}}},
+  [3] = {{{{20, 10}, {45, 0}, {70, 5}, {78, 22}, {65, 42}, {45, 48}, {70, 55}, {80, 75}, {70, 95}, {45, 100}, {20, 90}}}},
+  [4] = {{{{60, 0}, {15, 65}, {90, 65}}, {{70, 35}, {70, 100}}}, {{{20, 0}, {15, 60}, {85, 60}}, {{75, 0}, {75, 100}}}},
+  [5] = {{{{75, 0}, {28, 0}, {25, 45}, {55, 38}, {78, 55}, {78, 80}, {60, 98}, {25, 95}}},
+         {{{28, 0}, {25, 45}, {55, 38}, {78, 55}, {78, 80}, {60, 98}, {25, 95}}, {{28, 0}, {78, 0}}}},
+  [6] = {{{{70, 0}, {40, 15}, {22, 50}, {25, 80}, {45, 100}, {70, 92}, {78, 72}, {65, 55}, {40, 55}, {23, 72}}}},
+  [7] = {{{{20, 0}, {80, 0}, {40, 100}}}},
+  [8] = {{{{70, 10}, {50, 0}, {28, 10}, {30, 32}, {50, 48}, {72, 65}, {75, 88}, {50, 100}, {25, 88}, {28, 65}, {50, 48},
+           {70, 32}, {72, 12}, {52, 0}}}},
+  [9] = {{{{78, 20}, {60, 0}, {35, 5}, {25, 25}, {35, 45}, {60, 45}, {78, 25}, {78, 60}, {70, 100}}}},
+}
+
+local function joined(strokes) -- one list of points, the strokes end to end
+  local out = {}
+  for _, s in ipairs(strokes) do for _, p in ipairs(s) do out[#out + 1] = p end end
+  return out
+end
+
+local function upright(pts) -- resampled, its box's longer side SIZE, its box's middle at the origin
+  local r = resample(pts)
+  if not r then return nil end
+  local x0, y0, x1, y1 = math.huge, math.huge, -math.huge, -math.huge
+  for _, q in ipairs(r) do x0, y0, x1, y1 = math.min(x0, q[1]), math.min(y0, q[2]), math.max(x1, q[1]), math.max(y1, q[2]) end
+  local k, mx, my = SIZE / math.max(x1 - x0, y1 - y0, 1e-6), (x0 + x1) / 2, (y0 + y1) / 2
+  local out = {}
+  for i, q in ipairs(r) do out[i] = {(q[1] - mx) * k, (q[2] - my) * k} end
+  return out
+end
+
+local digit_templates
+
+function M.digit(strokes)
+  if not strokes or not strokes[1] then return nil end
+  if type(strokes[1][1]) == "number" then strokes = {strokes} end -- one stroke given as its points
+  local pts = joined(strokes)
+  if #pts < 2 or length(pts) < 20 then return nil end
+  if not digit_templates then
+    digit_templates = {}
+    for d = 0, 9 do
+      for _, way in ipairs(DIGITS[d]) do digit_templates[#digit_templates + 1] = {d = d, pts = upright(joined(way))} end
+    end
+  end
+  local cand = upright(pts)
+  if not cand then return nil end
+  local best, bd = nil, math.huge
+  for _, t in ipairs(digit_templates) do
+    local dist = distance(cand, t.pts)
+    if dist < bd then best, bd = t.d, dist end
+  end
+  local score = 1 - bd / (0.5 * math.sqrt(2 * SIZE * SIZE))
+  if score < M.MIN_DIGIT then return nil, score end
+  return best, score
+end
 
 local templates -- built on the first recognise: name -> list of normalised variants (every start, both ways)
 

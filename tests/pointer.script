@@ -35,6 +35,20 @@ lua zig = {} for i = 0, 4 do zig[#zig + 1] = {80 + i * 70, (i % 2) * 120 + 60} e
 expect_lua pointer.recognize(jitter(poly(zig, true), 2)) == "zigzag"
 # too short or too few points are nothing
 expect_lua pointer.recognize({{1, 1}, {2, 2}}) == nil
+# digits (pointer.digit): each drawn by a hand that is not the templates', big and small, upright and slanted
+lua bad1, bad2, bad3 = check_digits(1.6, 0), check_digits(0.7, 0), check_digits(1.2, 0.15)
+expect_lua bad1 == "" and bad2 == "" and bad3 == ""
+expect_lua pointer.digit({{1, 1}, {2, 2}}) == nil
+# a figure written in two strokes (a 7: the bar, then down) is one figure once the pen rests
+tick 40
+lua written_digit = nil
+drag 100 100 200 100 10
+tick 5
+drag 200 100 150 260 15
+tick 10
+expect_lua written_digit == nil
+tick 30
+expect_lua written_digit == 7
 # two fingers (touches()): a spread doubles the distance, no tap and no flick on the lift; moved together, the middle goes with them
 lua taps0, flick = taps, nil
 pinch 240 160 100 200 20
