@@ -777,9 +777,9 @@ function M.update()
   if tapped then for _, f in ipairs(handlers.tap) do f(tx + cam.x, ty + cam.y) end end
   local player = M.player()
   for _, o in ipairs(objs) do if o.alive then behave(o) end end
-  local W, H = world()
+  local ww, wh = world() -- (not W: that is the game's words, used just below)
   for _, o in ipairs(objs) do -- whatever leaves the world is gone; the player falling out loses, unless told otherwise
-    if o.alive and (o.x + o.w < -32 or o.x > W + 32 or o.y + o.h < -32 or o.y > H + 32) then
+    if o.alive and (o.x + o.w < -32 or o.x > ww + 32 or o.y + o.h < -32 or o.y > wh + 32) then
       o.alive = false
       local told = false
       for _, h in ipairs(handlers.out) do if h.a == o.kind then h.fn(o) told = true end end

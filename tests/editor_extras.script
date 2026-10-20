@@ -18,4 +18,10 @@ expect_lua tiempo == 1 and kit.time_left() == 0
 press B
 tick 2
 expect_lua sinvidas == 1 and kit.lives() == 0
+# this game has no "sale del mapa" block: the player falling out of the map loses with the kit's own words, as the block's
+# tooltip says (it used to stop the game on an error: the world's size hid the words in kit.lua)
+lua h = kit.player() h.x, h.y = 40, 2000
+tick 3
+expect_lua kit.state() == "lost" and kit.player() == nil
+shot extras_fell
 expect_ok
