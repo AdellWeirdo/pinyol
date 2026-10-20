@@ -1,0 +1,7 @@
+# The script runner itself (CMake test script_fails_on_game_error): a game that stops on an error fails the script on the
+# tick it stopped, with the game's own message, even though what the script checks after it still holds.
+new
+tick 2
+lua function _update() error("boom") end
+tick 3
+expect_lua true

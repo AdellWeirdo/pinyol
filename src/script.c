@@ -15,6 +15,9 @@ static char fail_msg[256];
 static bool tick_input(uint16_t held, bool touch, int px, int py) {
     hal_input in = {held, touch, (int16_t)px, (int16_t)py};
     game_tick(&in);
+    /* A Lua game stopped on an error stays frozen, and what the script checks after it could still hold: the script fails
+     * on the tick it stopped, with the game's own message (not only where it says expect_ok). */
+    if (v2_error()) FAIL("the game stopped on an error: %s", v2_error());
     if (layer_has(L_PLAY)) {
         const char *bad = invariants_check();
         if (bad) FAIL("%s", bad);

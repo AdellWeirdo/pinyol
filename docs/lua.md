@@ -852,7 +852,7 @@ tick 20                          # let 20 ticks pass
 expect_lua state == "play"       # a Lua expression that must be true
 lua P.x = 100                    # run Lua in the game (set up a situation)
 expect_lua_error spin()          # code that must fail
-expect_ok                        # the game has not stopped on an error
+expect_ok                        # the game has not stopped on an error (a script also fails by itself on the tick it does)
 shot name                        # save the screen to the saves folder (name.ppm)
 mic 0.5 440                      # the microphone hears a tone that loud (no Hz: noise; mic 0: silence; mic none: no microphone)
 battery 0.2 charging             # battery() says so (battery none: no battery; battery real: the platform's)

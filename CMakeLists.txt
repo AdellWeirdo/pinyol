@@ -357,6 +357,9 @@ add_test(NAME horizonte_linepal COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_
   cmp ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_on.ppm ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_on2.ppm && \
   cmp ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_off0.ppm ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_off.ppm && \
   ! cmp -s ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_on.ppm ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_off.ppm")
+add_test(NAME script_fails_on_game_error COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/sandbox \
+  --saves ${CMAKE_BINARY_DIR}/saves_game_error_x --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/fail/game_error.script 2>&1 | \
+  grep -q 'game_error.script:6: tick 3 -> the game stopped on an error: _update: .*boom'") # (tests/fail: scripts that must fail)
 add_test(NAME line_ramp COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_ramp_x && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/ramp \
   --saves ${CMAKE_BINARY_DIR}/saves_ramp_x --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/ramp.script >/dev/null && \
   cmp ${CMAKE_BINARY_DIR}/saves_ramp_x/ramp_r.ppm ${CMAKE_BINARY_DIR}/saves_ramp_x/ramp_p.ppm")
