@@ -25,6 +25,7 @@ function jitter(p, m)
 end
 function _update()
   pointer.update()
+  pointer.update() -- a second call in the same tick changes nothing
   if pointer.tapped then taps = taps + 1; picked = pointer.pick(targets, pointer.x, pointer.y) end
   if pointer.long then longs = longs + 1 end
   if pointer.dragging then drags = drags + 1 end

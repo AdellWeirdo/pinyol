@@ -2,7 +2,7 @@
 -- recognised, and the target nearest where a touch began.
 --
 --   local pointer = require("pointer")
---   in _update (once): pointer.update()
+--   in _update: pointer.update()   (more than once a tick is fine: the second does nothing)
 --     pointer.down, pointer.x, pointer.y         -- the finger now, in the screen's 480x320 pixels (as text() uses)
 --     pointer.began, pointer.tapped, pointer.long, pointer.released   -- true on the one tick it happens (began: it went down)
 --     pointer.dragging, pointer.dx, pointer.dy   -- moved past the slop since it went down; the move since last tick
@@ -25,7 +25,7 @@ M.FLICK_SPEED = 6  -- pixels per tick over the last few ticks, at least, to be a
 M.MIN_TARGET = 40  -- pixels: a smaller target is hit as if it were this big (a fingertip; the DS's stylus needed less)
 M.MIN_SCORE = 0.7  -- a recognised shape below this is "nothing" (nil)
 
-local sx, sy, held, still
+local sx, sy, held, still, seen -- seen: the tick update last ran
 M.down, M.x, M.y, M.dx, M.dy, M.stroke, M.last = false, 0, 0, 0, 0, nil, nil
 
 local function reset_events()
@@ -33,6 +33,8 @@ local function reset_events()
 end
 
 function M.update()
+  if seen == ticks() then return end -- once a tick, however many parts of a game call it
+  seen = ticks()
   reset_events()
   local x, y, down, tapped, released = pen()
   M.dx, M.dy = 0, 0
