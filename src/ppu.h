@@ -71,6 +71,8 @@ typedef struct { int16_t x, y; } ppu_line_scroll;
 typedef struct { int32_t pa, pc, x, y; } ppu_line_affine; /* the line's start (24.8) and step per pixel (8.8) */
 #define PPU_LINE_OFF INT32_MIN /* as ppu_line_affine.x: the layer shows nothing on that line (a Mode 7 sky) */
 typedef struct { int16_t x1, x2; } ppu_line_span;
+#define PPU_LINE_PALS 16 /* palette entries one line may replace, in each palette */
+typedef struct { uint8_t n; uint8_t idx[PPU_LINE_PALS]; uint16_t col[PPU_LINE_PALS]; } ppu_line_pal; /* (index, RGB565) pairs */
 
 typedef struct {
     uint8_t layers;  /* the layers drawn, PPU_BG0..PPU_OBJ bits (the GBA's display control); ppu_reset: all */
@@ -94,6 +96,7 @@ typedef struct {
         const ppu_line_span *win[2];  /* the windows' x span per line (their y span is then the whole screen) */
         const uint16_t *backdrop;     /* the backdrop colour per line */
         const uint8_t *fx_ev;         /* eva per line (evb = 16 - eva; evy = eva for fades) */
+        const ppu_line_pal *pal_bg, *pal_obj; /* entries of the backgrounds' / sprites' palette that differ on a line (HBlank palette writes) */
     } line;
 } ppu_state;
 
@@ -102,7 +105,7 @@ extern ppu_state PPU;
 void ppu_reset(void);           /* everything off, palettes black, mosaic 1, identity matrices, no tables */
 void ppu_render(uint16_t *out); /* the frame, PPU_W x PPU_H RGB565, row after row */
 /* True when ppu_render would give only the backdrop, one colour everywhere (no layer shown, no line backdrop, no
- * effect): *colour is it, and the frame need not be worked out. */
+ * effect, no per-line palette): *colour is it, and the frame need not be worked out. */
 bool ppu_blank(uint16_t *colour);
 /* For each of ntiles tiles: bit y set when its row y is all transparent, bit 8 + y when it has no transparent pixel. */
 void ppu_tile_rows(const uint8_t *tiles, int ntiles, uint16_t *rows);

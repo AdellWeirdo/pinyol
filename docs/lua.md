@@ -145,6 +145,7 @@ Each of the 160 lines can have its own values: wavy water, parallax bands, gradi
 |---|---|
 | `line_scroll(n, y, x [, y_offset])` | layer n's scroll on line y |
 | `line_backdrop(y, colour)` | the backdrop on line y (a sky gradient) |
+| `line_pal(y, index, colour [, colour ...])`, `line_pal_obj(...)` | on line y, entry `index` of the backgrounds' palette (and the next ones, one for each further colour) has that colour, as a console that writes its palette in each HBlank does: a sky that deepens, water that shimmers, a sail painted by the sunset; `line_pal_obj` is the same for the sprites' palette. Up to 16 entries a line in each; they last until `line_off()`. Entry 0 is the backdrop (`line_backdrop` wins on a line that has both). A game that replaces entries on some lines costs the renderer a little on each of them (about a thousand cycles a line on the console), and nothing at all when it does not |
 | `line_window(k, y, x1, x2)` | window k's span on line y (a circle, a cone of light) |
 | `line_fx(y, amount)` | 0..16 on line y: the amount of the `fade`, or how much of a `blend`'s first target shows (the second gets 16 − amount). Fog thickening toward the horizon of a `mode7` floor: `fade("light", BG2, 0)` once, then `line_fx` for each line. While it is on, every fade and blend of the game takes its amount from it, so a screen-wide fade needs `line_off()` first |
 | `line_off()` | back to the layers' own values (a `mode7` floor stays) |

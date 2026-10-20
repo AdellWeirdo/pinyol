@@ -97,3 +97,30 @@ fixes (a blending sprite over a sprite now blends with the background): `FX: 128
 | x: 4L+window only | `15d3f7e0226ca2e9` |
 | x: 4L+128 spr half OBJ_BLEND | `5df19b538750a824` |
 | x: 128 sprites off-screen | `684ff1e0e683e325` |
+
+## `line_pal`: the common path and the use (2026-10-20)
+
+The same bench (`firmware/main/bench_ppu.c`, content in PSRAM) on `main` at `9354805` and with the per-line palette, on the same board. Median cycles of 300
+frames; the 15 scenes give the same frame hash before and after.
+
+| Scene | before | after | change |
+|---|---|---|---|
+| clear only | 375,802 | 379,677 | +1.0 % |
+| 1 layer | 1,279,522 | 1,283,980 | +0.3 % |
+| 4 layers | 3,382,705 | 3,387,572 | +0.1 % |
+| 128 sprites 16x16 | 911,881 | 916,386 | +0.5 % |
+| 1 affine layer | 1,744,527 | 1,748,378 | +0.2 % |
+| GBA mode 0: 4L+128 spr | 4,076,849 | 4,081,426 | +0.1 % |
+| Max: aff+3L+128 spr | 4,970,660 | 4,976,023 | +0.1 % |
+| FX: 4L+alpha+window | 5,942,820 | 5,965,598 | +0.4 % |
+| x: 128 sprites off-screen | 380,966 | 384,999 | +1.1 % |
+| sum of the 15 scenes | | | **+0.34 %** |
+| x: 1 layer, 1 entry in each palette on every line | | 1,452,146 | +13 % over "1 layer" |
+| x: 4L+128 spr, 8 + 8 entries on every line | | 4,394,879 | +7.7 % over "GBA mode 0" |
+
+How it got there, by what each step measured: reading the palette through a pointer in `lines` cost +2.1 % over the 15 scenes (up to +6.9 % on the
+affine layer); reading it once a line and passing it down took the tile layers from +4.7 % to +2.8 %; the same code with the reads put back at the
+registers' addresses was +1.0 %; building the layer and sprite functions twice, one for the registers' palettes and one for the line's (chosen
+per line), +0.34 %. The use costs were measured after a copy of both palettes each line (+9.4 %) and after the copy made once a frame with a patch and restore of the
+entries a line changes (+7.7 %).
+

@@ -606,7 +606,7 @@ Timing / per-line
 
 33. HBlank DMA tables are offset by one line (effect applies to line+1); line 0 is set before the frame; 160 entries (+1 trailing copy).
 34. BG enable latency (~3 lines) and mode-switch behaviour (next line) are hardware effects that a "settings per line" model reproduces automatically only if the per-line table captures them.
-35. Per-line effects the model offers (np2d `line.*`): scroll, affine, window span, backdrop, blend alpha. Missing relative to hardware: per-line BLDY (fade gradients, widely used in pokeemerald), per-line mosaic size, per-line palette entries other than the backdrop, per-line layer enables and BG priority/bank changes. (np2d? based on the header only.)
+35. Per-line effects the model offers (np2d `line.*`): scroll, affine, window span, backdrop, blend alpha. Since then: per-line BLDY (`line_fx`) and per-line palette entries, background and sprite (`line_pal`, `line_pal_obj`: up to 16 entries a line in each). Still missing relative to hardware: per-line mosaic size, per-line layer enables and BG priority/bank changes. (np2d? based on the header only.)
 
 Memory / colour
 

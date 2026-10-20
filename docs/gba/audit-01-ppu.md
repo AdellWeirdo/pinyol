@@ -58,7 +58,7 @@ Ranking weighs visibility to game makers, effort and risk to frame time. Everyth
 2. **Semi-transparent sprite over another sprite: keep `under` = the BG** (`put`, `ppu.c:92-96`, row 13). Effort S, perf none. Shadows and ghosts overlapping sprites currently render opaque or blend with the wrong pixel.
 3. **OBJ window enabled but no `WINDOW` sprite this frame: apply `win.out`** (`ppu.c:454`, row 12a). Effort S, perf none. Flashlight/cave effects black out correctly when the light sprite is hidden.
 4. **BLEND sprite ignores the window FX bit when a second target exists** (reorder `ppu.c:484-489`, row 12b). Effort S, perf none.
-5. **Per-line palette overrides** (a few entries of BG/OBJ palette, applied at line start). Effort M, perf low (patch/restore a handful of entries per line; do NOT copy 160 palettes). Raster-bar skies, water bands, per-line recolours.
+5. **(Done: `line_pal`, `line_pal_obj`; see 04-genres.md section 10 for what it cost.) Per-line palette overrides** (a few entries of BG/OBJ palette, applied at line start). Effort M, perf low (patch/restore a handful of entries per line; do NOT copy 160 palettes). Raster-bar skies, water bands, per-line recolours.
 6. **Affine/scalable bitmap BG** (reuse the `bg_affine_x` stepping on RGB565 + mask; honour `line.affine`). Effort M, perf low (only when a matrix is set). Zooming title screens, rotozoom intros.
 7. **OBJ mosaic: clamp the first partial cell into the sprite** and stop mosaicking OBJ-window shapes (`ppu.c:300-302, 345-347, 359-366`). Effort S, perf none.
 8. **Per-line mosaic size and per-line layer enable/priority** (`line_mosaic`, `line_show`): small tables read in `line()`/`layers_x`. Effort S-M, perf low. Split screens, HBlank BG toggles, wipes.

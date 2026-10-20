@@ -35,6 +35,7 @@ typedef struct {
     fade_lut fade;         /* the last fade's tables */
     uint8_t drew;          /* the layer bits that may have pixels on this line, PPU_BACK always */
     bool drew_blend;       /* an OBJ_BLEND sprite crossed it */
+    const uint16_t *bgp, *objp; /* the palettes of this line: the registers', or a copy with the line's own entries (PALBUF) */
 } lines;
 
 static lines LB[2] = {{.fade.ey = -1}, {.fade.ey = -1}}; /* one per core */
@@ -107,9 +108,8 @@ ALWAYS void put_obj(lines *L, int x, uint32_t px, bool win, bool track) {
 /* ------------------------------------------------------------------ backgrounds */
 
 /* One tile's pixels fx..fx+run-1 of row tp (8 indices) onto x.. ; rev reads the row right to left (hflip). */
-ALWAYS void tile_run(lines *L, int x, const uint8_t *tp, int fx, int run, bool rev, bool opaque, int bank, uint32_t id,
-                     int bit, bool win, bool track) {
-    const uint16_t *pal = PPU.bg_pal;
+ALWAYS void tile_run(lines *L, const uint16_t *pal, int x, const uint8_t *tp, int fx, int run, bool rev, bool opaque, int bank,
+                     uint32_t id, int bit, bool win, bool track) {
     if (opaque && !win) { /* every pixel shows: no tests */
         uint32_t *top = L->top + x, *under = L->under + x;
         for (int k = 0; k < run; k++) {
@@ -125,7 +125,7 @@ ALWAYS void tile_run(lines *L, int x, const uint8_t *tp, int fx, int run, bool r
     }
 }
 
-ALWAYS void bg_tiles_x(lines *L, const ppu_bg *b, int n, int y, bool win, bool track) {
+ALWAYS void bg_tiles_x(lines *L, const ppu_bg *b, int n, int y, bool win, bool track, bool lp) {
     int sx = b->scroll_x, sy = b->scroll_y, mw = b->mosaic ? PPU.mosaic.bg_w : 1, mh = b->mosaic ? PPU.mosaic.bg_h : 1;
     if (PPU.line.scroll[n]) sx = PPU.line.scroll[n][y].x, sy = PPU.line.scroll[n][y].y;
     int W = b->map_w * 8, H = b->map_h * 8, py = y - y % (mh > 1 ? mh : 1) + sy;
@@ -135,6 +135,7 @@ ALWAYS void bg_tiles_x(lines *L, const ppu_bg *b, int n, int y, bool win, bool t
     const uint16_t *row = b->map + (py >> 3) * b->map_w;
     int fy = py & 7, bit = 1 << n;
     uint32_t id = (uint32_t)n << 16;
+    const uint16_t *pal = lp ? L->bgp : PPU.bg_pal; /* the line's palette, or (lp false, known when this is built) the registers': a constant address */
     if (mw > 1) { /* mosaic: a block of mw pixels shows its left edge */
         for (int x0 = 0; x0 < PPU_W; x0 += mw) {
             int px = x0 + sx;
@@ -145,7 +146,7 @@ ALWAYS void bg_tiles_x(lines *L, const ppu_bg *b, int n, int y, bool win, bool t
             if (t >= b->ntiles) continue;
             uint8_t i = b->tiles[t * 64 + ((e & 0x800) ? 7 - fy : fy) * 8 + ((e & 0x400) ? 7 - u : u)];
             if (!i) continue;
-            uint32_t c = PPU.bg_pal[(i + (e >> 12) * 16) & 255] | id;
+            uint32_t c = pal[(i + (e >> 12) * 16) & 255] | id;
             for (int x = x0, x1 = x0 + mw < PPU_W ? x0 + mw : PPU_W; x < x1; x++) put(L, x, c, bit, win, track);
         }
         L->drew |= (uint8_t)bit;
@@ -173,10 +174,10 @@ ALWAYS void bg_tiles_x(lines *L, const ppu_bg *b, int n, int y, bool win, bool t
                 int bank = (e >> 12) * 16;
                 bool rev = e & 0x400;
                 if (info & 0x100) {
-                    if (rev) tile_run(L, x, tp, fx, run, true, true, bank, id, bit, win, track);
-                    else tile_run(L, x, tp, fx, run, false, true, bank, id, bit, win, track);
-                } else if (rev) tile_run(L, x, tp, fx, run, true, false, bank, id, bit, win, track);
-                else tile_run(L, x, tp, fx, run, false, false, bank, id, bit, win, track);
+                    if (rev) tile_run(L, pal, x, tp, fx, run, true, true, bank, id, bit, win, track);
+                    else tile_run(L, pal, x, tp, fx, run, false, true, bank, id, bit, win, track);
+                } else if (rev) tile_run(L, pal, x, tp, fx, run, true, false, bank, id, bit, win, track);
+                else tile_run(L, pal, x, tp, fx, run, false, false, bank, id, bit, win, track);
             }
         }
         x += run, px += run;
@@ -184,7 +185,7 @@ ALWAYS void bg_tiles_x(lines *L, const ppu_bg *b, int n, int y, bool win, bool t
     if (drew) L->drew |= (uint8_t)bit;
 }
 
-ALWAYS void bg_affine_x(lines *L, const ppu_bg *b, int n, int y, bool win, bool track) {
+ALWAYS void bg_affine_x(lines *L, const ppu_bg *b, int n, int y, bool win, bool track, bool lp) {
     int W = b->map_w * 8, H = b->map_h * 8, mw = b->mosaic ? PPU.mosaic.bg_w : 1, mh = b->mosaic ? PPU.mosaic.bg_h : 1;
     if (!b->tiles || !b->map || W <= 0 || H <= 0) return;
     int32_t ax, ay, pa, pc;
@@ -199,7 +200,7 @@ ALWAYS void bg_affine_x(lines *L, const ppu_bg *b, int n, int y, bool win, bool 
     int bit = 1 << n, nt = b->ntiles;
     uint32_t id = (uint32_t)n << 16;
     const uint8_t *tiles = b->tiles;
-    const uint16_t *map = b->map, *pal = PPU.bg_pal;
+    const uint16_t *map = b->map, *pal = lp ? L->bgp : PPU.bg_pal;
     bool pow2 = !(W & (W - 1)) && !(H & (H - 1));
     if (mw == 1 && pow2) { /* the common case (a Mode 7 floor, a turned map): stepping, shifts, no multiplies */
         int shift = __builtin_ctz((unsigned)b->map_w), x0 = 0, x1 = PPU_W - 1;
@@ -298,7 +299,7 @@ static void obj_box(const ppu_obj *o, int *x0, int *y0, int *w, int *h) {
 }
 
 /* The sprite's source pixel for screen (sx, sy), as an RGB565 colour; false where it is transparent or outside. */
-static inline bool obj_pixel(const ppu_obj *o, int sx, int sy, uint16_t *c) {
+static inline bool obj_pixel(const ppu_obj *o, int sx, int sy, const uint16_t *pal, uint16_t *c) {
     int u, v;
     if (o->affine >= 0) { /* from the pixel's centre, in half pixels, so an even-sized sprite turns about its middle */
         const ppu_affine *a = &PPU.affine[o->affine & (PPU_AFFINES - 1)];
@@ -315,7 +316,7 @@ static inline bool obj_pixel(const ppu_obj *o, int sx, int sy, uint16_t *c) {
     if (o->idx) {
         uint8_t i = o->idx[v * o->w + u];
         if (!i) return false;
-        *c = PPU.obj_pal[(i + o->bank * 16) & 255];
+        *c = pal[(i + o->bank * 16) & 255];
         return true;
     }
     if (!o->rgb) return false;
@@ -324,7 +325,8 @@ static inline bool obj_pixel(const ppu_obj *o, int sx, int sy, uint16_t *c) {
     return true;
 }
 
-ALWAYS void obj_line_x(lines *L, const ppu_obj *o, int y, bool win, bool track) {
+ALWAYS void obj_line_x(lines *L, const ppu_obj *o, int y, bool win, bool track, bool lp) {
+    const uint16_t *opal = lp ? L->objp : PPU.obj_pal;
     int bx, by, bw, bh;
     obj_box(o, &bx, &by, &bw, &bh);
     if (y < by || y >= by + bh) return;
@@ -337,7 +339,7 @@ ALWAYS void obj_line_x(lines *L, const ppu_obj *o, int y, bool win, bool track) 
         int v = y - o->y;
         if (o->vflip) v = o->h - 1 - v;
         const uint8_t *src = o->idx + v * o->w;
-        const uint16_t *pal = PPU.obj_pal;
+        const uint16_t *pal = opal;
         int bank = o->bank * 16;
         if (o->hflip)
             for (int x = xa; x < xb; x++) {
@@ -355,7 +357,7 @@ ALWAYS void obj_line_x(lines *L, const ppu_obj *o, int y, bool win, bool track) 
     for (int x = xa; x < xb;) { /* a block of mw screen pixels (mosaic) shows its left edge */
         int x0 = x - x % mw, x1 = x0 + mw < xb ? x0 + mw : xb;
         uint16_t c;
-        if (obj_pixel(o, x0, sy, &c))
+        if (obj_pixel(o, x0, sy, opal, &c))
             for (; x < x1; x++) put_obj(L, x, c | id, win, track);
         x = x1;
     }
@@ -371,33 +373,39 @@ static void obj_window_line(lines *L, const ppu_obj *o, int y) { /* an OBJ_WINDO
     for (int x = xa; x < xb;) {
         int x0 = x - x % mw, x1 = x0 + mw < xb ? x0 + mw : xb;
         uint16_t c;
-        if (obj_pixel(o, x0, sy, &c))
+        if (obj_pixel(o, x0, sy, PPU.obj_pal, &c)) /* (only whether the pixel is there: not its colour) */
             for (; x < x1; x++) L->objwin[x] = 1;
         x = x1;
     }
 }
 
 /* The layers of one priority, in each of the four ways a line can be drawn. */
-ALWAYS void layers_x(lines *L, int p, int y, bool win, bool track) {
+ALWAYS void layers_x(lines *L, int p, int y, bool win, bool track, bool lp) {
     for (int n = PPU_BGS - 1; n >= 0; n--) {
         const ppu_bg *b = &PPU.bg[n];
         if ((b->prio & 3) != p || !(PPU.layers & (1 << n))) continue;
-        if (b->mode == BG_TILES) bg_tiles_x(L, b, n, y, win, track);
-        else if (b->mode == BG_AFFINE) bg_affine_x(L, b, n, y, win, track);
+        if (b->mode == BG_TILES) bg_tiles_x(L, b, n, y, win, track, lp);
+        else if (b->mode == BG_AFFINE) bg_affine_x(L, b, n, y, win, track, lp);
         else if (b->mode == BG_BITMAP) bg_bitmap_x(L, b, n, y, win, track);
     }
     for (int w = PPU_OBJS / 32 - 1; w >= 0; w--)
         for (uint32_t m = F.rows[y][w] & F.pri[p][w]; m;) {
             int b = 31 - __builtin_clz(m); /* highest first: back to front */
             m &= ~(1u << b);
-            obj_line_x(L, &PPU.obj[w * 32 + b], y, win, track);
+            obj_line_x(L, &PPU.obj[w * 32 + b], y, win, track, lp);
         }
 }
 
-static void layers_plain(lines *L, int p, int y) { layers_x(L, p, y, false, false); }
-static void layers_track(lines *L, int p, int y) { layers_x(L, p, y, false, true); }
-static void layers_win(lines *L, int p, int y) { layers_x(L, p, y, true, false); }
-static void layers_win_track(lines *L, int p, int y) { layers_x(L, p, y, true, true); }
+/* Each in two builds: the common one reads the palettes at the registers' own (constant) addresses; the other, for a frame that replaces
+ * palette entries on some lines (line_pal), reads this line's. A pointer in a register costs the inner loops several percent. */
+static void layers_plain(lines *L, int p, int y) { layers_x(L, p, y, false, false, false); }
+static void layers_track(lines *L, int p, int y) { layers_x(L, p, y, false, true, false); }
+static void layers_win(lines *L, int p, int y) { layers_x(L, p, y, true, false, false); }
+static void layers_win_track(lines *L, int p, int y) { layers_x(L, p, y, true, true, false); }
+static void layers_plain_lp(lines *L, int p, int y) { layers_x(L, p, y, false, false, true); }
+static void layers_track_lp(lines *L, int p, int y) { layers_x(L, p, y, false, true, true); }
+static void layers_win_lp(lines *L, int p, int y) { layers_x(L, p, y, true, false, true); }
+static void layers_win_track_lp(lines *L, int p, int y) { layers_x(L, p, y, true, true, true); }
 
 /* ------------------------------------------------------------------ the frame */
 
@@ -463,8 +471,35 @@ static void windows(lines *L, int y) { /* what shows where: outside, then the ob
     }
 }
 
+/* The palettes of a frame that replaces entries on some lines (line_pal): each core keeps a copy of the registers' palettes, made once a
+ * frame, and on each line puts back what the line before changed and writes what this one changes: a handful of entries, not 2 x 512 bytes. */
+static struct {
+    uint16_t pal[2][256]; /* [0] the backgrounds', [1] the sprites' */
+    uint8_t n[2], idx[2][PPU_LINE_PALS]; /* the entries the last line changed */
+    uint32_t frame;
+} PS[2];
+static uint32_t frame_no;
+
+static __attribute__((noinline, cold)) void line_palettes(lines *L, int y) {
+    typeof(PS[0]) *s = &PS[L - LB];
+    const uint16_t *base[2] = {PPU.bg_pal, PPU.obj_pal};
+    const ppu_line_pal *tab[2] = {PPU.line.pal_bg, PPU.line.pal_obj};
+    if (s->frame != frame_no) {
+        memcpy(s->pal[0], PPU.bg_pal, sizeof s->pal[0]), memcpy(s->pal[1], PPU.obj_pal, sizeof s->pal[1]);
+        s->n[0] = s->n[1] = 0, s->frame = frame_no;
+    }
+    for (int k = 0; k < 2; k++) {
+        for (int i = 0; i < s->n[k]; i++) s->pal[k][s->idx[k][i]] = base[k][s->idx[k][i]];
+        s->n[k] = tab[k] ? tab[k][y].n : 0;
+        for (int i = 0; i < s->n[k]; i++) s->idx[k][i] = tab[k][y].idx[i], s->pal[k][tab[k][y].idx[i]] = tab[k][y].col[i];
+    }
+    L->bgp = s->pal[0], L->objp = s->pal[1];
+}
+
 static void line(lines *L, int y, uint16_t *out) {
-    uint32_t back = PX(PPU.line.backdrop ? PPU.line.backdrop[y] : PPU.bg_pal[0], ID_BACK);
+    const bool lp = PPU.line.pal_bg || PPU.line.pal_obj; /* this frame replaces palette entries on some lines */
+    if (__builtin_expect(lp, 0)) line_palettes(L, y);
+    uint32_t back = PX(PPU.line.backdrop ? PPU.line.backdrop[y] : lp ? L->bgp[0] : PPU.bg_pal[0], ID_BACK);
     for (int x = 0; x < PPU_W; x++) L->top[x] = back;
     if (F.track)
         for (int x = 0; x < PPU_W; x++) L->under[x] = back;
@@ -473,7 +508,8 @@ static void line(lines *L, int y, uint16_t *out) {
     L->win = PPU.win.on[0] || PPU.win.on[1] || PPU.win.obj_on;
     if (L->win) windows(L, y);
     void (*layers)(lines *, int, int) =
-        L->win ? (F.track ? layers_win_track : layers_win) : (F.track ? layers_track : layers_plain);
+        lp ? (L->win ? (F.track ? layers_win_track_lp : layers_win_lp) : (F.track ? layers_track_lp : layers_plain_lp))
+           : (L->win ? (F.track ? layers_win_track : layers_win) : (F.track ? layers_track : layers_plain));
     for (int p = 3; p >= 0; p--) layers(L, p, y);
 
     int ea = PPU.fx.eva, eb = PPU.fx.evb, ey = PPU.fx.evy;
@@ -533,10 +569,11 @@ static void render_part(int part, void *frame) { /* every other line, from line 
 
 bool ppu_blank(uint16_t *colour) {
     *colour = PPU.bg_pal[0];
-    return !PPU.layers && !PPU.line.backdrop && PPU.fx.mode == FX_NONE;
+    return !PPU.layers && !PPU.line.backdrop && !PPU.line.pal_bg && PPU.fx.mode == FX_NONE;
 }
 
 void ppu_render(uint16_t *out) {
+    frame_no++; /* (a new frame: the cores' palette copies, if any, are made again) */
     prepare();
     hal_parallel(render_part, out);
 }
