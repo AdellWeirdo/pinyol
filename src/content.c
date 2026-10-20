@@ -650,10 +650,38 @@ static void check_arenas(void) {
     }
 }
 
+/* A Lua game's pictures, as gfx.c takes them (load_asset): one it refuses is drawn as a checkerboard, or not at all,
+ * and nothing says so until a script draws it with --strict-assets; so the validator reads every meta. PPU tiles and
+ * maps (a "tile" size, a "tilemap") are another loader's. */
+static void check_pictures(void) {
+    char dir[384];
+    snprintf(dir, sizeof dir, "%s/assets", G.game_dir);
+    DIR *d = opendir(dir);
+    for (struct dirent *e; d && (e = readdir(d));) {
+        const char *ext = strstr(e->d_name, ".meta.json");
+        if (!ext || ext[10]) continue;
+        char rel[300], why[96];
+        snprintf(rel, sizeof rel, "assets/%s", e->d_name);
+        snprintf(where, sizeof where, "%s", rel);
+        cJSON *meta = json_file(rel);
+        if (!meta) { err("not a JSON object%s", ""); continue; }
+        const cJSON *tile = jget(meta, "tile");
+        const char *type = jstr(meta, "type");
+        if ((tile && !cJSON_IsNull(tile)) || (type && !strcmp(type, "tilemap"))) { cJSON_Delete(meta); continue; }
+        int w = jint(meta, "w", 0), h = jint(meta, "h", 0), frames = jint(meta, "frames", 1);
+        cJSON_Delete(meta);
+        snprintf(why, sizeof why, "%dx%d, %d frame(s)", w, h, frames);
+        if (w <= 0 || h <= 0 || w > 1024 || h > 1024) err("%s: a picture is 1 to 1024 pixels a side", why);
+        if (frames <= 0 || frames > 64) err("%s: a picture holds 1 to 64 frames (split the sheet in two)", why);
+    }
+    if (d) closedir(d);
+}
+
 int content_validate(void) {
     errors = 0;
-    if (G.v2) { /* a Lua game: main.lua must start (compile, run, _init) */
+    if (G.v2) { /* a Lua game: main.lua must start (compile, run, _init), and its pictures must load */
         if (v2_error()) hal_log("validate: %s", v2_error()), errors++;
+        check_pictures();
         hal_log("validate: %d error(s)", errors);
         return errors;
     }

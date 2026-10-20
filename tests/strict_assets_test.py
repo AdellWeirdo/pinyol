@@ -50,6 +50,17 @@ with tempfile.TemporaryDirectory() as tmp:
     (assets / "BAD_MASK.mask").write_bytes(b"bad")
     check("function _init() end\nfunction _draw() img('BAD_MASK', 10, 10) end\n",
           ["--strict-assets", "--validate"], False, "BAD_MASK")
+    # a picture gfx.c refuses (65 frames: 64 at most) fails --validate even when nothing draws it yet, saying why;
+    # a PPU tilemap's meta, another loader's, is not read as a picture
+    (assets / "TOO_MANY.meta.json").write_text('{"w":2,"h":2,"frames":65,"format":"packed"}')
+    (game / "main.lua").write_text("function _init() end\nfunction _draw() end\n")
+    run = subprocess.run([str(headless), "--game", str(game), "--saves", str(Path(tmp) / "saves"), "--validate"],
+                         capture_output=True, text=True)
+    assert run.returncode != 0 and "TOO_MANY.meta.json: 2x2, 65 frame(s)" in run.stdout + run.stderr, run.stdout + run.stderr
+    (assets / "TOO_MANY.meta.json").unlink()
+    (assets / "MAP.meta.json").write_text('{"type":"tilemap","tiles":4,"map_w":30,"map_h":20,"palette":"WORLD"}')
+    check("function _init() end\nfunction _draw() end\n", ["--validate"], True)
+    (assets / "MAP.meta.json").unlink()
     script.write_text("tick 1\nexpect_ok\n")
     check("draws = 0\nfunction _init() end\nfunction _draw() draws = draws + 1; "
           "if draws > 1 then error('drawn twice') end end\n",

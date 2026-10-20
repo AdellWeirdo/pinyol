@@ -212,7 +212,10 @@ static bool load_asset(asset *a) {
     const char *format = jstr(meta, "format");
     bool packed = format && !strcmp(format, "packed");
     cJSON_Delete(meta);
-    if (a->w <= 0 || a->h <= 0 || a->frames <= 0 || a->w > 1024 || a->h > 1024 || a->frames > 64) return false;
+    if (a->w <= 0 || a->h <= 0 || a->frames <= 0 || a->w > 1024 || a->h > 1024 || a->frames > 64) {
+        hal_log("asset %s: %dx%d, %d frame(s): a picture is at most 1024x1024 and 64 frames", a->id, a->w, a->h, a->frames);
+        return false;
+    }
     if (packed) {
         if (load_packed(a)) return true;
         placeholder(a, a->w, a->h, a->frames);
