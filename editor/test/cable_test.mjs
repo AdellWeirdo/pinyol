@@ -63,7 +63,7 @@ const files = new Map([['game.json', new TextEncoder().encode('{"id":"prueba"}')
   const before = Math.floor(Date.now() / 1000);
   await send(files, 'prueba', () => {});
   assert.ok(fake.got.time && fake.got.time[0] >= before && fake.got.time[0] <= before + 5, 'the time, now');
-  assert.equal(fake.got.time[1], -new Date().getTimezoneOffset());
+  assert.equal(fake.got.time[1], 0 - new Date().getTimezoneOffset()); // (0 - x, not -x: at UTC -0 is not 0 to strictEqual)
   assert.equal(fake.got.ended, 'end');
 }
 {
