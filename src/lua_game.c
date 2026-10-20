@@ -1406,6 +1406,10 @@ bool v2_load(void) {
         fail("start", "no memory for Lua");
         return false;
     }
+    /* Generational: a game that makes tables every frame (a list of sprites to sort) leaves young garbage, cheap to collect at once;
+     * the incremental default let it pile up into cycles whose steps cost a whole scan on the console (examples/isla: 96 frames of
+     * 32 ms a minute, 58 fps; generational, 7 in 40 s, 59.8 fps, the same memory). Out of memory, Lua still collects in full first. */
+    lua_gc(Ls, LUA_GCGEN, 0, 0);
     lua_sethook(Ls, hook, LUA_MASKCOUNT, 1000);
     static const luaL_Reg libs[] = {{LUA_GNAME, luaopen_base}, {LUA_COLIBNAME, luaopen_coroutine},
                                     {LUA_TABLIBNAME, luaopen_table}, {LUA_STRLIBNAME, luaopen_string},

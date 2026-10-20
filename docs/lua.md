@@ -826,6 +826,8 @@ A game downloaded from the community cannot harm the console:
 
 - Lua 5.4 with 32-bit integers and floats on every platform (the same results everywhere).
 - 4 MB of memory for the script (`"lua_memory_kb"` in game.json, up to 6144); past it, "not enough memory".
+- The garbage collector runs in Lua's generational mode: tables made and dropped in the same frame (a list of sprites
+  to sort, a vector) are collected young and cheaply, not left to pile up into a pause that costs a frame.
 - A call (`_init`, `_update`, `_draw`) that runs 20 million VM instructions without returning is stopped: an
   endless loop becomes an error, not a frozen console.
 - No `io`, `os`, `debug` or `package`; `load` takes source text only, never bytecode; `require` only reads `.lua`
@@ -855,6 +857,9 @@ expect_led ff0000                # the LED is that colour (expect_led off: the c
 ```
 
 `#` after a space starts a comment in these scripts, so avoid Lua's `#` length operator there.
+
+The headless player runs `_draw` only for a `shot`: what a game works out while drawing (the sprites' order, say) is
+there to check after one, not after `tick`.
 
 Run it with `pinyol_headless --game DIR --fresh --script FILE --check-strips`, or name it `tests/<game>.script` next
 to `examples/<game>` and `ctest` runs it.

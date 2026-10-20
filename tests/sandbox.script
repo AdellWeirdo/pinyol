@@ -6,6 +6,7 @@ expect_lua ticks_seen >= 10
 expect_lua helper_value() == 42
 expect_lua io == nil and os == nil and debug == nil and package == nil
 expect_lua dofile == nil and loadfile == nil and string.dump == nil
+expect_lua collectgarbage("generational") == "generational"
 expect_lua load(string.char(27) .. "Lua") == nil
 expect_lua load("return 1 + 1")() == 2
 expect_lua_error require("../../etc/passwd")
