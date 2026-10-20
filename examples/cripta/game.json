@@ -1,0 +1,8 @@
+{
+  "id": "cripta",
+  "title": "Cripta",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "description": "Un castillo de ocho salas hechas en Tiled: las alas dan un segundo salto, la ráfaga rompe paredes y cada poder abre el camino al siguiente.",
+  "subtitle": "Metroidvania · salas de Tiled, mapa, guardado en estatuas"
+}

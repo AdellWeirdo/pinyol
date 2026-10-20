@@ -1,0 +1,8 @@
+{
+  "asset": "ROOM_PASILLO_SUELO",
+  "type": "tilemap",
+  "tiles": 7,
+  "map_w": 60,
+  "map_h": 20,
+  "palette": "WORLD"
+}

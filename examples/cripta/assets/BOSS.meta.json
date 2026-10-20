@@ -1,0 +1,13 @@
+{
+  "asset": "BOSS",
+  "type": "sprite",
+  "format": "idx8",
+  "w": 48,
+  "h": 48,
+  "frames": 2,
+  "frame_ms": [
+    0,
+    0
+  ],
+  "palette": "OBJ"
+}

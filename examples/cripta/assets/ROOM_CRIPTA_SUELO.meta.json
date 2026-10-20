@@ -1,0 +1,8 @@
+{
+  "asset": "ROOM_CRIPTA_SUELO",
+  "type": "tilemap",
+  "tiles": 5,
+  "map_w": 30,
+  "map_h": 20,
+  "palette": "WORLD"
+}

@@ -1,0 +1,8 @@
+{
+  "asset": "ROOM_MIRADOR_SUELO",
+  "type": "tilemap",
+  "tiles": 11,
+  "map_w": 60,
+  "map_h": 20,
+  "palette": "WORLD"
+}

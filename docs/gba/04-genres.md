@@ -191,7 +191,7 @@ examined.
 |---|---|---|---|---|
 | 1 | Mascot platformer | plataformas (GBA look), bolsillo, raton_de_biblioteca (Game Boy look), cinta, oxigeno (ZX look, single screen) | COVERED | plataformas is the GBA reference |
 | 2 | Speed platformer | veloz (16-bit), costa_relampago (Mega Drive look: ramps, loop, springs) | COVERED | |
-| 3 | Metroidvania | gotico (one hall + skull boss, 32-bit look) | PARTIAL | no room graph, map screen, or ability gating |
+| 3 | Metroidvania | cripta (eight rooms from Tiled, two abilities, map, statues, a boss); gotico (one hall + skull boss) | PARTIAL | eight rooms, not thirty: the picture cache and memory across many areas are not tried |
 | 4 | Run and gun | asalto | COVERED | Mega Man Zero-style dash/wall-cling/rank not shown |
 | 5 | Beat-em-up | calle, mazmorra | COVERED | |
 | 6 | Fighting | duelo, torneo | COVERED | |
@@ -398,4 +398,23 @@ The list expected `scene.go` hygiene, the full reset of the picture between game
 - **For script tests** a comparison of two shots has to be of the picture alone: the HUD's text ("per-line palette: yes/no") made "on differs from off" true whatever
   the engine did, and a mutant that never cleared the tables survived until the shots were taken with the HUD hidden and compared with a frame drawn before the
   function was ever used.
+
+## 11. What building the metroidvania showed (`examples/cripta`)
+
+- **The multi-room Tiled workflow works as it is**: each room is its own `.tmx` (a tile layer and an object layer), `tools/tiled2asset.py` imports each into
+  `assets/ROOM_<ID>_SUELO` and `room_<id>.lua`, and where a room is in the castle is two map properties (`mx`, `my`, in screens). Nothing in the tool or
+  the engine changed. A room changed in Tiled is checked by the same code the tests run (`checks.lua`).
+- **Changing rooms costs nothing on the console**: the hero walks the castle in castle pixels and the game only puts the next room's map on BG1
+  (`bg(1, {map = ...})`); walking through all eight rooms gave 57.6-58.8 fps and no slow tick at a room change. `rooms.lua` (a picture backdrop and a
+  curtain) is for adventures, not for this: a tile room needs none of it.
+- **A save stops the game for about four frames**: touching a statue writes 180 bytes to the card in 73 ms on the game's own thread (an 80 ms frame,
+  a 41 ms tick). A save in the background (written by the other core, or between frames in pieces) is the engine's gap here; not done.
+- **The design is proved, not only played**: `world.lua`'s solver (where a hero that climbs 3 tiles, or 5 with the wings, and dashes through cracked
+  walls can stand) checks the order (nothing gets the wings; the wings get the gust; both get the gargoyle and the heart), with a careful reach across
+  (3 tiles: what surely can be done) and a long one (7: what may be done), and that nothing reachable is a trap (one search forward, one back over the same
+  moves). The solver found two mistakes in the first plans: the heart and the gargoyle could be had without the gust, by jumping over cracked walls that
+  did not reach the ceiling. The physics is held to the solver's numbers by the test (one jump climbs 54 px, two 92: more than 3 and 5 tiles, less than 4
+  and 6); the first double jump climbed 99 px, six tiles, and was lowered.
+- **Not proved**: that the gargoyle can be beaten by hand with three hearts (the test beats it with hearts that do not run out), and the whole castle played
+  through with the buttons (the test moves the hero between the places it checks).
 

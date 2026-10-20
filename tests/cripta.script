@@ -1,0 +1,83 @@
+# cripta: the castle is finished in the order it was meant to be (world.lua's solver, with a careful reach for what surely can be done and a
+# long one for what may be), every opening of a room leads into another room's open tile, nothing reachable is a trap (the start is
+# reachable back from it), the hero's jumps climb what the solver assumes, and the game: walking into another room, falling into the
+# treasure room, the gust breaking the cracked wall, the statue saving, a death sending the hero back to it, the map, and the gargoyle.
+new
+tick 3
+lua W = require("world"); H = require("hero"); T = W.T; function cnt(t) local n = 0 for _ in pairs(t) do n = n + 1 end return n end
+lua function at(kind) local r, t = W.thing(kind); return W.world_tile(r, t.tx, t.ty) end; sx, sy = at("start")
+lua function gets(ab, kind, far) local s = W.reach(sx, sy, ab, far and 7 or 3); return W.can_reach(s, at(kind)) end
+expect_lua cnt(W.rooms) == 8 and W.rooms.pozo.h == 20 and W.rooms.mirador.w == 30 and W.rooms.pozo.mx == 3
+# the order: nothing gets the wings; the wings get the gust; both get the gargoyle and the heart. With the long reach, no more than that.
+expect_lua gets({}, "wings") and not gets({}, "gust", true) and not gets({}, "boss", true) and not gets({}, "heart", true)
+expect_lua gets({wings = true}, "gust") and not gets({wings = true}, "boss", true) and not gets({wings = true}, "heart", true)
+expect_lua not gets({gust = true}, "gust", true) and not gets({gust = true}, "boss", true)
+expect_lua gets({wings = true, gust = true}, "boss") and gets({wings = true, gust = true}, "heart") and gets({wings = true, gust = true}, "statue")
+# every open tile on a room's edge has an open tile of another room beyond it
+lua C = require("checks"); bad = C.bad_edges(); print("bad edges:", table.concat(bad, "; "))
+expect_lua cnt(bad) == 0
+# no trap: from everywhere the hero can get to at each stage, it can get back to the start (careful reach both ways)
+expect_lua C.traps(sx, sy, {}) == 0
+expect_lua C.traps(sx, sy, {wings = true}) == 0
+expect_lua C.traps(sx, sy, {wings = true, gust = true}) == 0
+# the hero's jumps: one climbs more than 3 tiles and less than 4; two more than 5 and less than 6 (what the solver takes as exact)
+lua function settle(h, ab) for i = 1, 60 do H.step(h, {}, ab) end end
+lua function apex(ab, second) local h = H.new(3 * T, 18 * T); settle(h, ab); local y0, top = h.y, h.y; for i = 1, 120 do H.step(h, {hold = true, jump = (i == 1) or (second and i == second)}, ab); top = math.min(top, h.y) end; return y0 - top end
+lua best2 = 0; for k = 2, 50 do best2 = math.max(best2, apex({wings = true}, k)) end
+expect_lua apex({}) > 3 * T and apex({}) < 4 * T and best2 > 5 * T and best2 < 6 * T
+expect_lua apex({}, 20) == apex({}) and apex({wings = true}) == apex({})
+# the game: a new one, and walking right out of the first room into the corridor
+expect_lua require("scene").top() == require("title")
+press A
+tick 40
+lua P = require("play"); held = {}; game.input = function() return {right = held.right, left = held.left, jump = held.jump, hold = held.hold, dash = held.dash, attack = held.attack} end
+expect_lua game.room == "entrada" and game.visited.entrada and not game.visited.pasillo
+lua held.right = true
+tick 160
+expect_lua game.room == "pasillo" and game.room_changes >= 1 and stored("save") ~= nil
+# into the hole in the corridor's floor: the treasure room below
+lua held.right = false; game.hero = H.new(21 * T + 2, 18 * T); game.hero.vx = 0
+tick 60
+expect_lua game.room == "tesoro" and game.visited.tesoro
+# the wings and the gust taken; the gust's dash breaks the mirador's cracked wall, and the way to the tower is open
+lua game.abilities = {wings = true, gust = true}; game.hero = H.new((4 * 15 + 24) * T, 8 * T); held.right = true
+tick 30
+expect_lua game.room == "mirador" and W.wcell(4 * 15 + 26, 8) == W.CRACKED
+lua held.dash = true
+tick 2
+lua held.dash = false
+tick 4
+expect_lua W.wcell(4 * 15 + 26, 8) == W.EMPTY and W.wcell(4 * 15 + 26, 5) == W.EMPTY and W.wcell(4 * 15 + 26, 4) == W.WALL
+expect_lua P.room().id == "mirador" and mget(1, 26 * 2, 8 * 2) == 0 and mget(1, 26 * 2 + 1, 5 * 2 + 1) == 0 and mget(1, 26 * 2, 4 * 2) ~= 0
+tick 36
+tick 120
+expect_lua game.room == "torre"
+# the statue of the mirador saves (the broken wall too) and a death sends the hero back to it
+lua held.right = false; game.hero = H.new((4 * 15 + 5) * T, 8 * T)
+tick 20
+expect_lua game.statue[1] == (4 * 15 + 5) * T and stored("save").broken.mirador ~= nil
+lua game.hearts = 1; game.hurt = 0; game.hero = H.new((6 * 15 + 3) * T, 12 * T)
+tick 1
+expect_lua game.room == "torre" and P.enemies()[1] ~= nil
+lua for _, e in ipairs(P.enemies()) do e.x, e.y, e.home_y, e.t = game.hero.x, game.hero.y, game.hero.y, 0 end
+tick 3
+expect_lua game.deaths == 1 and game.hearts == game.max_hearts and game.room == "mirador"
+# the map opens over the game and closes
+press START
+tick 2
+lua game.input = nil
+press START
+tick 3
+expect_lua require("scene").top() == require("map") and require("scene").depth() == 2
+press START
+tick 3
+expect_lua require("scene").top() == P
+# the gargoyle: the hero in its room, the sword swinging, a heart that never ends; it falls, and the ending comes
+lua game.input = function(t) return {attack = t % 16 == 0, left = false, right = false} end; game.hero = H.new((7 * 15 + 3) * T, 18 * T)
+tick 10
+expect_lua game.room == "jefe" and P.enemies()[1] and P.enemies()[1].kind == "boss"
+lua boss = P.enemies()[1]; local u = _update; function _update() u(); if game.hearts < 2 then game.hearts = game.max_hearts end; local b = P.enemies()[1]; if b and b.kind == "boss" then game.hero.x, game.hero.y = b.x + 30, b.y + 24; game.hero.vy, game.hero.face = 0, -1 end end
+tick 900
+expect_lua game.boss_dead and require("scene").top() == require("ending")
+expect_lua stored("save") == nil and stored("cleared") == 1
+expect_ok
