@@ -442,7 +442,7 @@ The list expected `scene.go` hygiene, the full reset of the picture between game
   tables made each frame for the sort, left to Lua's incremental collector, grew into cycles whose steps took a scan. Switched to Lua's generational
   mode (`collectgarbage("generational")` sent to the running game), the same play gave 7 slow frames in 40 s and 59.2-59.8 fps with the same
   memory (80-160 KB). The engine now starts every game in generational mode (`src/lua_game.c`, `v2_load`; `tests/sandbox.script` checks it), so
-  every game that makes tables in its frame gets it.
+  every game that makes tables in its frame gets it. Flashed and played again for a minute: 59.4-59.6 fps, 17 frames over 20 ms (111 before).
 - **A shadow under a GBA sprite cannot be blended with another sprite under it** (the object layer holds only the top sprite's pixel; a blended one
   mixes with the backgrounds), so the hero's shadow is a checker of a dark colour, the old dither, which reads over a column top as over the grass.
 - **The design is proved, not only played**: `iso.reach` (where the hero can get without pushing a crate) shows that only the first two gems can be had
