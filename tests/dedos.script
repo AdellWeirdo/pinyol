@@ -1,0 +1,11 @@
+# examples/dedos: one finger held still shakes 0, two make a pinch, the count of fingers is kept
+new
+tick 2
+touch 200 160 70
+tick 2
+expect_lua shake == 0 and most == 1
+pinch 240 160 100 200 20
+tick 2
+expect_lua most == 2 and math.abs(pinch_seen.scale - 2) < 0.05
+shot dedos
+expect_ok

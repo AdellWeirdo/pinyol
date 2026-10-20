@@ -125,6 +125,9 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [naves](examples/naves) | a shoot-'em-up: a star field with a speed per line, a turning planet, blended explosions, a flash |
 | [carreras](examples/carreras) | a kart race in Mode 7: a perspective floor, rivals as scaled sprites, laps and positions |
 | [puzle](examples/puzle) | a sliding puzzle for the touch screen: a ghost hint by blending, a mosaic reveal, music made of notes |
+| [stylus](examples/stylus) | the touch screen as the DS used it (`lib/pointer.lua`): shapes drawn and recognised, a box dragged, a flick's direction |
+| [dedos](examples/dedos) | every finger on the screen, the pinch two make, how much a finger held still shakes: to try a touch panel |
+| [dos_pantallas](examples/dos_pantallas) | two screens in the simulator (`"screens": 2`): a close view above, a touch map below; a tap picks, a flick sends |
 | [aldea](examples/aldea) | a top-down adventure: a village drawn in Tiled, people with typed-out dialogue, tree tops you walk behind |
 | [estilos](examples/estilos) | a game's own look: fonts from the library, outlined and wavy text, frames cut from a picture, turned pictures |
 | [inventos](examples/inventos) | toys of no genre, from code alone: painting, land that breaks, generative trails, 3D triangles, a split screen |

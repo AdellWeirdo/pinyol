@@ -1,0 +1,8 @@
+{
+  "id": "dedos",
+  "title": "Dedos",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "",
+  "description": "Cada dedo sobre la pantalla, con su número y dónde está; con dos, el pellizco y el giro; un dedo quieto dice cuánto tiembla. Para probar el táctil de la consola."
+}
