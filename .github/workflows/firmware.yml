@@ -1,0 +1,42 @@
+# The console's firmware, built with ESP-IDF 5.4.2, and its internal RAM checked: what the statics leave of the
+# ESP32-S3's 512 KB must not shrink unnoticed, because the radio (link), the strips' DMA and every task's stack live in
+# what is left (on 2026-10-20 the PPU had grown until the radio could not start). If this fails, either move something
+# out of internal RAM (firmware/components/pinyol_core/linker.lf says what stays inside and why) or, knowing what it
+# costs on the board, lower MIN_REMAIN here and say why in the commit.
+name: firmware
+on:
+  push:
+    branches: [main]
+    paths: ["src/**", "lib/**", "third_party/**", "firmware/**", ".github/workflows/firmware.yml"]
+  pull_request:
+    paths: ["src/**", "lib/**", "third_party/**", "firmware/**", ".github/workflows/firmware.yml"]
+  workflow_dispatch:
+permissions: {}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    container: espressif/idf:v5.4.2
+    env:
+      MIN_REMAIN: "70000" # bytes of D/IRAM the statics leave (73466 at 0f2a85c)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build
+        shell: bash
+        working-directory: firmware
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          . "$IDF_PATH/export.sh"
+          idf.py -DBP_BENCH=OFF build
+      - name: Internal RAM left by the statics
+        shell: bash
+        working-directory: firmware
+        run: |
+          . "$IDF_PATH/export.sh" >/dev/null
+          python -m esp_idf_size build/pinyol_console.map | tee size.txt
+          remain=$(sed -nE 's/^Used stat D\/IRAM:.*\( *([0-9]+) remain.*/\1/p' size.txt)
+          echo "internal RAM left by the statics: ${remain} bytes (at least ${MIN_REMAIN})"
+          test -n "$remain" && test "$remain" -ge "$MIN_REMAIN"
