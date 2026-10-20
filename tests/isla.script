@@ -1,0 +1,77 @@
+# isla: the island's order (without a crate pushed, only the first two gems can be got to), the rules of a push (from the crate's foot,
+# into what is no higher, never onto a gem or a palm; into the water it fills it), a fall into the sea leaves the hero where it was, C puts
+# the crates back and keeps the gems; the depth order: behind the four-block tower the hero is not seen (the frame is the one without it:
+# the CMake test compares the shots), in front of it it is drawn over it; and the whole island played with the keys, in 34 steps.
+new
+tick 3
+lua I = require("iso"); L = require("level"); K = I.key; function cnt(t) local n = 0 for _ in pairs(t) do n = n + 1 end return n end
+lua S = I.new(L); R = I.reach(S)
+expect_lua R[K(6, 1)] and R[K(4, 2)] and not R[K(3, 7)] and not R[K(5, 7)] and not R[K(10, 5)]
+expect_lua S.gems_left == 5 and I.surface(S, 3, 5) == 1 and I.ground(S, 8, 5) == I.WATER and I.ground(S, 7, 9) == I.PALM
+# a push: from the same level, into what is no higher; the hero takes the crate's place
+lua S.hx, S.hy = 3, 4; m = I.try(S, "down", false)
+expect_lua m.kind == "push" and m.cx == 3 and m.cy == 6 and not m.sinks
+lua I.apply(S, m)
+expect_lua S.hx == 3 and S.hy == 5 and S.crates[K(3, 6)] and not S.crates[K(3, 5)]
+# not against the pillar behind it; jumped onto from its foot, and from it onto the pillar and its gem
+expect_lua I.try(S, "down", false) == nil
+lua m = I.try(S, "down", true)
+expect_lua m.kind == "jump" and m.z1 == 1
+lua I.apply(S, m); m = I.try(S, "down", true)
+expect_lua m.kind == "jump" and m.z1 == 2 and I.apply(S, m) == true and S.gems_left == 4
+# a walk into the sea is a fall into it, and the hero stays where it was
+lua S.hx, S.hy = 2, 9; m = I.try(S, "left", false)
+expect_lua m.kind == "splash" and I.apply(S, m) == false and S.hx == 2 and S.hy == 9
+# into the channel: the crate sinks and fills it, and then it is ground to walk on
+lua S.hx, S.hy = 5, 5; I.apply(S, I.try(S, "right", false)); m = I.try(S, "right", false)
+expect_lua m.kind == "push" and m.sinks and m.cz1 == -1
+lua I.apply(S, m)
+expect_lua S.filled[K(8, 5)] and I.ground(S, 8, 5) == 0 and cnt(S.crates) == 1 and I.try(S, "right", false).kind == "walk"
+# never onto a gem, a palm or a higher cell; from above, a crate is stepped down onto
+lua S2 = I.new(L); S2.crates = {[K(6, 2)] = true}; S2.hx, S2.hy = 6, 3
+expect_lua I.try(S2, "up", false) == nil
+lua S2.crates = {[K(6, 9)] = true}; S2.hx, S2.hy = 5, 9
+expect_lua I.try(S2, "right", false) == nil
+lua S2.crates = {[K(2, 3)] = true}; S2.hx, S2.hy = 2, 4
+expect_lua I.try(S2, "up", false) == nil
+lua S2.crates = {[K(4, 3)] = true}; S2.hx, S2.hy = 4, 2
+expect_lua I.try(S2, "down", false).kind == "walk" and I.try(S2, "down", false).z1 == 1
+# C: the crates back, the gems kept
+lua I.reset(S)
+expect_lua cnt(S.crates) == 2 and cnt(S.filled) == 0 and S.gems_left == 4 and S.hx == 4 and S.hy == 9
+# the game: the title, then the island
+expect_lua require("scene").top() == require("title")
+press A
+tick 30
+lua P = require("play"); V = require("view"); function slot(name) for i, it in ipairs(V.order) do if it.name == name then return i end end end
+expect_lua require("scene").top() == P and game.s.gems_left == 5
+# behind the tower (5, 7) the hero and its shadow get the higher numbers, and the picture is the one without them (the frames are
+# drawn for the shots: the order is read after one)
+lua game.s.hx, game.s.hy = 4, 6
+tick 90
+lua game.paused = true
+tick 1
+shot isla_behind
+expect_lua slot("hero") > slot("col 5,7") and slot("shadow") > slot("col 5,7")
+lua game.hidden = true
+tick 1
+shot isla_behind_none
+# in front of it, drawn over it
+lua game.hidden = false; game.paused = false; game.s.hx, game.s.hy = 6, 8
+tick 90
+lua game.paused = true
+tick 1
+shot isla_front
+expect_lua slot("hero") < slot("col 5,7")
+lua game.hidden = true
+tick 1
+shot isla_front_none
+# the whole island with the keys: the five gems in 34 moves (three of them jumps up, two of them crates pushed), and the best kept
+lua game.hidden = false; game.paused = false; P.enter(); DIR = {U = "up", R = "right", D = "down", L = "left"}; step = 0
+lua plan = {"R","R","U","R","U","U","U","U","U","U","L","U", "L","L","L","L","jD","jR","jR", "D","L","D","D","jD","jD","jR","jR", "U","U","R","R","R","R","R"}
+lua game.input = function() if P.busy() then return {} end step = step + 1 local m = plan[step] if not m then return {} end return {dir = DIR[m:sub(-1)], jump = m:sub(1, 1) == "j"} end
+tick 900
+expect_lua game.s.gems_left == 0 and game.steps == 34 and stored("best") == 34 and game.s.filled[K(8, 5)]
+press A
+tick 30
+expect_lua require("scene").top() == require("title")

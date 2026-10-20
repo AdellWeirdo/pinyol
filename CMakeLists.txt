@@ -347,6 +347,10 @@ add_test(NAME tablero COMMAND $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURR
 add_test(NAME microjuegos COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_microjuegos_x && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/microjuegos \
   --saves ${CMAKE_BINARY_DIR}/saves_microjuegos_x --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/microjuegos.script >/dev/null && \
   for i in 1 2 3 4 5 6 7 8; do cmp ${CMAKE_BINARY_DIR}/saves_microjuegos_x/leak_0.ppm ${CMAKE_BINARY_DIR}/saves_microjuegos_x/leak_$i.ppm || exit 1; done")
+add_test(NAME isla_depth COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_isla_x && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/isla \
+  --saves ${CMAKE_BINARY_DIR}/saves_isla_x --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/isla.script >/dev/null && \
+  cmp ${CMAKE_BINARY_DIR}/saves_isla_x/isla_behind.ppm ${CMAKE_BINARY_DIR}/saves_isla_x/isla_behind_none.ppm && \
+  ! cmp -s ${CMAKE_BINARY_DIR}/saves_isla_x/isla_front.ppm ${CMAKE_BINARY_DIR}/saves_isla_x/isla_front_none.ppm")
 add_test(NAME horizonte_linepal COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_horizonte_x && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/horizonte \
   --saves ${CMAKE_BINARY_DIR}/saves_horizonte_x --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/horizonte.script >/dev/null && \
   cmp ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_on.ppm ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_on2.ppm && \

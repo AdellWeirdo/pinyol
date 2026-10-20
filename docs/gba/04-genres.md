@@ -213,7 +213,7 @@ examined.
 | 22 | Sports | futbol (5-a-side), paletes (pong) | PARTIAL | golf, tennis, skate missing |
 | 23 | Arcade classics | rocas, ladrillos, paletes, huevos (LCD) | COVERED | maze-chase (Pac-Man) missing |
 | 24 | Sensor / peripheral | control (mic, battery, LED, video) | PARTIAL | no IMU/tilt, light sensor or RTC to build on |
-| 25 | Isometric / 2.5D | none | MISSING | |
+| 25 | Isometric / 2.5D | isla (a grid island: heights, crates, depth-sorted sprites) | PARTIAL | no isometric tactics or skate, no map with more standing things than 128 sprites |
 | 26 | Link multiplayer | juntos (whiteboard, ball passed between screens) | PARTIAL | no competitive/co-op game |
 
 Engine surface that **no example exercises** (grep of `examples/*/main.lua` and sibling `.lua`): `window`,
@@ -428,4 +428,28 @@ The list expected `scene.go` hygiene, the full reset of the picture between game
   and 6); the first double jump climbed 99 px, six tiles, and was lowered.
 - **Not proved**: that the gargoyle can be beaten by hand with three hearts (the test beats it with hearts that do not run out), and the whole castle played
   through with the buttons (the test moves the hero between the places it checks).
+
+## 12. What building the isometric island showed (`examples/isla`)
+
+- **Depth order is a sort of the sprite numbers, and the engine needs nothing more**: the ground is one tiled background (61 different tiles for a
+  400 x 240 picture of a 12 x 12 island: the 2:1 diamonds repeat), and every column, crate, palm, gem, the hero and its shadow are sprites. Each frame
+  `view.lua` sorts them by the depth of their cell (`x + y`, then a layer: a sunk crate, a block, a shadow, what stands on top) and gives the nearest
+  sprite 0, as a GBA game re-sorting OAM had to. A thing between two cells counts as the one it is mostly in; with that, a hero walking past a tower
+  is never drawn over the column in front of it. `tests/isla.script` and the `isla_depth` CMake test prove it with pictures: behind the four-block
+  tower the frame is the same as the one without the hero; in front of it, it is not. A sort turned the wrong way fails both.
+- **The cost on the console is small, and what it found was the garbage collector's**: playing the island on the board, `_update` 0.6 ms, `_draw`
+  2.5 ms (the sort and the `spr` calls for about 20 things), the picture 3.3. Yet the play ran at 58 fps with 96 frames of 32 ms a minute: the
+  tables made each frame for the sort, left to Lua's incremental collector, grew into cycles whose steps took a scan. Switched to Lua's generational
+  mode (`collectgarbage("generational")` sent to the running game), the same play gave 7 slow frames in 40 s and 59.2-59.8 fps with the same
+  memory (80-160 KB). The engine now starts every game in generational mode (`src/lua_game.c`, `v2_load`; `tests/sandbox.script` checks it), so
+  every game that makes tables in its frame gets it.
+- **A shadow under a GBA sprite cannot be blended with another sprite under it** (the object layer holds only the top sprite's pixel; a blended one
+  mixes with the backgrounds), so the hero's shadow is a checker of a dark colour, the old dither, which reads over a column top as over the grass.
+- **The design is proved, not only played**: `iso.reach` (where the hero can get without pushing a crate) shows that only the first two gems can be had
+  that way, and the test plays the whole island with the keys in 34 moves, both crates pushed (one against the low pillar, one into the channel).
+- **For tests**: the headless player runs `_draw` only for a `shot`, so what a game works out while drawing (here the sprites' order) is read after
+  one (`docs/lua.md`, Testing). The first version of the test read it after `tick` and found an empty list.
+- **Not tried**: a map with more standing things than the 128 sprites (a bigger island would need culling by the camera, which `view.lua` does, and
+  columns merged into the ground picture where nothing can pass behind them), and the occluding parts of the ground on a second background layer, the
+  other way GBA isometric games split a scene.
 

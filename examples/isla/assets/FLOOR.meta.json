@@ -1,0 +1,8 @@
+{
+  "asset": "FLOOR",
+  "type": "tilemap",
+  "tiles": 61,
+  "map_w": 50,
+  "map_h": 30,
+  "palette": "WORLD"
+}

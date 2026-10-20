@@ -1,0 +1,8 @@
+{
+  "id": "isla",
+  "title": "Isla",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "description": "Una isla isométrica: cinco gemas sobre columnas, dos cajas que empujar contra un pilar o al agua, y el héroe que pasa por detrás de las torres.",
+  "subtitle": "Isométrico · sprites ordenados por profundidad cada frame"
+}
