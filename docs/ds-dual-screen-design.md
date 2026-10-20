@@ -1,4 +1,4 @@
-# Two screens: a design (step 1 built: layout C in the simulator)
+# Two screens: a design (step 1 built: layout C in the simulator; the Cirera has one screen, so the rest is dropped)
 
 Phase 2 of the DS touch work ([ds-touch-research.md](ds-touch-research.md)). Step 1 of "Order of work" is built (see below); the rest is not. It is written from a read of `src/ppu.h`, `src/ppu.c`, `src/game.c`, `src/lua_game.c` and `docs/hardware.md`; what was not read is under "To check before building".
 
@@ -16,6 +16,8 @@ local x, y, down, tapped, released = pen()   -- always the bottom screen's own p
 ```
 
 `screen(n)` picks which screen the PPU calls (`bg`, `spr`, `scroll`, `pal`, `line_*`...) and the drawing calls (`text`, `rect`, `line`...) act on. `SCREEN_W` and `SCREEN_H` are those of one screen. `touch()` and `pen()` are the bottom screen's.
+
+> **Decision (2026-10-20):** the Cirera has one touch screen. Two screens stay an opt-in of the simulator and the web player (`"screens": 2`), for games that want to be made DS-style; layouts A and B, the panel's strips and the firmware (steps 2 and 5 below) are not going to be built. Touch games for the console use `pen()` and `lib/pointer.lua` on its one screen.
 
 ## The size of a screen, and the panel
 
