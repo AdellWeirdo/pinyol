@@ -1,5 +1,5 @@
 /* pinyol_sim: desktop simulator. Same core, same game folder as the console's microSD.
- *   pinyol_sim [--game DIR] [--saves DIR] [--scale N] [--mute] [--script FILE]
+ *   pinyol_sim [--game DIR] [--saves DIR] [--scale N] [--mute] [--script FILE] [--no-splash]   (without the careta)
  *   pinyol_sim --console GAMES --menu firmware/cirera    the console: Cirera's menu, the game chosen, the menu again
  * Keys: arrows/WASD move, Enter/E/Z = A, Esc/Backspace/X = B, Tab/C = C, I = MENU (bag), J = notebook, P = START.
  * Mouse = touch. A gamepad: d-pad or stick, A, B, X or Y = C, START, BACK/SELECT = MENU. F11 or Alt+Enter: full
@@ -282,6 +282,7 @@ static void hot_reload(void) { /* twice a second: a file saved since the last lo
     if (!reload_req) return;
     reload_req = false;
     game_shutdown();
+    game_cfg.no_splash = true; /* the careta was seen when it opened: a saved file goes straight back to the game */
     if (game_init(&game_cfg)) hal_log("reloaded %s", game_cfg.game_dir);
     else hal_log("reload: %s is incomplete (fix it and save again)", game_cfg.game_dir);
 }
@@ -442,7 +443,7 @@ static void console_frame(void) { /* a frame of the console, and a game's .zip d
  * that game until it ends or MENU is held 2 s, then the menu again. */
 static int run_console(const char *menu_dir) {
     for (;;) {
-        bp_config menu = {menu_dir, NULL};
+        bp_config menu = {menu_dir, NULL, true}; /* the menu builds pinyol's logo itself */
         launch_id[0] = 0, relist = false;
         if (!game_init(&menu)) {
             fprintf(stderr, "menu incomplete: %s\n", menu_dir);
@@ -454,7 +455,7 @@ static int run_console(const char *menu_dir) {
         if (!launch_id[0]) continue; /* it ended without choosing (a game was installed): again */
         char dir[1100];
         snprintf(dir, sizeof dir, "%s/%s", games_root, launch_id);
-        bp_config game = {dir, NULL};
+        bp_config game = {dir, NULL, false};
         switch_req = false;
         if (!game_init(&game)) hal_log("%s: incomplete, back to the menu", launch_id);
         else
@@ -466,7 +467,7 @@ static int run_console(const char *menu_dir) {
 #endif
 
 int main(int argc, char **argv) {
-    bp_config cfg = {DEFAULT_GAME, NULL};
+    bp_config cfg = {DEFAULT_GAME, NULL, false};
     const char *script = NULL;
     bool mute = false, given = false; /* given: a game named (--game), played as it is */
 #ifndef __EMSCRIPTEN__
@@ -484,11 +485,13 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--scale") && i + 1 < argc) scale = atoi(argv[++i]) > 0 ? atoi(argv[i]) : 2;
         else if (!strcmp(argv[i], "--script") && i + 1 < argc) script = argv[++i];
         else if (!strcmp(argv[i], "--mute")) mute = true;
+        else if (!strcmp(argv[i], "--no-splash")) cfg.no_splash = true; /* making the game: straight to it */
 #ifndef __EMSCRIPTEN__
         else if (!strcmp(argv[i], "--console") && i + 1 < argc) snprintf(games_root, sizeof games_root, "%s", argv[++i]), console_mode = true;
         else if (!strcmp(argv[i], "--menu") && i + 1 < argc) menu = argv[++i];
 #endif
     }
+    if (script) cfg.no_splash = true; /* a script counts its ticks from _init */
 #ifndef __EMSCRIPTEN__
     if (given) app = false;
 #else

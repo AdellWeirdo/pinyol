@@ -1,0 +1,8 @@
+{
+  "id": "careta",
+  "title": "Careta",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un juego con su propia careta (splash.lua): sus colores y su música, y encima el sello POWERED BY PINYOL que pone el motor."
+}

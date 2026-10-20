@@ -85,6 +85,7 @@ bool game_init(const bp_config *cfg) {
     G.autosave_enabled = true;
     music_reset();
     layers_reset(L_TITLE);
+    if (!cfg->no_splash) splash_start(); /* POWERED BY PINYOL first (splash.c): _init runs after it */
     if (G.v2) v2_load(); /* a script error shows on screen (and fails --validate); the folder still opens */
     if (!ok) hal_log("game folder %s is incomplete", G.game_dir);
     return ok && G.font.bits && G.font_l.bits && G.bold.bits && G.bold_l.bits;
@@ -197,6 +198,10 @@ void game_tick(const hal_input *in) {
     G.in.px = in->px;
     G.in.py = in->py;
     if (in->held & ACT_QUIT) G.quit = true;
+    if (splash_on()) { /* the careta's ticks: the game's begin after it (it cannot be skipped: no button reaches it) */
+        splash_tick();
+        return;
+    }
     G.ticks++;
     if (G.v2) {
         v2_tick();
@@ -251,6 +256,7 @@ void game_render(uint16_t *native) {
 /* The zone (or the fight) into G.world, once a frame, before its windows are drawn. */
 void game_draw_world(void) {
     G.draws++;
+    if (splash_on() && !splash_own()) return; /* the engine's careta draws no world */
     if (G.v2) {
         v2_draw_world();
         return;
@@ -388,6 +394,10 @@ static void draw_stack(surface *s, surface *world) {
  * zone into G.world first (game_draw_world); once a frame is enough, the windows after the first reuse it. */
 void game_draw(surface *s, bool world_pass) {
     if (world_pass) game_draw_world();
+    if (splash_on()) {
+        splash_draw(s);
+        return;
+    }
     if (G.v2) {
         v2_draw(s);
         return;

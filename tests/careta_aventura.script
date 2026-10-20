@@ -1,0 +1,7 @@
+# The engine's careta on an adventure (examples/hola, run with --splash): then its title, as without it.
+tick 120
+shot careta_aventura
+tick 60
+new
+expect_layer PLAY
+expect_zone Z01

@@ -41,7 +41,9 @@ target_compile_options(lua PRIVATE ${SAN})
 file(GLOB CORE_SRC CONFIGURE_DEPENDS src/*.c)
 include(cmake/embed_lib.cmake)
 pinyol_embed_lib(${CMAKE_BINARY_DIR}/pinyol_lib.c ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-add_library(pinyol_core STATIC ${CORE_SRC} ${CMAKE_BINARY_DIR}/pinyol_lib.c)
+pinyol_splash_pics(SPLASH_PICS ${CMAKE_CURRENT_SOURCE_DIR})
+pinyol_embed_pics(${CMAKE_BINARY_DIR}/pinyol_splash.c ${SPLASH_PICS})
+add_library(pinyol_core STATIC ${CORE_SRC} ${CMAKE_BINARY_DIR}/pinyol_lib.c ${CMAKE_BINARY_DIR}/pinyol_splash.c)
 # physics as the Lua code did it, operation for operation: no fused multiply-adds, the same on every platform
 set_source_files_properties(src/lua_physics.c PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 target_include_directories(pinyol_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -302,11 +304,17 @@ foreach(s ${SCRIPTS})
     set(game ${CMAKE_BINARY_DIR}/editor/${CMAKE_MATCH_1}) # a template of the editor, built by make_editor_game
   elseif(n STREQUAL "cirera")
     set(game ${CMAKE_CURRENT_SOURCE_DIR}/firmware/cirera) # the console's menu
+  elseif(n STREQUAL "careta_aventura")
+    set(game ${CMAKE_CURRENT_SOURCE_DIR}/examples/hola) # the engine's careta before an adventure's title
   elseif(NOT IS_DIRECTORY ${game})
     set(game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/${n}) # games that only exist to be tested
   endif()
+  set(splash "")
+  if(n MATCHES "^careta") # the careta plays first (the others start at _init, their ticks counted from there)
+    set(splash --splash)
+  endif()
   add_test(NAME script_${n} COMMAND pinyol_headless --game ${game}
-           --saves ${CMAKE_BINARY_DIR}/saves_${n} --fresh --script ${s} --check-strips)
+           --saves ${CMAKE_BINARY_DIR}/saves_${n} --fresh --script ${s} --check-strips ${splash})
 endforeach()
 if(Python3_FOUND)
   add_test(NAME quad_mesh_screen COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/quad_mesh_screen.py

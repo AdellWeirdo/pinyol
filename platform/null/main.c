@@ -3,7 +3,9 @@
  *               [--audio FILE.pcm] [--video FILE.mp4]   (tools/record.sh joins the two)
  *               [--crc FILE]   a CRC-32 of every other frame, to check that a change draws the same pixels
  *               [--check-strips]   every frame also drawn as the console's panel strips, which must match
- *               [--pictures KB]   the pictures' memory budget (PIC_BUDGET): small, they are let go and come back */
+ *               [--pictures KB]   the pictures' memory budget (PIC_BUDGET): small, they are let go and come back
+ *               [--splash]   the careta first, as a player sees it (without, the game starts at once: scripts count
+ *                            its ticks from _init) */
 #include <dirent.h>
 #include <signal.h>
 #include <stdio.h>
@@ -119,7 +121,7 @@ static FILE *open_video(const char *path) {
 }
 
 int main(int argc, char **argv) {
-    bp_config cfg = {PINYOL_GAME, NULL};
+    bp_config cfg = {PINYOL_GAME, NULL, true};
     const char *script = NULL;
     bool validate = false, fresh = false;
     for (int i = 1; i < argc; i++) {
@@ -127,6 +129,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--saves") && i + 1 < argc) cfg.save_dir = argv[++i];
         else if (!strcmp(argv[i], "--script") && i + 1 < argc) script = argv[++i];
         else if (!strcmp(argv[i], "--validate")) validate = true;
+        else if (!strcmp(argv[i], "--splash")) cfg.no_splash = false; /* the careta too (scripts count ticks without it) */
         else if (!strcmp(argv[i], "--strict-assets")) strict_assets = true;
         else if (!strcmp(argv[i], "--fresh")) fresh = true;
         else if (!strcmp(argv[i], "--audio") && i + 1 < argc) dump = fopen(argv[++i], "wb");
@@ -138,7 +141,7 @@ int main(int argc, char **argv) {
         }
         else {
             fprintf(stderr, "usage: %s --game DIR [--saves DIR] [--fresh] (--validate | --script FILE) "
-                            "[--strict-assets] [--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--pictures KB]\n", argv[0]);
+                            "[--strict-assets] [--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--pictures KB] [--splash]\n", argv[0]);
             return 2;
         }
     }

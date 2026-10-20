@@ -581,7 +581,7 @@ static void do_frame(void *a) { (void)a; game_render(v1_scr.px); }
 
 static void profile_game(const char *dir) {
     mkdir(V1_SAVES, 0755);
-    bp_config cfg = {dir, V1_SAVES};
+    bp_config cfg = {dir, V1_SAVES, true};
     if (!game_init(&cfg)) {
         LOG("%s: game_init failed", dir);
         game_shutdown();
@@ -634,7 +634,7 @@ static void do_frame_strips(void *a) { /* a whole frame as the console draws it:
 static void profile_screens(const char *dir, const char *zone, const char *const *modes, int nmodes) {
     for (int i = 0; i < nmodes; i++) {
         mkdir(V1_SAVES, 0755);
-        bp_config cfg = {dir, V1_SAVES};
+        bp_config cfg = {dir, V1_SAVES, true};
         if (!game_init(&cfg)) { game_shutdown(); return; }
         uint16_t *frame = heap_caps_malloc(SCREEN_W * SCREEN_H * 2, MALLOC_CAP_SPIRAM);
         v1_strip = heap_caps_malloc(32 * SCREEN_H * 2, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);

@@ -181,6 +181,7 @@ uv run tools/new_game.py games/mygame --title "My Game"
 - **Sound**: WAV, PCM 16-bit mono at 22,050 Hz.
 - **Fonts**: `tools/font2fnt.py` turns a TTF, OTF, BDF or PNG sheet into the engine's FNT format; twelve free pixel
   fonts come with it (`third_party/fonts`), so each game can have its own letters.
+- **The careta**: every game opens with POWERED BY PINYOL. A Lua game can have its own, in its own style, with the seal on it ([docs/lua.md](docs/lua.md#the-careta-powered-by-pinyol), `examples/careta`); `pinyol_sim --no-splash` skips it while you make the game.
 - **Tests**: a script plays the game with real input and checks flags, zones and screens. See [tests/hola.script](tests/hola.script); run it with `./build/pinyol_headless --game DIR --fresh --script FILE`, and `tools/record.sh DIR FILE out.mp4` records the run as a video.
 
 ## A game in its own repo

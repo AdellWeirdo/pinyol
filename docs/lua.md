@@ -25,7 +25,7 @@ no genre, drawn with nothing but code: painting, land that breaks, generative tr
 ## The loop
 
 ```lua
-function _init() end      -- once, when the game starts (and again on "new game" in tests)
+function _init() end      -- once, when the game starts, after its careta (and again on "new game" in tests)
 function _update() end    -- 60 times a second: input, movement, rules
 function _draw() end      -- before each frame: scroll, sprites, text
 ```
@@ -34,6 +34,40 @@ The picture processor keeps its state between frames: a sprite stays where you p
 it. Text and shapes (the overlay) are drawn again every frame: call them in `_draw()`.
 
 A Lua error stops the game and shows the message on screen; `pinyol_headless --validate` reports it too.
+
+## The careta (POWERED BY PINYOL)
+
+Every game made with pinyol opens with a careta that says **POWERED BY PINYOL**, the way a film opens with its
+studio's logo. `_init` runs after it. The engine has its own: pinyol's logo builds itself on the night sky (3 s). A game
+can have its own instead, in its own style, with its pictures, its music and anything else the API draws or plays:
+`splash.lua` in the game folder (or another file, named by game.json `"splash"`). It returns a table:
+
+```lua
+-- splash.lua
+local careta = {}
+function careta.update(t)         -- t: ticks since the careta began (1, 2, 3...)
+  if t == 20 then tone(0, "G4") end
+  return t >= 150                 -- true: it is over
+end
+function careta.draw(t)
+  rect(0, 0, 480, 320, 0x1A0F2E)
+  text("MY GAME", 240, 100, {font = "bold", scale = 3, align = "center"})
+  local w, h = powered_by()       -- the seal's size
+  powered_by((480 - w) // 2, 200) -- where it goes this frame (its top-left corner)
+end
+return careta
+```
+
+Whatever a careta draws, **the engine draws the seal "POWERED BY PINYOL" over it**, on every frame: where
+`powered_by(x, y)` put it that frame (kept whole on the screen), or centred near the bottom. The careta cannot be
+skipped (no button reaches it) and lasts 2 to 6 seconds: earlier than 2 s, its last frame stays; at 6 s it ends. It
+runs after `main.lua` (so it can use the game's modules and pictures), and when it is over the picture processor
+starts again as new for `_init`. A mistake in `splash.lua` fails `--validate`; an error while it plays shows the
+engine's careta instead. See `examples/careta`.
+
+The careta plays on the console, the desktop, the web player and in RetroArch. To make a game without seeing it every
+time: `pinyol_sim --no-splash`, and saving a file (hot reload) goes straight back to the game. `pinyol_headless` and
+test scripts start without it (their ticks count from `_init`); `--splash` plays it first.
 
 ## Coordinates and colours
 

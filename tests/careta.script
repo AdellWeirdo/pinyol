@@ -1,0 +1,19 @@
+# examples/careta with its own careta (run with --splash): no _init until it is over (tick 150, when its update
+# says so), no button skips it (press: 2 ticks).
+tick 1
+expect_lua not started
+shot careta_start
+tick 59
+press A
+press START
+tick 40
+expect_lua not started
+shot careta_seal
+tick 45
+expect_lua not started
+tick 1
+expect_lua started and frames == 0
+tick 10
+expect_lua frames == 10
+expect_ok
+shot careta_game

@@ -48,6 +48,7 @@
 typedef struct {
     const char *game_dir; /* folder copied to the SD card, e.g. sd/games/mygame */
     const char *save_dir; /* NULL = <game_dir>/saves */
+    bool no_splash;       /* without the careta (splash.c): the console's menu, test scripts, --no-splash */
 } bp_config;
 
 bool game_init(const bp_config *cfg); /* false only if fonts/manifest are unreadable */
@@ -64,6 +65,9 @@ int content_validate(void);                            /* number of errors, each
 /* The Lua libraries built into the engine (lib/<name>.lua, made into pinyol_lib.c by cmake/embed_lib.cmake) */
 typedef struct { const char *name, *src; size_t len; } pinyol_lib_entry;
 extern const pinyol_lib_entry pinyol_lib[]; /* ends with a NULL name */
+/* The careta's pictures (packed, with their meta), built into the engine the same way (pinyol_splash.c) */
+typedef struct { const char *name; const uint8_t *pk; size_t len; const char *meta; } pinyol_pic_entry;
+extern const pinyol_pic_entry pinyol_splash[]; /* ends with a NULL name */
 
 /* ------------------------------------------------------------------ link.c: consoles playing together */
 #define LINK_PAYLOAD 220 /* bytes of JSON a message carries */
@@ -90,6 +94,9 @@ void v2_meter_toggle(void);           /* the frame meter on the screen, or off (
 void v2_draw_world(void);             /* _draw(), then the PPU into G.world */
 const char *v2_error(void);           /* the script's error, or NULL */
 bool v2_run(const char *code, bool expr, char *msg, int n); /* test scripts: run code or check an expression */
+bool v2_splash_update(int t);         /* the game's careta (splash.lua): update(t), true when it is done */
+void v2_splash_end(void);             /* the careta is over: the PPU as new, then _init() */
+
 size_t v2_memory(void);               /* bytes the script's state holds */
 typedef struct { uint32_t update, draw, ppu, ppu_max; } v2_times; /* microseconds */
 void v2_timing(v2_times *t); /* the averages (and the longest picture) since the last call */
@@ -116,6 +123,19 @@ surface gfx_clip(const surface *s, int x, int y, int w, int h); /* the part of s
 typedef struct { int x, y, w, h; } screen_rect;
 #define PANEL_CORNER 12 /* rows at a panel's top and bottom its corners may leave open (cut corners are 8) */
 void game_draw_world(void);                  /* only the zone into G.world: game_draw(s, true) starts with it */
+
+/* ------------------------------------------------------------------ splash.c: the careta, POWERED BY PINYOL */
+void splash_start(void);        /* game_init: it begins (unless bp_config.no_splash) */
+bool splash_on(void);           /* while it plays the game's ticks and frames are its */
+bool splash_own(void);          /* playing, and it is the game's own (splash.lua) */
+int splash_ticks(void);
+void splash_own_begin(void);    /* lua_game.c: the game has its own */
+void splash_own_failed(void);   /* it stopped on an error: the engine's instead */
+void splash_tick(void);
+void splash_draw(surface *s);   /* the frame: the engine's careta, or the game's with the seal over it */
+void splash_place(int x, int y); /* powered_by(x, y): the seal's top-left corner this frame */
+void splash_seal_size(int *w, int *h);
+void splash_frame_begin(void);  /* before the game's careta draws: the seal back to its place */
 
 typedef struct {
     char id[32];
@@ -157,6 +177,7 @@ void gfx_pin(asset *a);             /* keep it: something holds pointers into it
 void gfx_set_budget(size_t bytes);  /* (tests: a small budget, to let pictures go all the time) */
 size_t gfx_picture_bytes(void);     /* the pictures in memory now */
 asset *gfx_asset_opt(const char *id); /* the same, silent when the game leaves it out */
+bool gfx_asset_builtin(asset *a, const pinyol_pic_entry *e); /* one of the engine's own (pinyol_splash) into a */
 void gfx_reset(void);
 void gfx_force_missing(const char *id);
 bool gfx_opaque(const asset *a, int frame, int u, int v);
