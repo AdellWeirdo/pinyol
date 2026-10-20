@@ -339,6 +339,11 @@ add_test(NAME tablero COMMAND $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURR
 add_test(NAME microjuegos COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_microjuegos && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/microjuegos \
   --saves ${CMAKE_BINARY_DIR}/saves_microjuegos --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/microjuegos.script >/dev/null && \
   for i in 1 2 3 4 5 6 7 8; do cmp ${CMAKE_BINARY_DIR}/saves_microjuegos/leak_0.ppm ${CMAKE_BINARY_DIR}/saves_microjuegos/leak_$i.ppm || exit 1; done")
+add_test(NAME horizonte_linepal COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_horizonte && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/horizonte \
+  --saves ${CMAKE_BINARY_DIR}/saves_horizonte --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/horizonte.script >/dev/null && \
+  cmp ${CMAKE_BINARY_DIR}/saves_horizonte/hz_on.ppm ${CMAKE_BINARY_DIR}/saves_horizonte/hz_on2.ppm && \
+  cmp ${CMAKE_BINARY_DIR}/saves_horizonte/hz_off0.ppm ${CMAKE_BINARY_DIR}/saves_horizonte/hz_off.ppm && \
+  ! cmp -s ${CMAKE_BINARY_DIR}/saves_horizonte/hz_on.ppm ${CMAKE_BINARY_DIR}/saves_horizonte/hz_off.ppm")
 add_test(NAME linefx_crc COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/linefx \
   --saves ${CMAKE_BINARY_DIR}/saves_linefx_crc --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/linefx.script \
   --crc ${CMAKE_BINARY_DIR}/linefx.crc >/dev/null && test $(sort -u ${CMAKE_BINARY_DIR}/linefx.crc | wc -l) -eq 2")

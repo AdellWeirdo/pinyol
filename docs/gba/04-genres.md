@@ -55,7 +55,7 @@ effects as two 960-byte staging/live buffers (6 bytes per line) fed by repeating
 | Affine BG | Rotating/zooming worlds, Mode 7 floors | `bg(n,{mode="affine"})`, `rot`, `affine`, `mode7`, `project` | `affine()` raw call unused by any example |
 | Mode 7 per-line affine (HBlank) | F-Zero: Maximum Velocity (scaling/rotation of bitmap graphics, double layer), Mario Kart: Super Circuit, Banjo-Pilot ("Mode 7-style engine"; voxel tried and dropped) | `mode7` (carreras, moto, veloz title) | See "per-line fog" below |
 | Mode 7 fog / horizon | Tonc ch. 21: fog strength reuses the per-line scale, capped at 16, as the blend weight toward the backdrop; horizon switches mode 1 -> 0 in HBlank to show the backdrop | `PPU_LINE_OFF` hides lines above the horizon | **Per-line blend weight exists in the PPU (`PPU.line.fx_ev`, `ppu.c:461`) but no Lua call sets it (`lua_game.c:660` only clears it)**: no distance fog, no per-line fade |
-| HBlank gradient (backdrop) | Sky gradients | `line_backdrop` (5 examples) | Per-line palette entries other than the backdrop: not exposed (unverified that games did it a lot) |
+| HBlank gradient (backdrop) | Sky gradients | `line_backdrop` (5 examples), `line_pal` / `line_pal_obj` (`horizonte`) | Per-line mosaic size: not exposed |
 | HBlank scroll | Wavy water, parallax bands, battle ripples/swirls (Pokemon SWIRL/SHUFFLE/RIPPLE use sine offsets on BG scroll) | `line_scroll` (naves, plataformas, veloz) | OK |
 | HBlank window | Circular spotlight (Pokemon cave Flash darkness via WIN0H DMA), clockwise wipe, wave, shred-split, black hole | `window`, `line_window`, `window_out` | **No example uses any window call** |
 | Object window | Shape-defined masks (silhouettes, lights) | `WINDOW` sprite flag, `objwindow` | **Unused by any example** |
@@ -373,4 +373,22 @@ The list expected `scene.go` hygiene, the full reset of the picture between game
 - **For script tests**: `#` is a comment anywhere in a line (a third time): `bad[#bad + 1]` was cut to `bad[` and the check that used it passed; write `bad[k] = true`.
   The generic `script_<name>` test runs every script with `--check-strips`, which is several times slower than the plain run: a script of 27 000 ticks took 75 s
   there, and one of 17 000 took 26 s.
+
+## 10. What building the per-line palette showed (`line_pal`, `examples/horizonte`)
+
+- **The engine had to change here, and the cost of changing it was the story.** The renderer read the palettes at five places, all at the registers' own
+  (constant) addresses. Reading them through a per-line pointer cost 2 to 7 % on the console on every scene, used or not: a pointer held in a register in the
+  inner pixel loops of an in-order core with 16 registers is not free. What keeps the common path at +0.3 % (15 scenes, same frame hashes) is building the layer
+  and sprite functions twice and choosing per line: the registers' palettes as before, or the line's (`ppu.c`, `layers_*` and `layers_*_lp`).
+- **Using it costs about a thousand cycles a line** (a copy of the palettes each core makes once a frame, then a patch and a restore of the entries a line changes),
+  mostly the line tables being in PSRAM: 160 lines with both palettes, 8 + 8 entries, over 4 layers and 128 sprites, are 4.39 M cycles against 4.08 M without.
+  Whether that is memory latency was not settled (the measurement that would have told, with the tables in internal RAM, was not run).
+- **Backdrop gradients with `line_backdrop` do not need it**; a tile art that is made of a few palette entries does: the sky of `horizonte` is one colour in
+  the art and a hundred on the screen, the sea three, the boat's sail and the sun a gradient each, and a flat comparison (A) shows what is lost.
+- **A property test, not only goldens**: `tests/ppu_linepal_test.c` checks every pixel of lines that replace entries in each reader of the palette (tiles,
+  mosaic tiles, a turned layer, a bank, the backdrop, sprites, a turned sprite), the patch and restore of lines after one another, and the registers' palette
+  changing between two frames. A dozen mutants of the renderer are caught.
+- **For script tests** a comparison of two shots has to be of the picture alone: the HUD's text ("per-line palette: yes/no") made "on differs from off" true whatever
+  the engine did, and a mutant that never cleared the tables survived until the shots were taken with the HUD hidden and compared with a frame drawn before the
+  function was ever used.
 

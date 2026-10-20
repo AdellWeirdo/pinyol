@@ -69,7 +69,7 @@ part of it. The WAVs in `listen/` are not committed (860 KB of binaries that onl
 
 - Layout noise on the board is about +-7 % between builds that run the same code (instruction placement in IRAM): a change under ~8 % on one scene is not a result.
 - A per-line fade costs ~7 us a frame on the host in the worst case (a new amount on every line); not measured on the board.
-- Not done on purpose: window wrap (x2 < x1: sources disagree), the sprite priority hijack by transparent pixels (a hardware bug), per-line palette and mosaic, an affine bitmap layer, GBA-faithful sprite cycle budget.
+- Not done on purpose: window wrap (x2 < x1: sources disagree), the sprite priority hijack by transparent pixels (a hardware bug), per-line mosaic (per-line palette is `line_pal`), an affine bitmap layer, GBA-faithful sprite cycle budget.
 
 ## `gba-on-catalog`: this work on the engine the console runs
 

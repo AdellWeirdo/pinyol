@@ -1,0 +1,8 @@
+{
+  "id": "horizonte",
+  "title": "Horizonte",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "description": "Un día entero sobre el mar: el cielo, las nubes, el sol, el brillo del agua y la vela de un barco cambian de color línea a línea.",
+  "subtitle": "line_pal y line_pal_obj · la paleta que cambia en cada línea"
+}

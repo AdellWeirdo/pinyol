@@ -1,0 +1,37 @@
+# horizonte, and line_pal / line_pal_obj (the palette replaced on a line): bad arguments are errors, a line takes sixteen entries at most
+# (the same entry again is not a new one), the registers' palette comes back with line_off, and the game's frame with the per-line palette
+# on is the same after it is turned off and on again, and the one with it off is the one drawn before it was ever used (the CMake test compares the shots).
+new
+tick 5
+lua paused = true; phase = 0.5; hud = false; per_line = false
+tick 3
+shot hz_off0
+lua per_line = true
+tick 3
+shot hz_on
+expect_lua per_line == true
+expect_lua_error line_pal(-1, 0, 0)
+expect_lua_error line_pal(160, 0, 0)
+expect_lua_error line_pal(0, 256, 0)
+expect_lua_error line_pal(0, -1, 0)
+expect_lua_error line_pal(0, 255, 1, 2)
+expect_lua_error line_pal(0, 1)
+expect_lua_error line_pal("a", 1, 2)
+expect_lua_error line_pal_obj(0, 256, 0)
+expect_lua_error line_pal_obj(0, 1)
+lua line_off(); for i = 0, 15 do line_pal(3, i, 0x112233) end
+expect_ok
+expect_lua_error line_pal(3, 16, 0x112233)
+lua line_off(); for i = 1, 40 do line_pal(4, 7, i) end; line_pal(4, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
+expect_ok
+expect_lua_error line_pal(4, 20, 1)
+lua line_off(); for i = 0, 15 do line_pal_obj(9, i, 0x445566) end
+expect_lua_error line_pal_obj(9, 16, 0x445566)
+# the game: off, on again
+lua per_line = false
+tick 3
+shot hz_off
+lua per_line = true
+tick 3
+shot hz_on2
+expect_ok
