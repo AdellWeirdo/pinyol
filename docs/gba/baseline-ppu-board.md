@@ -136,6 +136,21 @@ turn; with all sixty a frame and the reduced renderer it was 50-52, with the big
 
 **The 24 ms slow frames and `-DBP_TE_LOCK`**: `horizonte` flat for a minute, the game list's own perf line and log. The normal loop: 96
 slow frames a minute (1.56 a second, as the 61.5 Hz panel against the 60 Hz timer predicts) and 59.6 ticks a second; locked to the panel's
-scans: 35 a minute and 61.0 ticks a second (the game 2.4 % fast). Fewer, not none, and the game's speed changes: left off. The cure that
-remains is the panel's own frame rate set to 60 Hz.
+scans: 35 a minute and 61.0 ticks a second (the game 2.4 % fast). Fewer, not none, and the game's speed changes: left off then.
+
+**The panel set to 60 Hz** (2026-10-20, the menu idle for 75 s, slow frames over 20 ms): the panel's own rate comes from RTN in the ST77922's
+70h, on the command page F1 opens (written outside it, it does nothing). At Freenove's 1A0h this board scans at 61.14 Hz; 1A8h gives
+60.00. The rate is now timed at the start (20 scans let go by: just out of sleep it runs 61.20 Hz, and settles) and RTN set from it.
+
+| Loop | Panel | Slow frames a minute (menu) |
+|---|---|---|
+| timer, RTN 1A0h | 61.14 Hz | 99 |
+| timer, RTN 1A8h fixed | 60.00 Hz | 27 |
+| timer, calibrated (1A8h) | 60.00-60.03 Hz | 36 |
+| locked to the scans, calibrated: the default now | 60.01 Hz | 18 (mostly the menu's own 32 ms frames) |
+
+`horizonte` locked and calibrated: 59.4-59.6 fps, panel 59.97 Hz, no frame over 20 ms in a minute. One step of RTN is 0.14 Hz, and a cold
+panel just flashed can time 61.24-61.25 Hz at the start, past the 61.23 where 1A9h is nearer: so the perf line also trims it
+(`display_trim_rate`, its scans over at least 2 s, when they are 0.1 Hz off). Seen once: 1A9h at the start, 59.90 Hz in the first window,
+1A8h from then on and 59.98-60.03 Hz for 90 s; the menu, 17 slow frames a minute.
 

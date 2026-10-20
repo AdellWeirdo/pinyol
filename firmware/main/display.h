@@ -18,6 +18,9 @@ void display_wait_scan(void);
  * no TE). For a game loop that keeps time with the panel (-DBP_TE_LOCK=ON, main.c). */
 uint32_t display_te_pulses(void);
 bool display_wait_te(int timeout_ms);
+/* The panel's scans a second since the last call (0 the first time, or within 2 s of it), and its rate trimmed back to 60 Hz when they
+ * are 0.1 Hz off: calibrate_rate at the start sees a cold panel, a little fast, and it warms. Called now and then (main.c, perf_report). */
+double display_trim_rate(void);
 void display_wait(void); /* until the presenting task is done with its frame: then the caller may send strips itself */
 /* TE (GPIO 42): one pulse per frame (vblank only) or also one per line (the init's setting). */
 void display_te_vblank_only(bool vblank_only);

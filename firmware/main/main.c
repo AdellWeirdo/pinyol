@@ -199,10 +199,12 @@ static void perf_report(void) {
             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024),
             part1_task ? (unsigned)uxTaskGetStackHighWaterMark(part1_task) : 0u);
+    double panel_hz = display_trim_rate();
     if (strip_us.first)
-        hal_log("frame: world %.2f ms, waiting for the scan %.2f ms, strips %.2f ms (CPU, the DMA overlaps)",
+        hal_log("frame: world %.2f ms, waiting for the scan %.2f ms, strips %.2f ms (CPU, the DMA overlaps) | panel %.2f Hz",
                 strip_us.world / 1000.0 / perf.frames, strip_us.wait / 1000.0 / perf.frames,
-                (strip_us.first + strip_us.rest) / 1000.0 / perf.frames);
+                (strip_us.first + strip_us.rest) / 1000.0 / perf.frames,
+                panel_hz); /* (60.00 wanted) */
     if (G.v2) { /* a Lua game: where its frames went */
         v2_times t;
         v2_timing(&t);
@@ -325,13 +327,13 @@ static void play(void) {
         }
         int64_t now = esp_timer_get_time();
 #ifdef BP_TE_LOCK
-        /* A tick for each scan the panel started since the last one (at most 4: after a stall, no running to catch up). The panel
-         * refreshes at about 61.5 Hz: with the 60 Hz timer the two drift apart 1.5 times a second, and each time a frame waits a whole
-         * scan (a 24 ms "slow frame") and two ticks run in the next. Here every frame is one scan, and the game runs 2.5 % fast. With
-         * no pulse in 50 ms (no TE wired) the timer keeps time instead. */
+        /* A tick for each scan the panel started since the last one (at most 4: after a stall, no running to catch up). The panel is
+         * set to 60 Hz at the start (display.c, calibrate_rate), but not exactly: with the 60 Hz timer the two would drift apart now
+         * and then, and each time a frame waits a whole scan (a 24 ms "slow frame") and two ticks run in the next. Here every frame is
+         * one scan. With no pulse ever (no TE wired), or none in 50 ms, the timer keeps time instead. */
         static uint32_t seen;
         uint32_t pulses = display_te_pulses();
-        if (pulses == seen && display_wait_te(50)) pulses = display_te_pulses();
+        if (pulses == seen && pulses && display_wait_te(50)) pulses = display_te_pulses();
         int due = (int)(pulses - seen);
         seen = pulses;
         if (due > 4) due = 4;

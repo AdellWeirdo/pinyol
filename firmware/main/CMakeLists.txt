@@ -13,7 +13,7 @@ endif()
 if(BP_FRAME_TICKS) # -DBP_FRAME_TICKS=1: draw every tick (60 fps) instead of every other one
   target_compile_definitions(${COMPONENT_LIB} PRIVATE TICKS_PER_FRAME=${BP_FRAME_TICKS})
 endif()
-if(BP_TE_LOCK) # -DBP_TE_LOCK=ON: a tick for each scan of the panel (61.5 Hz) instead of the 60 Hz timer (main.c, play)
+if(NOT DEFINED BP_TE_LOCK OR BP_TE_LOCK) # a tick for each scan of the panel (main.c, play); -DBP_TE_LOCK=OFF: the 60 Hz timer
   target_compile_definitions(${COMPONENT_LIB} PRIVATE BP_TE_LOCK)
 endif()
 if(BP_BENCH) # -DBP_BENCH=ON: renderer measurements instead of the game list (bench.c)

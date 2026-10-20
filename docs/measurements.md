@@ -33,7 +33,7 @@ of five runs. One core has 4.0 M cycles per frame at 60 fps.
 | What | Result |
 |---|---|
 | SPI clock asked / set | 80,000 / 80,000 kHz |
-| Panel refresh (TE, one pulse per frame) | 61.5 Hz; the init's TE mode also pulses every line (29.4 kHz) |
+| Panel refresh (TE, one pulse per frame) | 61.5 Hz then (61.14 Hz at RTN 1A0h on 2026-10-20); now calibrated to 60.00 at the start (`display.c`). The init's TE mode also pulses every line (29.4 kHz) |
 | v1: 480×320 RGB565 frame in PSRAM → panel | 9.45 ms |
 | Output stage alone: 240×160 indexed → palette, 2×, transpose, byte swap into 15 strips | 1.81 ms of CPU |
 | v2: 240×160 indexed in internal RAM → panel | 8.10 ms (the wire alone is 7.68 ms) |

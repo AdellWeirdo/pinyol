@@ -46,15 +46,17 @@ Digests of what the real hardware did, audits of np2d against it, measurements, 
 6. **`examples/pinball` on the console** (sent over the cable, `w:drive` flippers): 59-60 fps, tick 1.7 ms, audio 4-5 %; the flippers answer the
    keys and the ball is shot from the spring. (A hint that ran past the panel's edge on the console was cut in two lines.)
 
-**The 24 ms "slow frames" in every log, diagnosed (not yet fixed on the board).** Every console log, in every game and in the menu, has
-about fifteen `slow frame: 24 ms` lines every ten seconds. The game loop keeps time with the chip's timer at 60.000 Hz
-(`firmware/main/main.c`, `play`), the panel refreshes at about 61.5 Hz (measured on 2026-10-12, `docs/progress.md`), and a frame waits
-for the panel's scan (`display_wait_scan`) only when the last one started more than 3 ms before. The two clocks drift apart 61.5 - 60
-= 1.5 times a second: each time, a frame waits a whole scan (5 ms of world + 16 of waiting + 3 of strips = 24 ms) and the next ticks
-catch up two at a time, a jolt anyone can see. Fifteen in ten seconds is that number. `-DBP_TE_LOCK=ON` builds a loop that ticks once for
-each scan instead. Measured (baseline-ppu-board.md): 96 slow frames a minute with the timer, 35 locked, and the game 2.4 % fast
-locked: fewer, not none, so it stays off. The other cure is the panel's own frame rate set to 60 Hz, in registers of the ST77922 that
-are not documented here.
+**The 24 ms "slow frames" in every log, fixed.** Every console log, in every game and in the menu, had about fifteen
+`slow frame: 24 ms` lines every ten seconds. The game loop kept time with the chip's timer at 60.000 Hz (`firmware/main/main.c`, `play`),
+the panel refreshed at 61.14 Hz (Freenove's RTN in the ST77922's 70h; its oscillator is off by a few %), and a frame waits for the
+panel's scan (`display_wait_scan`) only when the last one started more than 3 ms before. The two clocks drifted apart 1.1-1.5 times a
+second: each time, a frame waited a whole scan (5 ms of world + 16 of waiting + 3 of strips = 24 ms) and the next ticks caught up two at a
+time, a jolt anyone can see. Now (a) at the start the panel's scans are timed and RTN rewritten for 60.00 Hz on that unit
+(`display.c`, `calibrate_rate`: 1A0h -> 1A8h on the first board, 60.00-60.04 Hz after; the perf log's `panel ... Hz`) and trimmed while it
+runs (`display_trim_rate`: a cold panel at the start runs fast and can land one step off, put right within ten seconds), and (b) the loop
+ticks once for each scan (`BP_TE_LOCK`, on by default; the timer when no TE comes). Measured (baseline-ppu-board.md): in the menu, 99 slow
+frames a minute before, 36 with the rate alone, 18 with both (the menu's own 32 ms frames, not the drift); `horizonte`, none in a minute
+at 59.4-59.6 fps.
 
 Still open: the saves' retry with a card that fails (compiled and read, never run: it needs the card taken out while the game saves,
 and the firmware does not remount a card put back).

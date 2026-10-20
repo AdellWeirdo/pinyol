@@ -6,12 +6,14 @@
  * The QSPI command format is the ST77922 interface protocol's. */
 #include "display.h"
 
+#include <math.h>
 #include <string.h>
 
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "driver/spi_master.h"
 #include "esp_timer.h"
+#include "hal.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -26,6 +28,12 @@
 #define PIN_D3 9
 #define PIN_BL 41
 #define PIN_TE 42
+/* The panel's frame rate (the ST77922's TIMINGCTRL, 70h): about 15 MHz / (RTN x lines), the lines being its 480 rows, 17 of back porch and
+ * 105 of front (the datasheet, V0.1 p.246: its table gives 60.00 Hz at RTN 20Bh for 478 lines). Its oscillator may be 5 % off either
+ * way (61.14 Hz on the first board at Freenove's RTN): at the start the panel's scans are timed and RTN set for 60.00 Hz, the game
+ * loop's own (calibrate_rate), and trimmed as it warms (display_trim_rate), so the two do not drift apart. PANEL_RTN is where it starts. */
+#define PANEL_RTN 0x1A0 /* Freenove's value: 59.9 Hz nominal */
+static const uint8_t TIMING_REST[10] = {0x11, 0x40, 0xE0, 0x00, 0x11, 0x69, 0x11, 0x00, 0x00, 0x1A}; /* 70h after RTN: 480 x 320, the porches */
 #define SCAN_START_US 3000 /* this close after the TE pulse the strips (8 ms) still outrun the scan (16 ms) */
 #define FRAME_W 480
 #define FRAME_H 320
@@ -67,7 +75,7 @@ static const struct {
     {0x71, 1, {0xD0}, 0},
     {0x66, 2, {0x02, 0x3F}, 0},
     {0xBE, 3, {0x26, 0x00, 0x9D}, 0},
-    {0x70, 12, {0x01, 0xA0, 0x11, 0x40, 0xE0, 0x00, 0x11, 0x69, 0x11, 0x00, 0x00, 0x1A}, 0},
+    {0x70, 12, {PANEL_RTN >> 8, PANEL_RTN & 0xFF, 0x11, 0x40, 0xE0, 0x00, 0x11, 0x69, 0x11, 0x00, 0x00, 0x1A}, 0}, /* TIMINGCTRL (TIMING_REST) */
     {0x90, 9, {0x04, 0x04, 0x55, 0x74, 0x00, 0x40, 0x43, 0x27, 0x27}, 0},
     {0x91, 9, {0x04, 0x04, 0x55, 0x75, 0x00, 0x40, 0x42, 0x27, 0x27}, 0},
     {0x92, 10, {0x04, 0x44, 0x55, 0xC0, 0x06, 0x00, 0x07, 0x05, 0x90, 0x27}, 0},
@@ -138,6 +146,8 @@ void display_backlight(int percent) {
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
 }
 
+static void calibrate_rate(void);
+
 void display_init(int spi_hz, bool flip) {
     flipped = flip;
     const spi_bus_config_t bus = {
@@ -172,6 +182,7 @@ void display_init(int spi_hz, bool flip) {
         assert(strip_buf[i]);
     }
     te_init();
+    calibrate_rate();
 }
 
 static void IRAM_ATTR te_isr(void *arg) {
@@ -251,6 +262,59 @@ void display_present_strips(display_strip_fn build, void *ctx) {
 }
 
 void display_present(const uint16_t *frame) { display_present_strips(build_strip, (void *)frame); }
+
+static int rtn_now = PANEL_RTN;
+
+static void set_rtn(int rtn) {
+    rtn_now = rtn;
+    uint8_t p[12] = {(uint8_t)(rtn >> 8), (uint8_t)rtn};
+    memcpy(p + 2, TIMING_REST, sizeof TIMING_REST);
+    static const uint8_t zero = 0;
+    write_reg(0xF1, &zero, 1); /* 70h is on the page F1 opens (as in INIT), and F0 + D0 close it */
+    write_reg(0x70, p, sizeof p);
+    write_reg(0xF0, &zero, 1);
+    write_reg(0xD0, &zero, 1);
+}
+
+/* The scans timed over half a second, and RTN set so they come at 60.00 a second (one step of RTN is 0.14 Hz, so the timing must be
+ * good to 0.1 %). The first third of a second is let go by: just out of sleep the panel runs a little fast (61.20 Hz settling to 61.17
+ * on the first board, enough to pick the step past the right one). Nothing done without TE, or with a rate this far from the nominal
+ * one that it is not the panel's (a missed or doubled pulse). */
+static void calibrate_rate(void) {
+    if (!te_pulse) return;
+    const int SETTLE = 20, N = 30;
+    for (int i = 0; i < SETTLE; i++)
+        if (xSemaphoreTake(te_pulse, pdMS_TO_TICKS(50)) != pdTRUE) return;
+    int64_t t0 = te_last;
+    uint32_t p0 = te_pulses;
+    for (int i = 0; i < N; i++)
+        if (xSemaphoreTake(te_pulse, pdMS_TO_TICKS(50)) != pdTRUE) return;
+    double hz = (te_pulses - p0) * 1e6 / (double)(te_last - t0);
+    if (hz < 50 || hz > 72) return;
+    int rtn = (int)(PANEL_RTN * hz / 60.0 + 0.5);
+    set_rtn(rtn);
+    hal_log("display: the panel scanned at %.2f Hz, RTN %03Xh -> %03Xh for 60 Hz", hz, PANEL_RTN, rtn);
+}
+
+double display_trim_rate(void) {
+    static int64_t t_then;
+    static uint32_t p_then;
+    uint32_t p;
+    int64_t t;
+    do p = te_pulses, t = te_last; while (p != te_pulses); /* the two of one pulse (the ISR may come between) */
+    if (!t_then || t - t_then < 2000000) {
+        if (!t_then) t_then = t, p_then = p;
+        return 0;
+    }
+    double hz = (p - p_then) * 1e6 / (double)(t - t_then);
+    t_then = t, p_then = p;
+    if (hz > 50 && hz < 72 && fabs(hz - 60) > 0.1) { /* (a step of RTN is 0.14 Hz: past half of one, the next is nearer) */
+        int rtn = (int)(rtn_now * hz / 60.0 + 0.5);
+        hal_log("display: the panel scans at %.2f Hz, RTN %03Xh -> %03Xh", hz, rtn_now, rtn);
+        set_rtn(rtn);
+    }
+    return hz;
+}
 
 void display_te_vblank_only(bool vblank_only) { write_reg(0x35, (const uint8_t[]){vblank_only ? 0x00 : 0x01}, 1); }
 
