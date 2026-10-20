@@ -393,6 +393,9 @@ The list expected `scene.go` hygiene, the full reset of the picture between game
   table made is paid for. Written with numbers in tables made once, `rgb` taking the fractions, and the line tables repainted only when the colours move
   (they stay until `line_off`) and a part of the sky each frame, it runs at 55 fps with everything on (the sea's shimmer, sixty lines of colour a frame, is the part
   that remains), 59 without it and 60 flat. A game that writes a palette per line should do the same.
+  Since then `line_ramp(y0, y1, index, from, to [, curve])` does a gradient in one call: `horizonte` paints its sky, clouds, hills, sail and sun
+  with eight of them a frame (about 300 calls into C a frame before, 70 now: the sea's shimmer is a wave, not a ramp, and stays a call a line).
+  `tests/ramp.script` and the `line_ramp` CMake test hold it to the picture of the same arithmetic done with `line_pal`. Not yet measured on the console.
 - **Backdrop gradients with `line_backdrop` do not need it**; a tile art that is made of a few palette entries does: the sky of `horizonte` is one colour in
   the art and a hundred on the screen, the sea three, the boat's sail and the sun a gradient each, and a flat comparison (A) shows what is lost.
 - **A property test, not only goldens**: `tests/ppu_linepal_test.c` checks every pixel of lines that replace entries in each reader of the palette (tiles,

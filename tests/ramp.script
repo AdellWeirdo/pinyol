@@ -1,0 +1,22 @@
+# line_ramp: one call paints an entry of the palette from one colour to another down some lines, straight or along a curve, either
+# way up; the picture is the one line_pal on every line gives with the same arithmetic (the CMake test compares the shots). Bad
+# arguments are errors, and a ramp counts against a line's sixteen entries as line_pal does.
+new
+tick 2
+shot ramp_r
+lua mode = "pal"
+tick 2
+shot ramp_p
+lua mode = "ramp"
+expect_lua_error line_ramp(-1, 5, 0, 0, 0)
+expect_lua_error line_ramp(0, 160, 0, 0, 0)
+expect_lua_error line_ramp(0, 5, 256, 0, 0)
+expect_lua_error line_ramp(0, 5, 0, 0)
+expect_lua_error line_ramp(0, 5, 0, 0, 0xFFFFFF, 0)
+expect_lua_error line_ramp(0, 5, 0, 0, 0xFFFFFF, -2)
+lua line_off(); for i = 0, 15 do line_pal(10, i, 0x123456) end; line_ramp(0, 20, 7, 0, 0xFFFFFF)
+expect_ok
+expect_lua_error line_ramp(0, 20, 99, 0, 0xFFFFFF)
+lua line_off(); line_ramp(0, 159, 3, 0, 0xFFFFFF, "obj"); line_ramp(0, 159, 3, 0, 0xFFFFFF, 2, "obj")
+expect_ok
+expect_ok

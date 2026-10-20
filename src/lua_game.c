@@ -646,6 +646,29 @@ static int l_line_backdrop(lua_State *L) {
 /* line_pal(y, index, colour [, colour ...]) and line_pal_obj(...): on line y, palette entry index (and the ones after it, one for each
  * further colour) has that colour, as a game's HBlank palette writes do (a sky that deepens, water that shimmers). Up to 16 entries a line in
  * each palette; they last until line_off(). */
+/* entry `idx` of line y's table takes colour c (the same entry again is replaced, not added); false when the line is full */
+static bool line_pal_put(ppu_line_pal *tab, int y, int idx, uint16_t c) {
+    ppu_line_pal *e = &tab[y];
+    int at = -1;
+    for (int i = 0; i < e->n; i++) if (e->idx[i] == idx) at = i;
+    if (at < 0) {
+        if (e->n >= PPU_LINE_PALS) return false;
+        at = e->n++;
+    }
+    e->idx[at] = (uint8_t)idx, e->col[at] = c;
+    return true;
+}
+
+static ppu_line_pal *line_pal_table(bool obj) { /* the table of the frame, made ready the first time it is written */
+    ppu_line_pal *tab = line_pal_tab[obj ? 1 : 0];
+    const ppu_line_pal **slot = obj ? &PPU.line.pal_obj : &PPU.line.pal_bg;
+    if (*slot != tab) {
+        memset(tab, 0, sizeof line_pal_tab[0]);
+        *slot = tab;
+    }
+    return tab;
+}
+
 static int line_pal_set(lua_State *L, bool obj) {
     int y = line_index(L, 1);
     int first = (int)luaL_checkinteger(L, 2);
@@ -653,26 +676,37 @@ static int line_pal_set(lua_State *L, bool obj) {
     luaL_argcheck(L, first >= 0 && first < 256, 2, "entry 0..255");
     if (n < 1) return luaL_error(L, "line_pal: a colour at least");
     luaL_argcheck(L, first + n <= 256, 2, "entries run past 255");
-    ppu_line_pal *tab = line_pal_tab[obj ? 1 : 0];
-    const ppu_line_pal **slot = obj ? &PPU.line.pal_obj : &PPU.line.pal_bg;
-    if (*slot != tab) {
-        memset(tab, 0, sizeof line_pal_tab[0]);
-        *slot = tab;
-    }
-    ppu_line_pal *e = &tab[y];
-    for (int k = 0; k < n; k++) {
-        uint16_t c = to565(luaL_checkinteger(L, 3 + k));
-        int at = -1;
-        for (int i = 0; i < e->n; i++) if (e->idx[i] == first + k) at = i;
-        if (at < 0) {
-            if (e->n >= PPU_LINE_PALS) return luaL_error(L, "line_pal: %d entries a line at most", PPU_LINE_PALS);
-            at = e->n++;
-        }
-        e->idx[at] = (uint8_t)(first + k), e->col[at] = c;
-    }
+    ppu_line_pal *tab = line_pal_table(obj);
+    for (int k = 0; k < n; k++)
+        if (!line_pal_put(tab, y, first + k, to565(luaL_checkinteger(L, 3 + k)))) return luaL_error(L, "line_pal: %d entries a line at most", PPU_LINE_PALS);
     return 0;
 }
 static int l_line_pal(lua_State *L) { return line_pal_set(L, false); }
+
+/* line_ramp(y0, y1, index, from, to [, curve] [, "obj"]): entry `index` of the palette goes from colour `from` on line y0 to `to` on
+ * line y1, in a straight line, or along k ^ curve (a sky that pales quickly near the horizon: 1.5). One call for what would be a
+ * line_pal on every line: a sky, a sea, a glow, without a hundred calls into C a frame. */
+static int l_line_ramp(lua_State *L) {
+    int y0 = line_index(L, 1), y1 = line_index(L, 2);
+    int idx = (int)luaL_checkinteger(L, 3);
+    luaL_argcheck(L, idx >= 0 && idx < 256, 3, "entry 0..255");
+    lua_Integer a = luaL_checkinteger(L, 4), b = luaL_checkinteger(L, 5);
+    int top = lua_gettop(L);
+    bool obj = top >= 6 && lua_type(L, top) == LUA_TSTRING && !strcmp(lua_tostring(L, top), "obj");
+    float curve = top >= 6 && lua_type(L, 6) == LUA_TNUMBER ? (float)lua_tonumber(L, 6) : 1.0f;
+    luaL_argcheck(L, curve > 0 && curve < 16, 6, "a curve above 0");
+    ppu_line_pal *tab = line_pal_table(obj);
+    const int ar = (int)(a >> 16 & 255), ag = (int)(a >> 8 & 255), ab = (int)(a & 255);
+    const int br = (int)(b >> 16 & 255), bg_ = (int)(b >> 8 & 255), bb = (int)(b & 255);
+    int step = y1 >= y0 ? 1 : -1, n = y1 >= y0 ? y1 - y0 : y0 - y1;
+    for (int i = 0, y = y0; i <= n; i++, y += step) {
+        float k = n ? (float)i / (float)n : 0.0f;
+        if (curve != 1.0f) k = powf(k, curve);
+        int r = ar + (int)lroundf((float)(br - ar) * k), g = ag + (int)lroundf((float)(bg_ - ag) * k), bl = ab + (int)lroundf((float)(bb - ab) * k);
+        if (!line_pal_put(tab, y, idx, to565(r << 16 | g << 8 | bl))) return luaL_error(L, "line_ramp: %d entries a line at most", PPU_LINE_PALS);
+    }
+    return 0;
+}
 static int l_line_pal_obj(lua_State *L) { return line_pal_set(L, true); }
 
 static int l_line_window(lua_State *L) { /* line_window(k, y, x1, x2) */
@@ -1309,7 +1343,7 @@ static void api(lua_State *L) {
         {"clock", l_clock}, {"btn", l_btn}, {"btnp", l_btnp}, {"btnr", l_btnr}, {"btnt", l_btnt}, {"btnb", l_btnb}, {"touch", l_touch}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
         {"pal", l_pal}, {"palette", l_palette}, {"backdrop", l_backdrop}, {"bg", l_bg}, {"scroll", l_scroll},
         {"affine", l_affine}, {"rot", l_rot}, {"mode7", l_mode7}, {"project", l_project}, {"mget", l_mget},
-        {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_backdrop", l_line_backdrop}, {"line_pal", l_line_pal}, {"line_pal_obj", l_line_pal_obj},
+        {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_backdrop", l_line_backdrop}, {"line_pal", l_line_pal}, {"line_pal_obj", l_line_pal_obj}, {"line_ramp", l_line_ramp},
         {"line_window", l_line_window}, {"line_fx", l_line_fx}, {"line_off", l_line_off}, {"sheet", l_sheet}, {"spr", l_spr},
         {"spr_off", l_spr_off}, {"spr_clear", l_spr_clear}, {"prio", l_prio}, {"bank", l_bank}, {"spr_mat", l_spr_mat},
         {"mat", l_mat}, {"show", l_show}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off},

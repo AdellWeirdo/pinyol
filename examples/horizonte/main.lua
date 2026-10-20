@@ -8,7 +8,8 @@ local ui = require("ui")
 phase, per_line, shimmer, paused, hud = 0.18, true, true, false, true -- (globals: the tests look at them)
 
 -- The day, by p from 0 (noon) to 1 (night): each key is p and then fifteen numbers: the sky at the top (r, g, b), at the horizon, the cloud, the sea, the sun.
--- Everything here is numbers in tables made once: a table made for each of the hundred and sixty lines, every frame, is what a console's collector cannot keep up with.
+-- Everything here is numbers in tables made once, and the gradients are line_ramp: a table made, or a call into C, for each of the
+-- hundred and sixty lines every frame is what the console cannot keep up with (the first horizonte ran at 14 fps for it).
 local KEYS = {
   {0.00, 60, 135, 235, 175, 215, 250, 255, 255, 255, 44, 108, 200, 255, 250, 205},
   {0.45, 80, 120, 220, 250, 205, 150, 255, 240, 225, 58, 100, 190, 255, 225, 140},
@@ -32,8 +33,6 @@ local function day(p)
 end
 
 local boat_sh, sun_sh, time_
-local last_key, last_sy, last_per_line, last_shimmer
-local sky_row, sail_row, SKY_STEP = 0, 0, 20
 
 function _init()
   palette("WORLD")
@@ -66,18 +65,16 @@ local function paint_flat()
   pal(I.obj.glow2, pk(D[13] * 0.75, D[14] * 0.75, D[15] * 0.75), "obj")
 end
 
--- the sky and its clouds and hills: a line each, from `from` to `to` (the tables stay until line_off, so a few lines a frame are enough)
-local function paint_sky(from, to)
+-- the sky and its clouds and hills, each a ramp of one palette entry down the hundred lines of the sky (line_ramp: one call each)
+local function paint_sky()
   local tr, tg, tb, hr, hg, hb, cr, cg, cb = D[1], D[2], D[3], D[4], D[5], D[6], D[7], D[8], D[9]
+  local last = SKY_LINES - 1
+  line_ramp(0, last, I.bg.sky, pk(tr, tg, tb), pk(hr, hg, hb), 1.5)
+  local lr, lg, lb = cr + (hr - cr) * 0.55, cg + (hg - cg) * 0.55, cb + (hb - cb) * 0.55 -- the clouds are lit from below
+  line_ramp(0, last, I.bg.cloud, pk(cr, cg, cb), pk(lr, lg, lb))
+  line_ramp(0, last, I.bg.shade, pk(cr * 0.72, cg * 0.72, cb * 0.72), pk(lr * 0.82, lg * 0.82, lb * 0.82))
   local hill = pk(hr * 0.4 + 6, hg * 0.4 + 7, hb * 0.4 + 18)
-  for y = from, to do
-    local k = y / (SKY_LINES - 1)
-    local kk = k * sqrt(k) -- k to the 1.5
-    local m = k * 0.55     -- the clouds are lit from below
-    local r, g, b = cr + (hr - cr) * m, cg + (hg - cg) * m, cb + (hb - cb) * m
-    local sh = 0.72 + 0.1 * k
-    line_pal(y, I.bg.sky, pk(tr + (hr - tr) * kk, tg + (hg - tg) * kk, tb + (hb - tb) * kk), pk(r, g, b), pk(r * sh, g * sh, b * sh), hill)
-  end
+  line_ramp(0, last, I.bg.hills, hill, hill)
 end
 
 local function paint_sea(sun_up, sy)
@@ -97,21 +94,19 @@ end
 
 local BOAT_TOP = 110 -- the boat bobs between 110 and 114: the sail's rows are the ones from 110 to 142, a fixed range
 
-local function paint_sail(from, to) -- the sail: lit by the sun's colour, darker towards the water
+local function paint_sail() -- the sail: lit by the sun's colour, darker towards the water
   local hr, hg, hb = D[4], D[5], D[6]
-  for y = from, to do
-    local k = (y - BOAT_TOP) / (BOAT_H + 4)
-    local m, f = 0.55 * (1 - k * 0.4), 1 - 0.25 * k
-    line_pal_obj(y, I.obj.sail, pk((250 + (hr - 250) * m) * f, (246 + (hg - 246) * m) * f, (238 + (hb - 238) * m) * f))
-  end
+  line_ramp(BOAT_TOP, BOAT_TOP + BOAT_H + 3, I.obj.sail, pk(250 + (hr - 250) * 0.55, 246 + (hg - 246) * 0.55, 238 + (hb - 238) * 0.55),
+            pk((250 + (hr - 250) * 0.33) * 0.75, (246 + (hg - 246) * 0.33) * 0.75, (238 + (hb - 238) * 0.33) * 0.75), "obj")
 end
 
 local function paint_sun(sy) -- the sun, redder as it goes down, a gradient of its own
-  for y = math.max(0, sy - SUN_R), min(159, sy + SUN_R - 1) do
-    local k = (y - (sy - SUN_R)) / (2 * SUN_R) * (0.3 + 0.5 * (sy / 100))
-    local r, g, b = D[13] + (255 - D[13]) * k, D[14] + (70 - D[14]) * k, D[15] + (40 - D[15]) * k
-    line_pal_obj(y, I.obj.core, pk(r, g, b), pk(r * 0.92, g * 0.92, b * 0.92), pk(r * 0.8, g * 0.8, b * 0.8))
-  end
+  local y0, y1 = math.max(0, sy - SUN_R), min(159, sy + SUN_R - 1)
+  local k = 0.3 + 0.5 * (sy / 100)
+  local r, g, b = D[13] + (255 - D[13]) * k, D[14] + (70 - D[14]) * k, D[15] + (40 - D[15]) * k
+  line_ramp(y0, y1, I.obj.core, pk(D[13], D[14], D[15]), pk(r, g, b), "obj")
+  line_ramp(y0, y1, I.obj.glow1, pk(D[13] * 0.92, D[14] * 0.92, D[15] * 0.92), pk(r * 0.92, g * 0.92, b * 0.92), "obj")
+  line_ramp(y0, y1, I.obj.glow2, pk(D[13] * 0.8, D[14] * 0.8, D[15] * 0.8), pk(r * 0.8, g * 0.8, b * 0.8), "obj")
 end
 
 function _update()
@@ -131,25 +126,15 @@ function _draw()
   local bx, by = 150, floor(112 + 2 * sin(time_ / 22))
   scroll(3, floor(time_ * 0.15), 0)
   if per_line then
-    local key = floor(p * 512)
-    local fresh = not last_per_line -- just turned on: all of it, once; then a part of the sky and the sail each frame, round and round
-    if fresh then
-      paint_sky(0, SKY_LINES - 1)
-      paint_sail(BOAT_TOP, BOAT_TOP + BOAT_H + 3)
-    else
-      paint_sky(sky_row, sky_row + SKY_STEP - 1)
-      sky_row = (sky_row + SKY_STEP) % SKY_LINES
-      paint_sail(BOAT_TOP + sail_row, BOAT_TOP + sail_row + 8)
-      sail_row = (sail_row + 9) % (BOAT_H + 4)
-    end
-    if shimmer or fresh or last_shimmer ~= shimmer or key ~= last_key then paint_sea(sx ~= nil, sy) end
-    if sx and (fresh or key ~= last_key or sy ~= last_sy) then paint_sun(sy) end
-    last_key, last_sy = key, sy
+    line_off() -- (each frame from nothing: the ramps are a few calls, and the sun moves)
+    paint_sky()
+    paint_sail()
+    if sx then paint_sun(sy) end
+    paint_sea(sx ~= nil, sy)
   else
     line_off()
     paint_flat()
   end
-  last_per_line, last_shimmer = per_line, shimmer
   spr(0, boat_sh, 0, bx, by, prio(0))
   if sx then spr(1, sun_sh, 0, floor(sx - SUN_R), floor(sy - SUN_R), prio(2)) else spr_off(1) end
   if hud then
