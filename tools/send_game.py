@@ -20,6 +20,7 @@ import io
 import json
 import sys
 import time
+from datetime import datetime
 import zipfile
 from pathlib import Path
 
@@ -106,7 +107,11 @@ def main() -> None:
         raise SystemExit("no console on a USB port: plug it in, or give --port")
     total = sum(len(b) for b in files.values())
     c = Cable(port)
-    print(f"{port}: {c.ask('hello')}")
+    hello = c.ask('hello')
+    print(f"{port}: {hello}")
+    if (hello.split() + ["", "0"])[1].isdigit() and int(hello.split()[1]) >= 2:  # it keeps a wall clock: give it this computer's
+        now = datetime.now().astimezone()
+        c.ask(f"time {int(now.timestamp())} {int(now.utcoffset().total_seconds() // 60)}")
     t0 = time.time()
     send(c, gid, files, patch=bool(a.only))
     print(f"\r{gid}: {len(files)} files, {total // 1024} KB in {time.time() - t0:.1f} s; it is starting on the console")

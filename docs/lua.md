@@ -80,7 +80,7 @@ test scripts start without it (their ticks count from `_init`); `--splash` plays
 
 | Call | Returns |
 |---|---|
-| `btn(name)` | true while held. Names: `"up" "down" "left" "right" "a" "b" "c" "start" "menu"` |
+| `btn(name)` | true while held. Names: `"up" "down" "left" "right" "a" "b" "c" "start" "menu"`. There are no L and R: the console has no shoulder buttons, and a name that only a computer's keyboard had would make games the console cannot play. A game after a GBA one gives what L and R did to C, or to the touch screen |
 | `btnp(name)` | true on the tick it was pressed. `btnp(name, hold, every)` also repeats while held: again after `hold` ticks, then every `every` ticks (a menu that scrolls on its own) |
 | `btnr(name)` | true on the tick it was let go (a charged shot fires on release) |
 | `btnt(name)` | ticks it has been held, 0 when it is not (a long press, how charged) |
@@ -88,6 +88,7 @@ test scripts start without it (their ticks count from `_init`); `--splash` plays
 | `touch()` | `x, y, down, tapped`, in world pixels |
 | `t()` | seconds since the game started |
 | `ticks()` | ticks since the game started (60 a second) |
+| `clock()` | the date and the time where the player is: `{year, month, day, hour, min, sec, wday, yday, days, offset}` (`wday` 1 Monday to 7 Sunday; `days` since 1970-01-01, for the time between two sessions; `offset` the minutes from UTC), or `nil` when the machine does not know the date. A computer and a browser always do; the console has no clock of its own and is given the computer's whenever a game is sent over the cable (the editor or `tools/send_game.py`), and keeps it while asleep, not once its battery runs out. A game that grows its berries by the day keeps the last `days` it saw in `store` and is ready for `nil` |
 
 ## Palettes
 

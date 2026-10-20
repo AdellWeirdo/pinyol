@@ -236,7 +236,8 @@ pokeemerald `src/main.c`, `src/decompress.c`, `src/graphics.c`.
 **pinyol:** **have**, and richer (`btnp(name, hold, every)`, `btnr`, `btnt`, `btnb` buffering). Nothing to add.
 The GBA had no input buffering built in either, but Emerald's repeat delays (40/5 frames) are good defaults to
 mention in docs. pinyol has C and MENU extra; GBA has L/R shoulders: how a GBA-ported game maps L/R is a
-documentation question, not hardware.
+documentation question, not hardware. Decided: no `"l"`/`"r"` names (the console has no such buttons; they would only exist on a
+keyboard); `docs/lua.md` says to give them to C or the touch screen.
 
 Sources: GBATEK "GBA Keypad Input"; pokeemerald `src/main.c`.
 
@@ -331,7 +332,7 @@ ROM chip** at 0800_00C4 (data), 0800_00C6 (direction), 0800_00C8 (control: read/
 **pinyol (ESP32-S3 console):**
 | Peripheral | Verdict |
 |---|---|
-| RTC / wall-clock date | **add** `date()`/`now()` (battery-safe, optional: the console has no RTC chip listed in `docs/hardware.md`, so it would need SNTP over WiFi or a user-set clock; where unknown, return nil like `battery()` does). Time-of-day gameplay is the main GBA use. Mark as optional/nil-able. |
+| RTC / wall-clock date | **done**: `clock()` (a table of the local date and time, or `nil` as the S-3511A's power-failure flag says: no date). The console has no RTC chip; the computer sets its clock over the cable (`hello 2`, then `time <unix> <offset>`) and the ESP32-S3's RTC timer keeps it through sleep and restarts, not through a flat battery. Seconds since 1970 are not given: the console's Lua has 32-bit integers, which 2038 would overflow; `days` and the time of day do the same work |
 | Solar sensor | **skip** (could be faked with an ambient-light sensor if the board had one; no evidence it does) |
 | Tilt / gyro | **maybe** (only if the board has an IMU: not listed in `docs/hardware.md`; the browser player has DeviceOrientation, so a nil-able `tilt()` is feasible) |
 | Rumble | **maybe** (nil-able `rumble(strength, ms)`; no motor on the board; the pilot LED or a speaker thump could substitute) |

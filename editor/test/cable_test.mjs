@@ -1,9 +1,10 @@
 // js/cable.js against a console made of streams (Node has no Web Serial): its answers come cut into pieces and mixed
-// with log lines, as over the real cable; the game it receives must be the game sent. Then a console that says no.
+// with log lines, as over the real cable; the game it receives must be the game sent. Then a console that says no, one that keeps a
+// wall clock (hello 2: it is given this computer's time) and an older one, which is not sent a line it would not answer.
 //   node editor/test/cable_test.mjs
 import assert from 'node:assert/strict';
 
-function fakeConsole({ refuse = null } = {}) {
+function fakeConsole({ refuse = null, version = 1 } = {}) {
   const got = { files: new Map(), lines: 0 };
   let out, current = null, inBuf = '';
   const readable = new ReadableStream({ start(c) { out = c; } });
@@ -17,7 +18,8 @@ function fakeConsole({ refuse = null } = {}) {
   const line = l => {
     got.lines++;
     const [cmd, a, b] = l.split(' ');
-    if (cmd === 'hello') return say('hello 1 card 1000');
+    if (cmd === 'hello') return say(`hello ${version} card 1000`);
+    if (cmd === 'time' && version >= 2) return (got.time = [Number(a), Number(b)], say('ok'));
     if (cmd === 'begin') return refuse ? say('err ' + refuse) : (got.id = a, got.total = Number(b), say('ok'));
     if (cmd === 'file') return (current = a, got.files.set(a, []), say('ok'));
     if (cmd === 'data') return (got.files.get(current).push(...Buffer.from(a, 'base64')), say('ok'));
@@ -54,4 +56,21 @@ const files = new Map([['game.json', new TextEncoder().encode('{"id":"prueba"}')
   await assert.rejects(send(files, 'prueba', () => {}), /no cabe en la consola/);
   assert.equal(fake.got.ended, 'abort'); // what came is thrown away
 }
-console.log('cable: a game sent whole through a chatty console; a refusal said in Spanish');
+{
+  const fake = fakeConsole({ version: 2 });
+  Object.defineProperty(navigator, 'serial', { value: fake.serial, configurable: true });
+  const { send } = await import('../js/cable.js?clock');
+  const before = Math.floor(Date.now() / 1000);
+  await send(files, 'prueba', () => {});
+  assert.ok(fake.got.time && fake.got.time[0] >= before && fake.got.time[0] <= before + 5, 'the time, now');
+  assert.equal(fake.got.time[1], -new Date().getTimezoneOffset());
+  assert.equal(fake.got.ended, 'end');
+}
+{
+  const fake = fakeConsole({ version: 1 }); // (the first block's console is one too: no time line went to it, or send would have failed)
+  Object.defineProperty(navigator, 'serial', { value: fake.serial, configurable: true });
+  const { send } = await import('../js/cable.js?old');
+  await send(files, 'prueba', () => {});
+  assert.equal(fake.got.time, undefined);
+}
+console.log('cable: a game sent whole through a chatty console; a refusal said in Spanish; the clock set on a console that keeps one');

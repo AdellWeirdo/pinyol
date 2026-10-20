@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "bp.h"
 #include "lauxlib.h"
@@ -1022,6 +1023,58 @@ bool save_file_atomic(const char *p, const char *txt) {
     return ok;
 }
 
+/* The C library's clock: the offset is worked out from the local and the UTC breakdowns of the same moment, with no
+ * extension (tm_gmtoff is not everywhere). A year before 2020 is taken as a clock that was never set. */
+__attribute__((weak)) bool hal_clock(int64_t *unix, int *offset_min) {
+    time_t t = time(NULL);
+    struct tm lt, gt;
+    const struct tm *l = localtime(&t);
+    if (!l) return false;
+    lt = *l;
+    const struct tm *g = gmtime(&t);
+    if (!g) return false;
+    gt = *g;
+    int days = lt.tm_yday - gt.tm_yday;
+    if (lt.tm_year != gt.tm_year) days = lt.tm_year > gt.tm_year ? 1 : -1; /* (across new year) */
+    *unix = (int64_t)t;
+    *offset_min = days * 1440 + (lt.tm_hour - gt.tm_hour) * 60 + (lt.tm_min - gt.tm_min);
+    return lt.tm_year + 1900 >= 2020;
+}
+
+static struct { bool on, known; int64_t unix; int offset; } forced;
+void clock_force(bool on, bool known, int64_t unix, int offset_min) { forced.on = on, forced.known = known, forced.unix = unix, forced.offset = offset_min; }
+
+/* clock() -> {year, month, day, hour, min, sec, wday (1 Monday .. 7 Sunday), yday (1..366), days, offset}, the local date and time;
+ * nil when the machine does not know it. days counts from 1970-01-01 (local): the time between two sessions, in a 32-bit Lua (the console's)
+ * that seconds since 1970 would overflow in 2038. The civil date from the days since 1970 (H. Hinnant's days_from_civil, backwards). */
+static int l_clock(lua_State *L) {
+    int64_t unix = 0;
+    int off = 0;
+    bool known = forced.on ? forced.known : hal_clock(&unix, &off);
+    if (forced.on) unix = forced.unix, off = forced.offset;
+    if (!known) return lua_pushnil(L), 1;
+    int64_t local = unix + (int64_t)off * 60;
+    int64_t days = local >= 0 ? local / 86400 : -((-local + 86399) / 86400), secs = local - days * 86400;
+    int64_t z = days + 719468, era = (z >= 0 ? z : z - 146096) / 146097;
+    int64_t doe = z - era * 146097, yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    int64_t doy = doe - (365 * yoe + yoe / 4 - yoe / 100), mp = (5 * doy + 2) / 153;
+    int64_t d = doy - (153 * mp + 2) / 5 + 1, m = mp < 10 ? mp + 3 : mp - 9, y = yoe + era * 400 + (m <= 2);
+    static const int before[12] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
+    bool leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
+    lua_createtable(L, 0, 10);
+    lua_pushinteger(L, (lua_Integer)y), lua_setfield(L, -2, "year");
+    lua_pushinteger(L, (lua_Integer)m), lua_setfield(L, -2, "month");
+    lua_pushinteger(L, (lua_Integer)d), lua_setfield(L, -2, "day");
+    lua_pushinteger(L, (lua_Integer)(secs / 3600)), lua_setfield(L, -2, "hour");
+    lua_pushinteger(L, (lua_Integer)(secs / 60 % 60)), lua_setfield(L, -2, "min");
+    lua_pushinteger(L, (lua_Integer)(secs % 60)), lua_setfield(L, -2, "sec");
+    lua_pushinteger(L, (lua_Integer)(((days % 7) + 7 + 3) % 7 + 1)), lua_setfield(L, -2, "wday"); /* 1970-01-01 was a Thursday */
+    lua_pushinteger(L, (lua_Integer)(before[m - 1] + d + (leap && m > 2))), lua_setfield(L, -2, "yday");
+    lua_pushinteger(L, (lua_Integer)days), lua_setfield(L, -2, "days");
+    lua_pushinteger(L, (lua_Integer)off), lua_setfield(L, -2, "offset");
+    return 1;
+}
+
 __attribute__((weak)) bool hal_save(const char *path, const char *txt) { return save_file_atomic(path, txt); }
 __attribute__((weak)) void hal_save_flush(void) {}
 
@@ -1253,7 +1306,7 @@ void v2_splash_end(void) {
 
 static void api(lua_State *L) {
     static const luaL_Reg F[] = {
-        {"btn", l_btn}, {"btnp", l_btnp}, {"btnr", l_btnr}, {"btnt", l_btnt}, {"btnb", l_btnb}, {"touch", l_touch}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
+        {"clock", l_clock}, {"btn", l_btn}, {"btnp", l_btnp}, {"btnr", l_btnr}, {"btnt", l_btnt}, {"btnb", l_btnb}, {"touch", l_touch}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
         {"pal", l_pal}, {"palette", l_palette}, {"backdrop", l_backdrop}, {"bg", l_bg}, {"scroll", l_scroll},
         {"affine", l_affine}, {"rot", l_rot}, {"mode7", l_mode7}, {"project", l_project}, {"mget", l_mget},
         {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_backdrop", l_line_backdrop}, {"line_pal", l_line_pal}, {"line_pal_obj", l_line_pal_obj},

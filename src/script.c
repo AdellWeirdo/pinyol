@@ -313,6 +313,16 @@ static bool run_line(char *cmd, char *arg) {
         if (device_led() != want) FAIL("the LED is %06x, not %s", device_led(), arg);
         return true;
     }
+    if (!strcmp(cmd, "clock")) { /* pinyol@2: clock UNIX [OFFSET_MIN]: the wall clock says that (and stays there); clock none: it knows no
+                                   * date; clock real: the machine's own again */
+        long long u = 0;
+        int off = 0;
+        if (!strcmp(arg, "none")) clock_force(true, false, 0, 0);
+        else if (!strcmp(arg, "real")) clock_force(false, false, 0, 0);
+        else if (sscanf(arg, "%lld %d", &u, &off) >= 1) clock_force(true, true, (int64_t)u, off);
+        else FAIL("clock: a time (seconds since 1970 and the minutes from UTC), none or real");
+        return true;
+    }
     if (!strcmp(cmd, "wait_ms")) { /* real time passing: two runs playing each other over BP_LINK=udp */
         uint32_t t0 = hal_micros(), ms = (uint32_t)atoi(arg);
         while (hal_micros() - t0 < ms * 1000) {}

@@ -55,7 +55,11 @@ export async function send(files, id, progress) {
     return a;
   };
   try {
-    await ask('hello', 4000);
+    const hello = await ask('hello', 4000);
+    if (Number(hello.split(' ')[1]) >= 2) { // a console that keeps a wall clock: this computer's time and its offset from UTC
+      const now = new Date();
+      await ask(`time ${Math.floor(now.getTime() / 1000)} ${-now.getTimezoneOffset()}`);
+    }
     const total = [...files.values()].reduce((n, b) => n + b.length, 0);
     let sent = 0;
     await ask(`begin ${id} ${total}`, 15000); // the game playing on it stops first

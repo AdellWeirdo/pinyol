@@ -1,7 +1,9 @@
 /* The cable: a game sent over the console's USB cable by pinyol's editor (Chrome's Web Serial), written to the card
  * (or, with no card, the flash) and started at once. A line each way; the console's answers start with "@pinyol " (the
  * log shares the cable) and it answers every line, so the editor never sends faster than it writes:
- *   hello                  @pinyol hello 1 <card|flash> <free KB>
+ *   hello                  @pinyol hello 2 <card|flash> <free KB>   (2: it takes `time`; 1, older, does not answer it)
+ *   time <unix> <offset>   the wall clock: seconds since 1970 (UTC) and the local offset in minutes: ok. The console has no clock
+ *                          of its own; it keeps this one while asleep (the RTC timer), until its battery runs out
  *   begin <id> <bytes>     the game playing (or the list) gives way, a folder is made ready: @pinyol ok | @pinyol err <why>
  *   file <path> <bytes>    the next file, a path inside the game made of safe names ("assets/SPR_x.rgb565"): ok
  *   data <base64>          its next bytes, at most 768 a line: ok
@@ -31,6 +33,8 @@
 #include "mbedtls/base64.h"
 #include "remote.h"
 #include "sd.h"
+#include "esp_attr.h"
+#include <sys/time.h>
 
 #define LINE 1100            /* a data line: "data " and 768 bytes in base64 */
 #define CHUNK 768
@@ -124,12 +128,35 @@ static void make_parents(const char *file) { /* the folders a file's path goes t
     }
 }
 
+/* The wall clock's offset from UTC, kept where a sleep or a restart does not lose it (the RTC timer keeps the seconds); the magic says
+ * it was set since the battery last ran out. */
+static RTC_NOINIT_ATTR int32_t clock_offset, clock_magic;
+#define CLOCK_MAGIC 0x434C4B31 /* "CLK1" */
+
+bool hal_clock(int64_t *unix, int *offset_min) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    if (clock_magic != CLOCK_MAGIC || tv.tv_sec < 1577836800) return false; /* (before 2020: never set) */
+    *unix = (int64_t)tv.tv_sec, *offset_min = (int)clock_offset;
+    return true;
+}
+
 /* Outside a transfer: the hello, a begin (answered once the game has stopped), or a test build's remote line. */
 static void command(const char *cmd) {
     char id[32];
     long bytes = 0;
+    long long unix = 0;
+    int offset = 0;
     if (!strcmp(cmd, "hello")) {
-        say("hello 1 %s %llu", storage_card() ? "card" : "flash", (unsigned long long)(free_bytes() / 1024));
+        say("hello 2 %s %llu", storage_card() ? "card" : "flash", (unsigned long long)(free_bytes() / 1024));
+    } else if (sscanf(cmd, "time %lld %d", &unix, &offset) == 2) {
+        if (unix < 1577836800 || offset < -14 * 60 || offset > 14 * 60) say("err not a time this console can take");
+        else {
+            struct timeval tv = {.tv_sec = (time_t)unix};
+            settimeofday(&tv, NULL);
+            clock_offset = offset, clock_magic = CLOCK_MAGIC;
+            say("ok");
+        }
     } else if (sscanf(cmd, "begin %31s %ld", id, &bytes) == 2 || sscanf(cmd, "patch %31s %ld", id, &bytes) == 2) {
         if (!safe_id(id) || bytes <= 0 || bytes > GAME_MAX) say("err not a game this console can take");
         else snprintf(want_id, sizeof want_id, "%s", id), want_bytes = bytes, patching = cmd[0] == 'p', wanted = true;

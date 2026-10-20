@@ -62,6 +62,10 @@ uint32_t hal_micros(void); /* a microsecond clock, for timing (wraps after ~71 m
  * once need not define them: src/lua_game.c has both as weak defaults. */
 bool hal_save(const char *path, const char *txt);
 void hal_save_flush(void);
+/* The wall clock: seconds since 1970 (UTC) in *unix and the local time's offset from UTC in minutes in *offset_min; false
+ * when this machine does not know the date (the console has no clock of its own: the computer sets it over the cable, and it
+ * keeps it while asleep). src/lua_game.c has a weak default from the C library, which computers and browsers use. */
+bool hal_clock(int64_t *unix, int *offset_min);
 /* realloc for big or script data, in memory that may be slower (PSRAM on the console); free() releases it. */
 void *hal_realloc_slow(void *p, size_t n);
 
