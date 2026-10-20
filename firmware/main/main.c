@@ -62,6 +62,9 @@ static char *save_txt, save_path[400];
 #define SAVE_QUIET_MS 1000
 #define SAVE_RETRIES 3    /* a failed write is tried again, this many times, this far apart */
 #define SAVE_RETRY_MS 3000
+/* The saver on core 1, under the picture's half (7), the display (5) and the mixer (6): while the card writes (60-80 ms) it
+ * must not hold core 0, where the game loop runs at priority 1. Unpinned at priority 2 it did: a frame as long as the write. */
+#define SAVER_PRIO 1
 
 /* True when there was nothing to write or it is down. A save that fails is put back (unless the game has stored something
  * newer meanwhile) for the saver to try again: the game has long since been told it was kept. */
@@ -101,7 +104,7 @@ bool hal_save(const char *path, const char *txt) {
     if (!saver) {
         save_mx = xSemaphoreCreateMutex();
         save_write_mx = xSemaphoreCreateMutex();
-        if (!save_mx || !save_write_mx || xTaskCreate(saver_task, "saves", 6144, NULL, 2, &saver) != pdPASS) {
+        if (!save_mx || !save_write_mx || xTaskCreatePinnedToCore(saver_task, "saves", 6144, NULL, SAVER_PRIO, &saver, 1) != pdPASS) {
             saver = NULL;
             return save_file_atomic(path, txt);
         }

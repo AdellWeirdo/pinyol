@@ -407,12 +407,13 @@ The list expected `scene.go` hygiene, the full reset of the picture between game
 - **Changing rooms costs nothing on the console**: the hero walks the castle in castle pixels and the game only puts the next room's map on BG1
   (`bg(1, {map = ...})`); walking through all eight rooms gave 57.6-58.8 fps and no slow tick at a room change. `rooms.lua` (a picture backdrop and a
   curtain) is for adventures, not for this: a tile room needs none of it.
-- **A save coincided with a stall, and its cause is not settled**: touching a statue logged `saves: 180 bytes in 73 ms`, and next to it an 80 ms frame
-  and a 41 ms tick. The write is not on the game's thread: the console hands `store()` to a task of its own (`saver_task` in `firmware/main/main.c`,
-  priority 2, not pinned to a core), which waits for a second of quiet and then writes. What made the game wait is a guess: the game reading the next
-  room's map from the card while the save holds the card's file lock (the walk changed rooms every second), or the save task taking core 0 from the
-  game loop (priority 1). Measuring the two apart (a save standing still, a save while rooms keep loading) was started and not finished: the board was
-  being used by another session at the time. (A first version of this paragraph said the write was on the game's thread; it was not.)
+- **A save stalled the picture, and it was the save task's priority**: touching a statue logged a 60-80 ms write to the card and, next to it, a frame
+  as long. The write is not on the game's thread: the console hands `store()` to a task of its own (`saver_task`, `firmware/main/main.c`). That task
+  ran at priority 2 with no core of its own, above the game loop (priority 1, core 0), and while the card wrote it held core 0. Measured on the board,
+  three times each, a save standing still and a save while rooms kept loading: unpinned at priority 2, a 46-79 ms frame in 5 of 6 and a 69 ms tick in one;
+  pinned to core 1 at priority 1 (under the picture's half, the display and the mixer there), none in 6, the write itself 84-110 ms in the background.
+  The other guesses were wrong: not the card's file lock (it stalled standing still, reading nothing), not a flash write (the saves are on the card).
+  (A first version of this paragraph said the write was on the game's thread; it was not.)
 - **The design is proved, not only played**: `world.lua`'s solver (where a hero that climbs 3 tiles, or 5 with the wings, and dashes through cracked
   walls can stand) checks the order (nothing gets the wings; the wings get the gust; both get the gargoyle and the heart), with a careful reach across
   (3 tiles: what surely can be done) and a long one (7: what may be done), and that nothing reachable is a trap (one search forward, one back over the same
