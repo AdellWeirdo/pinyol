@@ -336,22 +336,22 @@ if(NOT NO_PIL)
 endif()
 # line_fx: a fade whose amount grows down the screen, then line_off: two pictures, no more, no fewer
 add_test(NAME physics_drive COMMAND $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/drive
-  --saves ${CMAKE_BINARY_DIR}/saves_drive --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/drive.script)
+  --saves ${CMAKE_BINARY_DIR}/saves_drive_x --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/drive.script)
 add_test(NAME pinball COMMAND $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/pinball
-  --saves ${CMAKE_BINARY_DIR}/saves_pinball --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/pinball.script)
-add_test(NAME combate COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_combate && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/combate \
-  --saves ${CMAKE_BINARY_DIR}/saves_combate --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/combate.script >/dev/null && \
-  cmp ${CMAKE_BINARY_DIR}/saves_combate/leak_a.ppm ${CMAKE_BINARY_DIR}/saves_combate/leak_b.ppm")
+  --saves ${CMAKE_BINARY_DIR}/saves_pinball_x --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/pinball.script)
+add_test(NAME combate COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_combate_x && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/combate \
+  --saves ${CMAKE_BINARY_DIR}/saves_combate_x --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/combate.script >/dev/null && \
+  cmp ${CMAKE_BINARY_DIR}/saves_combate_x/leak_a.ppm ${CMAKE_BINARY_DIR}/saves_combate_x/leak_b.ppm")
 add_test(NAME tablero COMMAND $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/tablero
-  --saves ${CMAKE_BINARY_DIR}/saves_tablero --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/tablero.script)
-add_test(NAME microjuegos COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_microjuegos && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/microjuegos \
-  --saves ${CMAKE_BINARY_DIR}/saves_microjuegos --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/microjuegos.script >/dev/null && \
-  for i in 1 2 3 4 5 6 7 8; do cmp ${CMAKE_BINARY_DIR}/saves_microjuegos/leak_0.ppm ${CMAKE_BINARY_DIR}/saves_microjuegos/leak_$i.ppm || exit 1; done")
-add_test(NAME horizonte_linepal COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_horizonte && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/horizonte \
-  --saves ${CMAKE_BINARY_DIR}/saves_horizonte --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/horizonte.script >/dev/null && \
-  cmp ${CMAKE_BINARY_DIR}/saves_horizonte/hz_on.ppm ${CMAKE_BINARY_DIR}/saves_horizonte/hz_on2.ppm && \
-  cmp ${CMAKE_BINARY_DIR}/saves_horizonte/hz_off0.ppm ${CMAKE_BINARY_DIR}/saves_horizonte/hz_off.ppm && \
-  ! cmp -s ${CMAKE_BINARY_DIR}/saves_horizonte/hz_on.ppm ${CMAKE_BINARY_DIR}/saves_horizonte/hz_off.ppm")
+  --saves ${CMAKE_BINARY_DIR}/saves_tablero_x --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/tablero.script)
+add_test(NAME microjuegos COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_microjuegos_x && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/microjuegos \
+  --saves ${CMAKE_BINARY_DIR}/saves_microjuegos_x --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/microjuegos.script >/dev/null && \
+  for i in 1 2 3 4 5 6 7 8; do cmp ${CMAKE_BINARY_DIR}/saves_microjuegos_x/leak_0.ppm ${CMAKE_BINARY_DIR}/saves_microjuegos_x/leak_$i.ppm || exit 1; done")
+add_test(NAME horizonte_linepal COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/saves_horizonte_x && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/horizonte \
+  --saves ${CMAKE_BINARY_DIR}/saves_horizonte_x --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/horizonte.script >/dev/null && \
+  cmp ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_on.ppm ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_on2.ppm && \
+  cmp ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_off0.ppm ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_off.ppm && \
+  ! cmp -s ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_on.ppm ${CMAKE_BINARY_DIR}/saves_horizonte_x/hz_off.ppm")
 add_test(NAME linefx_crc COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/linefx \
   --saves ${CMAKE_BINARY_DIR}/saves_linefx_crc --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/linefx.script \
   --crc ${CMAKE_BINARY_DIR}/linefx.crc >/dev/null && test $(sort -u ${CMAKE_BINARY_DIR}/linefx.crc | wc -l) -eq 2")
