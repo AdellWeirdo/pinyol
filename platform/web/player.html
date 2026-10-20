@@ -326,7 +326,7 @@ const WORDS = {
     'No hay game.json en el .zip': 'No hi ha cap game.json al .zip', 'Abriendo el juego…': 'Obrint el joc…',
     'El id del juego no es válido': "L'identificador del joc no és vàlid", 'Teclado, mando, ratón o botones en pantalla': 'Teclat, comandament, ratolí o botons a la pantalla',
     'Cargando el motor…': 'Carregant el motor…', 'El juego no se puede abrir: sus archivos no encajan': 'El joc no es pot obrir: els fitxers no encaixen',
-    'El juego se ha parado': "El joc s'ha aturat", 'El juego no se ha podido abrir': "No s'ha pogut obrir el joc",
+    'El juego se ha parado': "El joc s'ha aturat", 'El juego se ha parado por un error': "El joc s'ha aturat per un error", 'El juego no se ha podido abrir': "No s'ha pogut obrir el joc",
     'Descargando el juego…': 'Descarregant el joc…', 'No se ha podido descargar el juego': "No s'ha pogut descarregar el joc",
     'Dirección de juego no válida': 'Adreça de joc no vàlida', 'Mando conectado': 'Comandament connectat',
     '¿Juegas con mando?': 'Jugues amb comandament?', 'Conéctalo por USB o Bluetooth y pulsa cualquier botón.': "Connecta'l per USB o Bluetooth i prem qualsevol botó.",
@@ -344,7 +344,7 @@ const WORDS = {
     'No hay game.json en el .zip': 'No game.json in the .zip', 'Abriendo el juego…': 'Opening the game…',
     'El id del juego no es válido': 'Invalid game ID', 'Teclado, mando, ratón o botones en pantalla': 'Keyboard, gamepad, mouse or on-screen buttons',
     'Cargando el motor…': 'Loading the engine…', 'El juego no se puede abrir: sus archivos no encajan': "The game can't be opened: its files don't match",
-    'El juego se ha parado': 'The game has stopped', 'El juego no se ha podido abrir': "The game couldn't be opened",
+    'El juego se ha parado': 'The game has stopped', 'El juego se ha parado por un error': 'The game stopped on an error', 'El juego no se ha podido abrir': "The game couldn't be opened",
     'Descargando el juego…': 'Downloading the game…', 'No se ha podido descargar el juego': "Couldn't download the game",
     'Dirección de juego no válida': 'Invalid game address', 'Mando conectado': 'Gamepad connected',
     '¿Juegas con mando?': 'Playing with a gamepad?', 'Conéctalo por USB o Bluetooth y pulsa cualquier botón.': 'Connect it by USB or Bluetooth and press any button.',
@@ -493,6 +493,19 @@ async function load(buf, url) {
 
 const syncSaves = () => new Promise(r => Module.FS.syncfs(false, r));
 
+/* A Lua game that stops on an error shows it on its screen; here it is also written under the game, where it can be read
+   and copied whole, and in the editor (?embed=1) it goes to the editor's own line, where its creator is looking. Once. */
+function watchError() {
+  const timer = setInterval(() => {
+    const p = Module._web_error && Module._web_error();
+    if (!p) return;
+    clearInterval(timer);
+    const message = t('El juego se ha parado por un error') + ': ' + Module.UTF8ToString(p);
+    status(message, true);
+    if (document.body.classList.contains('embed')) parent.postMessage({ pinyol: 'error', message }, location.origin);
+  }, 500);
+}
+
 async function start() {
   if (!gameFiles || started) return;
   started = true;
@@ -524,6 +537,7 @@ async function start() {
   status('');
   $('canvas').focus();
   if (gameFiles.url && fromSite(gameFiles.url) && /^[a-z0-9_-]{1,40}$/.test(gameFiles.id)) track(gameFiles.id, gameFiles.title);
+  watchError();
   try { Module.callMain(['--game', '/game', '--saves', '/persist/' + gameFiles.id]); }
   catch (e) { if (e !== 'unwind' && !(e && e.name === 'ExitStatus')) status(t('El juego se ha parado') + ': ' + e, true); }
 }

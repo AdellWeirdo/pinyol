@@ -71,7 +71,7 @@ if(EMSCRIPTEN)
   target_compile_options(pinyol_player PRIVATE -Wall -Wextra -sUSE_SDL=2)
   target_link_libraries(pinyol_player pinyol_core)
   target_link_options(pinyol_player PRIVATE -sUSE_SDL=2 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sINVOKE_RUN=0
-                      -sFORCE_FILESYSTEM=1 -sEXPORTED_RUNTIME_METHODS=FS,callMain -lidbfs.js
+                      -sFORCE_FILESYSTEM=1 -sEXPORTED_RUNTIME_METHODS=FS,callMain,UTF8ToString -lidbfs.js
                       --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/platform/web/player.html)
   set_property(TARGET pinyol_player APPEND PROPERTY LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/platform/web/player.html)
 

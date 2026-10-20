@@ -233,6 +233,9 @@ static uint16_t web_held; /* the page's on-screen buttons */
 
 EMSCRIPTEN_KEEPALIVE void web_mute(int on) { muted = on; }
 
+/* the Lua game's error (where and what, as on its screen), or NULL: the page shows it under the game and tells the editor */
+EMSCRIPTEN_KEEPALIVE const char *web_error(void) { return v2_error(); }
+
 EMSCRIPTEN_KEEPALIVE void web_button(int button, int down) {
     static const uint16_t bits[] = {ACT_UP, ACT_DOWN, ACT_LEFT, ACT_RIGHT, ACT_OK, ACT_BACK, ACT_NEXT, ACT_PAUSE, ACT_INV};
     if (button < 0 || button >= (int)(sizeof bits / sizeof bits[0])) return;
