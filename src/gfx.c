@@ -901,6 +901,16 @@ void gfx_upscale2x(const surface *src, surface *dst) {
     }
 }
 
+void gfx_copy1x(const surface *src, surface *dst, int ox, int oy) {
+    int xa = dst->x0 > ox ? dst->x0 : ox, xb = dst->x0 + dst->w < ox + src->w ? dst->x0 + dst->w : ox + src->w;
+    int ya = dst->y0 > oy ? dst->y0 : oy, yb = dst->y0 + dst->h < oy + src->h ? dst->y0 + dst->h : oy + src->h;
+    const int ys = step_y(dst);
+    for (int x = xa; x < xb; x++) {
+        uint16_t *d = at(dst, x, ya);
+        for (int y = ya; y < yb; y++, d += ys) *d = stored(dst, src->px[(y - oy) * src->w + (x - ox)]);
+    }
+}
+
 void gfx_upscale2x_key(const surface *src, surface *dst, uint16_t key) {
     int xa = dst->x0, xb = dst->x0 + dst->w, ya = dst->y0, yb = dst->y0 + dst->h, ys = step_y(dst);
     if (xb > 2 * src->w) xb = 2 * src->w;

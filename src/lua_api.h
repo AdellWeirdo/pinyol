@@ -68,6 +68,7 @@ static inline float opt_float(lua_State *L, int t, const char *k, float d, float
 void draw_register(lua_State *L); /* the API's drawing functions, as globals */
 void draw_frame_begin(void);      /* before _draw: a new list */
 void draw_overlay(surface *s);    /* the list, onto s (a window of the screen or all of it) */
+void draw_set_view(int x, int y, int w, int h); /* what is drawn from now on is (0, 0) at (x, y) and cut at w x h: one of two screens */
 bool draw_covers_screen(void);    /* the list starts with a full-screen opaque picture: the world need not be drawn */
 void draw_free(void);             /* the game's fonts, when its Lua state goes */
 /* Where a frame goes: while somebody wants it (a bit each, so the meter and a game's perf("ops") do not undo each other) every

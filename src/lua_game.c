@@ -61,7 +61,22 @@ static sheet sheets[MAX_SHEETS];
 static int nsheets;
 static tilemap tilemaps[MAX_TILEMAPS];
 static int ntilemaps;
-static struct { uint16_t *map; int mx7_on; float cx, cy, angle, height, horizon, fov; } layer[PPU_BGS];
+typedef struct { uint16_t *map; int mx7_on; float cx, cy, angle, height, horizon, fov; } layer_t;
+static layer_t layer[PPU_BGS];
+
+/* two screens (below): what a screen parks while the other is drawn on, and which one it is */
+typedef struct {
+    layer_t layer[PPU_BGS];
+    ppu_line_scroll scroll[PPU_BGS][PPU_H];
+    ppu_line_affine affine[PPU_BGS][PPU_H];
+    ppu_line_span win[2][PPU_H];
+    uint16_t back[PPU_H];
+    ppu_line_pal pal[2][PPU_H];
+    uint8_t ev[PPU_H];
+} parked_screen;
+static int screens = 1, cur_screen; /* 1 or 2; the one drawn on (0 or 1) */
+static parked_screen *parked;       /* [2], only for a game with two screens */
+static uint16_t *world2;            /* the bottom screen's picture (G.world is the top's) */
 
 static void *load_bytes(const char *id, const char *ext, long *len) {
     char path[384];
@@ -165,6 +180,7 @@ static void assets_free(void) {
     for (int i = 0; i < nsheets; i++) free(sheets[i].idx);
     for (int i = 0; i < ntilemaps; i++) free(tilemaps[i].tiles), free(tilemaps[i].map), free(tilemaps[i].rows);
     for (int i = 0; i < PPU_BGS; i++) free(layer[i].map);
+    if (parked) for (int k = 0; k < 2; k++) if (k != cur_screen) for (int i = 0; i < PPU_BGS; i++) free(parked[k].layer[i].map);
     nsheets = ntilemaps = 0;
     memset(layer, 0, sizeof layer);
 }
@@ -177,6 +193,43 @@ static ppu_line_span line_win_tab[2][PPU_H];
 static uint16_t line_back_tab[PPU_H];
 static ppu_line_pal line_pal_tab[2][PPU_H]; /* [0] the backgrounds' palette, [1] the sprites' */
 static uint8_t line_ev_tab[PPU_H];
+
+/* ------------------------------------------------------------------ two screens (game.json "screens": 2)
+ * What belongs to a screen but lives beside the PPU (its layers' maps, the per-line tables, whether it is only its
+ * backdrop) is parked while the other screen is the one drawn on: screen(n) swaps them. docs/ds-dual-screen-design.md */
+
+
+
+bool v2_dual(void) { return screens == 2; }
+
+static void screen_copy(parked_screen *p, bool save) { /* the current screen's into p, or p's into it */
+#define SWAP_TAB(field, tab) do { if (save) memcpy(p->field, tab, sizeof p->field); else memcpy(tab, p->field, sizeof tab); } while (0)
+    SWAP_TAB(layer, layer);
+    SWAP_TAB(scroll, line_scroll_tab);
+    SWAP_TAB(affine, line_affine_tab);
+    SWAP_TAB(win, line_win_tab);
+    SWAP_TAB(back, line_back_tab);
+    SWAP_TAB(pal, line_pal_tab);
+    SWAP_TAB(ev, line_ev_tab);
+#undef SWAP_TAB
+}
+
+static void screen_select(int n) { /* 0 or 1 */
+    if (screens < 2 || n == cur_screen) return;
+    screen_copy(&parked[cur_screen], true);
+    screen_copy(&parked[n], false);
+    cur_screen = n;
+    ppu_select(n);
+}
+
+static void screen_view(int n) { draw_set_view(DUAL_X(n), DUAL_Y, WORLD_W, WORLD_H); }
+
+static int l_screen(lua_State *L) { /* screen(1 or 2): the top or the bottom (the touch one); what is drawn from now on is for it */
+    lua_Integer n = luaL_checkinteger(L, 1);
+    if (n < 1 || n > screens) return luaL_error(L, screens == 2 ? "screen(%d): the screens are 1 and 2" : "screen(%d): this game has one screen (game.json \"screens\": 2)", (int)n);
+    if (screens == 2) screen_select((int)n - 1), screen_view((int)n - 1);
+    return 0;
+}
 
 /* ------------------------------------------------------------------ the sandbox */
 
@@ -232,6 +285,7 @@ static bool call(const char *fn, int nargs) { /* args are on the stack; true if 
         lua_pop(Ls, 1 + nargs);
         return true;
     }
+    screen_select(0); /* every call starts on the top screen */
     lua_insert(Ls, -1 - nargs);
     lua_pushcfunction(Ls, msgh);
     lua_insert(Ls, -2 - nargs);
@@ -423,8 +477,8 @@ static int l_btnb(lua_State *L) {
 }
 
 static int l_touch(lua_State *L) { /* in the 240x160 world's pixels */
-    lua_pushinteger(L, G.in.px / 2);
-    lua_pushinteger(L, G.in.py / 2);
+    lua_pushinteger(L, screens == 2 ? G.in.px : G.in.px / 2); /* two screens: already the bottom one's own pixels (game_tick) */
+    lua_pushinteger(L, screens == 2 ? G.in.py : G.in.py / 2);
     lua_pushboolean(L, G.in.touch);
     lua_pushboolean(L, G.in.tap);
     lua_pushboolean(L, G.in.release);
@@ -1354,7 +1408,7 @@ void v2_splash_end(void) {
 
 static void api(lua_State *L) {
     static const luaL_Reg F[] = {
-        {"clock", l_clock}, {"btn", l_btn}, {"btnp", l_btnp}, {"btnr", l_btnr}, {"btnt", l_btnt}, {"btnb", l_btnb}, {"touch", l_touch}, {"pen", l_pen}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
+        {"clock", l_clock}, {"btn", l_btn}, {"btnp", l_btnp}, {"btnr", l_btnr}, {"btnt", l_btnt}, {"btnb", l_btnb}, {"touch", l_touch}, {"pen", l_pen}, {"screen", l_screen}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
         {"pal", l_pal}, {"palette", l_palette}, {"backdrop", l_backdrop}, {"bg", l_bg}, {"scroll", l_scroll},
         {"affine", l_affine}, {"rot", l_rot}, {"mode7", l_mode7}, {"project", l_project}, {"mget", l_mget},
         {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_backdrop", l_line_backdrop}, {"line_pal", l_line_pal}, {"line_pal_obj", l_line_pal_obj}, {"line_ramp", l_line_ramp},
@@ -1378,10 +1432,10 @@ static void api(lua_State *L) {
     console_register(L); /* the console's games, for its menu: lua_console.c */
     grid_register(L);   /* a game's thinking on a grid: lua_grid.c */
     ray_register(L);    /* first person: lua_ray.c */
-    static const struct { const char *n; int v; } K[] = {
+    const struct { const char *n; int v; } K[] = { /* (not static: SCREEN_W and SCREEN_H are the game's) */
         {"BG0", PPU_BG0}, {"BG1", PPU_BG1}, {"BG2", PPU_BG2}, {"BG3", PPU_BG3}, {"OBJ", PPU_OBJ}, {"BACK", PPU_BACK},
         {"FX", PPU_FX}, {"ALL", 0x3F}, {"FLIP_X", F_FLIPX}, {"FLIP_Y", F_FLIPY}, {"BLEND", F_BLEND},
-        {"WINDOW", F_WINDOW}, {"DOUBLE", F_DOUBLE}, {"MOSAIC", F_MOSAIC}, {"SCREEN_W", SCREEN_W}, {"SCREEN_H", SCREEN_H},
+        {"WINDOW", F_WINDOW}, {"DOUBLE", F_DOUBLE}, {"MOSAIC", F_MOSAIC}, {"SCREEN_W", screens == 2 ? WORLD_W : SCREEN_W}, {"SCREEN_H", screens == 2 ? WORLD_H : SCREEN_H},
         {"W", PPU_W}, {"H", PPU_H}};
     for (size_t i = 0; i < sizeof K / sizeof K[0]; i++) lua_pushinteger(L, K[i].v), lua_setfield(L, -2, K[i].n);
     lua_pop(L, 1);
@@ -1401,6 +1455,8 @@ void v2_free(void) {
     Ls = NULL;
     splash_ref = LUA_NOREF;
     assets_free();
+    free(parked), free(world2);
+    parked = NULL, world2 = NULL, screens = 1, cur_screen = 0;
     hal_save_flush(); /* a save still on its way is written before the game goes */
     cJSON_Delete(store);
     store = NULL;
@@ -1413,6 +1469,15 @@ void v2_free(void) {
 bool v2_load(void) {
     v2_free();
     ppu_reset();
+    if (jint(G.game, "screens", 1) == 2) { /* two screens: the top is G.world, the bottom's picture and parked state are here */
+        parked = calloc(2, sizeof *parked);
+        world2 = calloc((size_t)WORLD_W * WORLD_H, sizeof *world2);
+        if (!parked || !world2) {
+            fail("start", "no memory for two screens");
+            return false;
+        }
+        screens = 2;
+    }
     int kb = jint(G.game, "lua_memory_kb", MEM_QUOTA_KB);
     mem_quota = (size_t)(kb < 256 ? 256 : kb > MEM_MAX_KB ? MEM_MAX_KB : kb) * 1024;
     Ls = lua_newstate(alloc, NULL);
@@ -1501,9 +1566,18 @@ void v2_draw_world(void) {
     draw_frame_begin();
     uint32_t t = hal_micros();
     if (splash_own()) splash_frame_begin(), splash_call("draw", splash_ticks(), NULL); /* the game's careta */
-    else call("_draw", 0);
+    else {
+        if (screens == 2) screen_view(0); /* _draw starts on the top screen */
+        call("_draw", 0);
+    }
     uint32_t u = hal_micros();
-    if (!(blank = ppu_blank(&backdrop))) ppu_render(G.world); /* nothing of the world shown: one colour, not worked out */
+    if (screens == 2) { /* each screen's processor draws its own picture (parked state brought back first) */
+        for (int k = 0; k < 2; k++) {
+            screen_select(k);
+            ppu_render(k ? world2 : G.world);
+        }
+        screen_select(0);
+    } else if (!(blank = ppu_blank(&backdrop))) ppu_render(G.world); /* nothing of the world shown: one colour, not worked out */
     us_draw = u - t, us_ppu = hal_micros() - u;
     acc.draw += us_draw, acc.ppu += us_ppu, acc.frames++;
     if (us_ppu > acc.ppu_max) acc.ppu_max = us_ppu;
@@ -1518,7 +1592,12 @@ void v2_timing(v2_times *t) {
 
 void v2_draw(surface *s) {
     surface world = {.px = G.world, .w = WORLD_W, .h = WORLD_H};
-    if (draw_covers_screen()) {} /* a full-screen opaque picture comes first: no world */
+    if (screens == 2) { /* the two pictures side by side, 1:1, in the middle rows; the text and shapes are cut to each */
+        surface bottom = {.px = world2, .w = WORLD_W, .h = WORLD_H};
+        gfx_fill(s, 0, 0, SCREEN_W, SCREEN_H, 0);
+        gfx_copy1x(&world, s, DUAL_X(0), DUAL_Y);
+        gfx_copy1x(&bottom, s, DUAL_X(1), DUAL_Y);
+    } else if (draw_covers_screen()) {} /* a full-screen opaque picture comes first: no world */
     else if (blank) gfx_fill(s, 0, 0, SCREEN_W, SCREEN_H, backdrop); /* (the same pixels as the world doubled) */
     else gfx_upscale2x(&world, s);
     draw_profile(1u, meter.on); /* (the commands are timed only while the meter is up) */

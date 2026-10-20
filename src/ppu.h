@@ -100,9 +100,14 @@ typedef struct {
     } line;
 } ppu_state;
 
-extern ppu_state PPU;
+/* Two pictures processors for a game with two screens (docs/ds-dual-screen-design.md): PPU is the selected one, as
+ * ppu_select picks; a game with one screen never leaves the first. */
+extern ppu_state ppu_ctx[2];
+extern ppu_state *ppu_cur;
+#define PPU (*ppu_cur)
+void ppu_select(int n); /* 0 or 1 */
 
-void ppu_reset(void);           /* everything off, palettes black, mosaic 1, identity matrices, no tables */
+void ppu_reset(void);           /* everything off, palettes black, mosaic 1, identity matrices, no tables; both processors, the first selected */
 void ppu_render(uint16_t *out); /* the frame, PPU_W x PPU_H RGB565, row after row */
 /* True when ppu_render would give only the backdrop, one colour everywhere (no layer shown, no line backdrop, no
  * effect, no per-line palette): *colour is it, and the frame need not be worked out. */

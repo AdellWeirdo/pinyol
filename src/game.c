@@ -192,11 +192,17 @@ void game_tick(const hal_input *in) {
     /* an adventure with nothing in its bag pauses on MENU; a Lua game reads MENU itself (btnp("menu")) */
     if (!G.v2 && (G.in.pressed & ACT_INV) && !content_has_bag()) G.in.pressed = (G.in.pressed & ~ACT_INV) | ACT_PAUSE;
     G.in.held = in->held;
-    G.in.tap = in->touch && !G.in.touch;
-    G.in.release = !in->touch && G.in.touch;
-    G.in.touch = in->touch;
-    G.in.px = in->px;
-    G.in.py = in->py;
+    int px = in->px, py = in->py;
+    bool touch = in->touch;
+    if (G.v2 && v2_dual()) { /* two screens: the bottom's own pixels; a touch off it is none */
+        px -= DUAL_X(1), py -= DUAL_Y;
+        if (px < 0 || py < 0 || px >= WORLD_W || py >= WORLD_H) touch = false;
+    }
+    G.in.tap = touch && !G.in.touch;
+    G.in.release = !touch && G.in.touch;
+    G.in.touch = touch;
+    G.in.px = px;
+    G.in.py = py;
     if (in->held & ACT_QUIT) G.quit = true;
     if (splash_on()) { /* the careta's ticks: the game's begin after it (it cannot be skipped: no button reaches it) */
         splash_tick();

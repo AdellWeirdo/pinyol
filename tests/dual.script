@@ -1,0 +1,19 @@
+# Two screens (game.json "screens": 2): each its own picture, the touch the bottom one's own pixels, off it none.
+new
+tick 2
+expect_lua w == 240 and h == 160
+shot dual
+tap 100 120
+tick 2
+expect_lua taps == 0
+tap 10 10
+tick 2
+expect_lua taps == 0
+tap 290 110
+tick 2
+expect_lua taps == 1 and tx == 50 and ty == 30
+tap 479 239
+tick 2
+expect_lua taps == 2 and tx == 239 and ty == 159
+expect_lua_error screen(3)
+expect_ok

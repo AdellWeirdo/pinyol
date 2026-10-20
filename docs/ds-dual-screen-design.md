@@ -1,6 +1,6 @@
-# Two screens: a design (not built)
+# Two screens: a design (step 1 built: layout C in the simulator)
 
-Phase 2 of the DS touch work ([ds-touch-research.md](ds-touch-research.md)). Nothing here is implemented. It is written from a read of `src/ppu.h`, `src/ppu.c`, `src/game.c`, `src/lua_game.c` and `docs/hardware.md`; what was not read is under "To check before building".
+Phase 2 of the DS touch work ([ds-touch-research.md](ds-touch-research.md)). Step 1 of "Order of work" is built (see below); the rest is not. It is written from a read of `src/ppu.h`, `src/ppu.c`, `src/game.c`, `src/lua_game.c` and `docs/hardware.md`; what was not read is under "To check before building".
 
 ## What a game would write
 
@@ -41,7 +41,7 @@ A is the one that feels like a DS; C is the cheap first step that proves the mod
 
 ## Order of work
 
-1. Layout C on SDL and headless: `screens` in `game.json`, `screen(n)`, the PPU context, two world buffers, `shot` of both. Proves 1-4 with no platform change.
+1. **Built (`screens` in game.json, `screen(n)`, `tests/dual.script`).** Layout C on SDL and headless: `screens` in `game.json`, `screen(n)`, the PPU context, two world buffers, `shot` of both. Proves 1-4 with no platform change.
 2. Layout A and the size query, in SDL, web and libretro.
 3. Touch mapping and `pen()` in screen-local pixels, with `tests/*.script` (`tap`, `drag` already exist) on the bottom screen and a tap on the top one that does nothing.
 4. An example (`examples/dos_pantallas`): map above, `lib/pointer.lua` below.
@@ -60,3 +60,11 @@ A is the one that feels like a DS; C is the cheap first step that proves the mod
 - The splash (the engine's careta) and the error overlay draw at 480x320: in dual mode they go on the bottom screen.
 - Whether `ppu_render` is called from anywhere besides `lua_game.c` that would see the wrong `PPU` (`firmware/main/bench_ppu.c` calls it directly).
 - The 4/3 scaler's cost on the ESP32-S3 against `gfx_upscale2x`'s fast path (`src/game.c:region_cut` keeps even edges for it).
+
+## What step 1 did differently from the plan above
+
+- The overlay is not two lists: `screen(n)` sets the existing camera and clip to that screen's rectangle (`draw_set_view` in `lua_draw.c`), so text and shapes of a screen are drawn from its corner and cut at its edge. `camera()`, `clip()` and `target()` keep to it.
+- What the plan called "parked state" is `parked_screen` in `lua_game.c`: the layers' maps and the per-line tables, copied in and out by `screen()` (about 31 KB each way); the PPU itself is `ppu_ctx[2]`.
+- The bottom world is allocated only for a two-screen game (`world2`), so one-screen games cost nothing. `PPU` is now `(*ppu_cur)`: one pointer load more in `ppu.c`; not measured on the board.
+- Touch is mapped in `game_tick`; `touch()` in a two-screen game does not halve.
+- Not done: the engine's careta of a game with its own `splash.lua`, the adventure runtime (v1), the panel's turned strips (only `gfx_copy1x` is generic; the firmware has not been built), layouts A and B.

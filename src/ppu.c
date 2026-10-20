@@ -19,7 +19,8 @@
 #pragma GCC optimize("no-tree-loop-distribute-patterns")
 #endif
 
-ppu_state PPU;
+ppu_state ppu_ctx[2];
+ppu_state *ppu_cur = &ppu_ctx[0];
 
 enum { ID_OBJ = 4, ID_BACK = 5, ID_BLEND = 0x80 }; /* layer ids 0..3 are the backgrounds; ID_BLEND marks OBJ_BLEND */
 #define PX(c, id) ((uint32_t)(c) | (uint32_t)(id) << 16) /* a pixel in the line buffers: colour, layer id above */
@@ -49,12 +50,18 @@ static struct {
 
 #define ALWAYS static inline __attribute__((always_inline))
 
+void ppu_select(int n) { ppu_cur = &ppu_ctx[n & 1]; }
+
 void ppu_reset(void) {
-    memset(&PPU, 0, sizeof PPU);
-    PPU.layers = PPU_BG0 | PPU_BG1 | PPU_BG2 | PPU_BG3 | PPU_OBJ;
-    PPU.mosaic.bg_w = PPU.mosaic.bg_h = PPU.mosaic.obj_w = PPU.mosaic.obj_h = 1;
-    for (int i = 0; i < PPU_OBJS; i++) PPU.obj[i].affine = -1;
-    for (int i = 0; i < PPU_AFFINES; i++) PPU.affine[i] = (ppu_affine){256, 0, 0, 256};
+    for (int k = 0; k < 2; k++) {
+        ppu_select(k);
+        memset(&PPU, 0, sizeof PPU);
+        PPU.layers = PPU_BG0 | PPU_BG1 | PPU_BG2 | PPU_BG3 | PPU_OBJ;
+        PPU.mosaic.bg_w = PPU.mosaic.bg_h = PPU.mosaic.obj_w = PPU.mosaic.obj_h = 1;
+        for (int i = 0; i < PPU_OBJS; i++) PPU.obj[i].affine = -1;
+        for (int i = 0; i < PPU_AFFINES; i++) PPU.affine[i] = (ppu_affine){256, 0, 0, 256};
+    }
+    ppu_select(0);
 }
 
 void ppu_tile_rows(const uint8_t *tiles, int ntiles, uint16_t *rows) {

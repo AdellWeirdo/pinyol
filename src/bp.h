@@ -92,6 +92,9 @@ bool v2_load(void);                   /* a fresh Lua state running main.lua and 
 void v2_free(void);
 void v2_tick(void);                   /* _update() */
 void v2_meter_toggle(void);           /* the frame meter on the screen, or off (F3 on a desktop) */
+bool v2_dual(void);                    /* game.json "screens": 2: two 240x160 screens, side by side (lua_game.c) */
+#define DUAL_X(k) ((k) * WORLD_W)      /* where screen k (0 top, 1 bottom: the touch one) is in the 480x320 frame */
+#define DUAL_Y ((SCREEN_H - WORLD_H) / 2)
 void v2_draw_world(void);             /* _draw(), then the PPU into G.world */
 const char *v2_error(void);           /* the script's error, or NULL */
 bool v2_run(const char *code, bool expr, char *msg, int n); /* test scripts: run code or check an expression */
@@ -206,6 +209,7 @@ void gfx_fill(surface *s, int x, int y, int w, int h, uint16_t c);
 void gfx_frame(surface *s, int x, int y, int w, int h, uint16_t c);
 void gfx_shade(surface *s, int x, int y, int w, int h); /* darken by half */
 void gfx_upscale2x(const surface *src, surface *dst);
+void gfx_copy1x(const surface *src, surface *dst, int ox, int oy); /* src as it is, its top-left at (ox, oy) of the frame dst is a window of */
 /* The same, leaving dst as it is wherever src has the key colour: a world drawn over a full-resolution background */
 void gfx_upscale2x_key(const surface *src, surface *dst, uint16_t key);
 void gfx_shade_except(surface *s, uint16_t key); /* a plain buffer darkened, but its key-coloured pixels */

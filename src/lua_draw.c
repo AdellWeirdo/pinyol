@@ -70,6 +70,8 @@ static uint32_t frame_no;           /* counts _draws: the picture cache keeps th
 static int cam_x, cam_y;            /* camera(): subtracted from what is drawn */
 static bool clipping;               /* clip(): only inside clip_r */
 static screen_rect clip_r;
+static screen_rect view;            /* draw_set_view: the screen of two that is drawn on, kept for target() back on the screen */
+static bool view_on;
 typedef struct { asset *a; int x0, y0, x1, y1; } dirty_box;
 static dirty_box dirty[MAX_DIRTY]; /* canvases drawn on: where, for their masks */
 static int ndirty;
@@ -1170,11 +1172,13 @@ static int l_target(lua_State *L) { /* target(canvas) draws on it from now on; t
     }
     draw_flush(); /* what was drawn on a canvas is there for the next picture that copies it, in this same call */
     target = a, cam_x = cam_y = 0, clipping = false; /* each target starts with no camera and no clip */
+    if (!a && view_on) draw_set_view(view.x, view.y, view.w, view.h); /* the screen again: the screen it was on */
     return 0;
 }
 
 static int l_camera(lua_State *L) { /* camera([x, y]): what is drawn moves by -x, -y */
     cam_x = optnum(L, 1, 0), cam_y = optnum(L, 2, 0);
+    if (view_on && !target) cam_x -= view.x, cam_y -= view.y; /* on one of two screens: from its corner */
     return 0;
 }
 
@@ -1182,6 +1186,15 @@ static int l_clip(lua_State *L) { /* clip([x, y, w, h]): only inside it is drawn
     if ((clipping = !lua_isnoneornil(L, 1))) {
         int w = num(L, 3), h = num(L, 4);
         clip_r = (screen_rect){i16(num(L, 1)), i16(num(L, 2)), w < 0 ? 0 : w > 4096 ? 4096 : w, h < 0 ? 0 : h > 4096 ? 4096 : h};
+    }
+    if (view_on && !target) { /* on one of two screens: from its corner, and never past its edge */
+        if (clipping) {
+            int x0 = clip_r.x + view.x, y0 = clip_r.y + view.y, x1 = x0 + clip_r.w, y1 = y0 + clip_r.h;
+            x0 = x0 > view.x ? x0 : view.x, y0 = y0 > view.y ? y0 : view.y;
+            x1 = x1 < view.x + view.w ? x1 : view.x + view.w, y1 = y1 < view.y + view.h ? y1 : view.y + view.h;
+            clip_r = (screen_rect){i16(x0), i16(y0), x1 > x0 ? x1 - x0 : 0, y1 > y0 ? y1 - y0 : 0};
+        } else clip_r = view;
+        clipping = true;
     }
     return 0;
 }
@@ -1233,7 +1246,14 @@ void draw_frame_begin(void) { /* each _draw starts on the screen, with no camera
     memset(&prof_cur, 0, sizeof prof_cur);
     nov = ntext = nstyle = nxf = npts = nclip = nlook = nquad = 0;
     gfx_quad_begin();
-    target = NULL, cam_x = cam_y = 0, clipping = false;
+    target = NULL, cam_x = cam_y = 0, clipping = false, view_on = false;
+}
+
+void draw_set_view(int x, int y, int w, int h) {
+    view = (screen_rect){x, y, w, h}, view_on = true;
+    cam_x = -x, cam_y = -y;
+    clipping = true;
+    clip_r = (screen_rect){i16(x), i16(y), w, h};
 }
 
 void draw_free(void) {
