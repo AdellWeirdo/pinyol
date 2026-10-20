@@ -4,7 +4,7 @@
 --   local pointer = require("pointer")
 --   in _update (once): pointer.update()
 --     pointer.down, pointer.x, pointer.y         -- the finger now, in the screen's 480x320 pixels (as text() uses)
---     pointer.tapped, pointer.long, pointer.released   -- true on the one tick it happens
+--     pointer.began, pointer.tapped, pointer.long, pointer.released   -- true on the one tick it happens (began: it went down)
 --     pointer.dragging, pointer.dx, pointer.dy   -- moved past the slop since it went down; the move since last tick
 --     pointer.flick                              -- on lift, a fast short stroke: {dx, dy, dir = "up"|"down"|"left"|"right"}
 --     pointer.stroke                             -- the points of the stroke going on; pointer.last on lift
@@ -27,7 +27,7 @@ local sx, sy, held, still
 M.down, M.x, M.y, M.dx, M.dy, M.stroke, M.last = false, 0, 0, 0, 0, nil, nil
 
 local function reset_events()
-  M.tapped, M.long, M.released, M.flick = false, false, false, nil
+  M.began, M.tapped, M.long, M.released, M.flick = false, false, false, false, nil
 end
 
 function M.update()
@@ -35,6 +35,7 @@ function M.update()
   local x, y, down, tapped, released = pen()
   M.dx, M.dy = 0, 0
   if tapped then
+    M.began = true
     sx, sy, held, still = x, y, 0, true
     M.stroke, M.dragging = {{x, y}}, false
   elseif down and M.stroke then

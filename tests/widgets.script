@@ -1,0 +1,57 @@
+# lib/widgets.lua: a button pressed by a tap or A, a slider by a finger or left and right, a list by a drag and a tap.
+new
+tick 2
+tap 60 40
+tick 2
+expect_lua presses == 1 and ui.focus == 1
+tap 400 40
+tick 2
+expect_lua presses == 1
+drag 20 95 220 95 20
+tick 2
+expect_lua level == 10
+drag 120 95 20 95 20
+tick 2
+expect_lua level == 0
+tap 100 100
+tick 2
+expect_lua level == 4 or level == 5
+tap 40 150
+tick 2
+expect_lua picked == "uno" and l.sel == 1 and l.scroll == 0
+drag 100 200 100 120 20
+tick 2
+expect_lua l.scroll > 40 and picked == "uno"
+tap 100 150
+tick 2
+expect_lua picked ~= "uno"
+shot widgets_touch
+tap 60 40
+tick 2
+expect_lua presses == 2 and ui.focus == 1 and ui.pad == false
+press DOWN
+tick 2
+expect_lua ui.pad == true and ui.focus == 2
+press A
+tick 2
+expect_lua presses == 2
+press UP
+tick 2
+press A
+tick 2
+expect_lua presses == 3
+press DOWN
+tick 2
+lua before = level
+press RIGHT
+tick 2
+expect_lua level == before + 1
+press DOWN
+tick 2
+expect_lua ui.focus == 3
+lua before = l.sel
+press DOWN
+tick 2
+expect_lua l.sel == before + 1 and ui.focus == 3
+shot widgets_pad
+expect_ok
