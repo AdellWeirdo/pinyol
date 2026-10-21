@@ -715,6 +715,8 @@ that the cat's console is running out, a story that knows the player is charging
 | `console_cover(id, canvas)` | the game's cover (its `cover.rgb565`, 240x160; an adventure's title picture otherwise) on that canvas, and its average colour; `nil` if it has none |
 | `console_launch(id)` | ends this game and starts that one |
 | `console_off()`, `console_version()` | switches the console off; the firmware's version |
+| `tilt()` | `x, y, z`: the way gravity pulls on the console, -1..1 each, relative to the neutral position `tilt_zero()` set (the player holds the console as they like and presses A, as Kirby Tilt 'n' Tumble did; `tilt_zero(false)` forgets it); `nil` on a console without a sensor (the Cirera has none yet: [docs/hardware-rev2.md](hardware-rev2.md); the desktop and the browser say `nil`). A marble that rolls downhill, a cocktail shaken |
+| `rumble(ms [, strength])` | a vibration of that many milliseconds (strength 0..1); nothing where there is no motor |
 | `console_played()` | the console's record of its games: `{id = {plays, seconds, last (the clock's, when known), seq (the order played in), fav, done = {achievement ids}}}`; the menu shows it and sorts by it |
 | `console_favourite(id [, bool])` | whether that game is a favourite; with a value, sets it |
 | `achieve(id)` | an achievement of the game earned: `true` the first time. The game lists them in `game.json`, `"achievements": [{"id": "first", "name": "Primer paso", "description": "..."}, ...]`; they are kept by the console with the game's record, whatever happens to the game's saves, and the menu counts them |
@@ -926,6 +928,8 @@ expect_crashed                   # and it has
 in 30 RIGHT+A 240 160            # exactly that input for 30 ticks: those buttons (- for none) and a finger at that point (up to five points)
 hotswap ui/menu.lua ui.menu      # the file run again over the module the game required, its state kept (what the simulator does when that file is saved)
 expect_led ff0000                # the LED is that colour (expect_led off: the console's own)
+tilt 0.5 -0.2 0.8                # tilt() reads so (tilt none: no sensor; tilt real: the platform's)
+expect_rumble 120                # the game asked for a vibration that long since the last look (0: none)
 ```
 
 `#` after a space starts a comment in these scripts, so avoid Lua's `#` length operator there.

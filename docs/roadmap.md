@@ -41,6 +41,19 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
   pursue/separate/flock y un hash espacial), `grid`: `l:scale`, `l:mix`, `g:rescan` (mapas de huida de Brogue).
   **No hecho:** XM/S3M (micromod), voz FM, importar `.uge`/FamiStudio, marcadores en WAV.
 
+- **Fase 5, hecho:** `lib/lockstep` (juego en paso sobre `link`: solo botones, tramas de 3 ticks con repetición,
+  retardo de 2 tramas), registro de la consola (`played.json`: partidas, tiempo, última vez, favoritos, logros),
+  `achieve()`/`achievements()` con `game.json "achievements"`, `console_played()`/`console_favourite()`, y el menú de
+  Cirera ordena favoritos y recientes, muestra partidas/tiempo/logros y C marca favorito. **No hecho:** ESP-NOW v2
+  (hace falta placa), rollback, Download Play, tarjetas tipo StreetPass, estantería de logros en la Biblioteca.
+
+- **Fase 6, hecho:** `tools/ase2asset.py` (lee el `.aseprite`: capas, cels comprimidos y enlazados, paletas, tags,
+  slices → imagen + `<id>_anims.lua`), `tools/ldtk2asset.py` (export simplificado: fondo o tiles, IntGrid, entidades →
+  `<id>.lua`), recarga en caliente que conserva el estado (`v2_hotswap`, el simulador la usa al guardar un módulo;
+  `hotswap FILE MOD` en scripts), `lib/lang` + `tools/strings_check.py` (CSV por idioma, letras que faltan en las
+  fuentes, pseudo-idioma), `pack_game --budget`, `llms.txt` en el sitio. **No hecho:** REPL y `tweak()` por el cable
+  (hace falta placa), depurador DAP, robot de cobertura en la Biblioteca.
+
 ## Fase 0 · Memoria y rendimiento
 
 Lo que más limita es la RAM interna (la radio pide 27 KB). Criterio de salida: ≥ 40 KB internos libres con radio y

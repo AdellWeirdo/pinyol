@@ -95,3 +95,8 @@ int hal_mic_read(int16_t *p, int max);
  * battery: level 0..1 and whether it charges; false where it cannot be told. */
 void hal_led(int rgb);
 bool hal_battery(float *level, bool *charging);
+/* A tilt sensor (an IMU on a Cirera rev2, docs/hardware-rev2.md): the direction gravity pulls, -1..1 each; false where
+ * there is none. And a rumble motor: a vibration of ms at strength 0..1; nothing where there is none. Both have weak
+ * defaults in src/lua_game.c that say so. */
+bool hal_imu(float *x, float *y, float *z);
+void hal_rumble(int ms, float strength);

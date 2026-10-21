@@ -16,3 +16,5 @@ function _draw()
   text(on_air and "EN EL AIRE" or "ENSAYO", 240, 120, {font = "large", align = "center", color = on_air and 0xFF4040 or 0x808890})
   if level then text(string.format("batería %d%%%s", math.floor(level * 100 + 0.5), charging and " (cargando)" or ""), 240, 170, {align = "center"}) end
 end
+-- a tilt sensor and a rumble motor, when the console has them (tests: tilt X Y Z, expect_rumble)
+function tilt_now() tx, ty, tz = tilt() return tx end

@@ -341,6 +341,19 @@ static bool run_line(char *cmd, char *arg) {
         else FAIL("battery: LEVEL [charging], none or real");
         return true;
     }
+    if (!strcmp(cmd, "tilt")) { /* pinyol@2: tilt X Y Z: the console tilted so; tilt none: no sensor; tilt real: the platform's */
+        float x, y, z;
+        if (!strcmp(arg, "none")) device_fake_tilt(true, false, 0, 0, 0);
+        else if (!strcmp(arg, "real")) device_fake_tilt(false, false, 0, 0, 0);
+        else if (sscanf(arg, "%f %f %f", &x, &y, &z) == 3) device_fake_tilt(true, true, x, y, z);
+        else FAIL("tilt X Y Z, none or real");
+        return true;
+    }
+    if (!strcmp(cmd, "expect_rumble")) { /* pinyol@2: expect_rumble MS: the game asked for a vibration that long since the last look (0: none) */
+        const int got = device_rumble_last();
+        if (got != atoi(arg)) FAIL("expect_rumble %s: the game asked for %d ms", arg, got);
+        return true;
+    }
     if (!strcmp(cmd, "expect_led")) { /* pinyol@2: expect_led RRGGBB, or off: the colour the game left the LED in */
         int want = !strcmp(arg, "off") ? -1 : (int)strtol(arg, NULL, 16);
         if (device_led() != want) FAIL("the LED is %06x, not %s", device_led(), arg);

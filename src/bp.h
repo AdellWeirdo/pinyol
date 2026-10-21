@@ -596,6 +596,8 @@ void mic_record_stop(void);
 void mic_inject(bool present, float level, float hz, bool breath); /* tests: a tone (hz 0: noise; breath: blowing) */
 int device_led(void); /* lua_device.c: the colour a game set the LED to, -1 none (tests) */
 void device_fake_battery(bool on, bool have, float level, bool charging); /* tests: a battery, or none */
+void device_fake_tilt(bool on, bool have, float x, float y, float z);    /* tests: a tilt sensor reading that, or none */
+int device_rumble_last(void);                                            /* tests: the ms the game last asked for (and forgets) */
 
 bool mod_play(const char *path, float gain); /* false if it cannot be read or played */
 void mod_stop(int fade_ms);

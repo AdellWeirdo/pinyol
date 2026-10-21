@@ -30,3 +30,21 @@ expect_lua menus == 1 and starts == 0
 press START
 expect_lua menus == 1 and starts == 1
 expect_ok
+# tilt: none here; a tilted console reads so, relative to the neutral position tilt_zero() takes; rumble is asked for
+expect_lua tilt() == nil
+tilt 0.5 -0.25 0.8
+expect_lua tilt_now() == 0.5 and ty == -0.25 and tz == 0.8
+lua tilt_zero()
+tilt 0.5 -0.25 0.8
+expect_lua tilt_now() == 0 and ty == 0 and tz == 0.8
+tilt 0.7 -0.25 0.8
+lua tilt_now()
+expect_lua math.abs(tx - 0.2) < 1e-6
+lua tilt_zero(false)
+expect_lua tilt_now() == 0.7
+tilt none
+expect_lua tilt() == nil
+lua rumble(120, 0.5)
+expect_rumble 120
+expect_rumble 0
+expect_ok

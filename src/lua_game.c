@@ -1495,6 +1495,8 @@ static int l_clock(lua_State *L) {
 
 __attribute__((weak)) bool hal_save(const char *path, const char *txt) { return save_file_atomic(path, txt); }
 __attribute__((weak)) bool hal_console_dir(char *path, size_t n) { (void)path, (void)n; return false; } /* no folder of its own: the defaults */
+__attribute__((weak)) bool hal_imu(float *x, float *y, float *z) { (void)x, (void)y, (void)z; return false; } /* no tilt sensor */
+__attribute__((weak)) void hal_rumble(int ms, float strength) { (void)ms, (void)strength; }                 /* no motor */
 __attribute__((weak)) void hal_save_flush(void) {}
 
 static bool store_write(const char *txt) {
