@@ -621,3 +621,21 @@ The crash screen's QR (version ≤ 10, 2 px modules): a shot of the panel over t
 (`cv2.QRCodeDetector` on the shot scaled 2x): "pinyol control: _update: script:1: prueba del QR..." The firmware's
 D/IRAM left stays at 90222 B (the QR's 407-byte buffer and the map live with the menu's state; the encoder's code is
 in flash).
+
+## 2026-10-22 · XM and S3M modules on the console (IBXM)
+
+The music test game sent to the card with three modules, played over the cable (`lua:music("STRESS")`...), the
+firmware's audio line (share of a core the mixer takes, every few seconds):
+
+| playing | audio, % of a core | underruns | internal free | PSRAM free |
+|---|---|---|---|---|
+| nothing | 2 | 0 | 77 KB | 4827 KB |
+| STRESS.xm: 8 channels, a note on half the cells, two instruments with envelopes and vibrato, speed 6 at 125 BPM | 9 | 0 | 77 KB | 4784 KB |
+| LOOPX.xm (4 channels, queued at the bar line of the XM playing) | 7 | 0 | 77 KB | 4751 KB |
+| LOOPS.s3m (4 channels) | 5 | 0 | 77 KB | 4792 KB |
+
+IBXM renders a tick at a time (a line's share at the song's speed) into a buffer in slow memory and the mixer takes
+it out by frames: about 7 % of a core for eight channels at 22050 Hz with linear interpolation off, nothing in
+internal RAM (D/IRAM left 90222 B, as before IBXM), the module's samples (as 16-bit), patterns and replay in PSRAM
+(43 KB for the dense one). `music_beat()` on the XM after 25 s said bar 14, beat 1 (a line every 120 ms, a bar
+every 1.92 s); the queued XM came in at the bar line (`music_queued()` true until then).

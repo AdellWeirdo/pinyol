@@ -323,8 +323,12 @@ static int l_music(lua_State *L) {
     }
     const char *id = luaL_checkstring(L, 1);
     char path[384];
-    snprintf(path, sizeof path, "%s/audio/%s.mod", G.game_dir, id);
-    FILE *f = safe_name(id) ? fopen(path, "rb") : NULL;
+    FILE *f = NULL;
+    static const char *const TRACKER[] = {"mod", "xm", "s3m"}; /* ProTracker, FastTracker II, Scream Tracker 3 */
+    for (int k = 0; k < 3 && !f; k++) {
+        snprintf(path, sizeof path, "%s/audio/%s.%s", G.game_dir, id, TRACKER[k]);
+        f = safe_name(id) ? fopen(path, "rb") : NULL;
+    }
     if (f) { /* a module: it replaces any music (with at = "bar", at the bar line of the module playing) */
         fclose(f);
         audio_music_stop(fade);

@@ -42,7 +42,10 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
   utilidad), `lib/rng` (Squirrel noise, flujos por semilla, fbm), `lib/gen` (cuevas, BSP, paseo, salas de Spelunky,
   `connected`), `lib/chain` (cadenas, patas que dan pasos, FABRIK, dos huesos), `lib/steer` (seek/flee/arrive/wander/
   pursue/separate/flock y un hash espacial), `grid`: `l:scale`, `l:mix`, `g:rescan` (mapas de huida de Brogue).
-  **No hecho:** XM/S3M (micromod), voz FM, importar `.uge`/FamiStudio, marcadores en WAV.
+  **Hecho el 22 de octubre:** XM/S3M (IBXM de Martin Cameron, BSD; `music("ID")` encuentra `.mod`, `.xm` o `.s3m`, con
+  compás, cola y parada en la línea como los `.mod`; `tests/make_tracker.py` genera los tres módulos de prueba). En la
+  placa, un XM de ocho canales cuesta el 7 % de un núcleo y nada de RAM interna (docs/measurements.md).
+  **No hecho:** voz FM, importar `.uge`/FamiStudio, marcadores en WAV.
 
 - **Fase 5, hecho:** `lib/lockstep` (juego en paso sobre `link`: solo botones, tramas de 3 ticks con repetición,
   retardo de 2 tramas), registro de la consola (`played.json`: partidas, tiempo, última vez, favoritos, logros),

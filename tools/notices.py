@@ -82,6 +82,8 @@ def main() -> None:
         block("cJSON", "MIT. `third_party/cjson` (and ESP-IDF's `json` component, the same library)",
               read(ROOT / "third_party/cjson/LICENSE")),
         block("pocketmod", "MIT. `third_party/pocketmod`", read(ROOT / "third_party/pocketmod/LICENSE")),
+        block("IBXM", "BSD 3-Clause. `third_party/ibxm` (Martin Cameron): XM and S3M modules, its memory asked for from the console's slow memory (ibxm.c, PINYOL_SLOW_ALLOC)",
+              read(ROOT / "third_party/ibxm/LICENSE")),
         block("QR Code generator", "MIT. `third_party/qrcodegen` (Project Nayuki), the crash screen's QR code",
               comment(ROOT / "third_party/qrcodegen/qrcodegen.h", "Copyright (c) Project Nayuki", "*   Software.")),
         block("msf_gif", "MIT (or public domain, at the reader's choice). `third_party/msf_gif`, the simulator's GIF of the last eight seconds (F9)",
