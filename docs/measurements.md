@@ -497,3 +497,44 @@ runs the vector one against the C one in Espressif's QEMU (4000 random runs, eve
 the same). **Not measured on the board yet**: Jet reports its RGB565 constant blend several times faster than C on an S3;
 the smooth `transition` fade (a mixed full-screen box, 12.3 ms of strips) is the scene to time. ESP-IDF saves the vector
 registers lazily per task (`_xt_coproc_sa_offset`), so both cores' strip tasks may use them.
+
+## 2026-10-21 · The round's changes on the board, and the variants
+
+Firmware `a3ae4d5` (the seven phases of docs/roadmap.md) flashed app and otadata only, on the board with the card
+(18 games on it). Compared with `602f119-dirty`, which was on it: the menu starts with **51 KB** of internal RAM free
+instead of 32; `examples/juntos` turns the radio on with 51 KB and keeps **24 KB** (it was 32 and 6). A game's own
+`game_init` takes what it took (the ROM's flash driver reads the flash no slower: cirera 257-268 ms; the 511 ms of the
+first boot after a flash is the first boot's). The mixed full-screen box of `transition`'s fade (now `span_mix_const`
+with the vector unit): **3.4 ms of strips** against the 12.3 measured on 2026-10-17.
+
+Then four builds, each flashed and the same nine games played the same way over the cable (`tools/remote.py`, a
+`-DBP_REMOTE=ON` build: the game launched from the menu, A three times, RIGHT held, the last two `perf:` lines):
+
+| Build | Internal RAM, menu / in a game | duelo world / strips | torneo | castells | trece | maqueta |
+|---|---|---|---|---|---|---|
+| 64 KB data cache, from flash (as it was) | 50 / 38-49 KB | 1.4 / 7.3-7.8 ms | 1.9-2.0 / 8.6-9.6 | 1.5-2.0 / 5.7-7.8 | 2.3-4.4 / 2.4-7.0 | 6.2 / 3.3 (56.9 fps) |
+| 32 KB data cache | 81 / 70-73 KB | 1.5 / 7.4-8.0 | 2.1 / 8.8-9.6 | 1.6-2.2 / 5.8-7.4 | 2.3-2.4 / 2.4 | 6.2-2.8 / 3.2-3.5 |
+| XIP from PSRAM (code and rodata in PSRAM) | 48 / 37-40 KB | 1.0 / 7.1-7.6 | 1.5-1.6 / 8.5-8.9 | 1.1-1.5 / 5.6-7.0 | 2.1-2.3 / 2.2 | 6.0 / 3.2 |
+| **both (taken)** | **80 / 68-71 KB** | 1.06 / 7.2-7.8 | 1.6-1.7 / 8.6-9.3 | 1.2-1.5 / 5.7-7.2 | 2.2-2.3 / 2.2 | 6.1 / 3.2 |
+
+World is the firmware's `world` (Lua and the picture processor, one core), strips the two cores' CPU for the whole
+frame. Every game stays at 59-60 fps in every build (maqueta's scene at 56.9 in all four: its own `_draw`, 6 ms). The
+32 KB data cache costs nothing these games can show and gives 31 KB of internal RAM; XIP takes 10-30 % off the world
+(the instruction cache refills from octal PSRAM, not quad flash) for 1.7 MB of PSRAM (6.3 -> 4.6 MB free at the menu).
+Both are now in `sdkconfig.defaults`. paleta's heaviest scene (strips 9.7-11.5 ms, 49-56 fps) varied between runs more
+than between builds. control 59-60, paleta 58-60, horizonte 59.9, veloz 59.6-60 in play.
+
+What `tools/remote.py`'s `shot` costs: a frame over the cable (400 KB) stalls the console for about six seconds, so
+the `perf:` lines next to a shot read 10-27 fps: those are the shots, not the game.
+
+An adventure (Bajo Pueblo, np2d@1, sent without its 123 MB of audio), the same stages on the two builds:
+
+| Stage | 64 KB cache, from flash | 32 KB cache and XIP |
+|---|---|---|
+| the title (a 480x320 picture every frame) | 16.8 ms of strips, 38-50 fps | 17.7 ms, 38-49 fps |
+| the first dialogue | 7.0-7.8 ms, 52-58 fps | 6.6-7.5 ms, 52-58 fps |
+| a choice, then walking | 6.6-6.9 ms, 60 fps | 6.3-6.7 ms, 60 fps |
+
+The title's 17 ms are the adventure's own (the picture drawn whole each frame: it was 11-12 ms with the world before
+the first shot, the rest is the shot); nothing else moved more than the run-to-run noise. Internal RAM in the game: 43
+KB on the old build, 42 on the new (an adventure allocates its own buffers; the 30 KB show in Lua games, 70 KB).

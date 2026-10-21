@@ -58,16 +58,23 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
   `tilt` y `expect_rumble` en los scripts, y `docs/hardware-rev2.md` (los añadidos por I2C, direcciones, patentes).
   **No hecho (hace falta la placa):** los drivers del firmware para la IMU y el DRV2605L.
 
-### Pendiente de placa (todo lo de esta ronda se probó en escritorio, QEMU y CI; nada en la Cirera)
+### Hecho en la placa (21 octubre 2026, tarde; detalles y tablas en docs/measurements.md)
 
-1. Flashear el firmware de `main` y comprobar: guardar en flash, un juego por el cable, una OTA, `examples/juntos`
-   con la radio (la memoria interna debería ir más holgada: +19,8 KB estáticos).
-2. Medir con `perf(true)`: un fundido suave de `transition` (la caja mezclada de pantalla completa, 12,3 ms de
-   tiras antes de PIE), horizonte, veloz.
-3. Probar `CONFIG_ESP32S3_DATA_CACHE_32KB` (+32 KB) y `CONFIG_SPIRAM_XIP_FROM_PSRAM` midiendo fps.
-4. El menú de la consola con el registro (`played.json` en la tarjeta o en la flash), el menú de pausa con MENU, los
-   ajustes (volumen, filtro de color sobre el mundo: su coste en ms), la pantalla de crash y `crash.txt`.
-5. `music(..., {at = "bar"})` escuchado: el cambio cae en la línea de compás.
+1. Firmware de `main` flasheado (app + otadata): el menú arranca con 51 KB internos (antes 32); juntos enciende la
+   radio y le quedan 24 KB (antes 6); juegos por el cable y `game_init` como antes.
+2. Caja mezclada de pantalla completa (PIE): 3,4 ms de tiras (antes 12,3).
+3. Variantes medidas jugando nueve juegos con el mismo guion por el cable: caché de datos a 32 KB (+31 KB internos,
+   coste nulo) y XIP desde PSRAM (mundo −10-30 %, −1,7 MB de PSRAM). Las dos quedan en `sdkconfig.defaults`: un juego
+   Lua corre con ~70 KB internos libres (antes ~40); con la radio, ~43.
+4. Juegos exigentes en juego: trece, duelo, torneo, castells, control, paleta, horizonte, veloz a 59-60 fps; maqueta
+   56,9 (su propio `_draw`, 6 ms, igual en todas las builds); Bajo Pueblo (aventura) 60 fps andando, 52-58 en diálogo,
+   38-50 en su portada (una imagen de 480×320 cada frame), igual que con la build antigua.
+5. Menú del sistema sobre TRECE visto en la pantalla real (captura por el cable). `played.json` no se escribía en
+   FAT (`rename` sobre un archivo existente): arreglado (`played.c`).
+
+**Aún pendiente de placa:** ajustes y filtro de color vistos en pantalla (el guion por el cable se perdió en TRECE,
+que lee MENU: ahí abre con un segundo de MENU), la pantalla de crash en la consola, `music(..., {at = "bar"})` de oído,
+geumgye e ilustres (ilustres enviado: 44 MB por el cable).
 
 ## Fase 0 · Memoria y rendimiento
 

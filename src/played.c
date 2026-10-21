@@ -1,6 +1,7 @@
 /* The console's record of its games (played.h): one small JSON file, read when first needed, written when something
  * changes (to a temporary file, then renamed: a cut write leaves the old one). Without a console folder (the
  * headless player, unless PINYOL_HOME is set) it is kept in memory for the run. */
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,17 +38,28 @@ static cJSON *load(void) {
     return doc;
 }
 
+static bool write_whole(const char *path, const char *txt) {
+    FILE *f = fopen(path, "w");
+    bool ok = f && fputs(txt, f) >= 0 && fputc('\n', f) != EOF;
+    if (f) ok = (fclose(f) == 0) && ok;
+    return ok;
+}
+
 static void save(void) {
     char p[400], tmp[408];
     if (!path_of(p, sizeof p)) return;
     char *txt = cJSON_PrintUnformatted(load());
     if (!txt) return;
-    snprintf(tmp, sizeof tmp, "%s.tmp", p);
-    FILE *f = fopen(tmp, "w");
-    bool ok = f && fputs(txt, f) >= 0 && fputc('\n', f) != EOF;
-    if (f) ok = (fclose(f) == 0) && ok;
-    if (ok) ok = rename(tmp, p) == 0;
-    if (!ok) hal_log("played: cannot write %s", p);
+    /* a temporary file, then put in the real one's place (FAT cannot rename over a file: the old one goes first); a card
+     * that will not do that gets the file written straight (a cut write then costs the record, not the card) */
+    snprintf(tmp, sizeof tmp, "%s.new", p);
+    bool ok = write_whole(tmp, txt);
+    if (ok) {
+        remove(p);
+        ok = rename(tmp, p) == 0;
+        if (!ok) remove(tmp), ok = write_whole(p, txt);
+    }
+    if (!ok) hal_log("played: cannot write %s (%s)", p, strerror(errno));
     free(txt);
 }
 
