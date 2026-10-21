@@ -1495,8 +1495,9 @@ static int l_clock(lua_State *L) {
 
 __attribute__((weak)) bool hal_save(const char *path, const char *txt) { return save_file_atomic(path, txt); }
 __attribute__((weak)) bool hal_console_dir(char *path, size_t n) { (void)path, (void)n; return false; } /* no folder of its own: the defaults */
-__attribute__((weak)) bool hal_imu(float *x, float *y, float *z) { (void)x, (void)y, (void)z; return false; } /* no tilt sensor */
-__attribute__((weak)) void hal_rumble(int ms, float strength) { (void)ms, (void)strength; }                 /* no motor */
+/* (hal_imu's and hal_rumble's weak defaults live in lua_device.c, the one file that calls them: MinGW's linker does not
+ * let a weak definition in one object of the archive answer another object's reference) */
+bool v2_clock(int64_t *utc_s, int *offset_min) { return hal_clock(utc_s, offset_min); } /* for played.c, the same reason */
 __attribute__((weak)) void hal_save_flush(void) {}
 
 static bool store_write(const char *txt) {

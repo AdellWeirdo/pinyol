@@ -91,7 +91,7 @@ void played_begin(const char *id) { /* a play more, now (the time comes at the e
     set_num(e, "plays", get_num(e, "plays") + 1);
     int64_t utc = 0;
     int off = 0;
-    if (hal_clock(&utc, &off)) set_num(e, "last", (double)utc);
+    if (v2_clock(&utc, &off)) set_num(e, "last", (double)utc);
     set_num(load(), "_seq", get_num(load(), "_seq") + 1);
     set_num(e, "seq", get_num(load(), "_seq")); /* the order games were played in, clock or not */
     free(json_text), json_text = NULL;

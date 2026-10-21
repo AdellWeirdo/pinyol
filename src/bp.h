@@ -97,6 +97,7 @@ bool v2_dual(void);                    /* game.json "screens": 2: two 240x160 sc
 #define DUAL_Y ((SCREEN_H - WORLD_H) / 2)
 void v2_draw_world(void);             /* _draw(), then the PPU into G.world */
 bool v2_hotswap(const char *rel, const char *mod); /* a module's file run again over the table the game holds: its state kept */
+bool v2_clock(int64_t *utc_s, int *offset_min);   /* hal_clock through lua_game.c (its weak default is there; MinGW wants the caller in the same object) */
 bool v2_reads_menu(void);             /* the game has read the MENU button (btn("menu")...): a tap of it is the game's */
 int v2_menu_items(const char **labels, int max); /* the game's own items for the console's menu (menuitem); their count */
 void v2_menu_choose(int i);           /* the player chose that one: its function runs */

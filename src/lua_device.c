@@ -28,6 +28,12 @@ static int l_battery(lua_State *L) {
 /* tilt() -> x, y, z: the way gravity pulls on the console (-1..1 each), relative to the neutral position tilt_zero() sets
  * (the player holds it as they like, presses A: Kirby Tilt 'n' Tumble's trick); nil on a console without a sensor
  * (docs/hardware-rev2.md: an IMU on the I2C bus, behind hal_imu). Tests: `tilt X Y Z`. */
+/* Where there is no sensor and no motor (a desktop, the browser, a console before its rev2): the platform says nothing
+ * and these answer. Weak, and in this file, the only one that calls them: MinGW's linker does not let a weak
+ * definition in one object of the archive answer another object's reference. */
+__attribute__((weak)) bool hal_imu(float *x, float *y, float *z) { (void)x, (void)y, (void)z; return false; }
+__attribute__((weak)) void hal_rumble(int ms, float strength) { (void)ms, (void)strength; }
+
 static struct { bool on, have; float x, y, z; } fake_tilt;
 static float zero[3];
 
