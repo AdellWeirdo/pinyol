@@ -39,13 +39,29 @@ void post_haze(int y0, int y1, float amp, float phase, float period) {
     haze.y0 = y0, haze.y1 = y1, haze.amp = amp, haze.phase = phase, haze.period = period > 0.01f ? period : 0.01f, haze.on = true;
 }
 
+/* The rows the effects read: the haze's, and each ring's reach (a ring reads up to its radius and width around its
+ * centre; a shifted row reads only itself). Copying the whole picture every frame was a millisecond on the console
+ * for a haze of twenty rows. */
+static void rows_read(int h, int *y0, int *y1) {
+    int a = h, b = -1;
+    if (haze.on) a = haze.y0 < a ? haze.y0 : a, b = haze.y1 > b ? haze.y1 : b;
+    for (int k = 0; k < nshocks; k++) {
+        const int lo = (int)floorf(shocks[k].y - shocks[k].r - shocks[k].width - fabsf(shocks[k].amp)) - 1;
+        const int hi = (int)ceilf(shocks[k].y + shocks[k].r + shocks[k].width + fabsf(shocks[k].amp)) + 1;
+        a = lo < a ? lo : a, b = hi > b ? hi : b;
+    }
+    *y0 = a < 0 ? 0 : a, *y1 = b >= h ? h - 1 : b;
+}
+
 static bool keep_copy(const uint16_t *world, int w, int h) {
     if (copy_n != w * h) {
         copy = hal_realloc_slow(copy, (size_t)w * h * sizeof *copy);
         copy_n = copy ? w * h : 0;
     }
     if (!copy) return false;
-    memcpy(copy, world, (size_t)w * h * sizeof *copy);
+    int y0, y1;
+    rows_read(h, &y0, &y1);
+    if (y1 >= y0) memcpy(copy + (size_t)y0 * w, world + (size_t)y0 * w, (size_t)(y1 - y0 + 1) * w * sizeof *copy);
     return true;
 }
 
@@ -84,9 +100,9 @@ void post_apply(uint16_t *world, int w, int h) {
     if (!post_any()) return;
     if (!keep_copy(world, w, h)) { post_reset(); return; }
     if (haze.on) apply_haze(world, w, h);
-    if (nshocks && haze.on) memcpy(copy, world, (size_t)w * h * sizeof *copy); /* the rings bend the hazed picture */
+    if (nshocks && haze.on) keep_copy(world, w, h); /* the rings bend the hazed picture */
     for (int k = 0; k < nshocks; k++) {
-        if (k) memcpy(copy, world, (size_t)w * h * sizeof *copy); /* each ring over the last's */
+        if (k) keep_copy(world, w, h); /* each ring over the last's */
         apply_shock(world, w, h, k);
     }
     post_reset();

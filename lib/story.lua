@@ -175,7 +175,8 @@ end
 -- story.new(text [, {vars, name, ui}]): ui changes how the box looks (font, color, name_color, choice_color,
 -- pick_color, speed (letters a tick), x, y, w, h, pad, box and border (its colours), frame (a picture for frame()
 -- instead), frame_scale, panel (true: the game's theme's panel instead), portraits
--- (who or "who_mood" -> picture), blip (a sound per letters), blip_every)
+-- (who or "who_mood" -> picture), blip (a sound per letters, or a function(letter): a voice, which can ask
+-- s:line().who for whose it is), blip_every)
 function story.new(src, opts)
   opts = opts or {}
   if type(src) ~= "string" then error("story.new: the story's text (file(...) gave nil?)", 2) end

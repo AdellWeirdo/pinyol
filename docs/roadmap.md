@@ -110,6 +110,27 @@ En la placa (bench del propio juego, autopiloto en silencio, 76 s): Lua `_update
 voces con acento): 0,79 / 4,61 ms, 59,8 fps, 76 KB, audio al 14 % de un núcleo, 0 underruns. El firmware se queda en
 la consola (remoto) y el juego normal en la tarjeta, para oírlo.
 
+### Dos juegos más: TRECE y 07:59 · Ocho mañanas (21 octubre, noche)
+
+TRECE (petanca en primera persona, Mode 7): el rival decide cada bola con `lib/brain` (arrimar, tirar a la mejor
+contraria o empujar el boliche, pesado por el momento y la persona; el cartel dice lo que pretende), un golpe sacude
+los ojos de Remei (`juice.trauma` leído en la cámara de Mode 7: un paso, un cabeceo, un giro) y manda un anillo por
+la imagen desde donde chocó el acero (`shock`), la calor tiembla sobre los pies de las casas (`haze`), cada persona
+tiene su voz en la historia (`lib/voice` como función `blip` de `story`: Remei grave, Tina aguda), cuatro logros, y
+la película de 1983 no parpadea ni deslumbra con "menos destellos". Sus cuatro guiones pasan.
+
+Ocho mañanas (ritmo táctil): el sello del acierto cae grande y se asienta (`juice.tween`), un fallo encoge los bustos y
+el toro que roza tambalea a Dani (`juice.trauma`), cuatro logros, rayos de un solo color con "menos destellos". Sus
+seis guiones pasan.
+
+Lo que sacaron del motor: `post.c` copiaba la imagen entera (76 KB, en PSRAM) cada frame aunque la neblina fuera de
+veinte filas: en la placa TRECE pasó de 58,5 a 55,5 fps (mínimo 43) con la neblina siempre puesta. Ahora copia solo
+las filas que leen los efectos (la neblina las suyas, cada anillo su alcance): 58,0 fps, render 15,6 ms (antes de
+los efectos 15,45). Y dos aclaraciones en `docs/lua.md`: `shock`/`haze` actúan sobre el mundo (capas y sprites), no
+sobre lo que `img`, las formas y `text` dibujan a resolución completa encima (un juego solo de `img` no los ve), y
+el `blip` de una historia puede ser una función (una voz por personaje). `lib/brain`, `juice`, `voice`, `achieve()`
+y `settings()` no pidieron ningún cambio.
+
 **Aún pendiente de placa:** nada de esta ronda. Oír `at = "bar"` y las voces de `lib/voice` con el altavoz es cosa de
 orejas, no de log.
 

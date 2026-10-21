@@ -586,3 +586,19 @@ the bus's gain, then takes the duck and the lowpass with the WAVs; one `memset` 
 (a 256-sample chunk: a few microseconds on the console).
 The firmware with all of it: 90222 B of D/IRAM left (the CI floor is 90000; it was 91558 before the round's last build), the
 two spare module contexts asked for in slow memory.
+
+## 2026-10-21 · TRECE on the round, and the post pass's copy
+
+TRECE (Mode 7 petanque; its own bench: `bench.txt` "auto", games played by itself in silence, the console's perf
+lines every few seconds and the game's own "worst frame" every 600 frames) on the console, 75 s each:
+
+| | tick (Lua) | render avg / max | fps median / min | worst frames (ms) | internal free |
+|---|---|---|---|---|---|
+| before | 1.40 ms | 15.45 / 16.32 ms | 58.5 / 52.4 | 13-17 | 74 KB |
+| after, post copying the whole picture | 1.43 ms | 16.76 / 20.50 ms | 55.5 / 43.3 | 16-24 | 73 KB |
+| after, post copying the rows it reads | 1.47 ms | 15.62 / 16.41 ms | 58.0 / 52.1 | 15-19 | 73 KB |
+
+The heat haze is on every frame on the square and the beach (22 rows), the rings only after a blow: with the whole
+240x160 picture copied first (76 KB, PSRAM to PSRAM) the render lost 1.3 ms a frame and the worst frames went past
+20 ms; copying the rows the effects read (the haze's own, each ring's reach) gives nearly all of it back. The 0.07 ms
+of tick are the rival's scores, the voices and `juice.update()`. Firmware D/IRAM left: 90222 B, as before.
