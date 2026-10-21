@@ -8,3 +8,7 @@ function _draw()
   light(100, 200, 60, 0xFFC060) light(300, 220, 80, 0x60A0FF)
   text("hola", 10, 300)
 end
+-- perf("lua"): busy() is the dear one, light() the cheap one, both called from _update once heavy is set
+function busy() local s = 0 for i = 1, 40000 do s = s + i % 7 end return s end
+function light_work() local s = 0 for i = 1, 400 do s = s + i end return s end
+function _update() if heavy then busy() light_work() end end

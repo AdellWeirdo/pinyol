@@ -19,6 +19,7 @@
 #include "lualib.h"
 #include "ppu.h"
 #include "lua_api.h"
+#include "lua_prof.h"
 
 #define MEM_QUOTA_KB 4096          /* game.json "lua_memory_kb" can ask for up to MEM_MAX_KB */
 #define MEM_MAX_KB 6144
@@ -258,10 +259,12 @@ static void hook(lua_State *L, lua_Debug *ar) {
  * instruction, where the VM has saved its place. While the budget stays spent every jump in any thread comes here again. */
 static void over(lua_State *L) { lua_sethook(L, hook, LUA_MASKCOUNT, 1); }
 
-static void arm(void) { /* a fresh budget for one call from the engine, and no hook: the VM runs at its full speed */
+static void arm_as(const char *entry) { /* a fresh budget for one call from the engine, and no hook (but perf("lua")'s): the VM runs at its full speed */
     pinyol_budget = CALL_BUDGET;
-    lua_sethook(Ls, NULL, 0, 0);
+    prof_arm(Ls, entry);
 }
+
+static void arm(void) { arm_as(NULL); }
 
 static int msgh(lua_State *L) { /* the error with where it happened */
     const char *m = lua_tostring(L, 1);
@@ -289,7 +292,7 @@ static bool call(const char *fn, int nargs) { /* args are on the stack; true if 
     lua_insert(Ls, -1 - nargs);
     lua_pushcfunction(Ls, msgh);
     lua_insert(Ls, -2 - nargs);
-    arm();
+    arm_as(fn);
     int base = lua_gettop(Ls) - nargs - 1;
     int rc = lua_pcall(Ls, nargs, 0, base);
     lua_remove(Ls, base); /* msgh */
@@ -1003,7 +1006,7 @@ static void meter_draw(surface *s) {
     uint32_t sum = 0;
     for (int i = 0; i < 60; i++) sum += meter.ms10[i];
     float ms = sum / 600.0f;
-    char line[5][96];
+    char line[6][96];
     snprintf(line[0], sizeof line[0], "%.0f fps   %.1f ms a frame", ms > 0 ? 1000 / ms : 0, ms);
     snprintf(line[1], sizeof line[1], "update %.1f  draw %.1f  layers %.1f", us_update / 1000.0f, us_draw / 1000.0f,
              us_ppu / 1000.0f);
@@ -1018,7 +1021,17 @@ static void meter_draw(surface *s) {
     for (int i = 0; i < nr && at < (int)sizeof line[4]; i++)
         at += snprintf(line[4] + at, sizeof line[4] - (size_t)at, " %s %.1f", rows[i].name, rows[i].ms);
     if (!nr) snprintf(line[4], sizeof line[4], "strips: one frame to measure");
-    const int nl = 5;
+    int nl = 5;
+    if (prof_on()) { /* perf("lua"): the dearest functions by their own time, as shares of the Lua time sampled */
+        prof_row top[2];
+        float total = 0;
+        const int np = prof_rows(top, 2, &total);
+        at = snprintf(line[5], sizeof line[5], "Lua:");
+        for (int i = 0; i < np && at < (int)sizeof line[5]; i++)
+            at += snprintf(line[5] + at, sizeof line[5] - (size_t)at, " %.24s %.0f%%", top[i].name,
+                           total > 0 ? 100 * top[i].self_ms / total : 0);
+        nl = 6;
+    }
     int lh = G.font.h - 6, h = nl * lh + 8, tw = 0, tw_all = 0;
     for (int i = 0; i < nl; i++) {
         int w = font_width(&G.font, line[i], (int)strlen(line[i]));
@@ -1040,10 +1053,32 @@ static void meter_draw(surface *s) {
 
 static int l_perf(lua_State *L) { /* perf() -> ms of the last _update, _draw, picture, and KB of script memory;
                                    * perf(true) / perf(false): the meter on the screen;
-                                   * perf("ops") -> {kind = {n, ms}}, commands, slots: where the last frame's drawing went */
+                                   * perf("ops") -> {kind = {n, ms}}, commands, slots: where the last frame's drawing went;
+                                   * perf("lua") -> {{name, self, total}, ...} (ms, dearest own time first), ms sampled:
+                                   * where the Lua time went since the first call; perf("lua", false) stops it */
     if (lua_isboolean(L, 1)) {
         meter.on = lua_toboolean(L, 1);
         return 0;
+    }
+    if (lua_type(L, 1) == LUA_TSTRING && !strcmp(lua_tostring(L, 1), "lua")) {
+        if (lua_isboolean(L, 2) && !lua_toboolean(L, 2)) {
+            prof_stop();
+            return 0;
+        }
+        prof_start(); /* from the next call into the game on (this one is not sampled) */
+        prof_row rows[128];
+        float total = 0;
+        const int n = prof_rows(rows, 128, &total);
+        lua_createtable(L, n, 0);
+        for (int i = 0; i < n; i++) {
+            lua_createtable(L, 0, 3);
+            lua_pushstring(L, rows[i].name), lua_setfield(L, -2, "name");
+            lua_pushnumber(L, rows[i].self_ms), lua_setfield(L, -2, "self");
+            lua_pushnumber(L, rows[i].total_ms), lua_setfield(L, -2, "total");
+            lua_rawseti(L, -2, i + 1);
+        }
+        lua_pushnumber(L, total);
+        return 2;
     }
     if (lua_type(L, 1) == LUA_TSTRING && !strcmp(lua_tostring(L, 1), "ops")) {
         draw_profile(2u, true); /* from now on every frame is measured (the first answer is empty: a frame has to go by) */
@@ -1464,6 +1499,7 @@ void v2_free(void) {
     device_reset();
     if (Ls) lua_close(Ls);
     Ls = NULL;
+    prof_new_state();
     splash_ref = LUA_NOREF;
     assets_free();
     free(parked), free(world2);

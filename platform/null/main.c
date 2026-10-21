@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include "bp.h"
+#include "lua_prof.h"
 
 #ifndef PINYOL_GAME /* the build's GAME_DIR (CMakeLists.txt) */
 #define PINYOL_GAME "examples/hola"
@@ -120,9 +121,25 @@ static FILE *open_video(const char *path) {
     return f;
 }
 
+static void write_profile(const char *path) { /* the stacks for a flame graph, and the dearest functions on stderr */
+    FILE *f = fopen(path, "w");
+    if (!f) {
+        fprintf(stderr, "--profile: cannot write %s\n", path);
+        return;
+    }
+    const int lines = prof_folded(f);
+    fclose(f);
+    prof_row rows[10];
+    float total = 0;
+    const int n = prof_rows(rows, 10, &total);
+    fprintf(stderr, "profile: %.1f ms of Lua, %d stacks in %s (speedscope.app or flamegraph.pl read it)\n", total, lines, path);
+    fprintf(stderr, "%8s %8s  function\n", "own ms", "total");
+    for (int i = 0; i < n; i++) fprintf(stderr, "%8.1f %8.1f  %s\n", rows[i].self_ms, rows[i].total_ms, rows[i].name);
+}
+
 int main(int argc, char **argv) {
     bp_config cfg = {PINYOL_GAME, NULL, true};
-    const char *script = NULL;
+    const char *script = NULL, *profile = NULL;
     bool validate = false, fresh = false;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--game") && i + 1 < argc) cfg.game_dir = argv[++i];
@@ -135,16 +152,18 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--audio") && i + 1 < argc) dump = fopen(argv[++i], "wb");
         else if (!strcmp(argv[i], "--crc") && i + 1 < argc) crcs = fopen(argv[++i], "w");
         else if (!strcmp(argv[i], "--check-strips")) check_strips = true;
+        else if (!strcmp(argv[i], "--profile") && i + 1 < argc) profile = argv[++i];
         else if (!strcmp(argv[i], "--pictures") && i + 1 < argc) gfx_set_budget((size_t)atoi(argv[++i]) * 1024);
         else if (!strcmp(argv[i], "--video") && i + 1 < argc) {
             if (!(video = open_video(argv[++i]))) return 2;
         }
         else {
             fprintf(stderr, "usage: %s --game DIR [--saves DIR] [--fresh] (--validate | --script FILE) "
-                            "[--strict-assets] [--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--pictures KB] [--splash]\n", argv[0]);
+                            "[--strict-assets] [--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--profile FILE.folded] [--pictures KB] [--splash]\n", argv[0]);
             return 2;
         }
     }
+    if (profile) prof_start(); /* perf("lua") from the first call into the game */
     char default_saves[512];
     snprintf(default_saves, sizeof default_saves, "%s/saves", cfg.game_dir);
     if (fresh) wipe_saves(cfg.save_dir ? cfg.save_dir : default_saves);
@@ -163,6 +182,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "asset check: required picture %s is missing or invalid\n", gfx_missing_asset());
         if (!rc) rc = 1;
     }
+    if (profile) write_profile(profile);
     game_shutdown();
     if (dump) fclose(dump);
     if (crcs) fclose(crcs);

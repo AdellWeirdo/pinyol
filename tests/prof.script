@@ -16,3 +16,17 @@ lua perf(true)
 tick 8
 expect_ok
 shot prof
+# perf("lua"): by function, own time and total; the first call starts it, and the dear function comes first
+lua heavy = true
+lua rows, ms = perf("lua")
+expect_lua next(rows) == nil and ms == 0
+tick 30
+lua rows, ms = perf("lua")
+expect_lua ms > 0 and rows[1].name:find("busy") ~= nil and rows[1].self > 0 and rows[1].total >= rows[1].self
+expect_lua (function() for _, r in ipairs(rows) do if r.name:find("_update") then return r.total >= rows[1].self end end end)()
+# the meter has a line for it; off again, it forgets
+tick 8
+expect_ok
+lua perf("lua", false)
+lua rows, ms = perf("lua")
+expect_lua next(rows) == nil

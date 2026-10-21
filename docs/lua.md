@@ -821,7 +821,15 @@ shared by every quad, light, gradient, warp and scaled picture) and which kinds 
 milliseconds, both cores added). `perf("ops")` gives the same to the game: `ops, commands, slots = perf("ops")`, `ops.quad.n` and
 `ops.quad.ms` for each kind (`text`, `rect`, `shade`, `panel`, `plate`, `box`, `img`, `frame`, `line`, `circ`, `poly`, `points`, `quad`,
 `grad`, `light`, `warp`, `linetint`) of the last whole frame; the first call starts measuring, so it answers after a frame has gone by.
-Measuring times each command in each strip, so it costs a little while it is on. MENU and C together show or hide the meter on the console, F3 in the simulator. `require("name")`
+Measuring times each command in each strip, so it costs a little while it is on. `perf("lua")` says where the Lua time goes, by
+function: `rows, ms = perf("lua")` gives `rows[i].name` (`"reach (dungeon.lua:93)"`; the engine's calls by their names,
+`_update`, `_draw`), `rows[i].self` (milliseconds with that function on top: its own code, and the C calls it made, as
+`mset` or a path) and `rows[i].total` (with it anywhere on the stack), dearest own time first, and `ms`, all the Lua time
+counted since the first call (that one starts it and answers empty). It samples every thousand instructions, which slows
+the script by about a third while it is on; `perf("lua", false)` stops it and forgets. With it on, the meter has a line
+for the two dearest. `pinyol_headless --profile out.folded` profiles a whole test run: the dearest functions on the
+terminal, and every stack in `out.folded` for a flame graph (drop it on [speedscope.app](https://www.speedscope.app) or
+give it to `flamegraph.pl`). MENU and C together show or hide the meter on the console, F3 in the simulator. `require("name")`
 loads `name.lua` from the game folder (`"ui.menu"` is `ui/menu.lua`). `file("story/es.txt")` returns the text of any
 file of the game (1 MB at most), or nil: stories, levels written by hand, a metro's stations as CSV.
 
