@@ -147,6 +147,11 @@ bool played_achieve(const char *game, const char *id) {
     return true;
 }
 
+void played_free(void) { /* a game ended: the record is let go (read again when the next starts) */
+    cJSON_Delete(doc), doc = NULL;
+    free(json_text), json_text = NULL;
+}
+
 const char *played_json(void) {
     if (!json_text) json_text = cJSON_PrintUnformatted(load());
     return json_text ? json_text : "{}";

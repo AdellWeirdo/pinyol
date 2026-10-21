@@ -148,6 +148,10 @@ void conf_filter(uint16_t *px, int n) {
     }
 }
 
+void conf_free(void) { /* a game ended: the filter's table let go (conf_load makes it again for the next) */
+    free(lut), lut = NULL;
+}
+
 void conf_apply(void) {
     audio_user((float)CONF.volume / 100);
     if (CONF.colour == CONF_COLOUR_NORMAL) {

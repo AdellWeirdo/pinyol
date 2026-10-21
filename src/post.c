@@ -3,6 +3,7 @@
  * made the first time something asks for it. A ring of radius 60 moves about six thousand pixels: well under a
  * millisecond on the console; the haze moves whole rows, memmove-cheap. */
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "hal.h"
@@ -19,6 +20,11 @@ static int copy_n;
 void post_reset(void) {
     nshocks = 0;
     haze.on = false;
+}
+
+void post_free(void) { /* a game ended */
+    post_reset();
+    free(copy), copy = NULL, copy_n = 0;
 }
 
 bool post_any(void) { return nshocks > 0 || haze.on; }

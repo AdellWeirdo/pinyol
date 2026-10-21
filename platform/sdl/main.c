@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "bp.h"
+#include "compat.h" /* mkdir without a mode on Windows */
 #include "record.h"
 #ifndef __EMSCRIPTEN__
 #include "capture.h"

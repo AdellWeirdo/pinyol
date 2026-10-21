@@ -99,6 +99,8 @@ bool game_init(const bp_config *cfg) {
 
 void game_shutdown(void) {
     played_end(G.ticks);
+    played_free();
+    conf_free();
     v2_free();
     arena_free();
     audio_reset();

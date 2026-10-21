@@ -23,6 +23,7 @@ extern conf_t CONF;
 void conf_load(void);  /* from the platform's folder, or the defaults; applies them (volume, colour) */
 void conf_save(void);  /* after a change in the system menu */
 void conf_apply(void); /* what the settings do outside the menu: the user's volume, the colour filter's table */
+void conf_free(void);  /* a game ended: the filter's table let go */
 bool conf_set(const char *key, const char *value); /* "volume" "80", "flash" "less"/"normal", "colour" "protan"..., "speed" "50",
                                                     * "lang" "ca", "swap_ab" "true": false if unknown or out of range */
 /* The colour filter on a picture's pixels, in place (RGB565): nothing when it is off. */

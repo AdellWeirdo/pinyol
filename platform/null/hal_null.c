@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "compat.h" /* mkdir without a mode on Windows */
 #include "hal.h"
 
 void hal_log(const char *fmt, ...) {

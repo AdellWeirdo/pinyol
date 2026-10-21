@@ -1773,6 +1773,8 @@ void v2_free(void) {
     if (Ls) lua_close(Ls);
     Ls = NULL;
     prof_new_state();
+    prof_stop();
+    post_free();
     splash_ref = LUA_NOREF;
     assets_free();
     free(parked), free(world2);

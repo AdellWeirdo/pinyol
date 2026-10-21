@@ -10,3 +10,4 @@ void post_haze(int y0, int y1, float amp, float phase, float period); /* rows y0
 bool post_any(void);
 void post_apply(uint16_t *world, int w, int h); /* on the picture, then forgotten for the next frame */
 void post_reset(void);
+void post_free(void); /* a game ended: the copy let go */
