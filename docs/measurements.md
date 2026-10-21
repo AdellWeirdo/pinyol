@@ -549,3 +549,11 @@ The console's menu and settings seen on the panel over horizonte (shots over the
 a 32768-entry table in PSRAM), gone again when it is turned off. Found on the way: the strips are drawn on both cores
 at once, so nothing in the drawing path may call into the game's Lua state (the menu read its items there and the
 console aborted in luaD_throw: fixed, the labels are copied on the tick).
+
+`music(..., {at = "bar"})` on the console's mixer (tests/games/music sent to the card, driven over the cable): with a
+bar of two seconds the queued song waits (`music_queued()` true while the first is at 0.90 s) and comes in on the
+line (the next sample, 1.1 s later: the new one at 0.32 s). The console's `lua:` round trip over the cable is about
+half a second, so finer timing needs a longer bar, as here.
+
+Geumgye (np2d@1, the same engine as Bajo Pueblo, sent without its 76 MB of audio): its title at 59.8 fps with 13.2 ms
+of strips (its picture, as Bajo Pueblo's), 42 KB of internal RAM free.

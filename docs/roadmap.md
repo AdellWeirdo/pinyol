@@ -78,8 +78,11 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
    frame) y la pantalla de crash con A reiniciando. Y un abort encontrado y arreglado (9bb4905): el dibujo corre en los
    dos núcleos y no puede tocar el estado de Lua.
 
-**Aún pendiente de placa:** `music(..., {at = "bar"})` de oído (el mezclador sí hace el cambio: comprobado por el cable),
-geumgye (misma aventura que Bajo Pueblo, 82 MB con su audio).
+8. `music(..., {at = "bar"})` en el mezclador de la consola: con compás de 2 s, la canción encolada espera
+   (`music_queued()` true, la vieja a 0,90 s) y entra en la línea (en la muestra siguiente, la nueva a 0,32 s = 0,9 + 1,1).
+
+**Aún pendiente de placa:** nada de esta ronda. Oír `at = "bar"` y las voces de `lib/voice` con el altavoz es cosa de
+orejas, no de log.
 
 ## Fase 0 · Memoria y rendimiento
 
