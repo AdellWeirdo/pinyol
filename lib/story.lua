@@ -20,6 +20,7 @@ story.__index = story
 local rich = require("rich") -- a line's text may carry marks: [c=FF8040]color[/c], [wave], [wait=20], [sfx=ID]...
 
 local function trim(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
+local render -- a line's parts as text (below)
 
 local UI = {
   font = "main", color = 0xFFFFFF, name_color = 0xFFE070, choice_color = 0xB8C8D8, pick_color = 0xFFFFFF,
@@ -39,13 +40,35 @@ local function compile(self, src, name)
     if not f then fail(err:gsub("^[^:]*:%d+:%d*:?%s*", "")) end
     return f
   end
-  local function parts(text) -- "Hola {nombre}." -> {"Hola ", f, "."}
+  local parts
+  local seqs = 0
+  local function sequence(e) -- {a|b|c} the next each time it is read, then the last for ever; {&a|b} round and round;
+    -- {~a|b} one at random; {!a|b} once each, then nothing. What it has shown is kept with the story (vars.seq)
+    local kind = e:sub(1, 1)
+    if kind == "&" or kind == "~" or kind == "!" then e = e:sub(2) else kind = "" end
+    local items = {}
+    for item in (e .. "|"):gmatch("(.-)|") do items[#items + 1] = parts(item) end
+    seqs = seqs + 1
+    local key = name .. ":" .. seqs
+    return function()
+      local seq = self.vars.seq
+      local n = (seq[key] or 0) + 1
+      seq[key] = n
+      local i
+      if kind == "&" then i = (n - 1) % #items + 1
+      elseif kind == "~" then i = math.random(#items)
+      elseif kind == "!" then i = n <= #items and n or nil
+      else i = math.min(n, #items) end
+      return i and render(items[i]) or ""
+    end
+  end
+  function parts(text) -- "Hola {nombre}." -> {"Hola ", f, "."}
     local out, pos = {}, 1
     while true do
       local a, b, e = text:find("{(.-)}", pos)
       if not a then out[#out + 1] = text:sub(pos); return out end
       out[#out + 1] = text:sub(pos, a - 1)
-      out[#out + 1] = code(e, true)
+      out[#out + 1] = e:find("|", 1, true) and sequence(e) or code(e, true)
       pos = b + 1
     end
   end
@@ -169,6 +192,8 @@ function story.new(src, opts)
   self.prog, self.knots, self.defaults = compile(self, src, opts.name or "story")
   self.vars.seen = self.vars.seen or {}
   self.vars.taken = self.vars.taken or {}
+  self.vars.seq = self.vars.seq or {}
+  rawset(self.env, "visits", function(knot) return self.vars.seen[knot] or 0 end) -- [if visits("bar") > 1]
   for _, d in ipairs(self.defaults) do
     if self.vars[d[1]] == nil then self.vars[d[1]] = d[2]() end
   end
@@ -177,7 +202,7 @@ function story.new(src, opts)
   return self
 end
 
-local function render(p)
+function render(p)
   local out = {}
   for i, v in ipairs(p) do out[i] = type(v) == "function" and tostring(v()) or v end
   return table.concat(out)

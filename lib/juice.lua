@@ -5,6 +5,12 @@
 --   local juice = require("juice")
 --   juice.tween(door, {y = 40}, 0.5, "out_bounce")   -- door.y goes to 40 in half a second, bouncing at the end
 --   juice.shake(6)                                    -- the screen shakes 6 pixels, and calms down
+--   juice.trauma(0.5)                                 -- a hit's trauma, 0..1: the shake is its square (Eiserloh, GDC 2016), sampled from
+--                                                     -- smooth noise, so a big blow shakes hard and a small one hardly; it wears off
+--   juice.kick(0, -6)                                 -- a push in one direction (a shot's recoil), that eases back
+--   local s = juice.spring(3, 0.5, 0)                 -- a second-order follower (frequency Hz, damping, response; t3ssel8r):
+--   x = s:update(target)                              -- it chases target with overshoot or anticipation, a value a tick
+--   juice.squash(hero, 0.3)                           -- hero.sx, hero.sy: squashed 30% (wider, lower) and springing back
 --   juice.freeze(5)                                   -- five ticks frozen: the hit lands
 --   juice.flash(0xFFFFFF, 3)                          -- three ticks of white
 --   in _update:  if juice.update() then return end    -- true while frozen: skip the game's tick
@@ -47,6 +53,8 @@ M.ease = {
 
 local tweens, timers, scripts = {}, {}, {}
 local shake, frozen, flash_colour, flash_left = 0, 0, 0, 0
+local trauma, kick_x, kick_y, shake_t = 0, 0, 0, 0
+local squashes = {}
 local Tween = {}
 Tween.__index = Tween
 
@@ -138,6 +146,38 @@ function M.cancel(what) -- a tween (and what was to come after it), a timer, a s
 end
 
 function M.shake(px) shake = math.max(shake, px) end
+function M.trauma(amount) trauma = math.min(1, trauma + (amount or 0.3)) end -- adds up; the shake is trauma^2 * 16 px
+function M.kick(dx, dy) kick_x, kick_y = kick_x + dx, kick_y + dy end
+
+-- spring(f, z, r [, x0]): a value that follows a target as a mass on a spring (second-order dynamics, after t3ssel8r's
+-- "Giving personality to procedural animations"): f, how fast it moves (Hz); z, damping (0: rings for ever, 1: no
+-- overshoot); r, response (0: eases in, 1: reacts at once, > 1 overshoots, < 0 anticipates the other way first).
+-- s:update(target) once a tick returns the value; s.x and s.v are where it is and how fast it goes.
+local Spring = {}
+Spring.__index = Spring
+function M.spring(f, z, r, x0)
+  local w = 2 * math.pi * (f or 1)
+  return setmetatable({x = x0 or 0, v = 0, prev = x0 or 0, k1 = (z or 1) / (math.pi * (f or 1)), k2 = 1 / (w * w),
+                       k3 = (r or 0) * (z or 1) / w}, Spring)
+end
+function Spring:update(target, dt)
+  dt = dt or 1 / 60
+  local xd = (target - self.prev) / dt -- the target's own speed
+  self.prev = target
+  local k2 = math.max(self.k2, dt * dt / 2 + dt * self.k1 / 2, dt * self.k1) -- stable however stiff
+  self.x = self.x + dt * self.v
+  self.v = self.v + dt * (target + self.k3 * xd - self.x - self.k1 * self.v) / k2
+  return self.x
+end
+function Spring:set(x) self.x, self.v, self.prev = x, 0, x return self end
+
+-- squash(obj, amount [, ticks]): obj.sx and obj.sy go to 1 + amount and 1 / (1 + amount) (the area kept: wider and lower
+-- on a landing; a negative amount stretches, taller and thinner, for a jump) and spring back to 1 over ticks (8)
+function M.squash(obj, amount, ticks)
+  obj.sx, obj.sy = 1 + amount, 1 / (1 + amount)
+  for _, q in ipairs(squashes) do if q.obj == obj then q.left, q.len = ticks or 8, ticks or 8 return end end
+  squashes[#squashes + 1] = {obj = obj, left = ticks or 8, len = ticks or 8}
+end
 function M.freeze(ticks) frozen = math.max(frozen, ticks) end
 function M.flash(colour, ticks) -- (none at all when the console is set to less flashing)
   if settings and settings().reduce_flashing then return end
@@ -201,18 +241,40 @@ function M.update()
     end
   end
   shake = shake > 0.5 and shake * 0.85 or 0
+  trauma = trauma > 0.02 and trauma - 0.025 or 0 -- gone in two thirds of a second from a full hit
+  kick_x, kick_y = kick_x * 0.8, kick_y * 0.8
+  if math.abs(kick_x) < 0.3 then kick_x = 0 end
+  if math.abs(kick_y) < 0.3 then kick_y = 0 end
+  shake_t = shake_t + 1
+  for i = #squashes, 1, -1 do
+    local q = squashes[i]
+    q.left = q.left - 1
+    local k = q.left / q.len -- back to 1 with a little ring
+    local a = (q.obj.sx - 1) * k * (1 + 0.3 * math.sin(k * math.pi * 2))
+    q.obj.sx, q.obj.sy = 1 + a, 1 / (1 + a)
+    if q.left <= 0 then q.obj.sx, q.obj.sy = 1, 1 table.remove(squashes, i) end
+  end
   return false
 end
 
-function M.offset() -- where the screen is pushed this frame: camera(juice.offset())
-  if shake == 0 then return 0, 0 end
-  return math.floor((math.random() * 2 - 1) * shake + 0.5), math.floor((math.random() * 2 - 1) * shake + 0.5)
+function M.offset() -- where the screen is pushed this frame: camera(juice.offset()); a third value, the angle in degrees
+  local ox, oy, ang = 0, 0, 0
+  if shake > 0 then ox, oy = (math.random() * 2 - 1) * shake, (math.random() * 2 - 1) * shake end
+  if trauma > 0 then -- smooth noise, not random: the screen swings instead of jittering (Eiserloh)
+    local t, s = shake_t * 0.6, trauma * trauma
+    ox, oy = ox + noise(t, 0.5) * 16 * s, oy + noise(t, 7.5) * 16 * s
+    ang = noise(t, 13.5) * 6 * s
+  end
+  return math.floor(ox + kick_x + 0.5), math.floor(oy + kick_y + 0.5), ang
 end
 
 function M.draw() -- the flash, over everything
   if flash_left > 0 then rect(0, 0, SCREEN_W, SCREEN_H, flash_colour) end
 end
 
-function M.reset() tweens, timers, scripts, shake, frozen, flash_left = {}, {}, {}, 0, 0, 0 end
+function M.reset()
+  tweens, timers, scripts, shake, frozen, flash_left = {}, {}, {}, 0, 0, 0
+  trauma, kick_x, kick_y, squashes = 0, 0, 0, {}
+end
 
 return M

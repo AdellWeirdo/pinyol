@@ -9,6 +9,18 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
 `l:descend`), `noise()`, efectos por línea (HDMA), sin límite de sprites por línea, sombra/brillo vía ventanas y `fade`,
 `.mod`, sonidos de números (sfxr), director musical (solo aventuras JSON), investigación GBA/PS1/Saturn/DS.
 
+## Estado (21 octubre 2026)
+
+- **Fase 0, hecho:** código del sistema y driver de flash fuera de IRAM (+19,8 KB; `firmware/sdkconfig.defaults`),
+  `perf("lua")` y `--profile` (profiler por muestreo), `span_mix_const` con PIE para cajas de un color mezcladas
+  (comprobado en QEMU, `tests/pie/run.sh`). **Pendiente de placa:** medir fps con las tiras y PIE, probar
+  `CONFIG_ESP32S3_DATA_CACHE_32KB` (+32 KB) y `CONFIG_SPIRAM_XIP_FROM_PSRAM`; saltar tiras sin cambios no compensa
+  mientras el DMA ya solapa el dibujo (ganaría batería, no fps).
+- **Fase 1, hecho:** menú del sistema (`sysmenu.c`), ajustes de consola (`conf.c`: volumen, destellos, filtro de
+  color, velocidad, idioma, A/B), pantalla de crash y `crash.txt`, `--record` y el comando `in`, `--check-flashes`
+  (también en el robot de la Biblioteca), F6/F7/F8/F9 en el simulador. **No hecho:** QR en el crash, remapeo
+  completo y mantener/alternar (solo A/B), recientes/favoritos/tiempo jugado (en la fase 5).
+
 ## Fase 0 · Memoria y rendimiento
 
 Lo que más limita es la RAM interna (la radio pide 27 KB). Criterio de salida: ≥ 40 KB internos libres con radio y

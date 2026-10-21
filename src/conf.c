@@ -98,7 +98,10 @@ void conf_save(void) {
     snprintf(txt, sizeof txt, "{\"volume\": %d, \"reduce_flash\": %s, \"colour\": \"%s\", \"speed\": %d, \"lang\": \"%s\", \"swap_ab\": %s}\n",
              CONF.volume, CONF.reduce_flash ? "true" : "false", COLOURS[CONF.colour], CONF.speed, LANGS[CONF.lang],
              CONF.swap_ab ? "true" : "false");
-    if (!save_file_atomic(p, txt)) hal_log("settings: cannot write %s", p);
+    static char written[256]; /* the same again is not written (on the console's flash a write stalls both cores) */
+    if (!strcmp(txt, written)) return;
+    if (save_file_atomic(p, txt)) snprintf(written, sizeof written, "%s", txt);
+    else hal_log("settings: cannot write %s", p);
 }
 
 /* ------------------------------------------------------------------ the colour filter */

@@ -69,3 +69,15 @@ expect_lua_error story.new(nil)
 expect_lua file("nope.txt") == nil
 expect_lua_error file("../secret")
 expect_ok
+# sequences in a text: {a|b|c} the next each time then the last, {&a|b} round and round, {!x|y} once each then nothing;
+# visits(knot) in an expression
+lua s = story.new(file("story/es.txt"), {name = "es.txt"}) s:go("eco")
+expect_lua s:line().text == "uno a x"
+lua s:next()
+expect_lua s:line().text == "visita 1"
+lua s:next()
+expect_lua s:line().text == "dos b y"
+lua s:next() s:next()
+expect_lua s:line().text == "tres a "
+lua s:next()
+expect_lua s:line().text == "visita 3"

@@ -1,0 +1,86 @@
+# lib/move: a hero on a text level (the floor at y 72, a hero of 8x14 stands at y 58). He runs; jumps (a held one, a
+# short one when the button is let go, coyote time off a ledge, a jump buffered before landing); a block's corner is
+# nudged round; a one-way platform is passed from below and holds from above; a moving solid carries and pushes him.
+# lib/autotile: masks and tiles from the same text map.
+new
+tick 5
+expect_lua hero.y == 58 and pl.state == "ground"
+# run right: whole pixels, the fraction kept; letting go, he brakes
+lua dir = 1
+tick 10
+expect_lua hero.x > 20 and hero.x == math.floor(hero.x) and math.abs(pl.vx - 2) < 1e-6
+lua dir = 0
+tick 10
+expect_lua pl.vx == 0
+# a jump from the ground, held: up, and back down to the floor
+lua jump_p, jump_h = true, true
+tick 3
+expect_lua pl.state == "jump" and hero.y < 58 and jumps == 1
+tick 60
+expect_lua hero.y == 58 and pl.state == "ground" and landings == 1
+# a short jump (let go at once) stays lower than a held one
+lua jump_p, jump_h = true, true
+tick 1
+lua jump_h = false
+tick 12
+lua short_top = hero.y
+tick 40
+lua jump_p, jump_h = true, true
+tick 13
+expect_lua hero.y < short_top
+tick 40
+expect_lua pl.state == "ground"
+# coyote time: the floor cut to its left half, he runs off its edge and can still jump for a few ticks
+lua LEVEL[10] = "########............" hero.x, hero.y, pl.vx, pl.vy = 60, 58, 0, 0 dir = 1
+tick 5
+expect_lua pl.state == "fall" and pl.coyote > 0
+lua jump_p, jump_h = true, true
+tick 2
+expect_lua pl.state == "jump" and jumps == 4
+lua dir = 0
+tick 60
+lua LEVEL[10] = "####################"
+# a buffered jump: pressed in the air a few ticks before landing, he jumps as he touches down
+lua hero.x, hero.y, pl.vx, pl.vy = 16, 48, 0, 0 jumps = 0
+tick 6
+lua jump_p, jump_h = true, true
+tick 1
+lua jump_h = false
+expect_lua pl.buffer > 0 and pl.state == "fall"
+tick 20
+expect_lua jumps == 1
+tick 60
+# a corner: the block at row 3 (x 48..55, y 24..31) overlaps the hero's head by four pixels: he is nudged aside and goes on
+lua hero.x, hero.y, pl.vx, pl.vy = 44, 58, 0, 0
+tick 3
+lua jump_p, jump_h = true, true
+tick 12
+expect_lua hero.x == 40 and hero.y < 32
+tick 60
+# a one-way platform at row 6 (x 80..103, y 48..55): passed on the way up, stood on coming down
+lua hero.x, hero.y, pl.vx, pl.vy = 88, 58, 0, 0
+tick 3
+lua jump_p, jump_h = true, true
+tick 60
+expect_lua hero.y == 34 and pl.state == "ground"
+# a moving solid: a lift carries him up; moving into him, it pushes him
+lua lift = move.solid(112, 68, 24, 4) hero.x, hero.y, pl.vx, pl.vy = 120, 54, 0, 0 lift_dy = -1
+tick 10
+expect_lua lift.y == 58 and hero.y + 14 == lift.y
+lua lift_dy = 0 lift.x, lift.y = 150, 58 hero.x, hero.y = 140, 58 lift_dx = -1
+tick 5
+expect_lua hero.x + 8 <= lift.x
+lua lift:remove() lift = nil
+# autotile: the blob mask of the floor's middle (east, south-east, south, south-west, west) and the 47-tile index; the dual grid's sixteen
+lua autotile.blob(1, 20, 10, is_solid, function(m) return m end)
+lua m_mid = autotile.mask(is_solid, 20, 10, 10, 9)
+expect_lua m_mid == 4 + 8 + 16 + 32 + 64
+expect_lua autotile.blob_index(255) == 46 and autotile.blob_index(0) == 0 and autotile.blob_index(2) == nil
+expect_lua mget_(10, 9) == m_mid and mget_(10, 2) == 0
+lua tiles = {} for k = 0, 15 do tiles[k] = 100 + k end
+lua autotile.dual(1, 20, 10, is_solid, tiles)
+expect_lua mget_(10, 10) == 115 and mget_(10, 9) == 112 and mget_(10, 5) == 100
+lua LEVEL[3] = "..........#........."
+lua autotile.fix(1, 20, 10, is_solid, tiles, 10, 2, true)
+expect_lua mget_(10, 2) == 108 and mget_(11, 3) == 101
+expect_ok

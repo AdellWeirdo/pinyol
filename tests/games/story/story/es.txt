@@ -30,3 +30,8 @@ Klaus: Está abierta. Huele a tierra mojada.
 
 == fin
 Abuela: Vuelve cuando quieras.
+
+== eco
+Eco: {uno|dos|tres} {&a|b} {!x|y}
+Eco: visita {visits("eco")}
+-> eco

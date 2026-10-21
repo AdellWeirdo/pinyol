@@ -43,3 +43,23 @@ tick 2
 expect_lua result == "ok"
 shot keyboard
 expect_ok
+# juice: trauma shakes by its square and wears off; a kick eases back; a spring chases its target and settles; a squash
+# squeezes and springs back to 1
+lua juice.trauma(1) ox, oy, ang = juice.offset()
+expect_lua ox ~= nil and oy ~= nil and ang ~= nil
+tick 60
+lua ox, oy = juice.offset()
+expect_lua ox == 0 and oy == 0
+lua juice.kick(10, 0) ox = juice.offset()
+expect_lua ox == 10
+tick 20
+lua ox = juice.offset()
+expect_lua ox == 0
+lua sp = juice.spring(3, 0.5, 0) top = 0 for i = 1, 20 do top = math.max(top, sp:update(100)) end
+expect_lua top > 100
+lua for i = 1, 200 do sx = sp:update(100) end
+expect_lua math.abs(sx - 100) < 0.5
+lua hero = {} juice.squash(hero, 0.3)
+expect_lua math.abs(hero.sx - 1.3) < 1e-6 and math.abs(hero.sy - 1 / 1.3) < 1e-6
+tick 10
+expect_lua hero.sx == 1 and hero.sy == 1
