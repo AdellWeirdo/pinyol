@@ -19,7 +19,7 @@ jobs:
       contents: read
     container: espressif/idf:v5.4.2
     env:
-      MIN_REMAIN: "70000" # bytes of D/IRAM the statics leave (73466 at 0f2a85c)
+      MIN_REMAIN: "90000" # bytes of D/IRAM the statics leave (73466 at 0f2a85c; 92938 with the system code in flash)
     steps:
       - uses: actions/checkout@v4
         with:

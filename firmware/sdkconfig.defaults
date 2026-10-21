@@ -31,6 +31,14 @@ CONFIG_FATFS_MAX_LFN=255
 CONFIG_FREERTOS_HZ=1000
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=16384
 
+# Internal RAM is what the radio runs out of first (docs/measurements.md, "Internal RAM and the radio"): the system's
+# own non-ISR code runs from flash, and the flash driver is the ROM's (it lacks only SPI_FLASH_AUTO_SUSPEND, unused
+# here). Statics leave 92938 bytes of D/IRAM instead of 73170. Next, not taken: CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH
+# gives 13 KB more but needs CONFIG_SPI_MASTER_ISR_IN_IRAM=n (the panel's interrupt would wait out flash writes).
+CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH=y
+CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH=y
+CONFIG_SPI_FLASH_ROM_IMPL=y
+
 # pinyol_core statics go to PSRAM (components/pinyol_core/linker.lf)
 CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY=y
 

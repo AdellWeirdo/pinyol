@@ -470,3 +470,19 @@ and a largest block of 12 KB. Measured on the board:
 - Now a game starts with 32 KB free; with the radio on, 6 KB are left (juntos plays, 59 fps). That is little: what
   grows internal RAM again stops the radio first. `.github/workflows/firmware.yml` fails when the statics leave less
   than 70000 bytes; the main task's 16 KB stack (8 KB seen used) is the next margin, if one is needed.
+
+## 2026-10-21 · The system's code out of internal RAM
+
+What the statics leave of D/IRAM (`esp_idf_size` on the map, the same build with one change each, `BP_BENCH=OFF`):
+
+| Build | D/IRAM left |
+|---|---|
+| Before | 73170 B |
+| FreeRTOS and ringbuf non-ISR code in flash | 84330 B (+11.2 KB) |
+| + the ROM's flash driver (`SPI_FLASH_ROM_IMPL`) | **92938 B (+19.8 KB)**, taken |
+| FreeRTOS, ringbuf, heap in flash (no ROM driver) | 97586 B (+24.4 KB), not taken: it needs the panel's SPI interrupt out of IRAM |
+
+The ROM's driver lacks only `SPI_FLASH_AUTO_SUSPEND` (off here). Not yet run on the board: check a save to the flash,
+a game sent over the cable, an OTA and `examples/juntos` with the radio, and the frame time of a strip-heavy game
+(FreeRTOS's queue and semaphore calls now run from flash). A checkout with its own `firmware/sdkconfig` keeps the old
+values until it is made again (`rm sdkconfig`, or `idf.py reconfigure` after deleting the lines). CI's floor is now 90000.
