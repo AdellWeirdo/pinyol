@@ -72,9 +72,11 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
 5. Menú del sistema sobre TRECE visto en la pantalla real (captura por el cable). `played.json` no se escribía en
    FAT (`rename` sobre un archivo existente): arreglado (`played.c`).
 
+6. ILUSTRES (44 MB, enviado por el cable): combates a 57,6-59,8 fps, intro de asalto a 53, con 2 MB de PSRAM de margen.
+
 **Aún pendiente de placa:** ajustes y filtro de color vistos en pantalla (el guion por el cable se perdió en TRECE,
 que lee MENU: ahí abre con un segundo de MENU), la pantalla de crash en la consola, `music(..., {at = "bar"})` de oído,
-geumgye e ilustres (ilustres enviado: 44 MB por el cable).
+geumgye (misma aventura que Bajo Pueblo, 82 MB con su audio).
 
 ## Fase 0 · Memoria y rendimiento
 

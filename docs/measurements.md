@@ -538,3 +538,8 @@ An adventure (Bajo Pueblo, np2d@1, sent without its 123 MB of audio), the same s
 The title's 17 ms are the adventure's own (the picture drawn whole each frame: it was 11-12 ms with the world before
 the first shot, the rest is the shot); nothing else moved more than the run-to-run noise. Internal RAM in the game: 43
 KB on the old build, 42 on the new (an adventure allocates its own buffers; the 30 KB show in Lua games, 70 KB).
+
+IL·LUSTRES (np2d@2, a Neo Geo-like fighter, 44 MB of pictures on the card, sent over the cable in eleven minutes)
+on the final build: `game_init` 755 ms; the fights at 57.6-59.8 fps (world 1.1-1.6 ms, strips 6-10 ms), the round's
+intro at 53 fps (world 4.2 ms), one 44 fps sample while pictures were loading (world 6.8 ms); PSRAM free went from 3.7
+to 2.0 MB as its fighters came in, so XIP's 1.7 MB still leaves it room. Internal RAM 56-59 KB in play.
