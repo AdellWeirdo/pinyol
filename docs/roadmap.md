@@ -21,6 +21,19 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
   (también en el robot de la Biblioteca), F6/F7/F8/F9 en el simulador. **No hecho:** QR en el crash, remapeo
   completo y mantener/alternar (solo A/B), recientes/favoritos/tiempo jugado (en la fase 5).
 
+- **Fase 2, hecho:** `lib/move` (actores y sólidos de Celeste, coyote, buffer, salto corto, ápice, esquinas, plataformas
+  de un sentido, sólidos que llevan y empujan), `lib/autotile` (blob 47 y dual-grid 16), juice (trauma con ruido, kick,
+  muelles de segundo orden, squash), story (secuencias `{a|b}`, `{&}`, `{~}`, `{!}` y `visits()`), audio (`bus()`,
+  `duck()`, `sfx` con `pitch_var`, `gain_var`, `max`, `cooldown`), `lib/voice` (blips tipo Animalese, `rich` acepta
+  una función en `blip`). **No hecho:** cadena del altavoz (paso alto, compresor, bajo virtual: hay que afinarla con el
+  micro de la placa), rampas/bucles tipo Sonic.
+
+- **Fase 3, hecho:** `palcycle` con BlendShift, `line_affine` y `line_scroll_ramp` (las tablas por línea del PPU
+  desde Lua), `shock` y `haze` (post-proceso sobre el mundo, `src/post.c`), `lib/stack` (sprite stacking con caché de
+  ángulos en canvases), `lib/water` (muelles), `lib/road` (carretera pseudo-3D sobre `line_affine`). Comprobado por
+  píxel en `tests/looks_check.py`. **No hecho:** dither de ruido azul, visibilidad 2D, silueta tras paredes, cleanEdge,
+  Voxel Space, luz normal por paleta, mallas 3D.
+
 ## Fase 0 · Memoria y rendimiento
 
 Lo que más limita es la RAM interna (la radio pide 27 KB). Criterio de salida: ≥ 40 KB internos libres con radio y

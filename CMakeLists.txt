@@ -353,6 +353,11 @@ if(Python3_FOUND)
            ${CMAKE_BINARY_DIR}/saves_quad/quad.ppm)
   set_tests_properties(script_quad PROPERTIES FIXTURES_SETUP quad_mesh)
   set_tests_properties(quad_mesh_screen PROPERTIES FIXTURES_REQUIRED quad_mesh)
+  if(NOT NO_PIL) # the new looks' shots read back: palcycle, shock, haze, line_scroll_ramp, line_affine
+    add_test(NAME looks_pixels COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/looks_check.py ${CMAKE_BINARY_DIR}/saves_looks)
+    set_tests_properties(script_looks PROPERTIES FIXTURES_SETUP looks_shots)
+    set_tests_properties(looks_pixels PROPERTIES FIXTURES_REQUIRED looks_shots)
+  endif()
 endif()
 # the console's menu (a game too) lists the examples as the console lists its games
 set_tests_properties(script_cirera PROPERTIES ENVIRONMENT "PINYOL_GAMES=${CMAKE_CURRENT_SOURCE_DIR}/examples")

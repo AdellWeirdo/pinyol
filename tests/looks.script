@@ -1,0 +1,51 @@
+# palcycle, line_affine, line_scroll_ramp, shock, haze (the shots are read by tests/looks_check.py), and the stack, water and
+# road libraries
+new
+tick 2
+shot looks_cycle0
+lua phase = 1
+tick 1
+shot looks_cycle1
+lua phase = 0.5
+tick 1
+shot looks_cycle_half
+lua palcycle(0, 3) mode = "none"
+tick 1
+shot looks_cycle_back
+expect_lua_error palcycle(5, 3, 0)
+lua mode = "plain"
+tick 1
+shot looks_plain
+lua mode = "shock"
+tick 1
+shot looks_shock
+lua mode = "haze"
+tick 1
+shot looks_haze
+lua mode = "ramp"
+tick 1
+shot looks_ramp
+lua mode = "affine"
+tick 1
+shot looks_affine
+lua mode = "road"
+tick 3
+shot looks_road
+expect_lua select(4, rd:project(3000, 0)) == true and select(4, rd:project(0, 0)) == false and select(2, rd:project(3000, 0)) == 48 + 300 * 240 / 3000
+# stack: the first angle's canvas is made on the first draw and has pixels in it; a second angle makes another
+lua mode = "stack"
+shot looks_stack0
+lua found = false for y = 0, 40 do for x = 0, 30 do if pget(x, y, "SL0_stack0") then found = true end end end
+expect_lua found == true
+lua angle = 45
+shot looks_stack
+lua found2 = false for y = 0, 40 do for x = 0, 30 do if pget(x, y, "SL0_stack1") then found2 = true end end end
+expect_lua found2 == true
+# water: a splash in the middle moves the surface there more than at the sides, and it settles
+lua mode = "water" pond:splash(240, 6)
+tick 4
+expect_lua math.abs(pond:height(240) - 200) > 0.5 and math.abs(pond:height(10) - 200) < math.abs(pond:height(240) - 200)
+shot looks_water
+tick 600
+expect_lua math.abs(pond:height(240) - 200) < 0.5
+expect_ok

@@ -21,6 +21,8 @@
 #include "lua_api.h"
 #include "lua_prof.h"
 #include "conf.h"
+#include "gfx_px.h"
+#include "post.h"
 #include "sysmenu.h"
 
 #define MEM_QUOTA_KB 4096          /* game.json "lua_memory_kb" can ask for up to MEM_MAX_KB */
@@ -557,6 +559,54 @@ static int l_palette(lua_State *L) { /* palette(id [, "obj"] [, offset]) */
 
 static int l_backdrop(lua_State *L) { PPU.bg_pal[0] = to565(luaL_checkinteger(L, 1)); return 0; }
 
+/* palcycle(lo, hi, phase [, {obj, blend}]): entries lo..hi of the palette cycle (Mark Ferrari's living worlds: a waterfall,
+ * lava, a river from a handful of entries): entry i shows what entry lo + ((i - lo + phase) mod n) held, and with blend (on by
+ * default) a fraction of phase mixes two neighbours, so the cycle glides instead of stepping (canvascycle's BlendShift).
+ * The entries' own colours are kept from the first call for that range (up to 8 ranges); palcycle() forgets them all (after
+ * a new palette is loaded), palcycle(lo, hi) puts that range back and forgets it. */
+#define CYCLES 8
+static struct { int lo, hi; bool obj, on; uint16_t base[256]; } cycles[CYCLES];
+
+static int l_palcycle(lua_State *L) {
+    if (lua_isnoneornil(L, 1)) {
+        for (int k = 0; k < CYCLES; k++) cycles[k].on = false;
+        return 0;
+    }
+    const int lo = (int)luaL_checkinteger(L, 1), hi = (int)luaL_checkinteger(L, 2);
+    luaL_argcheck(L, lo >= 0 && lo < 256, 1, "entry 0..255");
+    luaL_argcheck(L, hi > lo && hi < 256, 2, "an entry above the first, up to 255");
+    bool obj = false, blend = true;
+    if (lua_type(L, 4) == LUA_TSTRING) obj = !strcmp(lua_tostring(L, 4), "obj");
+    else if (lua_istable(L, 4)) obj = opt_bool(L, 4, "obj", false), blend = opt_bool(L, 4, "blend", true);
+    uint16_t *pal = obj ? PPU.obj_pal : PPU.bg_pal;
+    int k = -1, free_k = -1;
+    for (int i = 0; i < CYCLES; i++) {
+        if (cycles[i].on && cycles[i].lo == lo && cycles[i].hi == hi && cycles[i].obj == obj) k = i;
+        else if (!cycles[i].on && free_k < 0) free_k = i;
+    }
+    const int n = hi - lo + 1;
+    if (lua_isnoneornil(L, 3)) { /* back as it was */
+        if (k >= 0) memcpy(pal + lo, cycles[k].base + lo, (size_t)n * sizeof *pal), cycles[k].on = false;
+        return 0;
+    }
+    if (k < 0) {
+        if (free_k < 0) return luaL_error(L, "palcycle: %d ranges at most (palcycle() forgets them)", CYCLES);
+        k = free_k;
+        cycles[k].lo = lo, cycles[k].hi = hi, cycles[k].obj = obj, cycles[k].on = true;
+        memcpy(cycles[k].base + lo, pal + lo, (size_t)n * sizeof *pal);
+    }
+    const float phase = fin(luaL_checknumber(L, 3));
+    float ph = fmodf(phase, (float)n);
+    if (ph < 0) ph += (float)n;
+    const int whole = (int)ph;
+    const unsigned frac = (unsigned)((ph - (float)whole) * 256);
+    for (int i = 0; i < n; i++) {
+        const uint16_t a = cycles[k].base[lo + (i + whole) % n], b = cycles[k].base[lo + (i + whole + 1) % n];
+        pal[lo + i] = blend && frac ? mix565(a, b, frac, BLEND_ALPHA) : a;
+    }
+    return 0;
+}
+
 static int bg_index(lua_State *L, int arg) {
     int n = (int)luaL_checkinteger(L, arg);
     luaL_argcheck(L, n >= 0 && n < PPU_BGS, arg, "background 0..3");
@@ -730,6 +780,62 @@ static int l_line_scroll(lua_State *L) { /* line_scroll(n, y, x, y_offset) */
         PPU.line.scroll[n] = line_scroll_tab[n];
     }
     line_scroll_tab[n][y] = (ppu_line_scroll){i16(num(L, 3)), i16(optnum(L, 4, PPU.bg[n].scroll_y))};
+    return 0;
+}
+
+/* line_affine(n, y, x, y_map, pa, pc): on line y, layer n (in affine mode) starts at map point (x, y_map) and steps by (pa,
+ * pc) a screen pixel: what mode7() works out for a floor, line by line, for anything else (a floor with hills, a wall seen at
+ * an angle, a tower turning, a flag waving). The first use in a frame starts every line from the layer's own matrix. */
+static int l_line_affine(lua_State *L) {
+    int n = bg_index(L, 1), y = line_index(L, 2);
+    if (PPU.line.affine[n] != line_affine_tab[n]) {
+        const ppu_bg *b = &PPU.bg[n];
+        for (int i = 0; i < PPU_H; i++)
+            line_affine_tab[n][i] = (ppu_line_affine){.pa = b->pa, .pc = b->pc, .x = b->x0 + b->pb * i, .y = b->y0 + b->pd * i};
+        PPU.line.affine[n] = line_affine_tab[n];
+    }
+    line_affine_tab[n][y] = (ppu_line_affine){.pa = fx8m(luaL_checknumber(L, 5)), .pc = fx8m(luaL_optnumber(L, 6, 0)),
+                                              .x = fx8(luaL_checknumber(L, 3)), .y = fx8(luaL_checknumber(L, 4))};
+    return 0;
+}
+
+/* line_scroll_ramp(n, y0, y1, x0, x1 [, curve]): layer n's scroll goes from x0 on line y0 to x1 on line y1, straight or along
+ * k ^ curve: a floor sliding faster the nearer it is, a tower's side, a wave, in one call instead of a line_scroll a line. */
+static int l_line_scroll_ramp(lua_State *L) {
+    int n = bg_index(L, 1), y0 = line_index(L, 2), y1 = line_index(L, 3);
+    const float x0 = fin(luaL_checknumber(L, 4)), x1 = fin(luaL_checknumber(L, 5)), curve = (float)luaL_optnumber(L, 6, 1);
+    luaL_argcheck(L, curve > 0 && curve < 16, 6, "a curve above 0");
+    if (PPU.line.scroll[n] != line_scroll_tab[n]) {
+        for (int i = 0; i < PPU_H; i++)
+            line_scroll_tab[n][i] = (ppu_line_scroll){i16(PPU.bg[n].scroll_x), i16(PPU.bg[n].scroll_y)};
+        PPU.line.scroll[n] = line_scroll_tab[n];
+    }
+    const int step = y1 >= y0 ? 1 : -1, len = y1 >= y0 ? y1 - y0 : y0 - y1;
+    for (int i = 0, y = y0; i <= len; i++, y += step) {
+        float k = len ? (float)i / (float)len : 0;
+        if (curve != 1) k = powf(k, curve);
+        line_scroll_tab[n][y].x = i16((int)lroundf(x0 + (x1 - x0) * k));
+    }
+    return 0;
+}
+
+/* shock(x, y, r [, width [, amp]]) and haze(y0, y1 [, amp [, phase [, period]]]): the world's picture bent after it is drawn
+ * (post.c), for this frame: a ring that pushes what it passes outwards (an explosion, a drum hit), rows swaying sideways (heat
+ * over sand, a fire, a portal's edge). In the picture's own pixels (240 x 160). */
+static int l_shock(lua_State *L) {
+    const float x = fin(luaL_checknumber(L, 1)), y = fin(luaL_checknumber(L, 2)), r = fin(luaL_checknumber(L, 3));
+    float width = (float)luaL_optnumber(L, 4, 8), amp = (float)luaL_optnumber(L, 5, 6);
+    if (!(r > 0 && r < 1000)) return luaL_error(L, "shock: a radius from 0 to 1000");
+    width = width < 1 ? 1 : width > 200 ? 200 : width, amp = amp < -64 ? -64 : amp > 64 ? 64 : amp;
+    post_shock(x, y, r, width, amp);
+    return 0;
+}
+
+static int l_haze(lua_State *L) {
+    const int y0 = num(L, 1), y1 = num(L, 2);
+    float amp = (float)luaL_optnumber(L, 3, 2), phase = (float)luaL_optnumber(L, 4, 0), period = (float)luaL_optnumber(L, 5, 12);
+    amp = amp < -64 ? -64 : amp > 64 ? 64 : amp;
+    post_haze(y0, y1, amp, phase, period);
     return 0;
 }
 
@@ -1556,7 +1662,7 @@ static void api(lua_State *L) {
         {"clock", l_clock}, {"btn", l_btn}, {"btnp", l_btnp}, {"btnr", l_btnr}, {"btnt", l_btnt}, {"btnb", l_btnb}, {"touch", l_touch}, {"pen", l_pen}, {"touches", l_touches}, {"screen", l_screen}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
         {"pal", l_pal}, {"palette", l_palette}, {"backdrop", l_backdrop}, {"bg", l_bg}, {"scroll", l_scroll},
         {"affine", l_affine}, {"rot", l_rot}, {"mode7", l_mode7}, {"project", l_project}, {"mget", l_mget},
-        {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_backdrop", l_line_backdrop}, {"line_pal", l_line_pal}, {"line_pal_obj", l_line_pal_obj}, {"line_ramp", l_line_ramp},
+        {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_affine", l_line_affine}, {"line_scroll_ramp", l_line_scroll_ramp}, {"palcycle", l_palcycle}, {"shock", l_shock}, {"haze", l_haze}, {"line_backdrop", l_line_backdrop}, {"line_pal", l_line_pal}, {"line_pal_obj", l_line_pal_obj}, {"line_ramp", l_line_ramp},
         {"line_window", l_line_window}, {"line_fx", l_line_fx}, {"line_off", l_line_off}, {"sheet", l_sheet}, {"spr", l_spr},
         {"spr_off", l_spr_off}, {"spr_clear", l_spr_clear}, {"prio", l_prio}, {"bank", l_bank}, {"spr_mat", l_spr_mat},
         {"mat", l_mat}, {"show", l_show}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off},
@@ -1660,6 +1766,8 @@ bool v2_load(void) {
 
     menu_read = false;
     sysmenu_reset();
+    post_reset();
+    for (int k = 0; k < CYCLES; k++) cycles[k].on = false;
     const char *entry = jstr(G.game, "main") ? jstr(G.game, "main") : "main.lua";
     if (!safe_name(entry)) {
         fail("start", "game.json \"main\" is not a file name in the game folder");
@@ -1725,6 +1833,10 @@ void v2_draw_world(void) {
         }
         screen_select(0);
     } else if (!(blank = ppu_blank(&backdrop))) ppu_render(G.world); /* nothing of the world shown: one colour, not worked out */
+    if (post_any()) { /* shock(), haze(): the picture bent after it is drawn */
+        if (blank) ppu_render(G.world), blank = false; /* (one colour everywhere: nothing to bend, but the frame must exist) */
+        post_apply(G.world, WORLD_W, WORLD_H);
+    }
     if (conf_filter_on()) { /* the console's colour filter, on the world's pixels (the text and shapes over it stay) */
         if (blank) conf_filter(&backdrop, 1);
         else conf_filter(G.world, WORLD_W * WORLD_H);
