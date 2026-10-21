@@ -81,6 +81,35 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
 8. `music(..., {at = "bar"})` en el mezclador de la consola: con compás de 2 s, la canción encolada espera
    (`music_queued()` true, la vieja a 0,90 s) y entra en la línea (en la muestra siguiente, la nueva a 0,32 s = 0,9 + 1,1).
 
+### Un juego real sobre la ronda: CONTROL (21 octubre, noche)
+
+Las bibliotecas estaban probadas contra tests, no contra un juego. CONTROL (`juegos/CONTROL`, la sala de control de
+TV, Lua) usa ahora `lib/voice` (Marta y Joan hablan en blips de su onda y su tono, uno cada dos letras, la altura por
+la letra), `duck()` bajo el intercomunicador de la Núria, las opciones de `sfx` (clics variados, errores con
+`cooldown`, un pip a la vez), `music(nil, 200, {at = "bar"})` para que la sintonía acabe en su línea de compás, logros
+en `game.json` con `achieve()` (el informe nombra los nuevos), `settings().reduce_flashing` (los tallies ámbar fijos,
+la nieve del monitor quieta) y `juice.tween` (las fichas entran deslizando). Sus cuatro guiones pasan en el headless.
+
+Lo que el juego real sacó del motor, arreglado en la misma noche:
+
+- **El profiler estaba muerto** desde 479ba09 (`v2_free` lo paraba al arrancar cada juego, y `game_init` empieza por
+  `game_shutdown`): ahora el profiler es de la plataforma (`prof_stop` al salir del player, del simulador y del core
+  libretro), y el hook de cuenta no se reinicia en cada llamada, así los ticks cortos (< 1000 instrucciones) también
+  se muestrean. `--profile` sobre CONTROL: 554 ms de Lua en dos programas enteros; nada que optimizar
+  (`score.tick` 110 ms, `pilot` 189 ms solo en los tests, `babble` 42 ms; la carga domina: `third_below` y `letters`).
+- **`lib/voice` callaba las vocales con acento** (`%a` es ASCII en Lua): à, é, ñ, ç... se dicen como la letra de debajo.
+- **Los módulos `.mod` esquivaban el bus de música**: entraban al mezclador después del bus, así que `bus("music")`,
+  `duck()` y `at = "bar"` no les llegaban, y las sintonías de CONTROL son módulos. Ahora pasan por el bus como un WAV,
+  `music("ID", fade, {at = "bar"})` espera la línea de compás del módulo que suena (dieciséis líneas, cuatro tiempos de
+  cuatro), `music(nil, fade, {at = "bar"})` lo deja llegar a su línea y lo funde ahí, y `music_beat()` cuenta sus
+  compases. `tests/games/music/audio/LOOP.mod` (generado, 2 KB) lo comprueba en el headless.
+- Un guion de test no puede escribir `#t` (es comentario): `rawlen`.
+
+En la placa (bench del propio juego, autopiloto en silencio, 76 s): Lua `_update` 0,74 → 0,80 ms, `_draw` 4,5 → 4,5 ms,
+59,8 fps, 77 → 76 KB internos, 0 underruns, en el mismo firmware. Con el firmware de esta noche (módulos por el bus,
+voces con acento): 0,79 / 4,61 ms, 59,8 fps, 76 KB, audio al 14 % de un núcleo, 0 underruns. El firmware se queda en
+la consola (remoto) y el juego normal en la tarjeta, para oírlo.
+
 **Aún pendiente de placa:** nada de esta ronda. Oír `at = "bar"` y las voces de `lib/voice` con el altavoz es cosa de
 orejas, no de log.
 

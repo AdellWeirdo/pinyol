@@ -667,6 +667,7 @@ int main(int argc, char **argv) {
     }
     record_stop(); /* (--record or F8: the recording whole) */
     game_shutdown();
+    prof_stop();
     if (audio_dev) SDL_CloseAudioDevice(audio_dev);
     SDL_Quit();
     return rc;

@@ -198,6 +198,7 @@ int main(int argc, char **argv) {
     if (profile) write_profile(profile);
     record_stop();
     game_shutdown();
+    prof_stop();
     if (dump) fclose(dump);
     if (crcs) fclose(crcs);
     if (strip_errors) {

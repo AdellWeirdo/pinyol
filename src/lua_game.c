@@ -1773,8 +1773,7 @@ void v2_free(void) {
     device_reset();
     if (Ls) lua_close(Ls);
     Ls = NULL;
-    prof_new_state();
-    prof_stop();
+    prof_new_state(); /* (the profiler itself is the platform's: it outlives a game's restart; prof_stop at its end) */
     post_free();
     splash_ref = LUA_NOREF;
     assets_free();

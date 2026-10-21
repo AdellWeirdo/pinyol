@@ -1102,6 +1102,15 @@ static void mix_core(int16_t *out, int n, bool stereo) {
             }
             ramp_next(&bus_mus);
         }
+        if (!paused && music_sounds()) mus_clock += m; /* (before a module may end) */
+        if (!paused && mod_playing()) { /* a module goes through the music bus like a WAV: the bus's gain, the duck, the lowpass */
+            static float modb[CHUNK];
+            memset(modb, 0, (size_t)m * sizeof *modb);
+            mod_mix(modb, m);
+            const float g = bus_mus.v;
+            for (int i = 0; i < m; i++) mus[i] += modb[i] * g;
+            mus_open = true;
+        }
         /* the music bus: its duck (down, held, back) and lowpass; nothing to do while both rest and no music plays */
         if (duck_hold > 0 && !paused) {
             duck_hold -= m;
@@ -1167,8 +1176,6 @@ static void mix_core(int16_t *out, int n, bool stereo) {
         }
         if (!paused) studio_mix(acc, sd, sr, m); /* the synth tracks' voices */
         psg_mix(acc, m);
-        if (!paused && music_sounds()) mus_clock += m; /* (before a module may end) */
-        if (!paused) mod_mix(acc, m);
         if (!paused) studio_fx(acc, sd, sr, m); /* its echo and reverb, then Lo-fi GBA over everything */
         if (rv && !paused) { /* the room's return, left and right apart, with the panned voices' difference */
             static float rl[CHUNK], rr[CHUNK];

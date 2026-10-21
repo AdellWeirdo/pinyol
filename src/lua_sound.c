@@ -301,9 +301,19 @@ static int l_music_layer(lua_State *L) {
 static float song_bar; /* the song's bar in seconds and beats a bar, as music() was told, for music_beat() */
 static int song_beats = 4;
 
+static bool at_bar_asked(lua_State *L, int idx) { /* {at = "bar"} */
+    if (!lua_istable(L, idx)) return false;
+    const char *at = opt_str(L, idx, "at");
+    return at && !strcmp(at, "bar");
+}
+
 static int l_music(lua_State *L) {
     int fade = (int)luaL_optinteger(L, 2, lua_isnoneornil(L, 1) ? 500 : 300);
     if (lua_isnoneornil(L, 1)) {
+        if (at_bar_asked(L, 3) && mod_playing()) { /* a module plays to its bar line and fades there: a theme's button */
+            mod_stop_at_bar(fade);
+            return 0;
+        }
         audio_music_stop(fade);
         mod_stop(fade);
         midi_stop(fade);
@@ -315,11 +325,11 @@ static int l_music(lua_State *L) {
     char path[384];
     snprintf(path, sizeof path, "%s/audio/%s.mod", G.game_dir, id);
     FILE *f = safe_name(id) ? fopen(path, "rb") : NULL;
-    if (f) { /* a module: it replaces any music */
+    if (f) { /* a module: it replaces any music (with at = "bar", at the bar line of the module playing) */
         fclose(f);
         audio_music_stop(fade);
         midi_stop(fade);
-        if (!mod_play(path, 1)) audio_music_clock(0);
+        if (!(at_bar_asked(L, 3) ? mod_queue(path, 1) : mod_play(path, 1))) audio_music_clock(0);
         return 0;
     }
     snprintf(path, sizeof path, "%s/audio/%s.mid", G.game_dir, id);
@@ -375,6 +385,12 @@ static int l_music(lua_State *L) {
  * the player hears it; nil when no song plays or music() was not told its bar. Notes on the beat, a dancer in step. */
 static int l_music_beat(lua_State *L) {
     double t;
+    int mbar, mbeat;
+    float mfrac;
+    if (mod_position(&mbar, &mbeat, &mfrac)) { /* a module: by its lines, sixteen a bar */
+        lua_pushinteger(L, mbar), lua_pushinteger(L, mbeat), lua_pushnumber(L, mfrac);
+        return 3;
+    }
     if (!(song_bar > 0) || !audio_music_time(&t)) return lua_pushnil(L), 1;
     const double bars = t / song_bar, beat = (bars - floor(bars)) * song_beats;
     lua_pushinteger(L, (lua_Integer)floor(bars) + 1);
@@ -383,7 +399,7 @@ static int l_music_beat(lua_State *L) {
     return 3;
 }
 
-static int l_music_queued(lua_State *L) { lua_pushboolean(L, audio_music_queued()); return 1; } /* a song waits for the bar line */
+static int l_music_queued(lua_State *L) { lua_pushboolean(L, audio_music_queued() || mod_queued()); return 1; } /* a song waits for the bar line */
 
 
 /* music_time() -> seconds into the song music() started, as the player hears it now (what is queued for the speaker

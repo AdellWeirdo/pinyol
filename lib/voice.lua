@@ -10,9 +10,16 @@
 --
 -- sound: a short clip (make one with sound("BLIP", "blip"), or record one); pitch: the voice's own, 1 as the clip is,
 -- 2 an octave up; spread: semitones the letters move it, each way (2); every: letters between blips (2).
+-- An accented letter (à, é, ñ, ç...) is said as the plain one under it.
 local M = {}
 local V = {}
 V.__index = V
+
+local PLAIN = {} -- an accented letter -> the letter it is said as
+for plain, marked in pairs({a = "àáâäãÀÁÂÄÃ", e = "èéêëÈÉÊË", i = "ìíîïÌÍÎÏ", o = "òóôöõÒÓÔÖÕ", u = "ùúûüÙÚÛÜ",
+                            n = "ñÑ", c = "çÇ", s = "ß"}) do
+  for _, cp in utf8.codes(marked) do PLAIN[utf8.char(cp)] = plain end
+end
 
 function M.new(opts)
   assert(opts and opts.sound, "voice.new: a sound is needed")
@@ -21,7 +28,9 @@ function M.new(opts)
 end
 
 function V:say(ch)
-  if type(ch) ~= "string" or not ch:match("^%a$") then return false end
+  if type(ch) ~= "string" then return false end
+  ch = PLAIN[ch] or ch
+  if not ch:match("^%a$") then return false end
   self.n = self.n + 1
   if self.n % self.every ~= 0 then return false end
   local b = ch:lower():byte()

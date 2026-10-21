@@ -557,3 +557,32 @@ half a second, so finer timing needs a longer bar, as here.
 
 Geumgye (np2d@1, the same engine as Bajo Pueblo, sent without its 76 MB of audio): its title at 59.8 fps with 13.2 ms
 of strips (its picture, as Bajo Pueblo's), 42 KB of internal RAM free.
+
+## 2026-10-21 · A real game on the round: CONTROL
+
+CONTROL (`juegos/CONTROL`, Lua, 1300 lines) took the round's libraries: `lib/voice` for its two speakers (a blip every
+two letters, from a `sound()` of each one's wave and pitch), `duck()` under the producer's intercom, `sfx` variation
+options on the desk's clicks, `music(nil, 200, {at = "bar"})` for the theme's end, four achievements, `reduce_flashing`
+and `juice.tween` on its cards. Its own bench (`bench.txt`: the autopilot directs the show in a loop, silent, `perf()`
+logged each second; 76 s) on the console, before and after, on the same firmware (main 9bb4905 + remote, cache 32 +
+XIP):
+
+| | Lua `_update` | Lua `_draw` | fps (median / min) | internal free | underruns |
+|---|---|---|---|---|---|
+| before | 0.74 ms (max 0.98) | 4.51 ms (max 7.65) | 59.8 / 56.9 | 77 KB | 0 |
+| after, same firmware | 0.80 ms (max 1.08) | 4.45 ms (max 8.32) | 59.8 / 56.9 | 76 KB | 0 |
+| after, tonight's firmware (modules through the bus, voices with accents) | 0.79 ms (max 1.06) | 4.61 ms (max 9.06) | 59.8 / 56.6 | 76 KB | 0 (audio 14 % of a core) |
+
+The 0.06 ms are the voice's letters, `juice.update()` and a `settings()` read a second. `game_init` 255 ms both.
+
+The profiler, repaired on the way (it had been stopped by `v2_free` since 479ba09, and its count hook started over at
+each call, so a tick under 1000 instructions was never sampled): `--profile` over CONTROL's directed test, two whole
+shows, 554 ms of Lua on the desktop (about 14 us a tick); by own time `score.tick` 54 ms, `score.pending` 48,
+`pilot` 47 (the tests' director), `audio.babble` 33 (the new voices), `switcher.tape` 30, `prog.incident` 27; loading
+(`third_below`, `letters`) 14 ms once. Nothing worth a change: the console's 0.8 ms a tick is spread thin.
+
+Modules through the music bus (`audio.c`): the module renders into its own chunk buffer and is added to `mus[]` with
+the bus's gain, then takes the duck and the lowpass with the WAVs; one `memset` and one multiply-add per sample more
+(a 256-sample chunk: a few microseconds on the console).
+The firmware with all of it: 90222 B of D/IRAM left (the CI floor is 90000; it was 91558 before the round's last build), the
+two spare module contexts asked for in slow memory.

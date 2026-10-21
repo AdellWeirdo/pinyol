@@ -605,6 +605,11 @@ void mod_stop(int fade_ms);
 bool mod_playing(void);
 void mod_reset(void);
 void mod_mix(float *acc, int m); /* audio thread, lock held, m <= 256 */
+bool mod_queue(const char *path, float gain); /* at the bar line (sixteen lines) of the module playing; now if none */
+bool mod_queued(void);
+void mod_stop_at_bar(int fade_ms); /* the module plays to its bar line, then fades */
+bool mod_position(int *bar, int *beat, float *frac); /* bars of sixteen lines, beats of four, from the start; false: none */
+void prof_stop(void); /* lua_prof.c: the profiler's tables let go (a platform, at its end: it outlives a game's restart) */
 
 /* ------------------------------------------------------------------ music.c */
 void music_tick(void);

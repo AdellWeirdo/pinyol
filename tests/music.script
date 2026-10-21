@@ -25,4 +25,36 @@ expect_lua music_beat() == nil
 tick 70
 lua music("BEAT", 0, {at = "bar", bar = 0.5})
 expect_lua music_queued() == false and music_time() ~= nil
+lua music()
+tick 70
+# A module too: its bar is sixteen lines (four beats of four), no `bar` needed. LOOP.mod runs at speed 1 (a line every
+# 20 ms, a bar 320 ms). at = "bar" waits for the line; music(nil, fade, {at = "bar"}) plays to the line and stops there.
+lua music("LOOP")
+tick 2
+lua bar, beat, frac = music_beat()
+expect_lua bar == 1 and beat == 1 and frac >= 0 and frac <= 1
+tick 6
+lua bar, beat = music_beat()
+expect_lua bar == 1 and beat == 2
+lua music("LOOP", 0, {at = "bar"})
+expect_lua music_queued() == true
+tick 4
+expect_lua music_queued() == true
+tick 10
+lua bar, beat = music_beat()
+expect_lua music_queued() == false and bar == 1 and beat <= 2
+lua music(nil, 0, {at = "bar"})
+tick 2
+expect_lua music_beat() ~= nil
+tick 24
+expect_lua music_beat() == nil
+# a module asked for at the bar while nothing plays starts at once; a plain music() drops one waiting
+lua music("LOOP", 0, {at = "bar"})
+expect_lua music_queued() == false and music_beat() ~= nil
+lua music("LOOP", 0, {at = "bar"})
+expect_lua music_queued() == true
+lua music()
+expect_lua music_queued() == false
+tick 2
+expect_lua music_beat() == nil
 expect_ok

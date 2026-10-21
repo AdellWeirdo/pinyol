@@ -124,7 +124,11 @@ void prof_new_state(void) { /* the game's Lua state closed: its source strings m
 void prof_arm(lua_State *L, const char *entry) {
     P.entry = entry;
     P.last = hal_micros(); /* time outside Lua (the engine between calls) is nobody's */
-    lua_sethook(L, P.on ? sample : NULL, P.on ? LUA_MASKCOUNT : 0, PROF_EVERY);
+    /* the hook is set once: its count of instructions runs on across the calls, so a tick shorter than PROF_EVERY
+     * instructions is sampled too, now and then (setting it again each call would start the count over, and a light
+     * game would never be seen) */
+    if (!P.on) lua_sethook(L, NULL, 0, 0); /* (and the sandbox's "over" hook, if the last call spent its budget, goes) */
+    else if (lua_gethook(L) != sample) lua_sethook(L, sample, LUA_MASKCOUNT, PROF_EVERY);
 }
 
 static int by_self(const void *a, const void *b) {

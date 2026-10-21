@@ -346,7 +346,7 @@ RETRO_API bool retro_load_game(const struct retro_game_info *game) {
     return true;
 }
 
-RETRO_API void retro_unload_game(void) { game_shutdown(); }
+RETRO_API void retro_unload_game(void) { game_shutdown(), prof_stop(); }
 RETRO_API void retro_reset(void) {
     if (!game_init(&cfg)) hal_log("%s: game folder incomplete", game_dir);
 }
