@@ -22,6 +22,9 @@ static struct {
     char error[600];
     uint16_t carry;  /* presses on the ticks the speed skipped, given to the next */
     uint32_t frame;  /* ticks seen (G.ticks stops on the skipped ones) */
+    int nitems;      /* the game's own items, copied when the menu opens: the drawing runs on both of the console's cores
+                        at once and must not touch the game's Lua state (it did, and the console aborted in luaD_throw) */
+    char labels[MAX_ITEMS][40];
 } S;
 
 /* What the menu says, in the console's language (es, ca, en) */
@@ -35,15 +38,15 @@ static const char *const T_VOLUME[] = {"Volumen", "Volum", "Volume"};
 static const char *const T_FLASH[] = {"Destellos", "Llampecs", "Flashing"};
 static const char *const T_FLASH_V[2][3] = {{"normales", "normals", "normal"}, {"menos", "menys", "less"}};
 static const char *const T_COLOUR[] = {"Colores", "Colors", "Colours"};
-static const char *const T_COLOUR_V[4][3] = {{"normales", "normals", "normal"},
-                                             {"rojo-verde (protan)", "vermell-verd (protan)", "red-green (protan)"},
-                                             {"rojo-verde (deutan)", "vermell-verd (deutan)", "red-green (deutan)"},
-                                             {"azul-amarillo", "blau-groc", "blue-yellow"}};
+static const char *const T_COLOUR_V[4][3] = {{"normales", "normals", "normal"}, /* (short: a game's font may be wide) */
+                                             {"protan", "protan", "protan"},
+                                             {"deutan", "deutan", "deutan"},
+                                             {"tritan", "tritan", "tritan"}};
 static const char *const T_SPEED[] = {"Velocidad", "Velocitat", "Speed"};
 static const char *const T_LANG[] = {"Idioma", "Idioma", "Language"};
 static const char *const T_LANG_V[] = {"Español", "Català", "English"};
 static const char *const T_BUTTONS[] = {"Botones", "Botons", "Buttons"};
-static const char *const T_BUTTONS_V[2][3] = {{"A y B", "A i B", "A and B"}, {"B y A (cambiados)", "B i A (canviats)", "B and A (swapped)"}};
+static const char *const T_BUTTONS_V[2][3] = {{"A y B", "A i B", "A and B"}, {"B y A", "B i A", "B and A"}};
 static const char *const T_CRASH[] = {"El juego se ha parado", "El joc s'ha aturat", "The game stopped"};
 static const char *const T_CRASH_HINT[] = {"A otra vez  ·  B a la lista", "A una altra vegada  ·  B a la llista", "A again  ·  B the list"};
 static const char *const T_CRASH_HINT_NOLIST[] = {"A otra vez", "A una altra vegada", "A again"};
@@ -63,11 +66,19 @@ void sysmenu_crash(const char *error) {
     snprintf(S.error, sizeof S.error, "%s", error ? error : "error");
 }
 
-static int n_items(void) { return v2_menu_items(NULL, 0); }
+static int n_items(void) { return S.nitems; }
 
 static int main_rows(void) { return 1 + n_items() + 2 + (hal_can_switch_game() ? 1 : 0); } /* resume, items, restart, settings, quit */
 
+static void refresh_items(void) { /* on the game's tick, the only place the Lua state may be read */
+    const char *labels[MAX_ITEMS];
+    const int n = v2_menu_items(labels, MAX_ITEMS);
+    S.nitems = n > MAX_ITEMS ? MAX_ITEMS : n;
+    for (int i = 0; i < S.nitems; i++) snprintf(S.labels[i], sizeof S.labels[i], "%s", labels[i] ? labels[i] : "");
+}
+
 static void open_menu(bool by_hold) {
+    refresh_items();
     S.open = true, S.by_hold = by_hold, S.page = PAGE_MAIN, S.cursor = 0;
     audio_pause(true);
     v2_menu_event("_pause");
@@ -174,12 +185,15 @@ static void row_text(surface *s, int x, int y, int w, const char *left, const ch
     const font *f = &G.font;
     if (sel) gfx_fill(s, x, y - 1, w, f->h - 4, C_PAPER_SEL);
     font_draw(s, f, x + 8, y, left, -1, -1, C_INK);
-    if (right) font_draw(s, f, x + w - 8 - font_width(f, right, -1), y, right, -1, -1, sel ? C_INK : C_DIM);
+    if (!right) return;
+    int rx = x + w - 8 - font_width(f, right, -1), lw = font_width(f, left, -1);
+    if (rx < x + 8 + lw + 12) rx = x + 8 + lw + 12; /* a wide font: the value after the label, past the edge if it must */
+    font_draw(s, f, rx, y, right, -1, -1, sel ? C_INK : C_DIM);
 }
 
 static void draw_menu(surface *s) {
     const font *f = &G.font;
-    const int lh = f->h - 4, pw = 300;
+    const int lh = f->h - 4, pw = 360;
     gfx_shade(s, 0, 0, SCREEN_W, SCREEN_H);
     char value[64];
     if (S.page == PAGE_MAIN) {
@@ -187,10 +201,8 @@ static void draw_menu(surface *s) {
         const int px = (SCREEN_W - pw) / 2, py = (SCREEN_H - ph) / 2;
         panel(s, px, py, pw, ph);
         int y = py + 8;
-        const char *labels[MAX_ITEMS];
-        v2_menu_items(labels, MAX_ITEMS);
         for (int r = 0; r < rows; r++, y += lh) {
-            const char *t = r == 0 ? T_RESUME[L] : r <= items ? labels[r - 1] : r == items + 1 ? T_RESTART[L] : r == items + 2 ? T_SETTINGS[L] : T_QUIT[L];
+            const char *t = r == 0 ? T_RESUME[L] : r <= items ? S.labels[r - 1] : r == items + 1 ? T_RESTART[L] : r == items + 2 ? T_SETTINGS[L] : T_QUIT[L];
             row_text(s, px + 4, y, pw - 8, t, NULL, r == S.cursor);
         }
         text_center(s, f, SCREEN_W / 2, y + lh, T_HINT[L], C_DIM);
@@ -229,7 +241,7 @@ static void draw_crash(surface *s) {
     text_center(s, f, SCREEN_W / 2, SCREEN_H - lh - 8, hal_can_switch_game() ? T_CRASH_HINT[L] : T_CRASH_HINT_NOLIST[L], C_WHITE);
 }
 
-void sysmenu_draw(surface *s) {
+void sysmenu_draw(surface *s) { /* (on the console, on both cores at once: nothing here may call into Lua) */
     if (S.crashed) draw_crash(s);
     else if (S.open) draw_menu(s);
 }
