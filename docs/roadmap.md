@@ -54,6 +54,21 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
   fuentes, pseudo-idioma), `pack_game --budget`, `llms.txt` en el sitio. **No hecho:** REPL y `tweak()` por el cable
   (hace falta placa), depurador DAP, robot de cobertura en la Biblioteca.
 
+- **Fase 7, hecho:** `tilt()`, `tilt_zero()`, `rumble()` sobre `hal_imu`/`hal_rumble` (por defecto "no hay"), comandos
+  `tilt` y `expect_rumble` en los scripts, y `docs/hardware-rev2.md` (los añadidos por I2C, direcciones, patentes).
+  **No hecho (hace falta la placa):** los drivers del firmware para la IMU y el DRV2605L.
+
+### Pendiente de placa (todo lo de esta ronda se probó en escritorio, QEMU y CI; nada en la Cirera)
+
+1. Flashear el firmware de `main` y comprobar: guardar en flash, un juego por el cable, una OTA, `examples/juntos`
+   con la radio (la memoria interna debería ir más holgada: +19,8 KB estáticos).
+2. Medir con `perf(true)`: un fundido suave de `transition` (la caja mezclada de pantalla completa, 12,3 ms de
+   tiras antes de PIE), horizonte, veloz.
+3. Probar `CONFIG_ESP32S3_DATA_CACHE_32KB` (+32 KB) y `CONFIG_SPIRAM_XIP_FROM_PSRAM` midiendo fps.
+4. El menú de la consola con el registro (`played.json` en la tarjeta o en la flash), el menú de pausa con MENU, los
+   ajustes (volumen, filtro de color sobre el mundo: su coste en ms), la pantalla de crash y `crash.txt`.
+5. `music(..., {at = "bar"})` escuchado: el cambio cae en la línea de compás.
+
 ## Fase 0 · Memoria y rendimiento
 
 Lo que más limita es la RAM interna (la radio pide 27 KB). Criterio de salida: ≥ 40 KB internos libres con radio y
