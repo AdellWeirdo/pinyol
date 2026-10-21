@@ -82,3 +82,15 @@ press A
 tick 2
 expect_ok
 expect_lua n == 3 and crash == false
+# `in N SPEC [X Y ...]`: exactly that input for N ticks, what --record writes: buttons, and a finger
+lua last = nil
+in 2 A
+expect_lua last == "a"
+in 3 -
+lua last = nil
+in 1 B+RIGHT
+expect_lua last == "b"
+in 2 - 240 160
+expect_lua touched == true
+in 1 -
+expect_ok

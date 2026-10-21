@@ -58,6 +58,7 @@ ctest --test-dir build                       # validates every example and plays
 | Pause | P | START |
 | Touch | Mouse | Screen |
 | Restart the game (the simulator also restarts it when you save one of its files) | F5 | |
+| Screenshot (PNG), the cover from the screen, record the play as a test script, the last 8 s as a GIF | F6, F7, F8, F9 | |
 
 ## Make your own game
 

@@ -58,6 +58,7 @@ ctest --test-dir build                       # valida cada ejemplo y juega su gu
 | Pausa | P | START |
 | Tocar | Ratón | Pantalla |
 | Reiniciar el juego (el simulador también lo reinicia cuando guardas uno de sus archivos) | F5 | |
+| Captura (PNG), la portada desde la pantalla, grabar la partida como guion de prueba, los últimos 8 s en GIF | F6, F7, F8, F9 | |
 
 ## Haz tu juego
 

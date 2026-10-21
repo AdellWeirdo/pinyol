@@ -129,9 +129,13 @@ def check_game(game: Path, headless: Path, out: Path) -> dict:
             script.write_text(f"tick 90\nshot cover\ntick {PLAY_TICKS - 90}\nexpect_ok\n")
             try:
                 p = subprocess.run([str(headless), "--game", str(game), "--saves", t, "--fresh", "--script", str(script),
-                                    "--strict-assets"],
+                                    "--strict-assets", "--check-flashes"],
                                    capture_output=True, text=True, timeout=120)
-                if p.returncode:
+                if p.returncode == 4:
+                    errors.append("El juego parpadea más de tres veces por segundo en más de un cuarto de la pantalla: puede hacer "
+                                  "daño a jugadores fotosensibles (WCAG 2.3.1). Baja el ritmo de los destellos o hazlos más pequeños.\n"
+                                  + (p.stdout + p.stderr).strip()[-600:])
+                elif p.returncode:
                     errors.append("El juego falla al jugarlo diez segundos:\n" + (p.stdout + p.stderr).strip()[-1500:])
             except subprocess.TimeoutExpired:
                 errors.append("El juego no ha terminado diez segundos de juego en dos minutos.")

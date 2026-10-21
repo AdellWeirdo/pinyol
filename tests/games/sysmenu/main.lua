@@ -12,6 +12,8 @@ function _update()
   n = n + 1
   if btnp("a") then last = "a" elseif btnp("b") then last = "b" end
   if read_menu and btn("menu") then held_menu = true end
+  local _, _, down = pen()
+  if down then touched = true end
 end
 function _draw()
   cls(0x203040)

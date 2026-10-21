@@ -5,6 +5,7 @@
 
 #include "bp.h"
 #include "conf.h"
+#include "record.h"
 #include "sysmenu.h"
 #include "compat.h"
 
@@ -226,6 +227,7 @@ void game_tick(const hal_input *in_real) {
         splash_tick();
         return;
     }
+    record_tick(in_real); /* --record: the game's own ticks, as the player gave them */
     if (G.v2 && !sysmenu_tick()) return; /* the console's menu is up, or the speed skips this tick */
     G.ticks++;
     if (G.v2) {

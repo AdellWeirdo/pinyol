@@ -15,6 +15,10 @@
 #include <string.h>
 
 #include "bp.h"
+#include "record.h"
+#ifndef __EMSCRIPTEN__
+#include "capture.h"
+#endif
 #ifndef __EMSCRIPTEN__
 #include "desktop.h"
 #endif
@@ -291,6 +295,39 @@ static void hot_reload(void) { /* twice a second: a file saved since the last lo
 }
 #endif
 
+#ifndef __EMSCRIPTEN__
+static const char *capture_dir(void) { /* where the simulator puts what it captures */
+    static char d[1100];
+    if (game_cfg.save_dir) return game_cfg.save_dir;
+    snprintf(d, sizeof d, "%s/saves", game_cfg.game_dir);
+    return d;
+}
+
+static void capture_key(SDL_Keycode k) { /* F6 a screenshot, F7 the cover, F8 recording on or off, F9 the last 8 s as a GIF */
+    bool ok = true;
+    if (k == SDLK_F6) ok = capture_png(fb, capture_dir());
+    else if (k == SDLK_F7) ok = capture_cover(fb, game_cfg.game_dir);
+    else if (k == SDLK_F9) ok = capture_gif(capture_dir());
+    else if (record_on()) {
+        record_stop();
+        hal_log("recording saved");
+        return;
+    } else {
+        char path[1200];
+        for (int n = 1; n < 10000; n++) {
+            snprintf(path, sizeof path, "%s/partida-%d.script", capture_dir(), n);
+            FILE *f = fopen(path, "rb");
+            if (!f) break;
+            fclose(f);
+        }
+        ok = record_start(path, game_cfg.game_dir);
+        hal_log(ok ? "recording to %s (F8 again to stop)" : "cannot record to %s", path);
+        return;
+    }
+    hal_log(ok ? "%s" : "cannot write %s", capture_last());
+}
+#endif
+
 static hal_input poll_input(void) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
@@ -311,6 +348,9 @@ static hal_input poll_input(void) {
             SDL_GameControllerClose(pad), pad = NULL;
 #endif
         if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F3) v2_meter_toggle();
+#ifndef __EMSCRIPTEN__
+        if (e.type == SDL_KEYDOWN && e.key.keysym.sym >= SDLK_F6 && e.key.keysym.sym <= SDLK_F9) capture_key(e.key.keysym.sym);
+#endif
     }
     const Uint8 *k = SDL_GetKeyboardState(NULL);
     hal_input in = {0};
@@ -374,6 +414,9 @@ static hal_input poll_input(void) {
 
 static void present(void) {
     game_render(fb);
+#ifndef __EMSCRIPTEN__
+    capture_frame(fb); /* the last 8 s, for F9 */
+#endif
     SDL_UpdateTexture(tex, NULL, fb, SCREEN_W * 2);
     SDL_RenderClear(ren);
     SDL_RenderCopy(ren, tex, NULL, NULL);
@@ -485,8 +528,9 @@ static int run_console(const char *menu_dir) {
 
 int main(int argc, char **argv) {
     bp_config cfg = {DEFAULT_GAME, NULL, false};
-    const char *script = NULL;
+    const char *script = NULL, *record_path = NULL;
     bool mute = false, given = false; /* given: a game named (--game), played as it is */
+    (void)record_path;
 #ifndef __EMSCRIPTEN__
     const char *menu = NULL;
     char menu_dir[1024];
@@ -504,11 +548,17 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--mute")) mute = true;
         else if (!strcmp(argv[i], "--no-splash")) cfg.no_splash = true; /* making the game: straight to it */
 #ifndef __EMSCRIPTEN__
+        else if (!strcmp(argv[i], "--record") && i + 1 < argc) record_path = argv[++i]; /* the play as a test script */
+#endif
+#ifndef __EMSCRIPTEN__
         else if (!strcmp(argv[i], "--console") && i + 1 < argc) snprintf(games_root, sizeof games_root, "%s", argv[++i]), console_mode = true;
         else if (!strcmp(argv[i], "--menu") && i + 1 < argc) menu = argv[++i];
 #endif
     }
     if (script) cfg.no_splash = true; /* a script counts its ticks from _init */
+#ifndef __EMSCRIPTEN__
+    if (record_path && !record_start(record_path, cfg.game_dir)) fprintf(stderr, "cannot record to %s\n", record_path);
+#endif
 #ifndef __EMSCRIPTEN__
     if (given) app = false;
 #else
@@ -595,6 +645,7 @@ int main(int argc, char **argv) {
         while (!game_quit_requested()) frame();
 #endif
     }
+    record_stop(); /* (--record or F8: the recording whole) */
     game_shutdown();
     if (audio_dev) SDL_CloseAudioDevice(audio_dev);
     SDL_Quit();

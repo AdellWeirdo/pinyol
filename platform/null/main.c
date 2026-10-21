@@ -15,6 +15,8 @@
 #include <unistd.h>
 
 #include "bp.h"
+#include "flashcheck.h"
+#include "record.h"
 #include "lua_prof.h"
 
 #ifndef PINYOL_GAME /* the build's GAME_DIR (CMakeLists.txt) */
@@ -92,14 +94,22 @@ static void compare_strips(const uint16_t *fb, unsigned n) {
     }
 }
 
+static bool check_flashes;
+static int flash_worst, flash_tick; /* the biggest share of the screen found flashing past the limit, and when */
+
 static void frame_tick(void) {
     static uint16_t fb[SCREEN_W * SCREEN_H];
     static unsigned n;
     mix_tick();
-    if (!video && !crcs && !check_strips && !strict_assets) return;
+    if (!video && !crcs && !check_strips && !strict_assets && !check_flashes) return;
     bool capture = n++ % 2 == 0;
-    if (!capture && !strict_assets) return;
+    if (!capture && !strict_assets && !check_flashes) return;
     game_render(fb);
+    if (check_flashes) { /* every frame: a flash can be one frame long */
+        const int share = flash_frame(fb);
+        if (share > flash_worst) flash_worst = share, flash_tick = (int)n;
+    }
+    if (!capture) return;
     if (check_strips && capture) compare_strips(fb, n);
     if (video && capture) fwrite(fb, 2, SCREEN_W * SCREEN_H, video);
     if (crcs && capture) fprintf(crcs, "%08x\n", (unsigned)crc32(fb, sizeof fb));
@@ -139,7 +149,7 @@ static void write_profile(const char *path) { /* the stacks for a flame graph, a
 
 int main(int argc, char **argv) {
     bp_config cfg = {PINYOL_GAME, NULL, true};
-    const char *script = NULL, *profile = NULL;
+    const char *script = NULL, *profile = NULL, *record_path = NULL;
     bool validate = false, fresh = false;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--game") && i + 1 < argc) cfg.game_dir = argv[++i];
@@ -153,17 +163,20 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--crc") && i + 1 < argc) crcs = fopen(argv[++i], "w");
         else if (!strcmp(argv[i], "--check-strips")) check_strips = true;
         else if (!strcmp(argv[i], "--profile") && i + 1 < argc) profile = argv[++i];
+        else if (!strcmp(argv[i], "--check-flashes")) check_flashes = true;
+        else if (!strcmp(argv[i], "--record") && i + 1 < argc) record_path = argv[++i]; /* the play, as a script of `in` lines */
         else if (!strcmp(argv[i], "--pictures") && i + 1 < argc) gfx_set_budget((size_t)atoi(argv[++i]) * 1024);
         else if (!strcmp(argv[i], "--video") && i + 1 < argc) {
             if (!(video = open_video(argv[++i]))) return 2;
         }
         else {
             fprintf(stderr, "usage: %s --game DIR [--saves DIR] [--fresh] (--validate | --script FILE) "
-                            "[--strict-assets] [--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--profile FILE.folded] [--pictures KB] [--splash]\n", argv[0]);
+                            "[--strict-assets] [--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--check-flashes] [--record FILE.script] [--profile FILE.folded] [--pictures KB] [--splash]\n", argv[0]);
             return 2;
         }
     }
     if (profile) prof_start(); /* perf("lua") from the first call into the game */
+    if (record_path && !record_start(record_path, cfg.game_dir)) fprintf(stderr, "cannot record to %s\n", record_path);
     char default_saves[512];
     snprintf(default_saves, sizeof default_saves, "%s/saves", cfg.game_dir);
     if (fresh) wipe_saves(cfg.save_dir ? cfg.save_dir : default_saves);
@@ -183,12 +196,18 @@ int main(int argc, char **argv) {
         if (!rc) rc = 1;
     }
     if (profile) write_profile(profile);
+    record_stop();
     game_shutdown();
     if (dump) fclose(dump);
     if (crcs) fclose(crcs);
     if (strip_errors) {
         fprintf(stderr, "check-strips: %d pixels differ\n", strip_errors);
         rc = rc ? rc : 3;
+    }
+    if (check_flashes && flash_worst > 25) { /* WCAG 2.3.1: over a quarter of the screen, more than three flashes a second */
+        fprintf(stderr, "check-flashes: %d%% of the screen flashed more than three times a second (around frame %d): it can "
+                        "hurt photosensitive players\n", flash_worst, flash_tick);
+        rc = rc ? rc : 4;
     }
     if (video && pclose(video)) rc = rc ? rc : 1;
     return rc;

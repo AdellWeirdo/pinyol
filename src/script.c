@@ -422,6 +422,28 @@ static bool run_line(char *cmd, char *arg) {
             if (!tick_two(x1 + dx * i / n, y1 + dy * i / n, x2 + dx * i / n, y2 + dy * i / n)) return false;
         return tick(0);
     }
+    if (!strcmp(cmd, "in")) { /* in N SPEC [X Y ...]: N ticks of exactly that input, the buttons SPEC (A+RIGHT, or - for none) and
+                                * the fingers at those points (up to 5); what --record writes */
+        char spec[64];
+        int n = 0, at = 0;
+        if (sscanf(arg, "%d %63s%n", &n, spec, &at) < 2 || n < 1) FAIL("in N SPEC [X Y ...]");
+        hal_input in = {.held = strcmp(spec, "-") ? key_of(spec) : 0};
+        if (strcmp(spec, "-") && !in.held) FAIL("in: unknown buttons %s", spec);
+        const char *q = arg + at;
+        int x, y, k;
+        while (in.points < HAL_POINTS && sscanf(q, "%d %d%n", &x, &y, &k) == 2) {
+            in.x[in.points] = (int16_t)x, in.y[in.points] = (int16_t)y, in.points++;
+            q += k;
+        }
+        if (in.points) in.touch = true, in.px = in.x[0], in.py = in.y[0];
+        for (int i = 0; i < n; i++) {
+            game_tick(&in);
+            if (!v2_error()) crash_expected = false;
+            if (v2_error() && !crash_expected) FAIL("the game stopped on an error: %s", v2_error());
+            if (frame_cb) frame_cb();
+        }
+        return true;
+    }
     if (!strcmp(cmd, "hold")) {
         char k[32];
         int n = 0;

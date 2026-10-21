@@ -58,6 +58,7 @@ ctest --test-dir build                       # valida cada exemple i en juga el 
 | Pausa | P | START |
 | Tocar | Ratolí | Pantalla |
 | Reiniciar el joc (el simulador també el reinicia quan deses un dels seus fitxers) | F5 | |
+| Captura (PNG), la portada des de la pantalla, gravar la partida com a guió de prova, els últims 8 s en GIF | F6, F7, F8, F9 | |
 
 ## Fes el teu joc
 

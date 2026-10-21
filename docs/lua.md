@@ -893,10 +893,23 @@ settings speed 50                # the console's settings (speed 100/75/50, flas
 expect_menu open                 # the console's menu is up (or closed): press MENU taps it open
 allow_crash                      # the game may stop on an error from here on: the ticks do not fail for it (its crash screen is up)
 expect_crashed                   # and it has
+in 30 RIGHT+A 240 160            # exactly that input for 30 ticks: those buttons (- for none) and a finger at that point (up to five points)
 expect_led ff0000                # the LED is that colour (expect_led off: the console's own)
 ```
 
 `#` after a space starts a comment in these scripts, so avoid Lua's `#` length operator there.
+
+**A play recorded as a script.** `pinyol_sim --game DIR --record out.script` (or F8 while playing, again to stop:
+`saves/partida-N.script`) writes every tick's buttons and fingers as `in` lines, from the game's own first tick. Played
+back with `pinyol_headless --game DIR --fresh --script out.script` it gives the same frames (a game is deterministic given
+its input: the same seed, the same ticks), so one file is a bug report, a regression test and a replay. `--crc` on both
+runs shows it. What a script changes with `lua` is not input and is not recorded.
+
+**Flashing that can hurt.** `pinyol_headless ... --check-flashes` watches every frame for more than three flashes a
+second over more than a quarter of the screen (WCAG 2.3.1: a flash is a change of 10 % or more in relative luminance
+each way, the darker side under 80 %), and ends with code 4 and the frame it found it around. The Library's robot plays
+every game with it. The simulator also takes **F6** a screenshot (`saves/pantalla-N.png`), **F7** the game's cover from
+the screen (`cover.rgb565`, as `tools/cover.py` makes it), **F9** the last eight seconds as a GIF (`saves/clip-N.gif`).
 
 The headless player runs `_draw` only for a `shot`: what a game works out while drawing (the sprites' order, say) is
 there to check after one, not after `tick`.

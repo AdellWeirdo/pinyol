@@ -94,8 +94,16 @@ old_name(pinyol_headless bp_headless)
 
 find_package(SDL2 CONFIG QUIET)
 if(SDL2_FOUND)
-  add_executable(pinyol_sim platform/sdl/main.c platform/sdl/desktop.c platform/link_udp.c)
+  add_executable(pinyol_sim platform/sdl/main.c platform/sdl/desktop.c platform/sdl/capture.c platform/link_udp.c)
   target_compile_options(pinyol_sim PRIVATE -Wall -Wextra ${SAN})
+  target_include_directories(pinyol_sim PRIVATE third_party/msf_gif) # the GIF of the last eight seconds (F9)
+  set_source_files_properties(platform/sdl/capture.c PROPERTIES COMPILE_OPTIONS "-Wno-missing-field-initializers;-Wno-unused-parameter") # (msf_gif's)
+  # the captures on a made-up screen, and PIL reads the files back
+  add_executable(capture_test tests/capture_test.c platform/sdl/capture.c platform/null/hal_null.c platform/link_udp.c)
+  target_include_directories(capture_test PRIVATE third_party/msf_gif platform/sdl)
+  set_source_files_properties(tests/capture_test.c PROPERTIES COMPILE_OPTIONS "-Wall;-Wextra;-Werror")
+  target_link_libraries(capture_test pinyol_core)
+
   target_compile_definitions(pinyol_sim PRIVATE PINYOL_GAME="${GAME_DIR}")
   # the app links SDL statically where SDL was built so (SDL2::SDL2-static): one file, nothing to install beside it
   if(PINYOL_APP AND TARGET SDL2::SDL2-static)
@@ -174,6 +182,17 @@ add_executable(conf_test tests/conf_test.c platform/null/hal_null.c platform/lin
 target_compile_options(conf_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(conf_test pinyol_core)
 add_test(NAME conf COMMAND conf_test) # the console's settings: parsing, and the colour filter's table
+# flashing that can hurt: a game that flashes the whole screen every tick fails --check-flashes (4), a quiet one passes
+add_test(NAME flashes_caught COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/flash \
+  --saves ${CMAKE_BINARY_DIR}/saves_flash --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/flash.script --check-flashes; test $? -eq 4")
+add_test(NAME flashes_quiet COMMAND pinyol_headless --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/sysmenu
+  --saves ${CMAKE_BINARY_DIR}/saves_flash_quiet --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/sysmenu.script --check-flashes)
+# a play recorded as a script plays back frame for frame: plataformas' test through the recorder, then the recording, the same CRCs
+add_test(NAME record_replay COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/plataformas \
+  --saves ${CMAKE_BINARY_DIR}/saves_rec1 --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/record/plataformas_input.script --crc ${CMAKE_BINARY_DIR}/rec1.crc \
+  --record ${CMAKE_BINARY_DIR}/rec.script >/dev/null && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/plataformas \
+  --saves ${CMAKE_BINARY_DIR}/saves_rec2 --fresh --script ${CMAKE_BINARY_DIR}/rec.script --crc ${CMAKE_BINARY_DIR}/rec2.crc >/dev/null && \
+  cmp ${CMAKE_BINARY_DIR}/rec1.crc ${CMAKE_BINARY_DIR}/rec2.crc")
 add_executable(synth_test tests/synth_test.c platform/null/hal_null.c platform/link_udp.c)
 target_compile_options(synth_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(synth_test pinyol_core)
@@ -241,6 +260,10 @@ endif()
 set(NO_PIL 1)
 if(Python3_FOUND)
   execute_process(COMMAND ${Python3_EXECUTABLE} -c "import PIL" RESULT_VARIABLE NO_PIL OUTPUT_QUIET ERROR_QUIET)
+endif()
+if(TARGET capture_test AND NOT NO_PIL) # the simulator's captures (PNG, cover, GIF), read back with PIL
+  add_test(NAME capture COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/capture && mkdir -p ${CMAKE_BINARY_DIR}/capture && \
+    $<TARGET_FILE:capture_test> ${CMAKE_BINARY_DIR}/capture && ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/capture_check.py ${CMAKE_BINARY_DIR}/capture")
 endif()
 if(NOT NO_PIL)
   add_test(NAME new_lua_game COMMAND ${Python3_EXECUTABLE} -c

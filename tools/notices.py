@@ -82,6 +82,8 @@ def main() -> None:
         block("cJSON", "MIT. `third_party/cjson` (and ESP-IDF's `json` component, the same library)",
               read(ROOT / "third_party/cjson/LICENSE")),
         block("pocketmod", "MIT. `third_party/pocketmod`", read(ROOT / "third_party/pocketmod/LICENSE")),
+        block("msf_gif", "MIT (or public domain, at the reader's choice). `third_party/msf_gif`, the simulator's GIF of the last eight seconds (F9)",
+              comment(ROOT / "third_party/msf_gif/msf_gif.h", "ALTERNATIVE A - MIT License", "DEALINGS IN THE SOFTWARE.")),
         block("Fonts", "SIL Open Font License 1.1 (its text is at the end). What pinyol makes from them (`.fnt`, "
               "`.woff2`) is a Modified Version under that licence, and never carries a Reserved Font Name: Press Start "
               "2P's conversions are called Arcade 8, and the font packs (`tools/font2fnt.py --pack`) name their files by pack, never by font.\n\n" + fonts()),

@@ -1,0 +1,4 @@
+# a second and a half of flashing: --check-flashes must say so (CMake's flashes_caught test wants exit code 4)
+new
+tick 90
+expect_ok

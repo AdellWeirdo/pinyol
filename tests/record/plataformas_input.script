@@ -1,0 +1,14 @@
+# Input only (no `lua` lines that change the game's state): what --record turns into `in` lines and plays back frame for
+# frame (CMake's record_replay test compares the CRCs of both runs)
+new
+tick 10
+press A
+tick 20
+hold RIGHT 30
+press A
+tick 40
+hold LEFT 20
+tap 240 160
+drag 100 100 300 200 10
+tick 10
+expect_ok
