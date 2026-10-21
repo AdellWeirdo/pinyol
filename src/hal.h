@@ -48,7 +48,10 @@ int hal_games(hal_game *g, int max, int *last, bool *cold);
 bool hal_game_cover(const char *id, uint16_t *px, int w, int h);
 void hal_launch(const char *id);
 void hal_power_off(void);
-const char *hal_firmware(void); /* the console's firmware version, for its menu (a desktop: "escritorio") */
+const char *hal_firmware(void);
+/* The console's own folder, for what is not a game's (its settings, conf.c): made if needed; false where there is none
+ * (the headless player: the defaults, set by its scripts). src/lua_game.c has a weak default that says false. */
+bool hal_console_dir(char *path, size_t n); /* the console's firmware version, for its menu (a desktop: "escritorio") */
 int console_dir_games(const char *root, hal_game *g, int max);              /* the folders in root that are games */
 bool console_dir_cover(const char *dir, uint16_t *px, int w, int h);        /* dir's cover.rgb565 (or BG_TITLE) */
 void hal_audio_lock(void);

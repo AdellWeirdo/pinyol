@@ -4,6 +4,8 @@
 #include <string.h>
 
 #include "bp.h"
+#include "conf.h"
+#include "sysmenu.h"
 #include "compat.h"
 
 game G;
@@ -79,6 +81,7 @@ bool game_init(const bp_config *cfg) {
         ok = font_load(fonts[i].f, path) && ok;
     }
     settings_load();
+    conf_load(); /* the console's own settings, the same for every game */
     flags_reset();
     const char *newest = save_newest(); /* keep seq growing across reboots so "Continuar" picks the latest */
     if (newest) save_peek(newest, &G.save_seq);
@@ -187,7 +190,13 @@ static void menu_sounds(layer_id top) {
     else if (G.in.pressed & (ACT_UP | ACT_DOWN | ACT_LEFT | ACT_RIGHT)) sound("move");
 }
 
-void game_tick(const hal_input *in) {
+void game_tick(const hal_input *in_real) {
+    hal_input swapped = *in_real;
+    const hal_input *in = in_real;
+    if (CONF.swap_ab) { /* the console's setting: A and B the other way round, in every game */
+        swapped.held = (uint16_t)((in_real->held & ~(ACT_OK | ACT_BACK)) | (in_real->held & ACT_OK ? ACT_BACK : 0) | (in_real->held & ACT_BACK ? ACT_OK : 0));
+        in = &swapped;
+    }
     G.in.pressed = in->held & ~G.in.held;
     /* an adventure with nothing in its bag pauses on MENU; a Lua game reads MENU itself (btnp("menu")) */
     if (!G.v2 && (G.in.pressed & ACT_INV) && !content_has_bag()) G.in.pressed = (G.in.pressed & ~ACT_INV) | ACT_PAUSE;
@@ -217,6 +226,7 @@ void game_tick(const hal_input *in) {
         splash_tick();
         return;
     }
+    if (G.v2 && !sysmenu_tick()) return; /* the console's menu is up, or the speed skips this tick */
     G.ticks++;
     if (G.v2) {
         v2_tick();
@@ -273,7 +283,7 @@ void game_draw_world(void) {
     G.draws++;
     if (splash_on() && !splash_own()) return; /* the engine's careta draws no world */
     if (G.v2) {
-        v2_draw_world();
+        if (!sysmenu_paused()) v2_draw_world(); /* paused: the picture stays as it was */
         return;
     }
     layer_id base = G.nstack ? G.stack[0] : L_TITLE;

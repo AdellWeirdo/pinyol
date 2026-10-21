@@ -640,3 +640,16 @@ bool hal_game_cover(const char *id, uint16_t *px, int w, int h) {
     return console_dir_cover(dir, px, w, h);
 }
 const char *hal_firmware(void) { return "escritorio"; }
+
+bool hal_console_dir(char *path, size_t n) { /* the console's settings on a computer: $PINYOL_HOME, or ~/.pinyol; the browser: its saves' store */
+#ifdef __EMSCRIPTEN__
+    snprintf(path, n, "/persist/pinyol");
+#else
+    const char *home = getenv("PINYOL_HOME");
+    if (home && *home) snprintf(path, n, "%s", home);
+    else if ((home = getenv("HOME")) && *home) snprintf(path, n, "%s/.pinyol", home);
+    else return false;
+#endif
+    mkdir(path, 0755);
+    return true;
+}

@@ -96,6 +96,10 @@ bool v2_dual(void);                    /* game.json "screens": 2: two 240x160 sc
 #define DUAL_X(k) ((k) * WORLD_W)      /* where screen k (0 top, 1 bottom: the touch one) is in the 480x320 frame */
 #define DUAL_Y ((SCREEN_H - WORLD_H) / 2)
 void v2_draw_world(void);             /* _draw(), then the PPU into G.world */
+bool v2_reads_menu(void);             /* the game has read the MENU button (btn("menu")...): a tap of it is the game's */
+int v2_menu_items(const char **labels, int max); /* the game's own items for the console's menu (menuitem); their count */
+void v2_menu_choose(int i);           /* the player chose that one: its function runs */
+void v2_menu_event(const char *fn);   /* _pause() or _resume(), if the game has them */
 const char *v2_error(void);           /* the script's error, or NULL */
 bool v2_run(const char *code, bool expr, char *msg, int n); /* test scripts: run code or check an expression */
 bool v2_splash_update(int t);         /* the game's careta (splash.lua): update(t), true when it is done */
@@ -479,6 +483,7 @@ void audio_preload(const char *id);
 long audio_cache_bytes(void); /* RAM held by cached SFX: stays under a fixed budget */
 void audio_bus(float amb, float mus, float amb_lowpass_hz, int fade_ms); /* ducking; lowpass 0 = open */
 void audio_master(float gain, int fade_ms);
+void audio_user(float gain);   /* the console's own volume, 0..1 (conf.c): over every game's master, kept across games */
 #define VOLUME_MAX 4
 void audio_pause(bool paused);
 void audio_music_clock(int src);        /* 0: music() stopped the song; its clock from 0 (1 WAV, 2 module) */

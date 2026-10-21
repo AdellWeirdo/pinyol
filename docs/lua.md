@@ -705,6 +705,24 @@ that the cat's console is running out, a story that knows the player is charging
 | `console_launch(id)` | ends this game and starts that one |
 | `console_off()`, `console_version()` | switches the console off; the firmware's version |
 
+### The console's menu, over every game
+
+A tap of MENU pauses any Lua game and opens the console's menu over it: **Seguir**, the game's own items, **Reiniciar**
+(the game from its start, as a fresh run), **Ajustes** and, on the console, **Salir a la lista**; B closes it. A game
+that reads MENU itself (`btn("menu")`, `btnp("menu")`...) keeps its taps: for it, MENU held one second opens the menu.
+MENU held two seconds goes to the console's list, as always. While the menu is up the game is frozen (no `_update`, no
+`_draw`, the sound paused), and `ticks()` does not move.
+
+| Call | Does |
+|---|---|
+| `menuitem(label, fn)` | an item of the game's own in that menu, three at most (a label of 32 characters): `fn` runs when the player chooses it, with the menu already closed (`menuitem("Nivel 1", function() scene.go(level1) end)`). The same label again changes its function; `menuitem(label)` takes it away, `menuitem()` all of them. A new game (Reiniciar) starts with none: set them in `_init` |
+| `_pause()`, `_resume()` | if the game has them, called when the menu opens and when it closes |
+| `settings()` | the console's settings, the same for every game, as the player set them in Ajustes: `volume` (0-100, over the game's own `volume()`), `reduce_flashing` (true: the player wants less flashing; `juice.flash` then does nothing, and a game with its own flashes should look at it), `colour` (`"normal"`, `"protan"`, `"deutan"` or `"tritan"`: the world's colours are shifted for that player by the engine; the text and shapes over it are not), `speed` (100, 75 or 50: the share of ticks the game gets; its music keeps its pace), `lang` (`"es"`, `"ca"`, `"en"`: the menu's language, for a game that wants to follow it), `swap_ab` (A and B the other way round, done by the engine before the game sees them) |
+
+A game that stops on an error shows the **crash screen**: the whole error and its stack, UP and DOWN to read it, A to
+start the game again, B back to the list. The same text goes to `crash.txt` in the game's saves folder, to send with a
+bug report.
+
 ## Libraries built in
 
 Lua code every game can `require`, so a game does not start from nothing. They come inside the engine (the
@@ -871,6 +889,10 @@ expect_ok                        # the game has not stopped on an error (a scrip
 shot name                        # save the screen to the saves folder (name.ppm)
 mic 0.5 440                      # the microphone hears a tone that loud (no Hz: noise; mic 0: silence; mic none: no microphone)
 battery 0.2 charging             # battery() says so (battery none: no battery; battery real: the platform's)
+settings speed 50                # the console's settings (speed 100/75/50, flash less/normal, colour protan/deutan/tritan/normal, swap_ab, lang, volume)
+expect_menu open                 # the console's menu is up (or closed): press MENU taps it open
+allow_crash                      # the game may stop on an error from here on: the ticks do not fail for it (its crash screen is up)
+expect_crashed                   # and it has
 expect_led ff0000                # the LED is that colour (expect_led off: the console's own)
 ```
 

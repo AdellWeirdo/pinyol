@@ -185,6 +185,12 @@ void hal_launch(const char *id) { snprintf(launch_id, sizeof launch_id, "%s", id
 void hal_power_off(void) { power_off(); }
 const char *hal_firmware(void) { return esp_app_get_description()->version; }
 
+bool hal_console_dir(char *path, size_t n) { /* the console's settings: on the card, or in the flash without one */
+    snprintf(path, n, "%s/pinyol", storage_card() ? "/sdcard" : "/flash");
+    mkdir(path, 0755);
+    return true;
+}
+
 static struct { int64_t world, wait, first, rest; } strip_us; /* where a frame's time goes (perf_report) */
 
 static void perf_report(void) {

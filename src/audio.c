@@ -154,6 +154,7 @@ enum { S_AMB0, S_MUS = S_AMB0 + NAMB, S_VOICE0, S_VOICE1, NSTREAMS };
 
 static stream st[NSTREAMS];
 static ramp bus_amb = {1, 1, 0}, bus_mus = {1, 1, 0}, amb_lp = {1, 1, 0}, master = {1, 1, 0};
+static ramp user = {1, 1, 0}; /* the console's volume (conf.c), over the game's master */
 static ramp rv_wet = {0, 0, 0};               /* how much of the game's reverb comes back */
 static float rv_music, rv_amb;                 /* what the music and the ambience send into it */
 static bool rv_closing;                        /* fading out: the room goes when it is silent */
@@ -477,6 +478,12 @@ void audio_reverb(int room, float wet, float send_music, float send_ambient) {
 void audio_master(float gain, int fade_ms) {
     hal_audio_lock();
     ramp_to(&master, gain, fade_ms);
+    hal_audio_unlock();
+}
+
+void audio_user(float gain) { /* the console's volume: a game's volume() is inside it; a game's start leaves it alone */
+    hal_audio_lock();
+    ramp_to(&user, gain < 0 ? 0 : gain > 1 ? 1 : gain, 60);
     hal_audio_unlock();
 }
 
@@ -1063,7 +1070,7 @@ static void mix_core(int16_t *out, int n, bool stereo) {
             if (rv_closing && rv_wet.v == 0) reverb_set(-1), rv_closing = false;
         }
         for (int i = 0; i < m; i++) {
-            const float g = ramp_next(&master);
+            const float g = ramp_next(&master) * ramp_next(&user);
             if (stereo) out[2 * (off + i)] = limit((acc[i] + dl[i]) * g), out[2 * (off + i) + 1] = limit((acc[i] + dr[i]) * g);
             else out[off + i] = limit((acc[i] + 0.5f * (dl[i] + dr[i])) * g); /* (mono: panned sounds at half the gap) */
         }

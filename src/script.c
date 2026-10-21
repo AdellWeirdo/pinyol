@@ -5,6 +5,8 @@
 #include <string.h>
 
 #include "bp.h"
+#include "conf.h"
+#include "sysmenu.h"
 
 static void (*frame_cb)(void);
 static int line_no;
@@ -12,12 +14,15 @@ static char fail_msg[256];
 
 #define FAIL(...) do { snprintf(fail_msg, sizeof fail_msg, __VA_ARGS__); return false; } while (0)
 
+static bool crash_expected; /* expect_crashed said so: the crash screen is up on purpose */
+
 static bool tick_input(uint16_t held, bool touch, int px, int py) {
     hal_input in = {.held = held, .touch = touch, .px = (int16_t)px, .py = (int16_t)py};
     game_tick(&in);
     /* A Lua game stopped on an error stays frozen, and what the script checks after it could still hold: the script fails
      * on the tick it stopped, with the game's own message (not only where it says expect_ok). */
-    if (v2_error()) FAIL("the game stopped on an error: %s", v2_error());
+    if (!v2_error()) crash_expected = false;
+    if (v2_error() && !crash_expected) FAIL("the game stopped on an error: %s", v2_error());
     if (layer_has(L_PLAY)) {
         const char *bad = invariants_check();
         if (bad) FAIL("%s", bad);
@@ -32,7 +37,7 @@ static bool tick_two(int x1, int y1, int x2, int y2) { /* two fingers down for o
     hal_input in = {.touch = true, .px = (int16_t)x1, .py = (int16_t)y1, .points = 2, .x = {(int16_t)x1, (int16_t)x2},
                     .y = {(int16_t)y1, (int16_t)y2}};
     game_tick(&in);
-    if (v2_error()) FAIL("the game stopped on an error: %s", v2_error());
+    if (v2_error() && !crash_expected) FAIL("the game stopped on an error: %s", v2_error());
     if (frame_cb) frame_cb();
     return true;
 }
@@ -312,6 +317,16 @@ static bool run_line(char *cmd, char *arg) {
         else FAIL("mic: LEVEL [HZ], LEVEL blow or none");
         return true;
     }
+    if (!strcmp(cmd, "settings")) { /* settings KEY VALUE: the console's settings (conf.h): speed 50, colour protan, swap_ab true... */
+        char key[32], value[32];
+        if (sscanf(arg, "%31s %31s", key, value) != 2 || !conf_set(key, value)) FAIL("settings: cannot set \"%s\"", arg);
+        return true;
+    }
+    if (!strcmp(cmd, "expect_menu")) { /* expect_menu open | closed: the console's menu over the game */
+        const bool open = sysmenu_open();
+        if (!strcmp(arg, "open") ? !open : !strcmp(arg, "closed") ? open : true) FAIL("expect_menu %s: it is %s", arg, open ? "open" : "closed");
+        return true;
+    }
     if (!strcmp(cmd, "battery")) { /* pinyol@2: battery LEVEL [charging]; battery none; battery real */
         float level = 0;
         if (!strcmp(arg, "none")) device_fake_battery(true, false, 0, false);
@@ -338,6 +353,16 @@ static bool run_line(char *cmd, char *arg) {
     if (!strcmp(cmd, "wait_ms")) { /* real time passing: two runs playing each other over BP_LINK=udp */
         uint32_t t0 = hal_micros(), ms = (uint32_t)atoi(arg);
         while (hal_micros() - t0 < ms * 1000) {}
+        return true;
+    }
+    if (!strcmp(cmd, "allow_crash")) { /* pinyol@2: the game may stop on an error from here on (its crash screen is up): the ticks do
+                                         * not fail for it, until it runs again (A on the crash screen starts it over) */
+        crash_expected = true;
+        return true;
+    }
+    if (!strcmp(cmd, "expect_crashed")) { /* pinyol@2: it has stopped on an error */
+        if (!v2_error()) FAIL("expect_crashed: the game runs");
+        crash_expected = true;
         return true;
     }
     if (!strcmp(cmd, "expect_ok")) { /* pinyol@2: the script has not stopped on an error */

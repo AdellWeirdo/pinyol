@@ -139,7 +139,10 @@ end
 
 function M.shake(px) shake = math.max(shake, px) end
 function M.freeze(ticks) frozen = math.max(frozen, ticks) end
-function M.flash(colour, ticks) flash_colour, flash_left = colour or 0xFFFFFF, ticks or 3 end
+function M.flash(colour, ticks) -- (none at all when the console is set to less flashing)
+  if settings and settings().reduce_flashing then return end
+  flash_colour, flash_left = colour or 0xFFFFFF, ticks or 3
+end
 function M.busy(obj) -- is it moving?
   for _, tw in ipairs(tweens) do if tw.obj == obj then return true end end
   return false

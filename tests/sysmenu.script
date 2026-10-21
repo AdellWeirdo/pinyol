@@ -1,0 +1,84 @@
+# The console's menu over a Lua game (src/sysmenu.c): a tap of MENU pauses it, its items, the settings, the crash screen
+new
+lua n = 0
+tick 10
+expect_lua n == 10
+# a tap of MENU: the game sees MENU down for one tick, then the menu opens and it stops counting; _pause ran
+press MENU
+expect_menu open
+tick 5
+expect_lua n == 11 and paused == 1 and resumed == 0
+shot sysmenu_open
+# DOWN to the game's item, A chooses it: the menu closes first, then the item runs
+lua n = 0
+press DOWN
+press A
+expect_menu closed
+expect_lua rang == true and resumed == 1
+tick 5
+expect_lua n == 6
+# the settings page (Seguir, Sonar, Reiniciar, Ajustes); B goes back, B closes
+press MENU
+press DOWN
+press DOWN
+press DOWN
+press A
+shot sysmenu_settings
+press B
+press B
+expect_menu closed
+# Reiniciar: the game starts again (n back to 0, its item set again by _init)
+press MENU
+press DOWN
+press DOWN
+press A
+expect_menu closed
+tick 3
+expect_lua n == 4 and rang == false
+# a game that reads MENU keeps its taps; MENU held a second opens the menu anyway, and letting go then does not close it
+lua read_menu = true
+press MENU
+expect_menu closed
+hold MENU 70
+expect_menu open
+expect_lua held_menu == true
+tick 2
+expect_menu open
+press B
+expect_menu closed
+# the speed: at 50% the game gets one tick in two, and a press on a skipped tick is not lost
+settings speed 50
+lua n = 0
+tick 20
+expect_lua n == 10
+lua last = nil
+press A
+tick 4
+expect_lua last == "a"
+settings speed 100
+# A and B swapped by the console
+settings swap_ab true
+lua last = nil
+press A
+expect_lua last == "b"
+settings swap_ab false
+# settings() as the game reads them; the colour filter on the world
+settings flash less
+settings colour protan
+expect_lua settings().reduce_flashing == true and settings().colour == "protan" and settings().swap_ab == false and settings().speed == 100
+tick 1
+shot sysmenu_protan
+settings colour normal
+settings flash normal
+# the crash screen: the whole error; A starts the game again, fresh
+lua crash = true
+allow_crash
+tick 1
+expect_crashed
+shot sysmenu_crash
+tick 3
+expect_crashed
+press A
+tick 2
+expect_ok
+expect_lua n == 3 and crash == false

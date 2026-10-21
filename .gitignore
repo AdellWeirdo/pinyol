@@ -3,6 +3,7 @@ build-*/
 .DS_Store
 __pycache__/
 examples/*/saves/
+tests/games/*/saves/
 firmware/build-*/
 site/dist/
 site/.cache/

@@ -20,6 +20,8 @@
 #include "ppu.h"
 #include "lua_api.h"
 #include "lua_prof.h"
+#include "conf.h"
+#include "sysmenu.h"
 
 #define MEM_QUOTA_KB 4096          /* game.json "lua_memory_kb" can ask for up to MEM_MAX_KB */
 #define MEM_MAX_KB 6144
@@ -276,6 +278,16 @@ static void fail(const char *what, const char *msg) {
     snprintf(error, sizeof error, "%s: %s", what, msg ? msg : "error");
     hal_log("lua %s", error);
     failed = true;
+    sysmenu_crash(error); /* the crash screen: the whole error, A to start again */
+    char path[400], *txt = malloc(sizeof error + 256);
+    if (txt) { /* crash.txt in the saves folder: what to send with a bug report */
+        snprintf(path, sizeof path, "%s/crash.txt", G.save_dir);
+        snprintf(txt, sizeof error + 256, "pinyol %s\ngame %s\ntick %u\n%s\n", hal_firmware(), jstr(G.game, "id") ? jstr(G.game, "id") : "?",
+                 (unsigned)G.ticks, error);
+        FILE *f = fopen(path, "w"); /* plainly (not the saves' two files): the game has stopped, nothing waits */
+        if (!f || fputs(txt, f) < 0 || fclose(f)) hal_log("cannot write %s", path);
+        free(txt);
+    }
 }
 
 static bool call(const char *fn, int nargs) { /* args are on the stack; true if it ran (or does not exist) */
@@ -406,12 +418,18 @@ static int l_log(lua_State *L) {
 
 /* ------------------------------------------------------------------ the API */
 
+static bool menu_read; /* the game has asked about MENU: a tap of it is the game's, not the console's menu (sysmenu.c) */
+bool v2_reads_menu(void) { return menu_read; }
+
 static int act_bit(const char *name) {
     static const struct { const char *n; int bit; } A[] = {
         {"up", ACT_UP}, {"down", ACT_DOWN}, {"left", ACT_LEFT}, {"right", ACT_RIGHT}, {"a", ACT_OK}, {"b", ACT_BACK},
         {"c", ACT_NEXT}, {"start", ACT_PAUSE}, {"menu", ACT_INV}};
     for (size_t i = 0; i < sizeof A / sizeof A[0]; i++)
-        if (!strcmp(A[i].n, name)) return A[i].bit;
+        if (!strcmp(A[i].n, name)) {
+            if (A[i].bit == ACT_INV) menu_read = true;
+            return A[i].bit;
+        }
     return 0;
 }
 
@@ -1101,6 +1119,86 @@ static int l_perf(lua_State *L) { /* perf() -> ms of the last _update, _draw, pi
     return 4;
 }
 
+/* menuitem(label [, fn]): an item of the console's menu (a tap of MENU), the game's own, three at most: fn runs when the
+ * player chooses it, with the menu closed; menuitem(label) takes that item away; menuitem() takes all of them. */
+#define MENU_ITEMS 3
+static int l_menuitem(lua_State *L) {
+    lua_getfield(L, LUA_REGISTRYINDEX, "pinyol.menu");
+    if (lua_isnoneornil(L, 1)) { /* all gone */
+        lua_pushnil(L), lua_setfield(L, LUA_REGISTRYINDEX, "pinyol.menu");
+        return 0;
+    }
+    if (lua_isnil(L, -1)) lua_pop(L, 1), lua_newtable(L), lua_pushvalue(L, -1), lua_setfield(L, LUA_REGISTRYINDEX, "pinyol.menu");
+    const char *label = luaL_checkstring(L, 1);
+    if (strlen(label) > 32) return luaL_error(L, "menuitem: a label of 32 characters at most");
+    const int t = lua_gettop(L), n = (int)lua_rawlen(L, t);
+    int at = 0;
+    for (int i = 1; i <= n && !at; i++) { /* the same label: that item */
+        lua_rawgeti(L, t, i), lua_getfield(L, -1, "label");
+        if (!strcmp(lua_tostring(L, -1), label)) at = i;
+        lua_pop(L, 2);
+    }
+    if (lua_isnoneornil(L, 2)) { /* taken away */
+        if (at) {
+            for (int i = at; i < n; i++) lua_rawgeti(L, t, i + 1), lua_rawseti(L, t, i);
+            lua_pushnil(L), lua_rawseti(L, t, n);
+        }
+        return 0;
+    }
+    luaL_checktype(L, 2, LUA_TFUNCTION);
+    if (!at && n >= MENU_ITEMS) return luaL_error(L, "menuitem: %d items at most", MENU_ITEMS);
+    lua_createtable(L, 0, 2);
+    lua_pushvalue(L, 1), lua_setfield(L, -2, "label");
+    lua_pushvalue(L, 2), lua_setfield(L, -2, "fn");
+    lua_rawseti(L, t, at ? at : n + 1);
+    return 0;
+}
+
+int v2_menu_items(const char **labels, int max) {
+    if (!Ls) return 0;
+    lua_getfield(Ls, LUA_REGISTRYINDEX, "pinyol.menu");
+    const int n = lua_istable(Ls, -1) ? (int)lua_rawlen(Ls, -1) : 0;
+    for (int i = 0; labels && i < n && i < max; i++) {
+        lua_rawgeti(Ls, -1, i + 1), lua_getfield(Ls, -1, "label");
+        labels[i] = lua_tostring(Ls, -1); /* (kept alive by the table) */
+        lua_pop(Ls, 2);
+    }
+    lua_pop(Ls, 1);
+    return n;
+}
+
+void v2_menu_choose(int i) {
+    if (!Ls || failed) return;
+    lua_pushcfunction(Ls, msgh);
+    lua_getfield(Ls, LUA_REGISTRYINDEX, "pinyol.menu");
+    if (!lua_istable(Ls, -1)) { lua_pop(Ls, 2); return; }
+    lua_rawgeti(Ls, -1, i + 1);
+    if (!lua_istable(Ls, -1)) { lua_pop(Ls, 3); return; }
+    lua_getfield(Ls, -1, "fn");
+    lua_replace(Ls, -3), lua_pop(Ls, 1); /* the function where the menu table was */
+    arm_as("menuitem");
+    const int rc = lua_pcall(Ls, 0, 0, -2);
+    if (rc != LUA_OK) fail("menuitem", lua_tostring(Ls, -1)), lua_pop(Ls, 1);
+    lua_pop(Ls, 1); /* msgh */
+    draw_flush();
+}
+
+void v2_menu_event(const char *fn) {
+    if (Ls && !failed) call(fn, 0);
+}
+
+static int l_settings(lua_State *L) { /* settings() -> the console's settings: volume, reduce_flashing, colour, speed, lang, swap_ab */
+    static const char *const COL[] = {"normal", "protan", "deutan", "tritan"};
+    lua_createtable(L, 0, 6);
+    lua_pushinteger(L, CONF.volume), lua_setfield(L, -2, "volume");
+    lua_pushboolean(L, CONF.reduce_flash), lua_setfield(L, -2, "reduce_flashing");
+    lua_pushstring(L, COL[CONF.colour]), lua_setfield(L, -2, "colour");
+    lua_pushinteger(L, CONF.speed), lua_setfield(L, -2, "speed");
+    lua_pushstring(L, conf_lang_code()), lua_setfield(L, -2, "lang");
+    lua_pushboolean(L, CONF.swap_ab), lua_setfield(L, -2, "swap_ab");
+    return 1;
+}
+
 static int l_quit(lua_State *L) {
     (void)L;
     if (hal_can_switch_game()) hal_switch_game();
@@ -1224,6 +1322,7 @@ static int l_clock(lua_State *L) {
 }
 
 __attribute__((weak)) bool hal_save(const char *path, const char *txt) { return save_file_atomic(path, txt); }
+__attribute__((weak)) bool hal_console_dir(char *path, size_t n) { (void)path, (void)n; return false; } /* no folder of its own: the defaults */
 __attribute__((weak)) void hal_save_flush(void) {}
 
 static bool store_write(const char *txt) {
@@ -1463,7 +1562,7 @@ static void api(lua_State *L) {
         {"mat", l_mat}, {"show", l_show}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off},
         {"window", l_window}, {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow},
         {"mosaic", l_mosaic}, {"noise", l_noise},
-        {"quit", l_quit}, {"perf", l_perf}, {"store", l_store}, {"stored", l_stored}, {"load", l_load}, {"log", l_log},
+        {"quit", l_quit}, {"menuitem", l_menuitem}, {"settings", l_settings}, {"perf", l_perf}, {"store", l_store}, {"stored", l_stored}, {"load", l_load}, {"log", l_log},
         {"print", l_log}, {"require", l_require}, {"file", l_file}, {"powered_by", l_powered_by}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);
@@ -1559,6 +1658,8 @@ bool v2_load(void) {
     lua_call(Ls, 1, 0);
     lua_pop(Ls, 1);
 
+    menu_read = false;
+    sysmenu_reset();
     const char *entry = jstr(G.game, "main") ? jstr(G.game, "main") : "main.lua";
     if (!safe_name(entry)) {
         fail("start", "game.json \"main\" is not a file name in the game folder");
@@ -1594,11 +1695,9 @@ bool v2_load(void) {
 }
 
 void v2_tick(void) {
-    static int menu_held;
     if (G.in.held & ACT_QUIT) G.quit = true;
-    menu_held = (G.in.held & ACT_INV) ? menu_held + 1 : 0;
     if ((G.in.held & ACT_INV) && (G.in.pressed & ACT_NEXT)) meter.on = !meter.on; /* MENU and C: the meter */
-    if (menu_held == 2 * TICK_HZ && hal_can_switch_game()) hal_switch_game(); /* MENU held 2 s: back to the list */
+    /* (MENU held 2 s, back to the list, and a tap of it, the console's menu: sysmenu_tick, before this) */
     link_tick((uint32_t)G.ticks); /* what other consoles sent, before the game looks */
     mic_tick();                   /* and what the microphone heard */
     buttons_tick();               /* each button's story */
@@ -1626,6 +1725,11 @@ void v2_draw_world(void) {
         }
         screen_select(0);
     } else if (!(blank = ppu_blank(&backdrop))) ppu_render(G.world); /* nothing of the world shown: one colour, not worked out */
+    if (conf_filter_on()) { /* the console's colour filter, on the world's pixels (the text and shapes over it stay) */
+        if (blank) conf_filter(&backdrop, 1);
+        else conf_filter(G.world, WORLD_W * WORLD_H);
+        if (screens == 2) conf_filter(world2, WORLD_W * WORLD_H);
+    }
     us_draw = u - t, us_ppu = hal_micros() - u;
     acc.draw += us_draw, acc.ppu += us_ppu, acc.frames++;
     if (us_ppu > acc.ppu_max) acc.ppu_max = us_ppu;
@@ -1651,12 +1755,7 @@ void v2_draw(surface *s) {
     draw_profile(1u, meter.on); /* (the commands are timed only while the meter is up) */
     draw_overlay(s);
     if (meter.on) meter_draw(s);
-    if (failed) { /* the error, readable, over whatever was drawn */
-        gfx_fill(s, 0, 0, SCREEN_W, 64, C_INK);
-        uint16_t ls[4], ll[4];
-        int n = text_wrap(&G.font, error, SCREEN_W - 16, ls, ll, 4);
-        for (int i = 0; i < n; i++) font_draw(s, &G.font, 8, 2 + i * (G.font.h - 6), error + ls[i], ll[i], -1, C_PAPER);
-    }
+    sysmenu_draw(s); /* the console's menu, or the crash screen with the whole error, over everything */
 }
 
 const char *v2_error(void) { return failed ? error : NULL; }
