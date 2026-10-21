@@ -983,7 +983,7 @@ static int l_sheet(lua_State *L) { /* sheet(id) -> handle, w, h, frames */
     return 4;
 }
 
-enum { F_FLIPX = 1, F_FLIPY = 2, F_BLEND = 4, F_WINDOW = 8, F_DOUBLE = 16, F_MOSAIC = 32 };
+enum { F_FLIPX = 1, F_FLIPY = 2, F_BLEND = 4, F_WINDOW = 8, F_DOUBLE = 16, F_MOSAIC = 32, F_SIL = 64 };
 
 static int obj_index(lua_State *L, int arg) {
     int i = (int)luaL_checkinteger(L, arg);
@@ -1002,7 +1002,7 @@ static int l_spr(lua_State *L) {
     ppu_obj *o = &PPU.obj[i];
     *o = (ppu_obj){.on = true, .x = i16(num(L, 4)), .y = i16(num(L, 5)), .w = (uint8_t)s->w, .h = (uint8_t)s->h,
                    .hflip = fl & F_FLIPX, .vflip = (fl & F_FLIPY) != 0, .mosaic = (fl & F_MOSAIC) != 0,
-                   .mode = (uint8_t)(fl & F_WINDOW ? OBJ_WINDOW : fl & F_BLEND ? OBJ_BLEND : OBJ_NORMAL),
+                   .mode = (uint8_t)(fl & F_WINDOW ? OBJ_WINDOW : fl & F_BLEND ? OBJ_BLEND : fl & F_SIL ? OBJ_SIL : OBJ_NORMAL),
                    .dbl = (fl & F_DOUBLE) != 0, .prio = (uint8_t)((fl >> 8) & 3), .bank = (uint8_t)((fl >> 12) & 15),
                    .affine = (int8_t)(((fl >> 16) & 63) - 1)};
     if (s->idx) o->idx = s->idx + (size_t)f * s->w * s->h;
@@ -1024,6 +1024,15 @@ static int l_spr_clear(lua_State *L) {
 static int l_prio(lua_State *L) { lua_pushinteger(L, (luaL_checkinteger(L, 1) & 3) << 8); return 1; }
 static int l_bank(lua_State *L) { lua_pushinteger(L, (luaL_checkinteger(L, 1) & 15) << 12); return 1; }
 static int l_spr_mat(lua_State *L) { lua_pushinteger(L, ((luaL_checkinteger(L, 1) & 31) + 1) << 16); return 1; }
+
+/* silhouette(colour [, strength]): what SILHOUETTE sprites show through a background drawn over them: that colour, strength
+ * (0..1, 0.5) of it mixed over the background */
+static int l_silhouette(lua_State *L) {
+    PPU.sil.colour = to565(luaL_checkinteger(L, 1));
+    float k = fin(luaL_optnumber(L, 2, 0.5));
+    PPU.sil.alpha = (uint8_t)(k < 0 ? 0 : k > 1 ? 16 : (int)(k * 16 + 0.5f));
+    return 0;
+}
 
 static int l_mat(lua_State *L) { /* mat(m, degrees, scale_x [, scale_y]): sprite matrix m turns and scales */
     int m = (int)luaL_checkinteger(L, 1) & (PPU_AFFINES - 1);
@@ -1735,7 +1744,7 @@ static void api(lua_State *L) {
         {"affine", l_affine}, {"rot", l_rot}, {"mode7", l_mode7}, {"project", l_project}, {"mget", l_mget},
         {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_affine", l_line_affine}, {"line_scroll_ramp", l_line_scroll_ramp}, {"palcycle", l_palcycle}, {"shock", l_shock}, {"haze", l_haze}, {"line_backdrop", l_line_backdrop}, {"line_pal", l_line_pal}, {"line_pal_obj", l_line_pal_obj}, {"line_ramp", l_line_ramp},
         {"line_window", l_line_window}, {"line_fx", l_line_fx}, {"line_off", l_line_off}, {"sheet", l_sheet}, {"spr", l_spr},
-        {"spr_off", l_spr_off}, {"spr_clear", l_spr_clear}, {"prio", l_prio}, {"bank", l_bank}, {"spr_mat", l_spr_mat},
+        {"spr_off", l_spr_off}, {"spr_clear", l_spr_clear}, {"prio", l_prio}, {"bank", l_bank}, {"spr_mat", l_spr_mat}, {"silhouette", l_silhouette},
         {"mat", l_mat}, {"show", l_show}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off},
         {"window", l_window}, {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow},
         {"mosaic", l_mosaic}, {"noise", l_noise},
@@ -1757,7 +1766,7 @@ static void api(lua_State *L) {
     const struct { const char *n; int v; } K[] = { /* (not static: SCREEN_W and SCREEN_H are the game's) */
         {"BG0", PPU_BG0}, {"BG1", PPU_BG1}, {"BG2", PPU_BG2}, {"BG3", PPU_BG3}, {"OBJ", PPU_OBJ}, {"BACK", PPU_BACK},
         {"FX", PPU_FX}, {"ALL", 0x3F}, {"FLIP_X", F_FLIPX}, {"FLIP_Y", F_FLIPY}, {"BLEND", F_BLEND},
-        {"WINDOW", F_WINDOW}, {"DOUBLE", F_DOUBLE}, {"MOSAIC", F_MOSAIC}, {"SCREEN_W", screens == 2 ? WORLD_W : SCREEN_W}, {"SCREEN_H", screens == 2 ? WORLD_H : SCREEN_H},
+        {"WINDOW", F_WINDOW}, {"DOUBLE", F_DOUBLE}, {"MOSAIC", F_MOSAIC}, {"SILHOUETTE", F_SIL}, {"SCREEN_W", screens == 2 ? WORLD_W : SCREEN_W}, {"SCREEN_H", screens == 2 ? WORLD_H : SCREEN_H},
         {"W", PPU_W}, {"H", PPU_H}};
     for (size_t i = 0; i < sizeof K / sizeof K[0]; i++) lua_pushinteger(L, K[i].v), lua_setfield(L, -2, K[i].n);
     lua_pop(L, 1);

@@ -28,6 +28,9 @@ shot looks_ramp
 lua mode = "affine"
 tick 1
 shot looks_affine
+lua mode = "sil"
+tick 1
+shot looks_sil
 lua mode = "road"
 tick 3
 shot looks_road

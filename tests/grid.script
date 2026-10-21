@@ -43,3 +43,16 @@ expect_lua math.abs(x - 9) + math.abs(y - 6) > 4
 lua mix = g:layer(1) mix:mix(g:distances(9, 6), 2)
 expect_lua mix:get(9, 6) == 1 and mix:get(0, 0) == 31
 expect_lua_error g:rescan(grid(3, 3):layer())
+# field of view (shadowcasting): a pillar hides what lies behind it, the pillar itself is seen, and seeing is mutual
+lua g = grid(12, 8) g:set(6, 4, 0) v = g:fov(2, 4, 10)
+expect_lua v:get(2, 4) == 1 and v:get(5, 4) == 1 and v:get(6, 4) == 1 and v:get(9, 4) == 0 and v:get(11, 4) == 0 and v:get(9, 1) == 1
+lua w = g:fov(9, 4, 10)
+expect_lua w:get(2, 4) == 0 and w:get(6, 4) == 1
+# the radius: nothing past it; a layer given is filled again
+lua v = g:fov(2, 4, 3, v)
+expect_lua v:get(5, 4) == 1 and v:get(6, 4) == 0 and v:get(2, 7) == 1 and v:get(2, 1) == 1 and v:get(11, 4) == 0
+# line of sight: straight, through the pillar, round it, and at the pillar itself
+expect_lua g:sees(2, 4, 5, 4) == true and g:sees(2, 4, 9, 4) == false and g:sees(2, 4, 9, 1) == true and g:sees(2, 4, 6, 4) == true
+expect_lua_error g:fov(2, 4, 0)
+expect_lua_error g:fov(2, 4, 5, grid(3, 3):layer())
+

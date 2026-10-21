@@ -152,6 +152,7 @@ with `|`:
 | `BLEND` | always blended over what is under it (see `blend`) |
 | `WINDOW` | not drawn: its shape becomes the object window |
 | `spr_mat(m)` | turned and scaled by matrix m, set with `mat(m, degrees, scale_x [, scale_y])` |
+| `SILHOUETTE` | drawn as usual, and where a background of a nearer priority covers it, its silhouette shows through: a flat colour mixed over the background (a hero behind a house, a cat under the table). `silhouette(colour [, strength])` sets the colour and how much of it (0.5): the same for every such sprite |
 | `DOUBLE` | with `spr_mat`: the drawing area is twice the size, so the turned sprite is not cut. A turned sprite is drawn only where its pixels fall, so the larger area costs next to nothing |
 | `MOSAIC` | blocky with `mosaic()` |
 
@@ -428,6 +429,8 @@ where a crowd heads, a smell or a noise spreading through the rooms. Cells count
 | `l:spread(rate [, fade])` | once: each open cell moves `rate` (0 to 1) of the way to its open neighbours' mean, then all fade by `fade` (0 to 1). Walls hold nothing |
 | `l:scale(k)`, `l:mix(other [, w])` | every cell times `k`; `other`'s cells added, times `w`: several wants (food, danger, the hero) into one map |
 | `g:rescan(layer [, {diagonal}])` | a layer: each cell's value made no more than the cheapest neighbour's plus the step, from the layer's own values (Brogue's Dijkstra maps): a distance field scaled by -1.2 and rescanned leads away from the hero and into corners to hide, not straight into a wall |
+| `g:fov(x, y, radius [, layer])` | what is seen from that cell (shadowcasting, as roguelikes do it): a layer with 1 on every cell in view within the radius, walls seen included, 0 elsewhere; a layer of the grid given is filled instead of making one. Fog of war, a lantern, a guard's eyes (walls are the cells of cost 0) |
+| `g:sees(x0, y0, x1, y1)` | `true` when no wall stands on the straight line between the two cells (the ends may be walls): does the guard see the hero |
 | `l:climb(x, y)`, `l:descend(x, y)` | `dx, dy`: to the open neighbour with the most (follow a smell) or the least (walk down a distance field, flee a noise); `0, 0` when none is better |
 
 ```lua

@@ -55,6 +55,18 @@ y = 0  # and 0 at the top
 for sx in range(0, 480, 7):
     assert rp[sx, 0] == pp[sx, 0]
 
+sp = shot("looks_sil").load()  # the ship (an indexed sheet, at 100, 60) behind the picture: red, half, over the picture where it has pixels
+changed = 0
+for y in range(60, 76):  # the ship's 16 x 16 box
+    for x in range(100, 116):
+        if sp[2 * x, 2 * y] != pp[2 * x, 2 * y]:
+            changed += 1
+            r, g, b = sp[2 * x, 2 * y]
+            r0, g0, b0 = pp[2 * x, 2 * y]
+            assert r >= r0 and g <= g0 and b <= b0 and abs(r - (255 + r0) // 2) <= 24, (x, y, sp[2 * x, 2 * y], pp[2 * x, 2 * y])
+assert changed > 20, changed
+assert sp[10, 10] == pp[10, 10] and sp[470, 310] == pp[470, 310]  # away from the ship, the picture as it was
+
 ap = affine.load()
 for y in range(0, 320, 6):
     row = {ap[x, y] for x in range(0, 480, 5)}

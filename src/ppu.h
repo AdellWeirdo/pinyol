@@ -43,7 +43,8 @@ typedef struct {
     int bitmap_w, bitmap_h;
 } ppu_bg;
 
-enum { OBJ_NORMAL, OBJ_BLEND /* always a first blend target */, OBJ_WINDOW /* its shape is the object window */ };
+enum { OBJ_NORMAL, OBJ_BLEND /* always a first blend target */, OBJ_WINDOW /* its shape is the object window */,
+       OBJ_SIL /* drawn as normal, and where a nearer background covers it its silhouette shows through (PPU.sil) */ };
 
 typedef struct {
     bool on, hflip, vflip, mosaic;
@@ -90,6 +91,7 @@ typedef struct {
         uint8_t in[2], obj_in, out;  /* what shows inside each window and outside them all: layer bits + PPU_FX */
     } win;
     struct { uint8_t bg_w, bg_h, obj_w, obj_h; } mosaic; /* 1 = off */
+    struct { uint16_t colour; uint8_t alpha; } sil; /* OBJ_SIL sprites behind a background: this colour, alpha/16 of it over the background */
     struct {
         const ppu_line_scroll *scroll[PPU_BGS];
         const ppu_line_affine *affine[PPU_BGS];

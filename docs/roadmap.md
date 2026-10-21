@@ -34,8 +34,10 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
 - **Fase 3, hecho:** `palcycle` con BlendShift, `line_affine` y `line_scroll_ramp` (las tablas por línea del PPU
   desde Lua), `shock` y `haze` (post-proceso sobre el mundo, `src/post.c`), `lib/stack` (sprite stacking con caché de
   ángulos en canvases), `lib/water` (muelles), `lib/road` (carretera pseudo-3D sobre `line_affine`). Comprobado por
-  píxel en `tests/looks_check.py`. **No hecho:** dither de ruido azul, visibilidad 2D, silueta tras paredes, cleanEdge,
-  Voxel Space, luz normal por paleta, mallas 3D.
+  píxel en `tests/looks_check.py`. **Hecho el 22 de octubre:** visibilidad 2D (`g:fov`, shadowcasting en C sobre la
+  rejilla; `g:sees`, línea de visión) y silueta tras paredes (`SILHOUETTE` en `spr`, `silhouette(color, fuerza)`: el PPU
+  mezcla el color donde un fondo más cercano tapa al sprite). **No hecho:** dither de ruido azul, cleanEdge, Voxel
+  Space, luz normal por paleta, mallas 3D.
 
 - **Fase 4, hecho:** música adaptativa (`music(id, fade, {bar, beats, loop_at, layers, at = "bar"})`: la canción nueva
   espera aparcada y el mezclador la cambia en la línea de compás; `music_beat()`, `music_queued()`), `lib/brain` (IA de

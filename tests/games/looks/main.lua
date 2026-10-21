@@ -15,6 +15,7 @@ function _init()
   for i = 0, 2 do -- three slices drawn by code: a disc, a smaller disc, a dot
     canvas("SL" .. i, 16, 16) target("SL" .. i) circ(8, 8, 7 - i * 2, 0x40FF00 + i * 0x4000, true) target()
   end
+  ship = sheet("SHIP")
   car = stack.new({"SL0", "SL1", "SL2"}, {w = 16, h = 16, spacing = 2, scale = 1, steps = 8})
   pond = water.new({x = 0, y = 200, w = 480, springs = 24, colour = 0x2060C0, deep = 0x103060, depth = 100})
   rd = road.new({layer = 1, row = 5, map_w = 128, horizon = 48, stripe_pal = {{1, 0x3C9C3C, 0x2C7C2C}}})
@@ -45,5 +46,10 @@ function _draw()
     car:draw(100, 100, angle)
   elseif mode == "water" then
     pond:draw()
+  elseif mode == "sil" then -- the ship behind the picture: its silhouette shows through, red, half
+    line_off() -- (the ramp's per-line scroll, from the mode before, would shear the picture)
+    bg(1, {image = "PIC", prio = 0})
+    silhouette(0xFF0000, 0.5)
+    spr(0, ship, 0, 100, 60, SILHOUETTE | prio(1))
   end
 end

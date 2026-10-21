@@ -418,6 +418,76 @@ static int towards(lua_State *L, int sign) { /* the open neighbour with the most
 static int l_climb(lua_State *L) { return towards(L, 1); }
 static int l_descend(lua_State *L) { return towards(L, -1); }
 
+/* ------------------------------------------------------------------ seeing */
+
+/* Field of view by recursive shadowcasting (Björn Bergström, as roguelikes do it): from (cx, cy) outwards in each of
+ * the eight octants, a wall (a cell of cost 0) throws a shadow behind it; what is lit within the radius is marked 1 in
+ * the layer (the walls seen too). The octant's multipliers turn each into the first. */
+static void cast(const grid *g, float *v, int cx, int cy, int radius, int row, float start, float end, int xx, int xy, int yx, int yy) {
+    if (start < end) return;
+    const int r2 = radius * radius;
+    for (int i = row; i <= radius; i++) {
+        bool blocked = false;
+        float new_start = 0;
+        for (int dx = -i, dy = -i; dx <= 0; dx++) {
+            const int X = cx + dx * xx + dy * xy, Y = cy + dx * yx + dy * yy;
+            const float l_slope = ((float)dx - 0.5f) / ((float)dy + 0.5f), r_slope = ((float)dx + 0.5f) / ((float)dy - 0.5f);
+            if (start < r_slope) continue;
+            if (end > l_slope) break;
+            const bool inside = on(g->w, g->h, X, Y);
+            if (inside && dx * dx + dy * dy <= r2) v[Y * g->w + X] = 1;
+            const bool wall = !inside || g->cost[Y * g->w + X] == 0;
+            if (blocked) {
+                if (wall) { new_start = r_slope; continue; }
+                blocked = false, start = new_start;
+            } else if (wall && i < radius) {
+                blocked = true;
+                cast(g, v, cx, cy, radius, i + 1, start, l_slope, xx, xy, yx, yy);
+                new_start = r_slope;
+            }
+        }
+        if (blocked) break;
+    }
+}
+
+static int g_fov(lua_State *L) { /* g:fov(x, y, radius [, layer]) -> a layer: 1 on what is seen from there */
+    static const int M[8][4] = {{1, 0, 0, 1}, {0, 1, 1, 0}, {0, -1, 1, 0}, {-1, 0, 0, 1}, {-1, 0, 0, -1}, {0, -1, -1, 0}, {0, 1, -1, 0}, {1, 0, 0, -1}};
+    grid *g = check_grid(L);
+    int x, y;
+    if (!cell(L, 2, g->w, g->h, &x, &y)) return luaL_error(L, "grid fov: the viewer is off the grid");
+    const int radius = num(L, 4);
+    luaL_argcheck(L, radius >= 1 && radius <= 128, 4, "a radius of 1 to 128 cells");
+    layer *l;
+    if (lua_isnoneornil(L, 5)) {
+        new_layer(L, 1, 0);
+        l = lua_touserdata(L, -1);
+    } else {
+        l = luaL_checkudata(L, 5, "pinyol.layer");
+        if (l->w != g->w || l->h != g->h) return luaL_error(L, "grid fov: the layer is of another grid");
+        for (int i = 0; i < l->w * l->h; i++) l->v[i] = 0;
+        lua_pushvalue(L, 5);
+    }
+    l->v[y * g->w + x] = 1;
+    for (int o = 0; o < 8; o++) cast(g, l->v, x, y, radius, 1, 1, 0, M[o][0], M[o][1], M[o][2], M[o][3]);
+    return 1;
+}
+
+static int g_sees(lua_State *L) { /* g:sees(x0, y0, x1, y1) -> true when no wall stands on the line between (the ends may be walls) */
+    grid *g = check_grid(L);
+    int x0, y0, x1, y1;
+    if (!cell(L, 2, g->w, g->h, &x0, &y0) || !cell(L, 4, g->w, g->h, &x1, &y1)) return lua_pushboolean(L, false), 1;
+    const int dx = abs(x1 - x0), dy = -abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy, x = x0, y = y0;
+    while (x != x1 || y != y1) { /* Bresenham, each cell on the way but the ends */
+        const int e2 = 2 * err;
+        if (e2 >= dy) err += dy, x += sx;
+        if (e2 <= dx) err += dx, y += sy;
+        if ((x != x1 || y != y1) && g->cost[y * g->w + x] == 0) return lua_pushboolean(L, false), 1;
+    }
+    lua_pushboolean(L, true);
+    return 1;
+}
+
 static void meta(lua_State *L, const char *name, const luaL_Reg *m) {
     luaL_newmetatable(L, name);
     lua_newtable(L);
@@ -428,7 +498,7 @@ static void meta(lua_State *L, const char *name, const luaL_Reg *m) {
 
 void grid_register(lua_State *L) {
     static const luaL_Reg G[] = {{"set", g_set}, {"get", g_get}, {"size", g_size}, {"path", g_path}, {"rescan", g_rescan},
-                                 {"reach", g_reach}, {"distances", g_distances}, {"layer", g_layer}, {NULL, NULL}};
+                                 {"reach", g_reach}, {"distances", g_distances}, {"layer", g_layer}, {"fov", g_fov}, {"sees", g_sees}, {NULL, NULL}};
     static const luaL_Reg Y[] = {{"get", l_get}, {"set", l_set}, {"add", l_add}, {"fill", l_fill}, {"scale", l_scale}, {"mix", l_mix},
                                  {"spread", l_spread}, {"climb", l_climb}, {"descend", l_descend}, {NULL, NULL}};
     meta(L, "pinyol.grid", G);

@@ -34,6 +34,8 @@ typedef struct { int ey, up; uint16_t r[32], g[64], b[32]; } fade_lut;
 typedef struct {
     uint32_t top[PPU_W], under[PPU_W]; /* PX(colour, id) */
     uint8_t show[PPU_W];   /* with windows: the layer bits and PPU_FX that show at x */
+    uint8_t sil[PPU_W];    /* an OBJ_SIL sprite had a pixel at x (cleared each line while any is drawn) */
+    bool drew_sil;         /* one crossed this line */
     uint8_t objwin[PPU_W]; /* the object window's shape on this line */
     bool win;              /* this line has windows */
     fade_lut fade;         /* the last fade's tables */
@@ -48,6 +50,7 @@ static struct {
     uint32_t rows[PPU_H][PPU_OBJS / 32]; /* per line, a bit per sprite whose box crosses it (sprite i: word i / 32) */
     uint32_t pri[4][PPU_OBJS / 32];      /* per priority, a bit per drawn sprite; high bits draw first (127 under 0) */
     bool any_objwin;
+    bool any_sil;  /* an OBJ_SIL sprite is drawn this frame: the lines keep where they were */
     bool track; /* keep the pixel under the top one (an alpha blend needs it) */
 } F;
 
@@ -57,6 +60,7 @@ static void reset_one(ppu_state *p) {
     memset(p, 0, sizeof *p);
     p->layers = PPU_BG0 | PPU_BG1 | PPU_BG2 | PPU_BG3 | PPU_OBJ;
     p->mosaic.bg_w = p->mosaic.bg_h = p->mosaic.obj_w = p->mosaic.obj_h = 1;
+    p->sil.colour = 0xFFFF, p->sil.alpha = 8; /* white, half */
     for (int i = 0; i < PPU_OBJS; i++) p->obj[i].affine = -1;
     for (int i = 0; i < PPU_AFFINES; i++) p->affine[i] = (ppu_affine){256, 0, 0, 256};
 }
@@ -399,6 +403,14 @@ ALWAYS void obj_line_x(lines *L, const ppu_obj *o, int y, bool win, bool track, 
     uint32_t id = (uint32_t)(ID_OBJ | (o->mode == OBJ_BLEND ? ID_BLEND : 0)) << 16;
     L->drew |= PPU_OBJ;
     if (o->mode == OBJ_BLEND) L->drew_blend = true;
+    if (o->mode == OBJ_SIL) { /* where it has pixels (and may show): a background drawn after it leaves its silhouette there */
+        L->drew_sil = true;
+        int sy = mh > 1 ? y - y % mh : y;
+        for (int x = xa; x < xb; x++) {
+            uint16_t c;
+            if ((!win || (L->show[x] & PPU_OBJ)) && obj_pixel(o, x, sy, opal, &c)) L->sil[x] = 1;
+        }
+    }
     if (o->affine < 0 && mw == 1 && mh == 1 && o->idx) { /* a plain indexed sprite: its source row, read straight */
         int v = y - o->y;
         if (o->vflip) v = o->h - 1 - v;
@@ -498,7 +510,7 @@ static inline uint16_t fade(const fade_lut *f, uint16_t c) { return f->r[c >> 11
 static void prepare(void) {
     memset(F.rows, 0, sizeof F.rows);
     memset(F.pri, 0, sizeof F.pri);
-    F.any_objwin = false;
+    F.any_objwin = false, F.any_sil = false;
     bool blend_obj = false;
     for (int i = 0; i < PPU_OBJS && (PPU.layers & PPU_OBJ); i++) {
         const ppu_obj *o = &PPU.obj[i];
@@ -512,6 +524,7 @@ static void prepare(void) {
         int y0 = by < 0 ? 0 : by, y1 = by + bh > PPU_H ? PPU_H : by + bh;
         if (bx >= PPU_W || bx + bw <= 0 || y0 >= y1) continue; /* off screen: no line would draw it */
         blend_obj |= o->mode == OBJ_BLEND;
+        F.any_sil |= o->mode == OBJ_SIL;
         F.pri[o->prio & 3][i >> 5] |= 1u << (i & 31);
         for (int y = y0; y < y1; y++) F.rows[y][i >> 5] |= 1u << (i & 31);
     }
@@ -563,7 +576,7 @@ static __attribute__((noinline, cold)) void line_palettes(lines *L, int y) {
     L->bgp = s->pal[0], L->objp = s->pal[1];
 }
 
-static void line(lines *L, int y, uint16_t *out) {
+static void compose(lines *L, int y, uint16_t *out) {
     const bool lp = PPU.line.pal_bg || PPU.line.pal_obj; /* this frame replaces palette entries on some lines */
     if (__builtin_expect(lp, 0)) line_palettes(L, y);
     uint32_t back = PX(PPU.line.backdrop ? PPU.line.backdrop[y] : lp ? L->bgp[0] : PPU.bg_pal[0], ID_BACK);
@@ -626,6 +639,19 @@ static void line(lines *L, int y, uint16_t *out) {
         }
         out[x] = c;
     }
+}
+
+static void line(lines *L, int y, uint16_t *out) {
+    L->drew_sil = false;
+    if (F.any_sil) memset(L->sil, 0, PPU_W);
+    compose(L, y, out);
+    if (!L->drew_sil) return;
+    /* an OBJ_SIL sprite's pixel that a background drawn after it covered (the top is a background's): its silhouette, a
+     * flat colour mixed over what covers it, as a hero walking behind a house shows through it */
+    const int a = PPU.sil.alpha, b = 16 - a;
+    const uint16_t c = PPU.sil.colour;
+    for (int x = 0; x < PPU_W; x++)
+        if (L->sil[x] && ((L->top[x] >> 16) & 7) < ID_OBJ) out[x] = blend(c, out[x], a, b);
 }
 
 static void render_part(int part, void *frame) { /* every other line, from line `part` */
