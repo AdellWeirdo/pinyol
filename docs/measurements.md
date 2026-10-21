@@ -543,3 +543,9 @@ IL·LUSTRES (np2d@2, a Neo Geo-like fighter, 44 MB of pictures on the card, sent
 on the final build: `game_init` 755 ms; the fights at 57.6-59.8 fps (world 1.1-1.6 ms, strips 6-10 ms), the round's
 intro at 53 fps (world 4.2 ms), one 44 fps sample while pictures were loading (world 6.8 ms); PSRAM free went from 3.7
 to 2.0 MB as its fighters came in, so XIP's 1.7 MB still leaves it room. Internal RAM 56-59 KB in play.
+
+The console's menu and settings seen on the panel over horizonte (shots over the cable): the colour filter costs
+**1.8 ms a frame** (horizonte's picture 4.4 -> 6.3 ms, 59 -> 56 fps at its heaviest scene; the 240x160 world through
+a 32768-entry table in PSRAM), gone again when it is turned off. Found on the way: the strips are drawn on both cores
+at once, so nothing in the drawing path may call into the game's Lua state (the menu read its items there and the
+console aborted in luaD_throw: fixed, the labels are copied on the tick).
