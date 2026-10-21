@@ -158,7 +158,7 @@ function M.new(str, o)
   local marks = {}
   for _, r in ipairs(runs) do if r.at then marks[#marks + 1] = r end end
   return setmetatable({runs = runs, marks = marks, o = o, total = n, shown = 0, speed = o.speed or 1, hold = 0, k = 1,
-                       done = n == 0}, R)
+                       done = n == 0, plain = (str:gsub("%[.-%]", ""))}, R) -- plain: the letters without their marks, for a voice
 end
 
 function R:update()
@@ -174,7 +174,10 @@ function R:update()
     elseif m.sfx then sfx(m.sfx) end
   end
   local blip = self.o.blip
-  if blip and math.floor(self.shown / (self.o.blip_every or 3)) > math.floor(before / (self.o.blip_every or 3)) then
+  if type(blip) == "function" then -- a voice (lib/voice.lua): every letter typed, for it to decide
+    local plain = self.plain or ""
+    for i = before + 1, math.floor(self.shown) do blip(plain:sub(i, i)) end
+  elseif blip and math.floor(self.shown / (self.o.blip_every or 3)) > math.floor(before / (self.o.blip_every or 3)) then
     sfx(blip, 0.5)
   end
   if self.shown >= self.total and self.k > #self.marks then self.done = true end

@@ -3,6 +3,10 @@ juice = require("juice")
 particles = require("particles")
 physics = require("physics")
 keyboard = require("keyboard")
+voice = require("voice")
+rich = require("rich")
+sound("BEEP", "blip")
+abuela = voice.new({sound = "BEEP", pitch = 0.8, every = 2})
 
 door = {y = 0}
 fx = particles.new()

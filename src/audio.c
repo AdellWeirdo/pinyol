@@ -155,6 +155,12 @@ enum { S_AMB0, S_MUS = S_AMB0 + NAMB, S_VOICE0, S_VOICE1, NSTREAMS };
 static stream st[NSTREAMS];
 static ramp bus_amb = {1, 1, 0}, bus_mus = {1, 1, 0}, amb_lp = {1, 1, 0}, master = {1, 1, 0};
 static ramp user = {1, 1, 0}; /* the console's volume (conf.c), over the game's master */
+/* the buses a game sets (bus(), duck()): the sounds' gain; the music's lowpass and its duck (a dip that comes back) */
+static ramp bus_sfx = {1, 1, 0}, mus_lp = {1, 1, 0}, duck_mus = {1, 1, 0};
+static clip *clip_get(const char *id); /* (below) */
+static float mus_lp_state;
+static long duck_hold;      /* samples the duck stays down before it comes back */
+static int duck_release_ms;
 static ramp rv_wet = {0, 0, 0};               /* how much of the game's reverb comes back */
 static float rv_music, rv_amb;                 /* what the music and the ambience send into it */
 static bool rv_closing;                        /* fading out: the room goes when it is silent */
@@ -479,6 +485,36 @@ void audio_master(float gain, int fade_ms) {
     hal_audio_lock();
     ramp_to(&master, gain, fade_ms);
     hal_audio_unlock();
+}
+
+void audio_bus_set(int bus, float gain, float lowpass_hz, int fade_ms) { /* 0 music, 1 ambient, 2 sounds */
+    const float a = lowpass_hz > 0 ? 1 - expf(-6.2831853f * lowpass_hz / AUDIO_HZ) : 1;
+    hal_audio_lock();
+    if (bus == 0) ramp_to(&bus_mus, gain, fade_ms), ramp_to(&mus_lp, a, fade_ms);
+    else if (bus == 1) ramp_to(&bus_amb, gain, fade_ms), ramp_to(&amb_lp, a, fade_ms);
+    else ramp_to(&bus_sfx, gain, fade_ms);
+    hal_audio_unlock();
+}
+
+void audio_duck(float to, int attack_ms, int hold_ms, int release_ms) { /* the music dips to `to`, stays, comes back */
+    hal_audio_lock();
+    ramp_to(&duck_mus, to, attack_ms);
+    duck_hold = (long)attack_ms * AUDIO_HZ / 1000 + (long)hold_ms * AUDIO_HZ / 1000;
+    duck_release_ms = release_ms;
+    hal_audio_unlock();
+}
+
+int audio_sfx_count(const char *id) { /* voices playing that sound now */
+    clip *c = id ? clip_get(id) : NULL;
+    if (!c) return 0;
+    int n = 0;
+    hal_audio_lock();
+    for (int v = 0; v < SFX_VOICES; v++)
+        if (sfx[v].pcm)
+            for (int k = 0; k < c->count; k++)
+                if (sfx[v].pcm == c->pcm[k] || (c->vag[k] && sfx[v].vag == c->vag[k])) n++;
+    hal_audio_unlock();
+    return n;
 }
 
 void audio_user(float gain) { /* the console's volume: a game's volume() is inside it; a game's start leaves it alone */
@@ -856,7 +892,8 @@ void audio_reset(void) {
     hal_audio_lock();
     for (int i = 0; i < NSTREAMS; i++) close_stream(&st[i]);
     memset(sfx, 0, sizeof sfx);
-    bus_amb = bus_mus = amb_lp = master = (ramp){1, 1, 0};
+    bus_amb = bus_mus = amb_lp = master = bus_sfx = mus_lp = duck_mus = (ramp){1, 1, 0};
+    mus_lp_state = 0, duck_hold = 0;
     rv_wet = (ramp){0, 0, 0}, rv_music = rv_amb = 0, rv_closing = false;
     reverb_set(-1);
     lp_state = lp_l = lp_r = 0;
@@ -956,6 +993,7 @@ static void mix_core(int16_t *out, int n, bool stereo) {
     static float dl[CHUNK], dr[CHUNK];   /* the panned voices' difference from acc, left and right (both <= 0) */
     static float aml[CHUNK], amr[CHUNK]; /* the same for the ambience beds, before their lowpass */
     static float gv[CHUNK];              /* what is sent into the game's reverb */
+    static float mus[CHUNK];             /* the music, before its bus (lowpass, duck) */
     static int16_t buf[CHUNK * MAX_STEMS];
     for (int off = 0; off < n; off += CHUNK) {
         int m = n - off < CHUNK ? n - off : CHUNK;
@@ -967,6 +1005,8 @@ static void mix_core(int16_t *out, int n, bool stereo) {
         memset(aml, 0, sizeof aml), memset(amr, 0, sizeof amr);
         memset(dr, 0, sizeof dr);
         memset(gv, 0, sizeof gv);
+        memset(mus, 0, sizeof mus);
+        bool mus_open = false;
         const bool rv = reverb_on();
         bool amb_open = false; /* an ambience bed is playing: the bus has something to carry */
         for (int c = 0; c < NSTREAMS && !paused; c++) { /* pause freezes the world; menu clicks still play */
@@ -974,7 +1014,8 @@ static void mix_core(int16_t *out, int n, bool stereo) {
             if (!s->f) continue;
             if (s->dying && silent(s)) { close_stream(s); continue; }
             if (c < S_AMB0 + NAMB) amb_open = true;
-            float *dst = c < S_AMB0 + NAMB ? amb : acc;
+            if (c == S_MUS) mus_open = true;
+            float *dst = c < S_AMB0 + NAMB ? amb : c == S_MUS ? mus : acc;
             ramp b = c == S_MUS ? bus_mus : (ramp){1, 1, 0};
             long p0 = s->pos, bar = s->bar;
             int ch = s->chans; /* read first: stream_read closes (and zeroes) a one-shot that ends */
@@ -1005,28 +1046,42 @@ static void mix_core(int16_t *out, int n, bool stereo) {
             }
             ramp_next(&bus_mus);
         }
+        /* the music bus: its duck (down, held, back) and lowpass; nothing to do while both rest and no music plays */
+        if (duck_hold > 0 && !paused) {
+            duck_hold -= m;
+            if (duck_hold <= 0) ramp_to(&duck_mus, 1, duck_release_ms);
+        }
+        const bool mus_rest = !mus_open && mus_lp_state == 0 && mus_lp.v == mus_lp.target && duck_mus.v == duck_mus.target;
+        for (int i = 0; i < m && !paused && !mus_rest; i++) {
+            const float a = ramp_next(&mus_lp), d = ramp_next(&duck_mus);
+            mus_lp_state += a * (mus[i] * d - mus_lp_state);
+            acc[i] += mus_lp_state;
+        }
+        const float sg = bus_sfx.v; /* the sounds' bus this chunk (stepped below, a chunk at a time: 3 ms) */
+        for (int i = 0; i < m; i++) ramp_next(&bus_sfx);
         if (!paused) studio_tick(m); /* the steps falling in this block start their voices, to the sample */
         if (!paused) midi_tick(m);   /* the song's notes falling in it, the same */
         for (int v = 0; v < NVOICES; v++) {
             sfx_voice *x = &sfx[v];
             int i0 = x->wait < m ? x->wait : m;
             x->wait -= i0;
+            const float vgain = v < SFX_VOICES ? x->gain * sg : x->gain; /* the game's sounds through their bus */
             if (x->pitch == 1 && !x->env && !x->vag) /* as recorded: sample after sample, round again if it loops */
                 for (int i = i0; i < m && x->pcm;) {
                     int k = x->end - x->pos < m - i ? x->end - x->pos : m - i;
-                    for (int j = 0; j < k; j++) acc[i + j] += x->pcm[x->pos + j] * x->gain;
+                    for (int j = 0; j < k; j++) acc[i + j] += x->pcm[x->pos + j] * vgain;
                     if (x->send_d > 0 || x->send_r > 0)
                         for (int j = 0; j < k; j++) {
-                            float y = x->pcm[x->pos + j] * x->gain;
+                            float y = x->pcm[x->pos + j] * vgain;
                             sd[i + j] += y * x->send_d, sr[i + j] += y * x->send_r;
                         }
                     if (x->side_l != 0 || x->side_r != 0)
                         for (int j = 0; j < k; j++) {
-                            float y = x->pcm[x->pos + j] * x->gain;
+                            float y = x->pcm[x->pos + j] * vgain;
                             dl[i + j] += y * x->side_l, dr[i + j] += y * x->side_r;
                         }
                     if (rv && x->rev > 0)
-                        for (int j = 0; j < k; j++) gv[i + j] += x->pcm[x->pos + j] * x->gain * x->rev;
+                        for (int j = 0; j < k; j++) gv[i + j] += x->pcm[x->pos + j] * vgain * x->rev;
                     x->pos += k, i += k;
                     if (x->pos >= x->end) x->pos = x->loop ? x->loop_from : 0, x->pcm = x->loop ? x->pcm : NULL;
                 }
@@ -1034,7 +1089,7 @@ static void mix_core(int16_t *out, int n, bool stereo) {
                 uint32_t step = (uint32_t)(x->pitch * 65536.0f);
                 /* what the loop does not change, and the buses nothing goes into: acc is a float pointer like these, so
                  * through the voice every one of them would be loaded again each sample, and a bus at 0 added to anyway */
-                const float gain = x->gain, send_d = x->send_d, send_r = x->send_r, side_l = x->side_l, side_r = x->side_r, rev = x->rev;
+                const float gain = vgain, send_d = x->send_d, send_r = x->send_r, side_l = x->side_l, side_r = x->side_r, rev = x->rev;
                 const bool sends = send_d != 0 || send_r != 0, pan = side_l != 0 || side_r != 0, wet = rv && rev != 0;
                 for (int i = i0; i < m && x->pcm; i++) {
                     int a = x->pos, b = a + 1 < x->end ? a + 1 : (x->loop && !x->vag ? x->loop_from : a);

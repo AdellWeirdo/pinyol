@@ -484,6 +484,9 @@ long audio_cache_bytes(void); /* RAM held by cached SFX: stays under a fixed bud
 void audio_bus(float amb, float mus, float amb_lowpass_hz, int fade_ms); /* ducking; lowpass 0 = open */
 void audio_master(float gain, int fade_ms);
 void audio_user(float gain);   /* the console's own volume, 0..1 (conf.c): over every game's master, kept across games */
+void audio_bus_set(int bus, float gain, float lowpass_hz, int fade_ms); /* 0 music (gain, lowpass), 1 ambient (the same), 2 the game's sounds (gain) */
+void audio_duck(float to, int attack_ms, int hold_ms, int release_ms);     /* the music dips to `to` (0..1), stays, comes back */
+int audio_sfx_count(const char *id);                                       /* voices playing that sound now */
 #define VOLUME_MAX 4
 void audio_pause(bool paused);
 void audio_music_clock(int src);        /* 0: music() stopped the song; its clock from 0 (1 WAV, 2 module) */

@@ -63,3 +63,18 @@ lua hero = {} juice.squash(hero, 0.3)
 expect_lua math.abs(hero.sx - 1.3) < 1e-6 and math.abs(hero.sy - 1 / 1.3) < 1e-6
 tick 10
 expect_lua hero.sx == 1 and hero.sy == 1
+# sfx's variation and limits: max playing at once, a cooldown, a varied pitch still plays; the buses and a duck run
+lua h1 = sfx("BEEP", 1, {max = 1, loop = true}) h2 = sfx("BEEP", 1, {max = 1})
+expect_lua h1 ~= 0 and h2 == 0
+lua sfx_stop(h1)
+lua c1 = sfx("BEEP", 0.5, {cooldown = 0.5}) c2 = sfx("BEEP", 0.5, {cooldown = 0.5})
+expect_lua c1 ~= 0 and c2 == 0
+tick 31
+expect_lua sfx("BEEP", 0.5, {cooldown = 0.5, pitch_var = 3, gain_var = 0.2}) ~= 0
+lua bus("music", {gain = 0.5, lowpass = 800, fade = 0.2}) bus("sfx", {gain = 0.7}) bus("ambient") duck({to = 0.2, hold = 0.3})
+expect_lua_error bus("drums")
+# voice: a blip every second letter, none for spaces and marks; rich types with it
+expect_lua abuela:say("h") == false and abuela:say("o") == true and abuela:say(" ") == false and abuela:say("l") == false and abuela:say("a") == true
+lua abuela:reset() said = 0 r = rich.new("hola mundo", {speed = 1, blip = function(ch) if abuela:say(ch) then said = said + 1 end end})
+lua for i = 1, 12 do r:update() end
+expect_lua said == 4

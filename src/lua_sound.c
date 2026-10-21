@@ -76,12 +76,35 @@ static int l_sound(lua_State *L) {
 static int samples(float seconds) { return (int)(seconds * AUDIO_HZ + 0.5f); }
 
 /* sfx(id [, gain [, {pitch, loop, pan, reverb, attack, decay, sustain, release, loop_start, loop_end, delay}]]) -> a handle for sfx_set and sfx_stop (0 if it could not play) */
+/* cooldown: a sound's last play, so the same one is not started again within its cooldown (a hit every frame) */
+static struct { char id[32]; uint32_t tick; } cool[32];
+static int cool_n;
+
+static bool cooled(const char *id, float seconds) {
+    const uint32_t gap = (uint32_t)(seconds * TICK_HZ + 0.5f), now = (uint32_t)G.ticks;
+    int k = -1;
+    for (int i = 0; i < cool_n && k < 0; i++)
+        if (!strcmp(cool[i].id, id)) k = i;
+    if (k >= 0 && now - cool[k].tick < gap && now >= cool[k].tick) return false;
+    if (k < 0) k = cool_n < 32 ? cool_n++ : (int)(now % 32), snprintf(cool[k].id, sizeof cool[k].id, "%s", id);
+    cool[k].tick = now;
+    return true;
+}
+
 static int l_sfx(lua_State *L) {
     const char *id = luaL_checkstring(L, 1);
     sfx_opts o = {.gain = fin(luaL_optnumber(L, 2, 1)), .pitch = 1};
     if (!lua_isnoneornil(L, 3)) {
         luaL_checktype(L, 3, LUA_TTABLE);
-        o.pitch = opt_float(L, 3, "pitch", 1, 0.0625f, 16), o.loop = opt_bool(L, 3, "loop", false);
+        /* variation and limits: pitch_var semitones each way, gain_var 0..1 each way, max playing at once, cooldown seconds */
+        const float pv = opt_float(L, 3, "pitch_var", 0, 0, 24), gv = opt_float(L, 3, "gain_var", 0, 0, 1);
+        const int max = (int)opt_int(L, 3, "max", 0);
+        const float cd = opt_float(L, 3, "cooldown", 0, 0, 60);
+        if (max > 0 && safe_name(id) && audio_sfx_count(id) >= max) return lua_pushinteger(L, 0), 1;
+        if (cd > 0 && !cooled(id, cd)) return lua_pushinteger(L, 0), 1;
+        if (pv > 0) o.pitch *= powf(2, (float)(rand() / (double)RAND_MAX * 2 - 1) * pv / 12);
+        if (gv > 0) o.gain *= 1 + (float)(rand() / (double)RAND_MAX * 2 - 1) * gv;
+        o.pitch *= opt_float(L, 3, "pitch", 1, 0.0625f, 16), o.loop = opt_bool(L, 3, "loop", false);
         o.pan = opt_float(L, 3, "pan", 0, -1, 1), o.reverb = opt_float(L, 3, "reverb", 0, 0, 1);
         o.wait = samples(opt_float(L, 3, "delay", 0, 0, 10)); /* the sound starts that many seconds into the next block, to the sample */
         /* the envelope: any of its four asked for makes one (the rest: no attack, no decay, full sustain, no release) */
@@ -193,6 +216,40 @@ static int l_reverb(lua_State *L) {
         music = opt_float(L, 3, "music", 0, 0, 1), amb = opt_float(L, 3, "ambient", 0, 0, 1);
     }
     audio_reverb(room, wet < 0 ? 0 : wet > 1 ? 1 : wet, music, amb);
+    return 0;
+}
+
+static int bus_of(lua_State *L, int arg) {
+    const char *n = luaL_checkstring(L, arg);
+    if (!strcmp(n, "music")) return 0;
+    if (!strcmp(n, "ambient")) return 1;
+    if (!strcmp(n, "sfx")) return 2;
+    return luaL_error(L, "bus: \"%s\" is not music, ambient or sfx", n);
+}
+
+/* bus(name [, {gain, lowpass, fade}]): what a group of sounds goes through: "music", "ambient" (gain 0..1 and a lowpass in
+ * Hz, 0 open: a pause muffles the song, water dulls it) or "sfx" (gain); fade in seconds (0.3). bus(name) opens it again. */
+static int l_bus(lua_State *L) {
+    const int b = bus_of(L, 1);
+    float gain = 1, lp = 0, fade = 0.3f;
+    if (!lua_isnoneornil(L, 2)) {
+        luaL_checktype(L, 2, LUA_TTABLE);
+        gain = opt_float(L, 2, "gain", 1, 0, 1), lp = opt_float(L, 2, "lowpass", 0, 0, 20000), fade = opt_float(L, 2, "fade", 0.3f, 0, 60);
+    }
+    audio_bus_set(b, gain, lp, (int)(fade * 1000));
+    return 0;
+}
+
+/* duck([{to, attack, hold, release}]): the music dips (to 0.3) over attack (0.05 s), stays hold (0.5 s) and comes back
+ * over release (0.6 s): a voice line, a big hit, a pickup that wants to be heard */
+static int l_duck(lua_State *L) {
+    float to = 0.3f, attack = 0.05f, hold = 0.5f, release = 0.6f;
+    if (!lua_isnoneornil(L, 1)) {
+        luaL_checktype(L, 1, LUA_TTABLE);
+        to = opt_float(L, 1, "to", 0.3f, 0, 1), attack = opt_float(L, 1, "attack", 0.05f, 0, 10);
+        hold = opt_float(L, 1, "hold", 0.5f, 0, 60), release = opt_float(L, 1, "release", 0.6f, 0, 60);
+    }
+    audio_duck(to, (int)(attack * 1000), (int)(hold * 1000), (int)(release * 1000));
     return 0;
 }
 
@@ -398,7 +455,7 @@ void sound_register(lua_State *L) {
     lua_pushcfunction(L, l_instrument_release), lua_setfield(L, -2, "release");
     lua_setfield(L, -2, "__index");
     lua_pop(L, 1);
-    static const luaL_Reg F[] = {{"sound", l_sound}, {"sfx", l_sfx}, {"instrument", l_instrument}, {"sfx_set", l_sfx_set}, {"sfx_stop", l_sfx_stop},
+    static const luaL_Reg F[] = {{"sound", l_sound}, {"sfx", l_sfx}, {"bus", l_bus}, {"duck", l_duck}, {"instrument", l_instrument}, {"sfx_set", l_sfx_set}, {"sfx_stop", l_sfx_stop},
                                  {"sfx_on", l_sfx_on}, {"music", l_music}, {"music_layer", l_music_layer},
                                  {"music_time", l_music_time},
                                  {"tone", l_tone}, {"tone_set", l_tone_set}, {"note", l_note}, {"mic", l_mic},

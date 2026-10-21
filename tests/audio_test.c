@@ -212,6 +212,26 @@ int main(void) {
     }
 
     audio_reset();
+    /* the sounds' bus: at half gain the beep peaks at half; audio_sfx_count sees the one voice playing it */
+    beep();
+    audio_sfx_play("BEEP", 1, 1, true);
+    audio_mix(mono, N);
+    int full = 0;
+    for (int i = 0; i < N; i++) full = abs(mono[i]) > full ? abs(mono[i]) : full;
+    CHECK(audio_sfx_count("BEEP") == 1 && audio_sfx_count("NOPE") == 0);
+    audio_bus_set(2, 0.5f, 0, 0);
+    audio_mix(mono, N); /* (the ramp steps a chunk at a time: the first chunk may still be at 1) */
+    int half = 0;
+    for (int i = N / 2; i < N; i++) half = abs(mono[i]) > half ? abs(mono[i]) : half;
+    CHECK(half > full * 0.45f && half < full * 0.55f);
+    audio_bus_set(2, 1, 0, 0);
+    /* a duck with no music changes nothing, and the voice goes on */
+    audio_duck(0.2f, 0, 100, 100);
+    audio_mix(mono, N);
+    int again = 0;
+    for (int i = N / 2; i < N; i++) again = abs(mono[i]) > again ? abs(mono[i]) : again;
+    CHECK(again == full);
+
     printf("audio: %d checks, %d failed\n", checks, failures);
     return failures != 0;
 }
