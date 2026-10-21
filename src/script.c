@@ -317,6 +317,12 @@ static bool run_line(char *cmd, char *arg) {
         else FAIL("mic: LEVEL [HZ], LEVEL blow or none");
         return true;
     }
+    if (!strcmp(cmd, "hotswap")) { /* hotswap FILE MOD: FILE (in the game) run again over the module MOD the game required */
+        char file[128], mod[64];
+        if (sscanf(arg, "%127s %63s", file, mod) != 2) FAIL("hotswap FILE MOD");
+        if (!v2_hotswap(file, mod)) FAIL("hotswap %s: not a module the game has, or it failed", file);
+        return true;
+    }
     if (!strcmp(cmd, "settings")) { /* settings KEY VALUE: the console's settings (conf.h): speed 50, colour protan, swap_ab true... */
         char key[32], value[32];
         if (sscanf(arg, "%31s %31s", key, value) != 2 || !conf_set(key, value)) FAIL("settings: cannot set \"%s\"", arg);

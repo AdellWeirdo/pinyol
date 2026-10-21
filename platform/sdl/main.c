@@ -258,6 +258,8 @@ static struct stat saves_dir; /* --saves, if it lies inside the game folder: the
 
 /* The newest change among the game's files, one folder deep; saves/ (the game writes there) and art/ (sources, the
  * game reads assets/) left out. */
+static char newest_path[1024]; /* the file newest() found newest: a .lua that is not main.lua is swapped in, not restarted */
+
 static time_t newest(const char *dir, int depth) {
     time_t t = 0;
     DIR *d = opendir(dir);
@@ -271,10 +273,26 @@ static time_t newest(const char *dir, int depth) {
         if (stat(p, &st)) continue;
         if (S_ISDIR(st.st_mode) && st.st_ino == saves_dir.st_ino && st.st_dev == saves_dir.st_dev) continue;
         time_t u = S_ISDIR(st.st_mode) ? (depth > 0 ? newest(p, depth - 1) : 0) : st.st_mtime;
-        if (u > t) t = u;
+        if (u > t) {
+            t = u;
+            if (!S_ISDIR(st.st_mode)) snprintf(newest_path, sizeof newest_path, "%s", p);
+        }
     }
     closedir(d);
     return t;
+}
+
+/* A saved .lua that the game required (not main.lua): run again over the module, the game going on with its state. */
+static bool try_hotswap(void) {
+    const size_t root = strlen(game_cfg.game_dir);
+    if (strncmp(newest_path, game_cfg.game_dir, root) || newest_path[root] != '/') return false;
+    const char *rel = newest_path + root + 1;
+    const size_t n = strlen(rel);
+    if (n < 5 || strcmp(rel + n - 4, ".lua") || !strcmp(rel, "main.lua")) return false;
+    char mod[128];
+    snprintf(mod, sizeof mod, "%.*s", (int)(n - 4), rel);
+    for (char *c = mod; *c; c++) if (*c == '/') *c = '.';
+    return v2_hotswap(rel, mod);
 }
 
 static void hot_reload(void) { /* twice a second: a file saved since the last look restarts the game */
@@ -288,6 +306,7 @@ static void hot_reload(void) { /* twice a second: a file saved since the last lo
     }
     if (!reload_req) return;
     reload_req = false;
+    if (try_hotswap()) return; /* a library of the game renewed in place; anything else starts the game over */
     game_shutdown();
     game_cfg.no_splash = true; /* the careta was seen when it opened: a saved file goes straight back to the game */
     if (game_init(&game_cfg)) hal_log("reloaded %s", game_cfg.game_dir);

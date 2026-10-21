@@ -261,6 +261,9 @@ set(NO_PIL 1)
 if(Python3_FOUND)
   execute_process(COMMAND ${Python3_EXECUTABLE} -c "import PIL" RESULT_VARIABLE NO_PIL OUTPUT_QUIET ERROR_QUIET)
 endif()
+if(NOT NO_PIL) # the importers (ase2asset, ldtk2asset), strings_check and pack_game --budget, on files made by the test
+  add_test(NAME tools COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/tools_test.py ${CMAKE_BINARY_DIR})
+endif()
 if(TARGET capture_test AND NOT NO_PIL) # the simulator's captures (PNG, cover, GIF), read back with PIL
   add_test(NAME capture COMMAND sh -c "rm -rf ${CMAKE_BINARY_DIR}/capture && mkdir -p ${CMAKE_BINARY_DIR}/capture && \
     $<TARGET_FILE:capture_test> ${CMAKE_BINARY_DIR}/capture && ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/capture_check.py ${CMAKE_BINARY_DIR}/capture")

@@ -152,6 +152,34 @@ def sitemap(paths: list[str]) -> None:
                                       f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
 
 
+def llms_txt() -> None:
+    """llms.txt (llmstxt.org): what pinyol is and where its documents are, for the coding agents that make games with it."""
+    gh = "https://raw.githubusercontent.com/ipaud/pinyol/main/"
+    (DIST / "llms.txt").write_text(f"""# pinyol
+
+> A small C engine for 2D games on the Cirera console (ESP32-S3, 480x320 touch screen) and in the browser: a game is a
+> folder of Lua (pinyol@2, a GBA-like virtual console: four backgrounds, 128 sprites, palettes, per-line effects) or of
+> JSON data (pinyol@1 adventures), tested headless with scripts, sent to the console over USB.
+
+## Docs
+
+- [README](https://github.com/ipaud/pinyol#readme): what it is, quick start, the examples, the editor, the console
+- [AGENTS.md]({gh}AGENTS.md): how a coding agent makes a game here (build, test, the folders)
+- [docs/lua.md]({gh}docs/lua.md): the whole Lua API, the built-in libraries, the test scripts
+- [docs/tutorial.md]({gh}docs/tutorial.md): a first game step by step
+- [docs/art.md]({gh}docs/art.md): the looks (Game Boy, Spectrum, GBA, 16 bits, Neo Geo...) and how to make art for them
+- [docs/game-format.md]({gh}docs/game-format.md): the data adventures' JSON
+- [docs/hardware.md]({gh}docs/hardware.md): the console's pins and peripherals
+- [docs/measurements.md]({gh}docs/measurements.md): what things cost on the console
+
+## Play
+
+- [Every example in the browser]({page.SITE})
+- [The Library]({page.SITE}biblioteca/): games people sent
+- [The editor]({page.SITE}editor/): games without code
+""")
+
+
 def not_found() -> None:
     """404.html, which Pages serves at any address it has nothing for: its links absolute, in the three languages."""
     (DIST / "404.html").write_text(f"""<!doctype html>
@@ -223,6 +251,7 @@ def main() -> None:
     page.publish(DIST, page.moved("biblioteca/"), "juegos/")  # the old games tab (its games' pages stay under it)
     print(f"{len(tabs)} tabs, juegos/: {gamepage.write(DIST, games_list, versioned)} games, each in {len(i18n.LANGS)} languages")
     sitemap(list(tabs) + [f"juegos/{g['id']}/" for g in games_list])
+    llms_txt()
     not_found()
     (DIST / ".nojekyll").write_text("")  # GitHub Pages: serve the folders as they are
     (DIST / "CNAME").write_text(page.SITE.split("/")[2] + "\n")  # GitHub Pages: the site's own domain

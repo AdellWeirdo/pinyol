@@ -132,3 +132,9 @@ lua h = steer.hash(32) h:rebuild(birds) near = h:near(birds[1], 32)
 expect_lua rawlen(near) >= 1
 lua wv = {x = 0, y = 0, vx = 1, vy = 0, max_speed = 2, max_force = 0.2} for i = 1, 10 do steer.apply(wv, steer.wander(wv)) end
 expect_lua wv.x > 0
+# lang: the words from strings.csv in the console's language, holes filled, a missing text falls back to the first language
+lua lang = require("lang") lang.load("ca")
+expect_lua lang.code == "ca" and lang.tr("hello", {name = "Pau"}) == "Hola, Pau" and lang.plural("coins", 3) == "3 monedes"
+expect_lua lang.tr("only_es") == "solo español" and lang.tr("nope") == "nope" and lang.plural("coins", 1) == "una moneda"
+lua lang.set("en")
+expect_lua lang.tr("hello", {name = "Pau"}) == "Hello, Pau" and rawlen(lang.keys()) == 4

@@ -1,0 +1,12 @@
+# hotswap FILE MOD: the file's table over the module's, the references and the state kept; a broken file changes nothing
+new
+tick 3
+expect_lua count == 4 and mod.name == "first"
+hotswap mod2.lua mod
+expect_lua mod == kept and mod.name == "second" and mod.extra == true and mod.speed == 10
+tick 1
+expect_lua count == 24
+expect_lua_error nothing_here()
+lua ok = pcall(function() return mod.step() end)
+expect_lua ok
+expect_ok

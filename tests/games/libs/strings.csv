@@ -1,0 +1,5 @@
+key,es,ca,en
+hello,"Hola, {name}","Hola, {name}","Hello, {name}"
+coins,una moneda,una moneda,one coin
+coins_n,{n} monedas,{n} monedes,{n} coins
+only_es,solo español,,

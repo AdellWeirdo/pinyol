@@ -367,6 +367,41 @@ static int l_require(lua_State *L) {
     return 1;
 }
 
+/* A module changed while the game runs (the simulator, a file saved; a test's `hotswap FILE MOD`): the file is run again and
+ * what it returns is copied over the table the game already holds (the way rxi's lume.hotswap does it), so every reference
+ * the game keeps stays good and its state lives on: a number tuned, a function fixed, without starting over. False when it
+ * is not a module the game has required, or it fails (the engine then starts the game over as before). */
+bool v2_hotswap(const char *rel, const char *mod) {
+    if (!Ls || failed || !safe_name(rel) || !mod || !safe_name(mod)) return false;
+    lua_getfield(Ls, LUA_REGISTRYINDEX, "pinyol.loaded");
+    lua_getfield(Ls, -1, mod);
+    if (!lua_istable(Ls, -1)) { lua_pop(Ls, 2); return false; }
+    const int old = lua_gettop(Ls);
+    lua_pushcfunction(Ls, msgh);
+    const int base = lua_gettop(Ls);
+    load_chunk(Ls, rel);
+    lua_pushstring(Ls, mod);
+    arm_as("hotswap");
+    if (lua_pcall(Ls, 1, 1, base) != LUA_OK) {
+        hal_log("hotswap %s: %s", rel, lua_tostring(Ls, -1));
+        lua_settop(Ls, old - 2);
+        return false;
+    }
+    if (!lua_istable(Ls, -1)) { lua_settop(Ls, old - 2); return false; }
+    /* the new table's fields over the old's (fields gone from the file are left: the game may still hold them) */
+    lua_pushnil(Ls);
+    while (lua_next(Ls, -2)) {
+        lua_pushvalue(Ls, -2), lua_pushvalue(Ls, -2);
+        lua_settable(Ls, old);
+        lua_pop(Ls, 1);
+    }
+    if (lua_getmetatable(Ls, -1)) lua_setmetatable(Ls, old);
+    lua_settop(Ls, old - 2);
+    draw_flush();
+    hal_log("hotswap %s: %s renewed, the game's state kept", rel, mod);
+    return true;
+}
+
 #define FILE_MAX (1024 * 1024)
 
 /* file(name) -> the text of one of the game's files ("story/es.txt", "maps/metro.csv"), or nil if it has none */
