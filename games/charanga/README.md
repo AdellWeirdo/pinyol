@@ -56,3 +56,5 @@ uv run --with pyserial tools/send_game.py games/charanga   # a la consola por US
 - **Sin hacer**: la nota circular, más episodios.
 - **Probado**: simulador headless (el test pasa). En la Cirera física (2026-10-20): arranca y la portada va a 59 fps
   sin errores; jugada a mano por Pau: los golpes, los caminos y la calibración se sienten a tiempo.
+  Con la música y las dificultades (2026-10-21): 60 fps, el audio un 18 % de un núcleo y sin cortes; la melodía
+  se oye sobre el bombo y se distinguen los sonidos de la oficina. Mientras suena, la RAM interna libre baja de 32 a 24 KB.
