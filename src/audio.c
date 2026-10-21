@@ -42,6 +42,7 @@ typedef struct {
     int pend_ms[MAX_STEMS];
     bool pend_set[MAX_STEMS], armed, pend_die;
     ramp cut_l, cut_r;                 /* pan: how much of each ear's gain is taken away (0..1; both 0: the centre) */
+    bool parked;                       /* opened and waiting (S_NEXT): not read until the song playing reaches its bar line */
     /* a stream kept as ADPCM (audio/<id>.spum: every stem's block, then the next block, 28 samples a block), decoded as it plays */
     bool adpcm;
     long samples;                      /* its length in samples (pos and len stay in the bytes of the PCM it stands for) */
@@ -150,7 +151,7 @@ static inline float env_next(sfx_voice *x) {
     return x->level;
 }
 
-enum { S_AMB0, S_MUS = S_AMB0 + NAMB, S_VOICE0, S_VOICE1, NSTREAMS };
+enum { S_AMB0, S_MUS = S_AMB0 + NAMB, S_VOICE0, S_VOICE1, S_NEXT, NSTREAMS }; /* S_NEXT: the song waiting for the bar line, parked */
 
 static stream st[NSTREAMS];
 static ramp bus_amb = {1, 1, 0}, bus_mus = {1, 1, 0}, amb_lp = {1, 1, 0}, master = {1, 1, 0};
@@ -380,6 +381,7 @@ static bool now(const stream *s) { return !s->bar || s->pos == 0; }
 
 void audio_music_stop(int fade_ms) {
     hal_audio_lock();
+    close_stream(&st[S_NEXT]);
     stream *s = &st[S_MUS];
     if (now(s)) fade_out(s, fade_ms);
     else {
@@ -392,32 +394,85 @@ void audio_music_stop(int fade_ms) {
 /* Starts a cue from sample 0, each layer rising from silence to gains[k] over fade_ms, in one locked
  * swap (the audio thread never sees it half set up). bar_s > 0 quantises later changes to bar lines.
  * Returns the cue's layer count (its WAV channels). */
-int audio_music_start(const char *cue, float loop_at_s, float bar_s, const float *gains, int fade_ms) {
+/* A cue opened into `s` (which must be closed), its layers at silence, ready to rise to gains[k] over fade_ms
+ * (set_gains): the stream's part of audio_music_start, outside the lock (file I/O). Returns its layer count, 0 if none. */
+static int open_cue(stream *s, const char *cue, float loop_at_s, float bar_s) {
     long start = 0, len = 0, samples = 0, loop_sample = 0;
     int chans = 1;
     FILE *f = open_spum(cue, &start, &len, &chans, &samples, &loop_sample, false);
     const bool adpcm = f != NULL;
     if (!f) f = open_wav(cue, &start, &len, &chans, false);
+    if (!f) return 0;
     if (!(loop_at_s >= 0 && loop_at_s < 3600)) loop_at_s = 0; /* also NaN */
     if (!(bar_s > 0 && bar_s < 60)) bar_s = 0;
+    long frame = 2L * chans, at = (long)(loop_at_s * AUDIO_HZ) * frame;
+    *s = (stream){.f = f, .start = start, .len = len, .chans = chans, .loop = true,
+                  .loop_at = at < len ? at : 0, .bar = (long)(bar_s * AUDIO_HZ) * frame};
+    snprintf(s->id, sizeof s->id, "%s", cue);
+    if (adpcm) { /* a loop goes back to a block's start: the file's own if the game gave none */
+        adpcm_setup(s, samples, chans);
+        long at2 = loop_at_s > 0 ? (long)(loop_at_s * AUDIO_HZ) / VAG_SAMPLES * VAG_SAMPLES : loop_sample;
+        s->loop_at = at2 < samples ? at2 * 2L * chans : 0;
+    }
+    return chans;
+}
+
+static float next_gains[MAX_STEMS];
+static int next_fade_ms;
+
+int audio_music_start(const char *cue, float loop_at_s, float bar_s, const float *gains, int fade_ms) {
+    stream fresh = {0};
+    const int chans = open_cue(&fresh, cue, loop_at_s, bar_s);
     hal_audio_lock();
     stream *s = &st[S_MUS];
     close_stream(s);
-    audio_music_clock_locked(f ? 1 : 0); /* in the same swap: not one block of the old song counted */
-    if (f) {
-        long frame = 2L * chans, at = (long)(loop_at_s * AUDIO_HZ) * frame;
-        *s = (stream){.f = f, .start = start, .len = len, .chans = chans, .loop = true,
-                      .loop_at = at < len ? at : 0, .bar = (long)(bar_s * AUDIO_HZ) * frame};
-        snprintf(s->id, sizeof s->id, "%s", cue);
-        if (adpcm) { /* a loop goes back to a block's start: the file's own if the game gave none */
-            adpcm_setup(s, samples, chans);
-            long at = loop_at_s > 0 ? (long)(loop_at_s * AUDIO_HZ) / VAG_SAMPLES * VAG_SAMPLES : loop_sample;
-            s->loop_at = at < samples ? at * 2L * chans : 0;
-        }
+    close_stream(&st[S_NEXT]); /* a song waiting for the bar line is no longer wanted */
+    audio_music_clock_locked(chans ? 1 : 0); /* in the same swap: not one block of the old song counted */
+    if (chans) {
+        *s = fresh;
         for (int k = 0; k < chans; k++) ramp_to(&s->g[k], gains ? gains[k] : k == 0, fade_ms);
     }
     hal_audio_unlock();
-    return f ? chans : 0;
+    return chans;
+}
+
+/* The same, but the song starts on the next bar line of the one playing (its `bar`), as iMUSE's transitions did: the
+ * new one is opened now and parked; the mixer swaps it in at the line, to the block. With no song playing, or one
+ * with no bar, it starts now. */
+int audio_music_queue(const char *cue, float loop_at_s, float bar_s, const float *gains, int fade_ms) {
+    hal_audio_lock();
+    const bool wait = st[S_MUS].f && st[S_MUS].bar && !st[S_MUS].dying;
+    hal_audio_unlock();
+    if (!wait) return audio_music_start(cue, loop_at_s, bar_s, gains, fade_ms);
+    stream fresh = {0};
+    const int chans = open_cue(&fresh, cue, loop_at_s, bar_s);
+    if (!chans) return 0;
+    fresh.parked = true;
+    hal_audio_lock();
+    close_stream(&st[S_NEXT]);
+    st[S_NEXT] = fresh;
+    for (int k = 0; k < MAX_STEMS; k++) next_gains[k] = gains ? gains[k] : k == 0;
+    next_fade_ms = fade_ms;
+    hal_audio_unlock();
+    return chans;
+}
+
+bool audio_music_queued(void) {
+    hal_audio_lock();
+    const bool q = st[S_NEXT].f != NULL;
+    hal_audio_unlock();
+    return q;
+}
+
+/* Under the lock, in the mixer: the song playing crossed a bar line (or ended) and one waits: the swap. */
+static void swap_in_next(void) {
+    stream *s = &st[S_MUS], *n = &st[S_NEXT];
+    close_stream(s);
+    *s = *n;
+    *n = (stream){0};
+    s->parked = false;
+    audio_music_clock_locked(1);
+    for (int k = 0; k < s->chans; k++) ramp_to(&s->g[k], next_gains[k], next_fade_ms);
 }
 
 void audio_music_pan(float pan, int fade_ms) {
@@ -1011,7 +1066,7 @@ static void mix_core(int16_t *out, int n, bool stereo) {
         bool amb_open = false; /* an ambience bed is playing: the bus has something to carry */
         for (int c = 0; c < NSTREAMS && !paused; c++) { /* pause freezes the world; menu clicks still play */
             stream *s = &st[c];
-            if (!s->f) continue;
+            if (!s->f || s->parked) continue;
             if (s->dying && silent(s)) { close_stream(s); continue; }
             if (c < S_AMB0 + NAMB) amb_open = true;
             if (c == S_MUS) mus_open = true;
@@ -1021,6 +1076,7 @@ static void mix_core(int16_t *out, int n, bool stereo) {
             int ch = s->chans; /* read first: stream_read closes (and zeroes) a one-shot that ends */
             int got = stream_read(s, buf, m);
             if (s->armed && bar && (s->pos / bar != p0 / bar || s->pos < p0)) apply_pending(s); /* <= 1 chunk late */
+            if (c == S_MUS && st[S_NEXT].f && ((bar && (s->pos / bar != p0 / bar || s->pos < p0)) || !s->f)) swap_in_next(); /* the song waiting, at the line */
             const float send = !rv ? 0 : c == S_MUS ? rv_music : c < S_AMB0 + NAMB ? rv_amb : 0;
             float *pl = c < S_AMB0 + NAMB ? aml : dl, *pr = c < S_AMB0 + NAMB ? amr : dr;
             const bool panned = s->cut_l.v != 0 || s->cut_l.target != 0 || s->cut_r.v != 0 || s->cut_r.target != 0;

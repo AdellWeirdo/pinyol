@@ -17,7 +17,7 @@ function _init()
   end
   car = stack.new({"SL0", "SL1", "SL2"}, {w = 16, h = 16, spacing = 2, scale = 1, steps = 8})
   pond = water.new({x = 0, y = 200, w = 480, springs = 24, colour = 0x2060C0, deep = 0x103060, depth = 100})
-  rd = road.new({layer = 1, row = 0, map_w = 128, horizon = 48, stripe_pal = {{1, 0x3C9C3C, 0x2C7C2C}}})
+  rd = road.new({layer = 1, row = 5, map_w = 128, horizon = 48, stripe_pal = {{1, 0x3C9C3C, 0x2C7C2C}}})
   rd:add(400, 0) rd:add(300, 2) rd:add(300, -2)
 end
 

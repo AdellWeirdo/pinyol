@@ -341,8 +341,8 @@ void midi_stop(int fade_ms) {
     if (S.on) {
         release_all(false); /* the notes let go over their release, not cut */
         S.on = false;
+        audio_music_clock_locked(0); /* (only when a song of notes was the clock's: a WAV song queued for its bar line keeps its time) */
     }
-    audio_music_clock_locked(0);
     hal_audio_unlock();
 }
 

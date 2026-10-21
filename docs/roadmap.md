@@ -34,6 +34,13 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
   píxel en `tests/looks_check.py`. **No hecho:** dither de ruido azul, visibilidad 2D, silueta tras paredes, cleanEdge,
   Voxel Space, luz normal por paleta, mallas 3D.
 
+- **Fase 4, hecho:** música adaptativa (`music(id, fade, {bar, beats, loop_at, layers, at = "bar"})`: la canción nueva
+  espera aparcada y el mezclador la cambia en la línea de compás; `music_beat()`, `music_queued()`), `lib/brain` (IA de
+  utilidad), `lib/rng` (Squirrel noise, flujos por semilla, fbm), `lib/gen` (cuevas, BSP, paseo, salas de Spelunky,
+  `connected`), `lib/chain` (cadenas, patas que dan pasos, FABRIK, dos huesos), `lib/steer` (seek/flee/arrive/wander/
+  pursue/separate/flock y un hash espacial), `grid`: `l:scale`, `l:mix`, `g:rescan` (mapas de huida de Brogue).
+  **No hecho:** XM/S3M (micromod), voz FM, importar `.uge`/FamiStudio, marcadores en WAV.
+
 ## Fase 0 · Memoria y rendimiento
 
 Lo que más limita es la RAM interna (la radio pide 27 KB). Criterio de salida: ≥ 40 KB internos libres con radio y

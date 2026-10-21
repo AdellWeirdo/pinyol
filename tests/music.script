@@ -1,0 +1,28 @@
+# music() told its bar: music_beat() counts bars and beats as the player hears them; a song with at = "bar" waits for the
+# bar line of the one playing and starts there (music_queued() meanwhile); music() with nothing stops it all
+new
+expect_lua music_beat() == nil
+lua music("BEAT", 0, {bar = 0.5, beats = 2})
+tick 3
+lua bar, beat, frac = music_beat()
+expect_lua bar == 1 and beat == 1 and frac >= 0 and frac < 1
+tick 20
+lua bar, beat, frac = music_beat()
+expect_lua bar == 1 and beat == 2
+lua music("BEAT", 0, {at = "bar", bar = 0.5, beats = 2})
+expect_lua music_queued() == true
+tick 2
+expect_lua music_queued() == true and music_time() > 0.3
+tick 10
+expect_lua music_queued() == false and music_time() < 0.25
+lua music("BEAT", 0, {at = "bar"})
+expect_lua music_queued() == true
+lua music()
+expect_lua music_queued() == false
+tick 2
+expect_lua music_beat() == nil
+# the stop lands on the bar line and fades: once it is gone, a song with at = "bar" starts at once
+tick 70
+lua music("BEAT", 0, {at = "bar", bar = 0.5})
+expect_lua music_queued() == false and music_time() ~= nil
+expect_ok

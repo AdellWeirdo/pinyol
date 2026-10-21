@@ -34,3 +34,12 @@ expect_lua_error grid(300, 5)
 expect_lua_error g:set(0, 0, 256)
 expect_lua_error g:path("a", 0, 1, 1)
 expect_ok
+# a flee map (Brogue): the distance field from the goal, scaled by -1.2 and rescanned, leads away from it, and
+# descending it from near the goal ends far from it; scale and mix change the cells
+lua df = g:distances(9, 6) fl = df fl:scale(-1.2) flee = g:rescan(fl)
+expect_lua flee:get(9, 6) ~= nil and flee:get(0, 0) < flee:get(9, 6)
+lua x, y = 8, 6 for _ = 1, 40 do local dx, dy = flee:descend(x, y) if dx == 0 and dy == 0 then break end x, y = x + dx, y + dy end
+expect_lua math.abs(x - 9) + math.abs(y - 6) > 4
+lua mix = g:layer(1) mix:mix(g:distances(9, 6), 2)
+expect_lua mix:get(9, 6) == 1 and mix:get(0, 0) == 31
+expect_lua_error g:rescan(grid(3, 3):layer())

@@ -298,6 +298,9 @@ static int l_music_layer(lua_State *L) {
 }
 
 /* music(id [, fade_ms]) loops audio/<id>.mod (a tracker module) or audio/<id>.wav; music() stops it */
+static float song_bar; /* the song's bar in seconds and beats a bar, as music() was told, for music_beat() */
+static int song_beats = 4;
+
 static int l_music(lua_State *L) {
     int fade = (int)luaL_optinteger(L, 2, lua_isnoneornil(L, 1) ? 500 : 300);
     if (lua_isnoneornil(L, 1)) {
@@ -305,6 +308,7 @@ static int l_music(lua_State *L) {
         mod_stop(fade);
         midi_stop(fade);
         audio_music_clock(0);
+        song_bar = 0;
         return 0;
     }
     const char *id = luaL_checkstring(L, 1);
@@ -336,12 +340,50 @@ static int l_music(lua_State *L) {
         if (!midi_play(id, bank, loop, volume, fade)) audio_music_clock(0);
         return 0;
     }
-    static const float all[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+    /* a WAV or SPUM: music("SONG", fade, {bar = seconds, beats = 4, loop_at = seconds, layers = {1, 0, 0}, at = "bar"}):
+     * `bar` is the length of a bar, so changes of layers and songs (at = "bar") land on bar lines, and music_beat() counts
+     * beats (`beats` a bar); `loop_at` where the song goes back to; `layers` each channel's gain at the start; at = "bar"
+     * starts it on the next bar line of the song playing (iMUSE's transitions), else now */
+    float gains[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+    float bar = 0, loop_at = 0;
+    int beats = 4;
+    bool at_bar = false;
+    if (lua_istable(L, 3)) {
+        bar = opt_float(L, 3, "bar", 0, 0, 60), loop_at = opt_float(L, 3, "loop_at", 0, 0, 3600);
+        beats = (int)opt_int(L, 3, "beats", 4);
+        const char *at = opt_str(L, 3, "at");
+        at_bar = at && !strcmp(at, "bar");
+        lua_getfield(L, 3, "layers");
+        if (lua_istable(L, -1))
+            for (int k = 0; k < 8; k++) {
+                lua_rawgeti(L, -1, k + 1);
+                gains[k] = lua_isnumber(L, -1) ? fin(lua_tonumber(L, -1)) : 0;
+                lua_pop(L, 1);
+            }
+        lua_pop(L, 1);
+    }
     midi_stop(fade);
     mod_stop(fade);
-    if (safe_name(id)) audio_music_start(id, 0, 0, all, fade);
+    if (safe_name(id)) {
+        const int n = at_bar ? audio_music_queue(id, loop_at, bar, gains, fade) : audio_music_start(id, loop_at, bar, gains, fade);
+        if (n) song_bar = bar, song_beats = beats < 1 ? 1 : beats;
+    }
     return 0;
 }
+
+/* music_beat() -> bar, beat, fraction: where the song is (bars and beats counted from 1, the fraction of the beat gone), as
+ * the player hears it; nil when no song plays or music() was not told its bar. Notes on the beat, a dancer in step. */
+static int l_music_beat(lua_State *L) {
+    double t;
+    if (!(song_bar > 0) || !audio_music_time(&t)) return lua_pushnil(L), 1;
+    const double bars = t / song_bar, beat = (bars - floor(bars)) * song_beats;
+    lua_pushinteger(L, (lua_Integer)floor(bars) + 1);
+    lua_pushinteger(L, (lua_Integer)floor(beat) + 1);
+    lua_pushnumber(L, beat - floor(beat));
+    return 3;
+}
+
+static int l_music_queued(lua_State *L) { lua_pushboolean(L, audio_music_queued()); return 1; } /* a song waits for the bar line */
 
 
 /* music_time() -> seconds into the song music() started, as the player hears it now (what is queued for the speaker
@@ -457,7 +499,7 @@ void sound_register(lua_State *L) {
     lua_pop(L, 1);
     static const luaL_Reg F[] = {{"sound", l_sound}, {"sfx", l_sfx}, {"bus", l_bus}, {"duck", l_duck}, {"instrument", l_instrument}, {"sfx_set", l_sfx_set}, {"sfx_stop", l_sfx_stop},
                                  {"sfx_on", l_sfx_on}, {"music", l_music}, {"music_layer", l_music_layer},
-                                 {"music_time", l_music_time},
+                                 {"music_time", l_music_time}, {"music_beat", l_music_beat}, {"music_queued", l_music_queued},
                                  {"tone", l_tone}, {"tone_set", l_tone_set}, {"note", l_note}, {"mic", l_mic},
                                  {"mic_record", l_mic_record}, {"volume", l_volume}, {"reverb", l_reverb}, {"music_pan", l_music_pan}, {"ambient", l_ambient}, {NULL, NULL}};
     lua_pushglobaltable(L);

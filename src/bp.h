@@ -444,6 +444,8 @@ bool midi_playing(void);
 void midi_tick(int m); /* in audio_mix: the m samples of the song that follow */
 void midi_reset(void);
 int audio_music_start(const char *cue, float loop_at_s, float bar_s, const float *gains, int fade_ms);
+int audio_music_queue(const char *cue, float loop_at_s, float bar_s, const float *gains, int fade_ms); /* the same, on the next bar line of the song playing */
+bool audio_music_queued(void);                                                                      /* a song waits for the bar line */
 void audio_music_layer(int stem, float gain, int fade_ms);
 void audio_music_stop(int fade_ms);
 bool audio_music_playing(void);

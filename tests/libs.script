@@ -78,3 +78,57 @@ expect_lua abuela:say("h") == false and abuela:say("o") == true and abuela:say("
 lua abuela:reset() said = 0 r = rich.new("hola mundo", {speed = 1, blip = function(ch) if abuela:say(ch) then said = said + 1 end end})
 lua for i = 1, 12 do r:update() end
 expect_lua said == 4
+# brain: the best-scoring action, kept unless another beats it by the margin; enter, update and exit run; force
+lua e = {hp = 10, near = false, log = {}}
+lua b = brain.new({flee = {score = function(x) return x.hp < 3 and 1 or 0 end, enter = function(x) x.log[#x.log + 1] = "flee" end}, attack = {score = function(x) return x.near and 0.8 or 0 end, update = function(x) x.hits = (x.hits or 0) + 1 end}, wander = {score = 0.1, exit = function(x) x.log[#x.log + 1] = "left wander" end}}, {every = 5, stick = 0.15})
+lua b:update(e)
+expect_lua b.current == "wander" and b:think(e) == "wander"
+lua e.near = true for i = 1, 6 do b:update(e) end
+expect_lua b.current == "attack" and e.hits >= 1 and e.log[1] == "left wander"
+lua e.hp = 2 for i = 1, 6 do b:update(e) end
+expect_lua b.current == "flee" and e.log[2] == "flee" and b.since >= 1
+lua b:force("wander", e)
+expect_lua b.current == "wander"
+# rng: a seed gives the same numbers again, another seed others; ranges hold; hash is a function of its index
+lua r1, r2, r3 = rng.new(7), rng.new(7), rng.new(8) a, b2, c = r1:int(1, 6), r2:int(1, 6), r3:int(1, 6)
+expect_lua a == b2 and a >= 1 and a <= 6
+lua same = true for i = 1, 50 do if r1:int(100) ~= r2:int(100) then same = false end end
+expect_lua same
+lua ok = true for i = 1, 200 do local v = r3:float(2, 5) if v < 2 or v >= 5 then ok = false end end
+expect_lua ok and rng.hash(5, 1) == rng.hash(5, 1) and rng.hash(5, 1) ~= rng.hash(6, 1) and rng.hash(3) < 1
+lua t = {1, 2, 3, 4, 5} r3:shuffle(t) sum = 0 for _, v in ipairs(t) do sum = sum + v end
+expect_lua sum == 15 and r3:pick({"a"}) == "a" and math.abs(rng.fbm(1.5, 2.5)) <= 1
+# gen: caves have open cells and a solid border; bsp has rooms, all joined; a walk tunnels; spelunky's rooms make a path
+lua m = gen.caves(40, 30, {seed = 3})
+expect_lua m:count(0) > 100 and m:get(0, 0) == 1 and m:get(39, 29) == 1 and m:get(-1, 5) == 1
+lua m2 = gen.bsp(50, 40, {seed = 5}) before = m2:count(0) gen.connected(m2)
+expect_lua rawlen(m2.rooms) >= 2 and m2:count(0) == before
+lua m3 = gen.walk(30, 30, {seed = 2, steps = 400})
+expect_lua m3:count(0) > 50 and m3:get(15, 15) == 0
+lua rooms = gen.spelunky(4, 4, {seed = 9}) drops = 0 for y = 1, 4 do for x = 1, 4 do if rooms[y][x] == 2 then drops = drops + 1 end end end
+expect_lua drops == 3
+# chain: the body follows the head keeping its links' length and bend; a two-bone elbow keeps both lengths; FABRIK reaches
+lua w = chain.new(6, 8, {bend = 30, x = 100, y = 100}) w:follow(120, 100) w:follow(130, 110)
+lua d = math.sqrt((w.points[1].x - w.points[2].x) ^ 2 + (w.points[1].y - w.points[2].y) ^ 2)
+expect_lua math.abs(d - 8) < 1e-3 and w.points[1].x == 130
+lua ex, ey = chain.two_bone(0, 0, 10, 10, 12, 0)
+expect_lua math.abs(math.sqrt(ex * ex + ey * ey) - 10) < 1e-3 and math.abs(math.sqrt((ex - 12) ^ 2 + ey ^ 2) - 10) < 1e-3
+lua pts = {{x = 0, y = 0}, {x = 10, y = 0}, {x = 20, y = 0}, {x = 30, y = 0}} reached = chain.fabrik(pts, {10, 10, 10}, 15, 15)
+expect_lua reached and math.abs(pts[4].x - 15) < 0.5 and math.abs(pts[4].y - 15) < 0.5 and pts[1].x == 0
+lua leg = chain.leg({hip = w.points[2], len = 10, side = 1, stride = 6}) for i = 1, 30 do w:follow(130 + i * 2, 110) leg:update() end
+expect_lua leg.steps >= 1
+# steer: seek moves towards the target, flee away, arrive stops near it, flocking keeps birds apart
+lua e = {x = 0, y = 0, vx = 0, vy = 0, max_speed = 2, max_force = 0.5} for i = 1, 30 do steer.apply(e, steer.seek(e, 100, 0)) end
+expect_lua e.x > 30 and math.abs(e.y) < 1
+lua f = {x = 50, y = 0, vx = 0, vy = 0, max_speed = 2, max_force = 0.5} for i = 1, 20 do steer.apply(f, steer.flee(f, 0, 0)) end
+expect_lua f.x > 60
+lua a = {x = 0, y = 0, vx = 0, vy = 0, max_speed = 3, max_force = 0.3} for i = 1, 300 do steer.apply(a, steer.arrive(a, 100, 50, 40)) end
+expect_lua math.abs(a.x - 100) < 2 and math.abs(a.y - 50) < 2 and math.abs(a.vx) < 0.5
+lua birds = {} for i = 1, 20 do birds[i] = {x = 100 + i, y = 100 + (i % 3) * 2, vx = 1, vy = 0, max_speed = 2, max_force = 0.2} end
+lua for t = 1, 60 do for _, bd in ipairs(birds) do steer.apply(bd, steer.flock(bd, birds, {radius = 30})) end end
+lua close = 0 for i = 1, 20 do for j = i + 1, 20 do if math.abs(birds[i].x - birds[j].x) + math.abs(birds[i].y - birds[j].y) < 2 then close = close + 1 end end end
+expect_lua close < 10
+lua h = steer.hash(32) h:rebuild(birds) near = h:near(birds[1], 32)
+expect_lua rawlen(near) >= 1
+lua wv = {x = 0, y = 0, vx = 1, vy = 0, max_speed = 2, max_force = 0.2} for i = 1, 10 do steer.apply(wv, steer.wander(wv)) end
+expect_lua wv.x > 0

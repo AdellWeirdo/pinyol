@@ -292,6 +292,30 @@ static int g_distances(lua_State *L) { /* g:distances(x, y | {{x, y}, ...} [, {d
     return 1;
 }
 
+/* g:rescan(layer [, {diagonal}]) -> a layer: each cell's value made no more than the cheapest neighbour's plus the step,
+ * starting from the layer's own values (Brogue's Dijkstra maps: a distance field scaled by -1.2 and rescanned is a map
+ * that leads away from the hero and into corners to hide, not straight into a wall). Cells at nil (unreachable) stay. */
+static int g_rescan(lua_State *L) {
+    grid *g = check_grid(L);
+    layer *o = luaL_checkudata(L, 2, "pinyol.layer");
+    if (o->w != g->w || o->h != g->h) return luaL_error(L, "grid rescan: the layer is not the grid's size");
+    int cells = g->w * g->h;
+    bool diag = diagonal_opt(L, 3);
+    float lo = 0;
+    for (int i = 0; i < cells; i++)
+        if (!isinf(o->v[i]) && o->v[i] < lo) lo = o->v[i]; /* the search wants costs from 0: shifted up, then back */
+    if (!s_begin(cells, -1, -1, diag)) return luaL_error(L, "grid rescan: out of memory");
+    for (int i = 0; i < cells; i++)
+        if (!isinf(o->v[i]) && g->cost[i]) relax(i, i % g->w, i / g->w, (int32_t)lroundf((o->v[i] - lo) * STRAIGHT), -1);
+    run(g, FAR - 255 * DIAGONAL);
+    layer *l = new_layer(L, 1, 0);
+    for (int i = 0; i < cells; i++) {
+        int32_t d = dist_of(i);
+        l->v[i] = d == FAR ? HUGE_VALF : d / (float)STRAIGHT + lo;
+    }
+    return 1;
+}
+
 static int l_get(lua_State *L) {
     layer *l = check_layer(L);
     int x, y;
@@ -320,6 +344,23 @@ static int l_fill(lua_State *L) {
     layer *l = check_layer(L);
     float v = fin(luaL_checknumber(L, 2));
     for (int i = 0; i < l->w * l->h; i++) l->v[i] = v;
+    return 0;
+}
+
+static int l_scale(lua_State *L) { /* l:scale(k): every cell times k (a distance field times -1.2 is the start of a flee map) */
+    layer *l = check_layer(L);
+    float k = fin(luaL_checknumber(L, 2));
+    for (int i = 0; i < l->w * l->h; i++)
+        if (!isinf(l->v[i])) l->v[i] = fin(l->v[i] * k);
+    return 0;
+}
+
+static int l_mix(lua_State *L) { /* l:mix(other [, w]): other's cells added, times w (1): several wants into one map */
+    layer *l = check_layer(L), *o = luaL_checkudata(L, 2, "pinyol.layer");
+    float w = lua_isnoneornil(L, 3) ? 1 : fin(luaL_checknumber(L, 3));
+    if (o->w != l->w || o->h != l->h) return luaL_error(L, "layer mix: the layers are not the same size");
+    for (int i = 0; i < l->w * l->h; i++)
+        if (!isinf(l->v[i]) && !isinf(o->v[i])) l->v[i] = fin(l->v[i] + o->v[i] * w);
     return 0;
 }
 
@@ -386,9 +427,9 @@ static void meta(lua_State *L, const char *name, const luaL_Reg *m) {
 }
 
 void grid_register(lua_State *L) {
-    static const luaL_Reg G[] = {{"set", g_set}, {"get", g_get}, {"size", g_size}, {"path", g_path},
+    static const luaL_Reg G[] = {{"set", g_set}, {"get", g_get}, {"size", g_size}, {"path", g_path}, {"rescan", g_rescan},
                                  {"reach", g_reach}, {"distances", g_distances}, {"layer", g_layer}, {NULL, NULL}};
-    static const luaL_Reg Y[] = {{"get", l_get}, {"set", l_set}, {"add", l_add}, {"fill", l_fill},
+    static const luaL_Reg Y[] = {{"get", l_get}, {"set", l_set}, {"add", l_add}, {"fill", l_fill}, {"scale", l_scale}, {"mix", l_mix},
                                  {"spread", l_spread}, {"climb", l_climb}, {"descend", l_descend}, {NULL, NULL}};
     meta(L, "pinyol.grid", G);
     meta(L, "pinyol.layer", Y);
