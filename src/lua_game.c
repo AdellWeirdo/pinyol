@@ -22,6 +22,7 @@
 #include "lua_prof.h"
 #include "conf.h"
 #include "gfx_px.h"
+#include "played.h"
 #include "post.h"
 #include "sysmenu.h"
 
@@ -1293,6 +1294,36 @@ void v2_menu_event(const char *fn) {
     if (Ls && !failed) call(fn, 0);
 }
 
+/* achieve(id) -> true the first time: an achievement of the game earned (game.json "achievements": [{"id", "name",
+ * "description"}, ...]), kept by the console with the game's record (played.c), for its menu and the Library's shelf.
+ * achievements() -> the list, each {id, name, description, done}. */
+static int l_achieve(lua_State *L) {
+    const char *id = luaL_checkstring(L, 1), *game = jstr(G.game, "id");
+    const cJSON *list = jget(G.game, "achievements"), *it;
+    bool known = false;
+    cJSON_ArrayForEach(it, list) if (cJSON_IsObject(it) && jstr(it, "id") && !strcmp(jstr(it, "id"), id)) known = true;
+    if (!known) return luaL_error(L, "achieve: game.json lists no achievement \"%s\"", id);
+    lua_pushboolean(L, game && played_achieve(game, id));
+    return 1;
+}
+
+static int l_achievements(lua_State *L) {
+    const char *game = jstr(G.game, "id");
+    const cJSON *list = jget(G.game, "achievements"), *it;
+    lua_newtable(L);
+    int n = 0;
+    cJSON_ArrayForEach(it, list) {
+        if (!cJSON_IsObject(it) || !jstr(it, "id")) continue;
+        lua_createtable(L, 0, 4);
+        lua_pushstring(L, jstr(it, "id")), lua_setfield(L, -2, "id");
+        lua_pushstring(L, jstr(it, "name") ? jstr(it, "name") : jstr(it, "id")), lua_setfield(L, -2, "name");
+        lua_pushstring(L, jstr(it, "description") ? jstr(it, "description") : ""), lua_setfield(L, -2, "description");
+        lua_pushboolean(L, game && played_achieved(game, jstr(it, "id"))), lua_setfield(L, -2, "done");
+        lua_rawseti(L, -2, ++n);
+    }
+    return 1;
+}
+
 static int l_settings(lua_State *L) { /* settings() -> the console's settings: volume, reduce_flashing, colour, speed, lang, swap_ab */
     static const char *const COL[] = {"normal", "protan", "deutan", "tritan"};
     lua_createtable(L, 0, 6);
@@ -1668,7 +1699,7 @@ static void api(lua_State *L) {
         {"mat", l_mat}, {"show", l_show}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off},
         {"window", l_window}, {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow},
         {"mosaic", l_mosaic}, {"noise", l_noise},
-        {"quit", l_quit}, {"menuitem", l_menuitem}, {"settings", l_settings}, {"perf", l_perf}, {"store", l_store}, {"stored", l_stored}, {"load", l_load}, {"log", l_log},
+        {"quit", l_quit}, {"menuitem", l_menuitem}, {"settings", l_settings}, {"achieve", l_achieve}, {"achievements", l_achievements}, {"perf", l_perf}, {"store", l_store}, {"stored", l_stored}, {"load", l_load}, {"log", l_log},
         {"print", l_log}, {"require", l_require}, {"file", l_file}, {"powered_by", l_powered_by}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);

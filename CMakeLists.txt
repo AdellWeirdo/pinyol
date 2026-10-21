@@ -361,6 +361,11 @@ if(Python3_FOUND)
 endif()
 # the console's menu (a game too) lists the examples as the console lists its games
 set_tests_properties(script_cirera PROPERTIES ENVIRONMENT "PINYOL_GAMES=${CMAKE_CURRENT_SOURCE_DIR}/examples")
+# the console's record (played.json) lives in PINYOL_HOME for this test, fresh each run
+set_tests_properties(script_trophies PROPERTIES ENVIRONMENT "PINYOL_HOME=${CMAKE_BINARY_DIR}/home_trophies")
+add_test(NAME trophies_fresh COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_BINARY_DIR}/home_trophies)
+set_tests_properties(trophies_fresh PROPERTIES FIXTURES_SETUP trophies_home)
+set_tests_properties(script_trophies PROPERTIES FIXTURES_REQUIRED trophies_home)
 # a canvas shown turned, changed every frame, must look different from one frame to the next (not a kept copy)
 add_test(NAME turned_canvas COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/turned \
   --saves ${CMAKE_BINARY_DIR}/saves_turned_crc --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/turned.script \

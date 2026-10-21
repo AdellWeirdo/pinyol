@@ -35,11 +35,24 @@ function _init()
   sound("EDGE", {wave = "square", freq = 220, sustain = 0.01, decay = 0.06, volume = 0.12})
   local last, cold
   GAMES, last, cold = console_games()
+  local played = console_played() -- the console's record: plays, time, favourites, achievements
+  local last_id = last and GAMES[last] and GAMES[last].id
   for i, g in ipairs(GAMES) do
     g.color = CARDS[(i - 1) % #CARDS + 1]
     g.look = g.subtitle ~= "" and g.subtitle or (g.flash and "En la memoria" or "En la tarjeta")
+    g.order = i
+    local p = played[g.id]
+    g.plays, g.seconds, g.seq, g.fav = p and p.plays or 0, p and p.seconds or 0, p and p.seq or 0, p and p.fav or false
+    g.done = p and p.done and rawlen(p.done) or 0
   end
-  sel = last or 1
+  -- favourites first, then the ones played most recently, then the list's own order
+  table.sort(GAMES, function(a, b)
+    if a.fav ~= b.fav then return a.fav end
+    if a.seq ~= b.seq then return a.seq > b.seq end
+    return a.order < b.order
+  end)
+  sel = 1
+  for i, g in ipairs(GAMES) do if g.id == last_id then sel = i end end
   pos = sel
   SLOTS = math.min(SLOTS, math.max(1, #GAMES))
   if not cold then state, enter = "list", 1 end -- back from a game: straight to its cover
@@ -145,6 +158,11 @@ local function update_list()
   end
   if btnp("b") then asking = true end
   if #GAMES == 0 then return end -- (nothing to move through or open; B still asks to switch off)
+  if btnp("c") then -- a favourite, or not: it goes to the front next time the console wakes
+    local g = GAMES[sel]
+    g.fav = console_favourite(g.id, not g.fav)
+    sfx("TICK")
+  end
   if btnp("left", 18, 6) or btnp("up", 18, 6) then move(-1) end
   if btnp("right", 18, 6) or btnp("down", 18, 6) then move(1) end
   local x, _, _, tapped = touch()
@@ -207,10 +225,18 @@ local function draw_footer(g)
   text(g.title, 240, 228, {font = "title", align = "center", color = PAPER})
   local look = g.look:upper()
   local extra = (g.flash and not g.music) and "  ·  SIN MÚSICA" or ""
+  if g.fav then look = "* " .. look end
+  if g.plays > 0 then -- the console's record: how often, how long, the achievements
+    local mins = math.floor(g.seconds / 60 + 0.5)
+    local t = g.plays == 1 and "1 PARTIDA" or (g.plays .. " PARTIDAS")
+    if mins >= 1 then t = t .. "  ·  " .. (mins >= 120 and (math.floor(mins / 60) .. " H") or (mins .. " MIN")) end
+    if g.done > 0 then t = t .. "  ·  " .. g.done .. (g.done == 1 and " LOGRO" or " LOGROS") end
+    extra = extra .. "  ·  " .. t
+  end
   local w1 = textw(look, "label")
   local w2 = extra ~= "" and textw(extra, "label") or 0
   local x0 = 240 - (w1 + w2) // 2
-  text(look, x0, 260, {font = "label", color = DIM})
+  text(look, x0, 260, {font = "label", color = g.fav and GOLD or DIM})
   if extra ~= "" then text(extra, x0 + w1, 260, {font = "label", color = GOLD}) end
   local n, track = #GAMES, 200 -- where it is in the row: a thin track and a cherry pill on it (two calls, not n)
   local pill = math.max(10, track // n)

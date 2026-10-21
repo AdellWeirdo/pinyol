@@ -1,0 +1,18 @@
+# achieve() the first time only; achievements() with done; the console's record counts plays and seconds and keeps
+# favourites, in PINYOL_HOME (CMake sets it for this test)
+new
+expect_lua achievements()[1].id == "first" and achievements()[1].done == false and achievements()[2].name == "Diez"
+press A
+expect_lua got == true and achievements()[1].done == true
+press A
+expect_lua got == false
+expect_lua achieve("ten") == true and achieve("ten") == false
+expect_lua_error achieve("nope")
+expect_lua console_favourite("trophies") == false and console_favourite("trophies", true) == true and console_favourite("trophies") == true
+expect_lua console_played().trophies.fav == true and rawlen(console_played().trophies.done) == 2
+# the play is counted from its start (the time played is added when it ends: played.json in PINYOL_HOME after the run)
+expect_lua console_played().trophies.plays == 1 and console_played().trophies.seq == 1
+tick 60
+new
+expect_lua achievements()[1].done == true and console_played().trophies.plays == 1
+expect_ok

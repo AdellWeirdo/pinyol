@@ -1,0 +1,2 @@
+{"id": "trophies", "title": "Trophies", "engine": "pinyol@2", "main": "main.lua",
+ "achievements": [{"id": "first", "name": "Primer paso", "description": "Pulsa A"}, {"id": "ten", "name": "Diez", "description": "Diez ticks"}]}

@@ -5,6 +5,7 @@
 
 #include "bp.h"
 #include "conf.h"
+#include "played.h"
 #include "record.h"
 #include "sysmenu.h"
 #include "compat.h"
@@ -74,6 +75,7 @@ bool game_init(const bp_config *cfg) {
     else snprintf(G.save_dir, sizeof G.save_dir, "%s/saves", cfg->game_dir);
     mkdir(G.save_dir, 0755);
     bool ok = content_load();
+    played_begin(jstr(G.game, "id")); /* the console's record: a play more when it ends */
     char path[384];
     struct { font *f; const char *file; } fonts[] = {
         {&G.font, "FONT_MAIN"}, {&G.font_l, "FONT_MAIN_L"}, {&G.bold, "FONT_BOLD"}, {&G.bold_l, "FONT_BOLD_L"}};
@@ -96,6 +98,7 @@ bool game_init(const bp_config *cfg) {
 }
 
 void game_shutdown(void) {
+    played_end(G.ticks);
     v2_free();
     arena_free();
     audio_reset();

@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include "lua_api.h"
+#include "played.h"
 
 #define MAX_GAMES 64
 
@@ -76,7 +77,41 @@ static int l_console_version(lua_State *L) {
     return 1;
 }
 
+static void push_json(lua_State *L, const cJSON *j) { /* a cJSON value as a Lua value */
+    if (cJSON_IsObject(j)) {
+        lua_newtable(L);
+        const cJSON *it;
+        cJSON_ArrayForEach(it, j) { push_json(L, it); lua_setfield(L, -2, it->string); }
+    } else if (cJSON_IsArray(j)) {
+        lua_newtable(L);
+        int i = 1;
+        const cJSON *it;
+        cJSON_ArrayForEach(it, j) { push_json(L, it); lua_rawseti(L, -2, i++); }
+    } else if (cJSON_IsString(j)) lua_pushstring(L, j->valuestring);
+    else if (cJSON_IsNumber(j)) lua_pushnumber(L, j->valuedouble);
+    else if (cJSON_IsBool(j)) lua_pushboolean(L, cJSON_IsTrue(j));
+    else lua_pushnil(L);
+}
+
+/* console_played() -> {id = {plays, seconds, last, seq, fav, done = {...}}, ...}: the console's record of its games (played.c) */
+static int l_console_played(lua_State *L) {
+    cJSON *j = cJSON_Parse(played_json());
+    if (!cJSON_IsObject(j)) { cJSON_Delete(j); lua_newtable(L); return 1; }
+    cJSON_DeleteItemFromObjectCaseSensitive(j, "_seq");
+    push_json(L, j);
+    cJSON_Delete(j);
+    return 1;
+}
+
+static int l_console_favourite(lua_State *L) { /* console_favourite(id [, bool]) -> bool: asks, or sets */
+    const char *id = luaL_checkstring(L, 1);
+    lua_pushboolean(L, played_favourite(id, lua_isnoneornil(L, 2) ? -1 : lua_toboolean(L, 2)));
+    return 1;
+}
+
 void console_register(lua_State *L) {
+    lua_register(L, "console_played", l_console_played);
+    lua_register(L, "console_favourite", l_console_favourite);
     lua_register(L, "console_games", l_console_games);
     lua_register(L, "console_cover", l_console_cover);
     lua_register(L, "console_launch", l_console_launch);

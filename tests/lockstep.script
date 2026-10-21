@@ -1,0 +1,21 @@
+# lockstep: a console (0x42) joins; the game starts from known empty frames, then waits for its frames and runs them in step
+new
+tick 2
+link_from 42 {"f":0,"i":[]}
+tick 1
+expect_lua started == true and rawlen(ls.players) == 2 and ls.me ~= 0
+# the first `delay` frames (6 ticks) are known: the game runs them; after, it waits for 0x42's frame 3
+tick 8
+expect_lua ran == 6 and ls.waiting >= 1
+expect_link_sent "f":
+# 0x42's frame 3 (3 ticks of RIGHT) and 4 arrive, with earlier ones repeated: the game runs on, with its RIGHTs
+link_from 42 {"f":4,"i":[[0,0,0],[8,8,8],[0,0,0]]}
+tick 6
+expect_lua ran == 12 and pos[0x42] == 3 and ls.lag >= 0
+# mine are LEFT for a frame (the sixth I sample, sent as frame 8: two frames of delay): the game reaches it once 0x42's
+# frames up to 8 are in, and then my three LEFTs count
+hold LEFT 3
+link_from 42 {"f":8,"i":[[0,0,0],[0,0,0],[0,0,0],[0,0,0]]}
+tick 13
+expect_lua pos[link.id()] == -3 and ls.tick == 24
+expect_ok

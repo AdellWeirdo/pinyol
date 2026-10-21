@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <sys/stat.h>
 /* Headless HAL: logs to stderr, no audio device (so no lock is needed). */
 #include <stdarg.h>
 #include <stdio.h>
@@ -49,6 +50,14 @@ bool hal_game_cover(const char *id, uint16_t *px, int w, int h) {
 void hal_launch(const char *id) { hal_log("console: launch %s", id); }
 void hal_power_off(void) { hal_log("console: off"); }
 const char *hal_firmware(void) { return "escritorio"; }
+
+bool hal_console_dir(char *path, size_t n) { /* only when asked: $PINYOL_HOME (tests of the console's record); else the defaults */
+    const char *home = getenv("PINYOL_HOME");
+    if (!home || !*home) return false;
+    snprintf(path, n, "%s", home);
+    mkdir(path, 0755);
+    return true;
+}
 
 /* The link (src/link.c): by default a quiet air, where tests make other consoles speak (script: link_from);
  * BP_LINK=udp joins the desktop's real one (platform/link_udp.c), so headless runs can play each other. */
