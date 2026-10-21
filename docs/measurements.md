@@ -486,3 +486,14 @@ The ROM's driver lacks only `SPI_FLASH_AUTO_SUSPEND` (off here). Not yet run on 
 a game sent over the cable, an OTA and `examples/juntos` with the radio, and the frame time of a strip-heavy game
 (FreeRTOS's queue and semaphore calls now run from flash). A checkout with its own `firmware/sdkconfig` keeps the old
 values until it is made again (`rm sdkconfig`, or `idf.py reconfigure` after deleting the lines). CI's floor is now 90000.
+
+## 2026-10-21 · The vector unit for runs of one colour mixed in
+
+A box of one colour seen through, added or taken away (a fade, a flash, a dialogue's backing: `gfx_grad` with one colour and
+no dither) now mixes its runs with `span_mix_const` (src/gfx_span.c): in C everywhere, and on the console with the S3's
+128-bit vector unit (PIE, `ee.*`), eight pixels an iteration, following Jet's constant blend (MIT). Both give the pixels of
+the general mixing: `span_test` checks the C one against `mix565`/`blend_held` for every pixel under, and `tests/pie/run.sh`
+runs the vector one against the C one in Espressif's QEMU (4000 random runs, every alignment, length, mode and byte order:
+the same). **Not measured on the board yet**: Jet reports its RGB565 constant blend several times faster than C on an S3;
+the smooth `transition` fade (a mixed full-screen box, 12.3 ms of strips) is the scene to time. ESP-IDF saves the vector
+registers lazily per task (`_xt_coproc_sa_offset`), so both cores' strip tasks may use them.

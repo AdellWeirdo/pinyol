@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include "gfx_px.h"
+#include "gfx_span.h"
 
 /* The PlayStation's 4x4 dither, in 8-bit steps added before a colour is cut to 5 bits (psx-spx, "GPU Rendering
  * Attributes"): lit pixels lose their low bits unevenly instead of in bands. */
@@ -572,6 +573,21 @@ void gfx_grad(surface *s, int x, int y, int w, int h, const uint8_t c1[3], const
             }
         }
         return;
+    }
+    if (!dither && !step[0] && !step[1] && !step[2] && !s->canvas) { /* one colour (a fade, a box seen through, a flash): runs */
+        const uint16_t c = ramp565(first, step, 0, 0);
+        const int xs = step_x(s);
+        if (xs == 1) {
+            for (int j = 0; j < m; j++) span_mix_const(at(s, x + u0, y + v0 + j), n, c, alpha, mode, s->swap);
+            return;
+        }
+        if (ys == 1 || ys == -1) { /* a turned window (the console's strips): its columns are the runs */
+            for (int k = 0; k < n; k++) {
+                uint16_t *dst = at(s, x + u0 + k, y + v0);
+                span_mix_const(ys < 0 ? dst - (m - 1) : dst, m, c, alpha, mode, s->swap);
+            }
+            return;
+        }
     }
     /* mixed with what is there: each row's colour (and its 4 dither phases) made ready once a chunk of rows, as gfx_lines does
      * (a strip of haze over the sky was 300 ns a pixel on the console when each pixel worked out its colour and unpacked it) */

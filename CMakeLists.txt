@@ -166,6 +166,10 @@ add_executable(mod_test tests/mod_test.c platform/null/hal_null.c platform/link_
 target_compile_options(mod_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(mod_test pinyol_core)
 add_test(NAME mod COMMAND mod_test)
+add_executable(span_test tests/span_test.c platform/null/hal_null.c platform/link_udp.c)
+target_compile_options(span_test PRIVATE -Wall -Wextra -Werror ${SAN})
+target_link_libraries(span_test pinyol_core)
+add_test(NAME span COMMAND span_test) # one colour mixed into a run: the same pixels as the general mixing
 add_executable(synth_test tests/synth_test.c platform/null/hal_null.c platform/link_udp.c)
 target_compile_options(synth_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(synth_test pinyol_core)
