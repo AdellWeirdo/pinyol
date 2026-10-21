@@ -17,9 +17,39 @@ conf_t CONF;
 static uint16_t *lut; /* RGB555 -> RGB565 through the filter, while one is on */
 static int lut_colour;
 
-static const conf_t DEFAULTS = {.volume = 100, .reduce_flash = false, .colour = 0, .speed = 100, .lang = CONF_ES, .swap_ab = false};
+static const conf_t DEFAULTS = {.volume = 100, .reduce_flash = false, .colour = 0, .speed = 100, .lang = CONF_ES, .swap_ab = false,
+                                .buttons = "ABC", .sticky = false};
 static const char *const LANGS[] = {"es", "ca", "en"};
 static const char *const COLOURS[] = {"normal", "protan", "deutan", "tritan"};
+
+static bool button_map(const char *v) { /* three letters, each of A, B, C once: what the console's A, B and C do */
+    if (!v || strlen(v) != 3) return false;
+    int seen = 0;
+    for (int i = 0; i < 3; i++) {
+        const int k = v[i] - 'A';
+        if (k < 0 || k > 2 || (seen & (1 << k))) return false;
+        seen |= 1 << k;
+    }
+    return true;
+}
+
+uint16_t conf_input(uint16_t held, bool in_menu) {
+    static const uint16_t BIT[3] = {ACT_OK, ACT_BACK, ACT_NEXT}; /* A, B, C */
+    static uint16_t prev, latched; /* the sticky buttons: what was down last tick, and what a press left held */
+    uint16_t out = held & ~(ACT_OK | ACT_BACK | ACT_NEXT);
+    for (int p = 0; p < 3; p++)
+        if (held & BIT[p]) out |= BIT[CONF.buttons[p] - 'A'];
+    if (CONF.swap_ab) out = (uint16_t)((out & ~(ACT_OK | ACT_BACK)) | (out & ACT_OK ? ACT_BACK : 0) | (out & ACT_BACK ? ACT_OK : 0));
+    if (CONF.sticky && !in_menu) { /* a press latches the button, the next press lets it go; the platform's "held" is not seen */
+        const uint16_t abc = ACT_OK | ACT_BACK | ACT_NEXT, pressed = out & ~prev & abc;
+        prev = out;
+        latched ^= pressed;
+        out = (uint16_t)((out & ~abc) | latched);
+    } else {
+        prev = out, latched = 0;
+    }
+    return out;
+}
 
 const char *conf_lang_code(void) { return LANGS[CONF.lang]; }
 
@@ -58,6 +88,13 @@ bool conf_set(const char *key, const char *value) {
         if (!strcmp(value, "true")) CONF.swap_ab = true;
         else if (!strcmp(value, "false")) CONF.swap_ab = false;
         else return false;
+    } else if (!strcmp(key, "buttons")) {
+        if (!button_map(value)) return false;
+        snprintf(CONF.buttons, sizeof CONF.buttons, "%s", value);
+    } else if (!strcmp(key, "hold")) {
+        if (!strcmp(value, "toggle")) CONF.sticky = true;
+        else if (!strcmp(value, "press")) CONF.sticky = false;
+        else return false;
     } else {
         return false;
     }
@@ -85,6 +122,8 @@ void conf_load(void) {
             }
             if (jstr(j, "lang")) conf_set("lang", jstr(j, "lang"));
             if (cJSON_IsBool(jget(j, "swap_ab"))) CONF.swap_ab = cJSON_IsTrue(jget(j, "swap_ab"));
+            if (jstr(j, "buttons")) conf_set("buttons", jstr(j, "buttons"));
+            if (cJSON_IsBool(jget(j, "sticky"))) CONF.sticky = cJSON_IsTrue(jget(j, "sticky"));
         }
         cJSON_Delete(j);
     }
@@ -95,9 +134,9 @@ void conf_save(void) {
     char p[400];
     if (!conf_path(p, sizeof p)) return;
     char txt[256];
-    snprintf(txt, sizeof txt, "{\"volume\": %d, \"reduce_flash\": %s, \"colour\": \"%s\", \"speed\": %d, \"lang\": \"%s\", \"swap_ab\": %s}\n",
+    snprintf(txt, sizeof txt, "{\"volume\": %d, \"reduce_flash\": %s, \"colour\": \"%s\", \"speed\": %d, \"lang\": \"%s\", \"swap_ab\": %s, \"buttons\": \"%s\", \"sticky\": %s}\n",
              CONF.volume, CONF.reduce_flash ? "true" : "false", COLOURS[CONF.colour], CONF.speed, LANGS[CONF.lang],
-             CONF.swap_ab ? "true" : "false");
+             CONF.swap_ab ? "true" : "false", CONF.buttons, CONF.sticky ? "true" : "false");
     static char written[256]; /* the same again is not written (on the console's flash a write stalls both cores) */
     if (!strcmp(txt, written)) return;
     if (save_file_atomic(p, txt)) snprintf(written, sizeof written, "%s", txt);

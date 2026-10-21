@@ -602,3 +602,22 @@ The heat haze is on every frame on the square and the beach (22 rows), the rings
 240x160 picture copied first (76 KB, PSRAM to PSRAM) the render lost 1.3 ms a frame and the worst frames went past
 20 ms; copying the rows the effects read (the haze's own, each ring's reach) gives nearly all of it back. The 0.07 ms
 of tick are the rival's scores, the voices and `juice.update()`. Firmware D/IRAM left: 90222 B, as before.
+
+## 2026-10-22 · PALETA on the round, the crash's QR and the button map
+
+PALETA (the drops puzzle) on the console, its autopilot playing from level 5 for 50 s (driven over the cable:
+`lua:autopiloto = true; ir(5)`; a port opened after a game is sent resets the console into the menu, so the game is
+launched again first), old and new versions, the same levels won (5 to 10):
+
+| | tick (Lua) | `_update` / `_draw` | render | fps median / min | internal free |
+|---|---|---|---|---|---|
+| before | 3.05 ms | 3.00 / 1.60 ms | 15.47 ms | 51.6 / 49.8 | 69 KB |
+| after (juice, achievements, calm) | 3.24 ms | 3.20 / 1.64 ms | 15.34 ms | 51.5 / 50.3 | 68 KB |
+
+The 3 ms a tick are the autopilot's (it tries 24 placements of each pair, resolving a copy of the board for each);
+a player's hand costs 0.3 ms. The round's additions: 0.2 ms.
+
+The crash screen's QR (version ≤ 10, 2 px modules): a shot of the panel over the cable decodes with OpenCV
+(`cv2.QRCodeDetector` on the shot scaled 2x): "pinyol control: _update: script:1: prueba del QR..." The firmware's
+D/IRAM left stays at 90222 B (the QR's 407-byte buffer and the map live with the menu's state; the encoder's code is
+in flash).

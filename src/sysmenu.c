@@ -4,15 +4,18 @@
 #include <string.h>
 
 #include "conf.h"
+#include "qrcodegen.h"
 #include "sysmenu.h"
 
 #define TAP_TICKS 30     /* MENU let go within this: a tap */
 #define HOLD_OPEN 60     /* MENU held this long opens the menu whatever the game does with MENU */
 #define HOLD_QUIT 120    /* and this long goes to the list, as before there was a menu */
 #define MAX_ITEMS 3      /* the game's own */
+#define QR_VERSION 10    /* the crash's QR: up to 57 x 57 modules, 271 bytes of text at the lowest correction */
+#define QR_TEXT 240      /* bytes of the error in it */
 
 enum { PAGE_MAIN, PAGE_SETTINGS };
-enum { ROW_VOLUME, ROW_FLASH, ROW_COLOUR, ROW_SPEED, ROW_LANG, ROW_BUTTONS, ROWS_SETTINGS };
+enum { ROW_VOLUME, ROW_FLASH, ROW_COLOUR, ROW_SPEED, ROW_LANG, ROW_BUTTONS, ROW_HOLD, ROWS_SETTINGS };
 
 static struct {
     bool open, crashed, by_hold;
@@ -25,7 +28,11 @@ static struct {
     int nitems;      /* the game's own items, copied when the menu opens: the drawing runs on both of the console's cores
                         at once and must not touch the game's Lua state (it did, and the console aborted in luaD_throw) */
     char labels[MAX_ITEMS][40];
+    uint8_t qr[qrcodegen_BUFFER_LEN_FOR_VERSION(QR_VERSION)]; /* the crash as a QR code, to photograph with a phone */
+    int qr_size;     /* modules a side; 0 when there is none */
 } S;
+
+static const char *const MAPS[] = {"ABC", "ACB", "BAC", "BCA", "CAB", "CBA"}; /* the button maps, as the menu cycles them */
 
 /* What the menu says, in the console's language (es, ca, en) */
 static const char *const T_RESUME[] = {"Seguir", "Seguir", "Resume"};
@@ -45,8 +52,9 @@ static const char *const T_COLOUR_V[4][3] = {{"normales", "normals", "normal"}, 
 static const char *const T_SPEED[] = {"Velocidad", "Velocitat", "Speed"};
 static const char *const T_LANG[] = {"Idioma", "Idioma", "Language"};
 static const char *const T_LANG_V[] = {"Español", "Català", "English"};
-static const char *const T_BUTTONS[] = {"Botones", "Botons", "Buttons"};
-static const char *const T_BUTTONS_V[2][3] = {{"A y B", "A i B", "A and B"}, {"B y A", "B i A", "B and A"}};
+static const char *const T_BUTTONS[] = {"Botones", "Botons", "Buttons"}; /* its value: what A, B and C do, "A=B B=A C=C" */
+static const char *const T_HOLD[] = {"Mantener", "Mantenir", "Hold"};
+static const char *const T_HOLD_V[2][3] = {{"pulsando", "prement", "pressing"}, {"alternar", "alternar", "toggle"}};
 static const char *const T_CRASH[] = {"El juego se ha parado", "El joc s'ha aturat", "The game stopped"};
 static const char *const T_CRASH_HINT[] = {"A otra vez  ·  B a la lista", "A una altra vegada  ·  B a la llista", "A again  ·  B the list"};
 static const char *const T_CRASH_HINT_NOLIST[] = {"A otra vez", "A una altra vegada", "A again"};
@@ -64,7 +72,16 @@ bool sysmenu_open(void) { return S.open; }
 void sysmenu_crash(const char *error) {
     S.crashed = true, S.open = false, S.scroll = 0;
     snprintf(S.error, sizeof S.error, "%s", error ? error : "error");
+    /* the same, shortened, as a QR code: a phone reads it off the console's screen and the report writes itself */
+    char text[QR_TEXT + 64];
+    uint8_t temp[qrcodegen_BUFFER_LEN_FOR_VERSION(QR_VERSION)];
+    const char *id = jstr(G.game, "id");
+    snprintf(text, sizeof text, "pinyol %s: %.*s", id ? id : "?", QR_TEXT, S.error);
+    S.qr_size = qrcodegen_encodeText(text, temp, S.qr, qrcodegen_Ecc_LOW, 1, QR_VERSION, qrcodegen_Mask_AUTO, true)
+                    ? qrcodegen_getSize(S.qr) : 0;
 }
+
+int sysmenu_qr_size(void) { return S.crashed ? S.qr_size : 0; }
 
 static int n_items(void) { return S.nitems; }
 
@@ -114,7 +131,14 @@ static void adjust(int row, int dir) {
     case ROW_COLOUR: CONF.colour = (CONF.colour + 4 + dir) % 4; break;
     case ROW_SPEED: CONF.speed = dir > 0 ? (CONF.speed == 50 ? 75 : 100) : (CONF.speed == 100 ? 75 : 50); break;
     case ROW_LANG: CONF.lang = (CONF.lang + 3 + dir) % 3; break;
-    case ROW_BUTTONS: CONF.swap_ab = !CONF.swap_ab; break;
+    case ROW_BUTTONS: { /* the six orders of A, B and C, round and round (the old A/B swap folded into them) */
+        int i = 0;
+        while (i < 5 && strcmp(MAPS[i], CONF.buttons)) i++;
+        if (CONF.swap_ab) CONF.swap_ab = false, i = 2; /* ("BAC": the same as it was) */
+        snprintf(CONF.buttons, sizeof CONF.buttons, "%s", MAPS[(i + 6 + dir) % 6]);
+        break;
+    }
+    case ROW_HOLD: CONF.sticky = !CONF.sticky; break;
     }
     conf_apply();
 }
@@ -219,7 +243,15 @@ static void draw_menu(surface *s) {
         case ROW_COLOUR: left = T_COLOUR[L]; snprintf(value, sizeof value, "%s", T_COLOUR_V[CONF.colour][L]); break;
         case ROW_SPEED: left = T_SPEED[L]; snprintf(value, sizeof value, "%d%%", CONF.speed); break;
         case ROW_LANG: left = T_LANG[L]; snprintf(value, sizeof value, "%s", T_LANG_V[CONF.lang]); break;
-        default: left = T_BUTTONS[L]; snprintf(value, sizeof value, "%s", T_BUTTONS_V[CONF.swap_ab][L]); break;
+        case ROW_BUTTONS: {
+            char m[4];
+            snprintf(m, sizeof m, "%s", CONF.buttons);
+            if (CONF.swap_ab) { const char t = m[0]; m[0] = m[1], m[1] = t; } /* (the old swap, shown as the map it is) */
+            left = T_BUTTONS[L];
+            snprintf(value, sizeof value, "A=%c B=%c C=%c", m[0], m[1], m[2]);
+            break;
+        }
+        default: left = T_HOLD[L]; snprintf(value, sizeof value, "%s", T_HOLD_V[CONF.sticky][L]); break;
         }
         row_text(s, px + 4, y, pw - 8, left, value, r == S.cursor);
     }
@@ -232,8 +264,17 @@ static void draw_crash(surface *s) {
     gfx_fill(s, 0, 0, SCREEN_W, SCREEN_H, C_BLACK);
     gfx_fill(s, 0, 0, SCREEN_W, lh + 8, RGB(160, 32, 32));
     font_draw(s, &G.bold, 8, 4, T_CRASH[L], -1, -1, C_WHITE);
+    int qr_w = 0;
+    if (S.qr_size) { /* the QR at the right, two pixels a module, in its white quiet zone; the text wraps beside it */
+        const int m = 2, quiet = 4 * m, box = S.qr_size * m + 2 * quiet, qx = SCREEN_W - 8 - box, qy = lh + 12;
+        gfx_fill(s, qx, qy, box, box, C_WHITE);
+        for (int y = 0; y < S.qr_size; y++)
+            for (int x = 0; x < S.qr_size; x++)
+                if (qrcodegen_getModule(S.qr, x, y)) gfx_fill(s, qx + quiet + x * m, qy + quiet + y * m, m, m, C_BLACK);
+        qr_w = box + 8;
+    }
     uint16_t ls[40], ll[40];
-    const int n = text_wrap(f, S.error, SCREEN_W - 16, ls, ll, 40), room = (SCREEN_H - lh - 8 - 2 * lh) / lh;
+    const int n = text_wrap(f, S.error, SCREEN_W - 16 - qr_w, ls, ll, 40), room = (SCREEN_H - lh - 8 - 2 * lh) / lh;
     if (S.scroll > n - room) S.scroll = n - room > 0 ? n - room : 0;
     int y = lh + 12;
     for (int i = S.scroll; i < n && i < S.scroll + room; i++, y += lh) font_draw(s, f, 8, y, S.error + ls[i], ll[i], -1, C_WHITE);

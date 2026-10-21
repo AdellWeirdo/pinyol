@@ -197,12 +197,10 @@ static void menu_sounds(layer_id top) {
 }
 
 void game_tick(const hal_input *in_real) {
-    hal_input swapped = *in_real;
+    hal_input mapped = *in_real;
     const hal_input *in = in_real;
-    if (CONF.swap_ab) { /* the console's setting: A and B the other way round, in every game */
-        swapped.held = (uint16_t)((in_real->held & ~(ACT_OK | ACT_BACK)) | (in_real->held & ACT_OK ? ACT_BACK : 0) | (in_real->held & ACT_BACK ? ACT_OK : 0));
-        in = &swapped;
-    }
+    mapped.held = conf_input(in_real->held, sysmenu_paused()); /* the console's settings: the buttons' map, A/B swapped, sticky */
+    if (mapped.held != in_real->held) in = &mapped;
     G.in.pressed = in->held & ~G.in.held;
     /* an adventure with nothing in its bag pauses on MENU; a Lua game reads MENU itself (btnp("menu")) */
     if (!G.v2 && (G.in.pressed & ACT_INV) && !content_has_bag()) G.in.pressed = (G.in.pressed & ~ACT_INV) | ACT_PAUSE;

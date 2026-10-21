@@ -3,7 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <string.h>
+
 #include "conf.h"
+#include "hal.h"
 
 static int fails;
 #define CHECK(c) do { if (!(c)) { printf("conf_test: %s (line %d)\n", #c, __LINE__); fails++; } } while (0)
@@ -23,6 +26,14 @@ int main(void) {
     CHECK(conf_set("flash", "less") && CONF.reduce_flash && conf_set("flash", "normal") && !CONF.reduce_flash);
     CHECK(conf_set("lang", "ca") && CONF.lang == CONF_CA && !conf_set("lang", "fr"));
     CHECK(conf_set("swap_ab", "true") && CONF.swap_ab && !conf_set("swap_ab", "yes"));
+    CHECK(conf_set("swap_ab", "false") && conf_set("buttons", "CAB") && !strcmp(CONF.buttons, "CAB"));
+    CHECK(!conf_set("buttons", "AAB") && !conf_set("buttons", "ABCD") && !conf_set("buttons", "abc") && !strcmp(CONF.buttons, "CAB"));
+    CHECK(conf_input(ACT_OK, false) == ACT_NEXT && conf_input(ACT_BACK, false) == ACT_OK && conf_input(ACT_NEXT | ACT_UP, false) == (ACT_BACK | ACT_UP));
+    CHECK(conf_set("buttons", "ABC") && conf_set("hold", "toggle") && CONF.sticky && !conf_set("hold", "maybe"));
+    /* sticky: a press latches A, the next press lets it go; nothing latches while the console's menu is up */
+    CHECK(conf_input(0, false) == 0 && conf_input(ACT_OK, false) == ACT_OK && conf_input(0, false) == ACT_OK && conf_input(0, false) == ACT_OK);
+    CHECK(conf_input(ACT_OK, false) == 0 && conf_input(0, false) == 0 && conf_input(ACT_OK, true) == ACT_OK && conf_input(0, true) == 0);
+    CHECK(conf_set("hold", "press") && !CONF.sticky);
     CHECK(!conf_set("nothing", "1"));
 
     uint16_t grey = 0x8410, red = 0xF800, green = 0x07E0, blue = 0x001F; /* 50% grey, and the three pure colours */

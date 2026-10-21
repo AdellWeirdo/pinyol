@@ -62,10 +62,30 @@ lua last = nil
 press A
 expect_lua last == "b"
 settings swap_ab false
+# the buttons' map: with "BCA", A does B, B does C and C does A; and sticky buttons: a press of A holds it until the next
+settings buttons BCA
+lua last = nil
+press B
+expect_lua last == nil
+press A
+expect_lua last == "b" and settings().buttons == "BCA"
+settings buttons ABC
+settings hold toggle
+lua last = nil; held_a = 0
+lua _old_update = _update; _update = function() _old_update() if btn("a") then held_a = held_a + 1 end end
+press A
+tick 5
+expect_lua last == "a" and held_a >= 5 and settings().sticky == true
+press A
+lua held_a = 0
+tick 5
+expect_lua held_a == 0
+settings hold press
+lua _update = _old_update
 # settings() as the game reads them; the colour filter on the world
 settings flash less
 settings colour protan
-expect_lua settings().reduce_flashing == true and settings().colour == "protan" and settings().swap_ab == false and settings().speed == 100
+expect_lua settings().reduce_flashing == true and settings().colour == "protan" and settings().swap_ab == false and settings().speed == 100 and settings().buttons == "ABC" and settings().sticky == false
 tick 1
 shot sysmenu_protan
 settings colour normal

@@ -6,10 +6,10 @@ include(${ROOT}/cmake/embed_lib.cmake)
 pinyol_embed_lib(${CMAKE_CURRENT_BINARY_DIR}/pinyol_lib.c ${ROOT}/lib)
 pinyol_splash_pics(SPLASH_PICS ${ROOT})
 pinyol_embed_pics(${CMAKE_CURRENT_BINARY_DIR}/pinyol_splash.c ${SPLASH_PICS})
-idf_component_register(SRCS ${CORE_SRC} ${ROOT}/third_party/cjson/cJSON.c ${LUA_SRC} ${CMAKE_CURRENT_BINARY_DIR}/pinyol_lib.c
+idf_component_register(SRCS ${CORE_SRC} ${ROOT}/third_party/cjson/cJSON.c ${ROOT}/third_party/qrcodegen/qrcodegen.c ${LUA_SRC} ${CMAKE_CURRENT_BINARY_DIR}/pinyol_lib.c
                             ${CMAKE_CURRENT_BINARY_DIR}/pinyol_splash.c
                        INCLUDE_DIRS ${ROOT}/src ${ROOT}/third_party/cjson ${ROOT}/third_party/lua
-                       PRIV_INCLUDE_DIRS ${ROOT}/third_party/pocketmod
+                       PRIV_INCLUDE_DIRS ${ROOT}/third_party/pocketmod ${ROOT}/third_party/qrcodegen
                        LDFRAGMENTS linker.lf)
 target_compile_definitions(${COMPONENT_LIB} PUBLIC LUA_32BITS=1) # as on the desktop: games behave the same
 # gcc 14 flags bounded snprintf truncation, which src/ uses on purpose (clang on the desktop does not)

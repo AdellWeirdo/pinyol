@@ -734,11 +734,11 @@ MENU held two seconds goes to the console's list, as always. While the menu is u
 |---|---|
 | `menuitem(label, fn)` | an item of the game's own in that menu, three at most (a label of 32 characters): `fn` runs when the player chooses it, with the menu already closed (`menuitem("Nivel 1", function() scene.go(level1) end)`). The same label again changes its function; `menuitem(label)` takes it away, `menuitem()` all of them. A new game (Reiniciar) starts with none: set them in `_init` |
 | `_pause()`, `_resume()` | if the game has them, called when the menu opens and when it closes |
-| `settings()` | the console's settings, the same for every game, as the player set them in Ajustes: `volume` (0-100, over the game's own `volume()`), `reduce_flashing` (true: the player wants less flashing; `juice.flash` then does nothing, and a game with its own flashes should look at it), `colour` (`"normal"`, `"protan"`, `"deutan"` or `"tritan"`: the world's colours are shifted for that player by the engine, 1.8 ms a frame on the console; the text and shapes over it are not), `speed` (100, 75 or 50: the share of ticks the game gets; its music keeps its pace), `lang` (`"es"`, `"ca"`, `"en"`: the menu's language, for a game that wants to follow it), `swap_ab` (A and B the other way round, done by the engine before the game sees them) |
+| `settings()` | the console's settings, the same for every game, as the player set them in Ajustes: `volume` (0-100, over the game's own `volume()`), `reduce_flashing` (true: the player wants less flashing; `juice.flash` then does nothing, and a game with its own flashes should look at it), `colour` (`"normal"`, `"protan"`, `"deutan"` or `"tritan"`: the world's colours are shifted for that player by the engine, 1.8 ms a frame on the console; the text and shapes over it are not), `speed` (100, 75 or 50: the share of ticks the game gets; its music keeps its pace), `lang` (`"es"`, `"ca"`, `"en"`: the menu's language, for a game that wants to follow it), `swap_ab` (A and B the other way round, done by the engine before the game sees them), `buttons` (what the console's A, B and C do, as three letters: `"ABC"` as they are, `"BAC"` with A and B swapped, done by the engine too), `sticky` (true: a press of A, B or C holds it until the next press, for a player who cannot keep a button down; the engine does it) |
 
 A game that stops on an error shows the **crash screen**: the whole error and its stack, UP and DOWN to read it, A to
 start the game again, B back to the list. The same text goes to `crash.txt` in the game's saves folder, to send with a
-bug report.
+bug report; and the screen shows it as a QR code too, for a phone to read off the console and paste into the report.
 
 ## Libraries built in
 
@@ -921,7 +921,7 @@ expect_ok                        # the game has not stopped on an error (a scrip
 shot name                        # save the screen to the saves folder (name.ppm)
 mic 0.5 440                      # the microphone hears a tone that loud (no Hz: noise; mic 0: silence; mic none: no microphone)
 battery 0.2 charging             # battery() says so (battery none: no battery; battery real: the platform's)
-settings speed 50                # the console's settings (speed 100/75/50, flash less/normal, colour protan/deutan/tritan/normal, swap_ab, lang, volume)
+settings speed 50                # the console's settings (speed 100/75/50, flash less/normal, colour protan/deutan/tritan/normal, swap_ab, buttons BAC, hold toggle/press, lang, volume)
 expect_menu open                 # the console's menu is up (or closed): press MENU taps it open
 allow_crash                      # the game may stop on an error from here on: the ticks do not fail for it (its crash screen is up)
 expect_crashed                   # and it has

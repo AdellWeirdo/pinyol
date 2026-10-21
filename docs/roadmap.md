@@ -18,8 +18,11 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
   mientras el DMA ya solapa el dibujo (ganaría batería, no fps).
 - **Fase 1, hecho:** menú del sistema (`sysmenu.c`), ajustes de consola (`conf.c`: volumen, destellos, filtro de
   color, velocidad, idioma, A/B), pantalla de crash y `crash.txt`, `--record` y el comando `in`, `--check-flashes`
-  (también en el robot de la Biblioteca), F6/F7/F8/F9 en el simulador. **No hecho:** QR en el crash, remapeo
-  completo y mantener/alternar (solo A/B), recientes/favoritos/tiempo jugado (en la fase 5).
+  (también en el robot de la Biblioteca), F6/F7/F8/F9 en el simulador. **Cerrada el 22 de octubre:** QR en la
+  pantalla de crash (`third_party/qrcodegen`, el error con el id del juego en ≤ 57×57 módulos a 2 px; un móvil lo lee
+  en la pantalla de la consola), remapeo completo de A, B y C (`settings().buttons`, los seis órdenes en Ajustes) y
+  mantener/alternar (`settings().sticky`: pulsar deja el botón pulsado hasta la siguiente pulsación; el motor lo
+  hace, el juego no se entera); recientes/favoritos/tiempo jugado quedaron en la fase 5.
 
 - **Fase 2, hecho:** `lib/move` (actores y sólidos de Celeste, coyote, buffer, salto corto, ápice, esquinas, plataformas
   de un sentido, sólidos que llevan y empujan), `lib/autotile` (blob 47 y dual-grid 16), juice (trauma con ruido, kick,
@@ -122,6 +125,13 @@ la película de 1983 no parpadea ni deslumbra con "menos destellos". Sus cuatro 
 Ocho mañanas (ritmo táctil): el sello del acierto cae grande y se asienta (`juice.tween`), un fallo encoge los bustos y
 el toro que roza tambalea a Dani (`juice.trauma`), cuatro logros, rayos de un solo color con "menos destellos". Sus
 seis guiones pasan.
+
+PALETA (puzle de gotas, 22 octubre): el estallido de un grupo sacude la paleta, más con cada eslabón de cadena
+(`juice.trauma` sumado a la esquina del tablero), la ficha del resultado entra deslizando (`juice.tween`), cuatro
+logros (la ficha nombra los nuevos), y con "menos destellos" el fogonazo de la cadena se queda en un brillo y el grupo
+no parpadea. De paso, `tests/reglas.script` llevaba tiempo roto (un estallido forzado sin pareja caída no tenía
+eslabón): arreglado en `juego.lua`. Sus dos guiones pasan. En la placa, con el autopiloto (3 ms de tick suyos):
+3,05 → 3,24 ms, 51,6 → 51,5 fps, mismos niveles ganados.
 
 Lo que sacaron del motor: `post.c` copiaba la imagen entera (76 KB, en PSRAM) cada frame aunque la neblina fuera de
 veinte filas: en la placa TRECE pasó de 58,5 a 55,5 fps (mínimo 43) con la neblina siempre puesta. Ahora copia solo

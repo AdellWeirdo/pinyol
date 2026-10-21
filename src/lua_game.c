@@ -1359,7 +1359,7 @@ static int l_achievements(lua_State *L) {
     return 1;
 }
 
-static int l_settings(lua_State *L) { /* settings() -> the console's settings: volume, reduce_flashing, colour, speed, lang, swap_ab */
+static int l_settings(lua_State *L) { /* settings() -> the console's settings: volume, reduce_flashing, colour, speed, lang, swap_ab, buttons, sticky */
     static const char *const COL[] = {"normal", "protan", "deutan", "tritan"};
     lua_createtable(L, 0, 6);
     lua_pushinteger(L, CONF.volume), lua_setfield(L, -2, "volume");
@@ -1368,6 +1368,8 @@ static int l_settings(lua_State *L) { /* settings() -> the console's settings: v
     lua_pushinteger(L, CONF.speed), lua_setfield(L, -2, "speed");
     lua_pushstring(L, conf_lang_code()), lua_setfield(L, -2, "lang");
     lua_pushboolean(L, CONF.swap_ab), lua_setfield(L, -2, "swap_ab");
+    lua_pushstring(L, CONF.buttons), lua_setfield(L, -2, "buttons");
+    lua_pushboolean(L, CONF.sticky), lua_setfield(L, -2, "sticky");
     return 1;
 }
 

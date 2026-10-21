@@ -15,7 +15,9 @@ typedef struct {
     int colour;        /* CONF_COLOUR_*: the world's colours shifted so the pairs that player cannot tell apart differ */
     int speed;         /* 100, 75 or 50: the share of ticks the game gets (its music keeps its own pace) */
     int lang;          /* CONF_ES, CONF_CA, CONF_EN: the system menu, the crash screen */
-    bool swap_ab;      /* A and B swapped, for every game */
+    bool swap_ab;      /* A and B swapped, for every game (kept for old settings; the map below does the same and more) */
+    char buttons[4];   /* what the console's A, B and C do, as letters: "ABC" as they are, "BAC" with A and B swapped... */
+    bool sticky;       /* a press of A, B or C holds it until the next press: for a player who cannot keep a button down */
 } conf_t;
 
 extern conf_t CONF;
@@ -25,7 +27,12 @@ void conf_save(void);  /* after a change in the system menu */
 void conf_apply(void); /* what the settings do outside the menu: the user's volume, the colour filter's table */
 void conf_free(void);  /* a game ended: the filter's table let go */
 bool conf_set(const char *key, const char *value); /* "volume" "80", "flash" "less"/"normal", "colour" "protan"..., "speed" "50",
-                                                    * "lang" "ca", "swap_ab" "true": false if unknown or out of range */
+                                                    * "lang" "ca", "swap_ab" "true", "buttons" "BAC", "hold" "toggle"/"press":
+                                                    * false if unknown or out of range */
+/* The buttons held, as the player set them: A, B and C in the order of the map, then A and B swapped if asked, then
+ * the sticky ones latched by their presses. Once a tick, on the platform's input; in_menu: the console's menu is up
+ * (nothing latched there). */
+uint16_t conf_input(uint16_t held, bool in_menu);
 /* The colour filter on a picture's pixels, in place (RGB565): nothing when it is off. */
 void conf_filter(uint16_t *px, int n);
 bool conf_filter_on(void);

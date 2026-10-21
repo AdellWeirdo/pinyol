@@ -44,11 +44,11 @@ include(cmake/embed_lib.cmake)
 pinyol_embed_lib(${CMAKE_BINARY_DIR}/pinyol_lib.c ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 pinyol_splash_pics(SPLASH_PICS ${CMAKE_CURRENT_SOURCE_DIR})
 pinyol_embed_pics(${CMAKE_BINARY_DIR}/pinyol_splash.c ${SPLASH_PICS})
-add_library(pinyol_core STATIC ${CORE_SRC} ${CMAKE_BINARY_DIR}/pinyol_lib.c ${CMAKE_BINARY_DIR}/pinyol_splash.c)
+add_library(pinyol_core STATIC ${CORE_SRC} third_party/qrcodegen/qrcodegen.c ${CMAKE_BINARY_DIR}/pinyol_lib.c ${CMAKE_BINARY_DIR}/pinyol_splash.c)
 # physics as the Lua code did it, operation for operation: no fused multiply-adds, the same on every platform
 set_source_files_properties(src/lua_physics.c PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
 target_include_directories(pinyol_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_include_directories(pinyol_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/pocketmod)
+target_include_directories(pinyol_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/pocketmod ${CMAKE_CURRENT_SOURCE_DIR}/third_party/qrcodegen) # (the crash screen's QR)
 target_compile_options(pinyol_core PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(pinyol_core PUBLIC cjson lua m)
 target_link_options(pinyol_core PUBLIC ${SAN})
@@ -182,6 +182,11 @@ add_executable(conf_test tests/conf_test.c platform/null/hal_null.c platform/lin
 target_compile_options(conf_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(conf_test pinyol_core)
 add_test(NAME conf COMMAND conf_test) # the console's settings: parsing, and the colour filter's table
+add_executable(qr_test tests/qr_test.c third_party/qrcodegen/qrcodegen.c)
+target_include_directories(qr_test PRIVATE third_party/qrcodegen)
+target_compile_options(qr_test PRIVATE -Wall -Wextra -Werror ${SAN})
+target_link_options(qr_test PRIVATE ${SAN})
+add_test(NAME qr COMMAND qr_test) # the crash screen's QR code: a short text and a long one, their finder patterns
 # flashing that can hurt: a game that flashes the whole screen every tick fails --check-flashes (4), a quiet one passes
 add_test(NAME flashes_caught COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/flash \
   --saves ${CMAKE_BINARY_DIR}/saves_flash --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/flash.script --check-flashes; test $? -eq 4")
