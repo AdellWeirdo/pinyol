@@ -1,0 +1,9 @@
+{
+  "id": "mesh",
+  "title": "mesh()",
+  "subtitle": "mesh test",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "test",
+  "description": "Cubo texturado y con luz, igual que el ejemplo gte de PSn00bSDK, para comparar el quad de pinyol con la GPU y el GTE de la PS1."
+}

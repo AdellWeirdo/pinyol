@@ -1,0 +1,55 @@
+# mesh() against the same cube drawn by hand with quad(): four poses, each once by mesh() and once by hand (tests/mesh_check.py
+# compares the shots), then what mesh() does with its options.
+new
+expect_lua cube == 1
+lua vx, vy, vz = 0, 0, 0
+tick 2
+shot mesh_a0
+expect_lua shown == 1
+lua vx, vy, vz = 256, 0, 256
+tick 2
+shot mesh_a1
+expect_lua shown == 2
+lua vx, vy, vz = 600, 0, 600
+tick 2
+shot mesh_a2
+lua vx, vy, vz = 300, 500, 700
+tick 2
+shot mesh_a3
+lua mode = "lua"
+lua vx, vy, vz = 0, 0, 0
+tick 2
+shot mesh_b0
+lua vx, vy, vz = 256, 0, 256
+tick 2
+shot mesh_b1
+lua vx, vy, vz = 600, 0, 600
+tick 2
+shot mesh_b2
+lua vx, vy, vz = 300, 500, 700
+tick 2
+shot mesh_b3
+
+# options: a face-on cube with the culled faces kept; a triangle model; the model's own uv
+lua mode = "none"
+lua flat = mesh_new({{-50,-50,0},{50,-50,0},{0,50,0}}, {{1,2,3}, uv = {0,0,32,0,16,32}})
+expect_lua mesh(flat, "TEX_CUBE", {pos = {0, 0, 300}}) == 1 or mesh(flat, "TEX_CUBE", {pos = {0, 0, 300}, cull = false}) == 1
+expect_lua mesh(cube, "TEX_CUBE", {pos = {0, 0, 400}, cull = false}) == 6
+expect_lua mesh(cube, "TEX_CUBE", {pos = {0, 0, 400}, snap = true, fade = {100, 600}, light = true}) == 1
+expect_lua mesh(cube, "TEX_CUBE", {pos = {0, 0, -100}}) == 0
+expect_lua mesh(cube, "NO_SUCH_PICTURE", {}) == 0
+# a ball of 256 quads: the part that faces us (about 64 faces at this distance) is one command, not 64 of the 128 quad slots
+lua ball_h = ball(16, 16)
+expect_lua mesh(ball_h, "TEX_CUBE", {pos = {0, 0, 400}, scale = 1.5, light = true}) > 50
+# the pool of a frame holds 384 faces: more calls than that are cut, not an error
+lua pooled = 0 for i = 1, 6 do pooled = pooled + mesh(ball_h, "TEX_CUBE", {pos = {0, 0, 400}, cull = false}) end
+expect_lua pooled > 0 and pooled <= 384
+tick 3
+# what it refuses
+expect_lua_error mesh_new({}, {{1, 2, 3}})
+expect_lua_error mesh_new({{0, 0, 0}}, {})
+expect_lua_error mesh_new({{0, 0, 0}, {1, 0, 0}}, {{1, 2, 3}})
+expect_lua_error mesh_new({{0, 0, 0}, {1, 0, 0}, {0, 1, 0}}, {{1, 2, 3, uv = {0, 0}}})
+expect_lua_error mesh_new({{0, 0, 0}, {1, 0, 0}, {0, 1, 0}}, {{1, 2, 3, uv = {0, 0, 1, 0, 0, 1}}, {1, 2, 3}})
+expect_lua_error mesh(99, "TEX_CUBE")
+shot mesh_end

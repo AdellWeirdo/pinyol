@@ -8,6 +8,7 @@
 
 #include "gfx_px.h"
 #include "lua_api.h"
+#include "mesh.h"
 
 #define OV_MAX 2048                /* overlay commands per frame: particles, stars, a split screen drawn twice */
 #define OV_TEXT 12288              /* overlay text bytes per frame */
@@ -21,8 +22,8 @@
 
 /* ------------------------------------------------------------------ the overlay: text and shapes at 480x320 */
 
-enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS, OV_QUAD, OV_GRAD, OV_LIGHT, OV_WARP, OV_LINES, OV_OPS };
-static const char *const OP_NAME[OV_OPS] = {"text", "rect", "shade", "panel", "plate", "box", "img", "frame", "line", "circ", "poly", "points", "quad", "grad", "light", "warp", "linetint"};
+enum { OV_TEXT_OP, OV_FILL, OV_SHADE, OV_PANEL, OV_PLATE, OV_BOX, OV_IMG, OV_NINE, OV_LINE, OV_CIRC, OV_POLY, OV_POINTS, OV_QUAD, OV_GRAD, OV_LIGHT, OV_WARP, OV_LINES, OV_MESH, OV_OPS };
+static const char *const OP_NAME[OV_OPS] = {"text", "rect", "shade", "panel", "plate", "box", "img", "frame", "line", "circ", "poly", "points", "quad", "grad", "light", "warp", "linetint", "mesh"};
 
 /* Where a frame goes (the meter, perf("ops")): each kind of command counted when it is recorded and timed as the strips draw it, in the
  * frame's own numbers (prof_last: the frame before the one being recorded). Timing each command costs, so only while asked for. */
@@ -58,6 +59,12 @@ static struct { /* quad's corners and how it is drawn (grad's two colours in lig
     const struct quad_mip *mip; /* quad: the smaller copy of its picture it is sampled from, or NULL */
 } ov_quad[OV_EXT];
 static int nquad;
+#define MESH_SLOTS 16 /* models a game keeps (mesh_new) */
+#define MESH_POOL 384 /* faces of every mesh() of a frame together */
+static mesh_model *models[MESH_SLOTS];
+static int nmodels;
+static mesh_face mfaces[MESH_POOL]; /* a mesh's faces for the strips: c->str is the first, c->len how many */
+static int nmf;
 static int nstyle, nxf;
 static struct { char name[32]; font f; } vfont[MAX_FONTS]; /* fonts/<name>.fnt, loaded when first used */
 static int nvfont;
@@ -196,6 +203,22 @@ static void draw_one(surface *s, const ov_cmd *c) {
         const typeof(ov_quad[0]) *q = &ov_quad[c->ext - 1];
         gfx_lines(s, c->x, c->y, c->w, c->h, (const uint16_t *)(ov_pts + c->str), q->mode == 3 ? BLEND_ALPHA : q->mode,
                   q->alpha + (q->alpha >> 7), q->mode == 4);
+        break;
+    }
+    case OV_MESH: { /* flip: bit 0 lit, bit 1 dithered; the faces are far to near already */
+        const bool lit = c->flip & 1, dither = (c->flip & 2) && lit;
+        for (int i = 0; i < c->len; i++) {
+            const mesh_face *f = &mfaces[c->str + i];
+            int x0 = f->xy[0], x1 = f->xy[0], y0 = f->xy[1], y1 = f->xy[1];
+            for (int k = 1; k < 4; k++) {
+                x0 = f->xy[2 * k] < x0 ? f->xy[2 * k] : x0, x1 = f->xy[2 * k] > x1 ? f->xy[2 * k] : x1;
+                y0 = f->xy[2 * k + 1] < y0 ? f->xy[2 * k + 1] : y0, y1 = f->xy[2 * k + 1] > y1 ? f->xy[2 * k + 1] : y1;
+            }
+            if (x1 / 8 + 2 < s->x0 || x0 / 8 - 1 >= s->x0 + s->w || y1 / 8 + 2 < s->y0 || y0 / 8 - 1 >= s->y0 + s->h) continue;
+            uint8_t light[4][3];
+            for (int k = 0; k < 4; k++) memcpy(light[k], f->light, 3);
+            gfx_quad(s, c->a, c->frame, f->xy, light, lit, BLEND_ALPHA, 256, dither, false, 0, f->mip, f->uv);
+        }
         break;
     }
     case OV_POINTS: /* a swarm: its picture at each point (its top-left corner, already worked out) */
@@ -342,7 +365,8 @@ static void bounds(const ov_cmd *c, int *x0, int *y0, int *x1, int *y1) { /* wha
 
 static void forget(const ov_cmd *c, int text_bytes, int corners) { /* the last command, off the list with its data */
     nov--, ntext -= text_bytes, npts -= 2 * corners;
-    if (c->op == OV_QUAD || c->op == OV_GRAD || c->op == OV_LIGHT || c->op == OV_WARP || c->op == OV_LINES) nquad--;
+    if (c->op == OV_MESH) nmf -= c->len;
+    else if (c->op == OV_QUAD || c->op == OV_GRAD || c->op == OV_LIGHT || c->op == OV_WARP || c->op == OV_LINES) nquad--;
     else if (c->ext && c->op == OV_TEXT_OP) nstyle--;
     else if (c->ext) nxf--;
     if (c->op == OV_IMG && c->font) nlook--;
@@ -470,6 +494,10 @@ static void commit(ov_cmd *c, int text_bytes, int corners) {
     for (int i = 0; c->op == OV_QUAD && i < 4; i++)
         ov_quad[c->ext - 1].xy[2 * i] = i16(ov_quad[c->ext - 1].xy[2 * i] - cam_x * 8),
         ov_quad[c->ext - 1].xy[2 * i + 1] = i16(ov_quad[c->ext - 1].xy[2 * i + 1] - cam_y * 8);
+    for (int i = 0; c->op == OV_MESH && i < c->len; i++)
+        for (int k = 0; k < 4; k++)
+            mfaces[c->str + i].xy[2 * k] = i16(mfaces[c->str + i].xy[2 * k] - cam_x * 8),
+            mfaces[c->str + i].xy[2 * k + 1] = i16(mfaces[c->str + i].xy[2 * k + 1] - cam_y * 8);
     if (!target) {
         as_picture(c); /* the costly ones, once, then copied */
         if (clipping) {
@@ -1011,6 +1039,128 @@ static int l_quad(lua_State *L) {
     return 0;
 }
 
+/* mesh_new(verts, faces): a model kept for mesh(), its number. verts = {{x, y, z}, ...}; faces = {{a, b, c, d [, uv = {u1, v1, ... u4, v4}]}, ...}
+ * with vertex numbers from 1, in the order quad() takes corners (a triangle gives three, and three uv pairs); uv in texels, on every
+ * face or on none (then the whole picture is on each). Up to MESH_MAX_VERTS vertices, MESH_MAX_FACES faces, MESH_SLOTS models. */
+static int l_mesh_new(lua_State *L) {
+    luaL_checktype(L, 1, LUA_TTABLE), luaL_checktype(L, 2, LUA_TTABLE);
+    const int nv = (int)lua_rawlen(L, 1), nf = (int)lua_rawlen(L, 2);
+    if (nv < 1 || nv > MESH_MAX_VERTS) return luaL_error(L, "mesh_new: 1 to %d vertices, not %d", MESH_MAX_VERTS, nv);
+    if (nf < 1 || nf > MESH_MAX_FACES) return luaL_error(L, "mesh_new: 1 to %d faces, not %d", MESH_MAX_FACES, nf);
+    if (nmodels == MESH_SLOTS) return luaL_error(L, "mesh_new: a game can keep %d meshes", MESH_SLOTS);
+    float *v = lua_newuserdatauv(L, sizeof(float) * 3 * (size_t)nv, 0); /* (the Lua state frees them if an error is raised) */
+    uint16_t *idx = lua_newuserdatauv(L, sizeof(uint16_t) * 4 * (size_t)nf, 0);
+    float *uv = lua_newuserdatauv(L, sizeof(float) * 8 * (size_t)nf, 0);
+    for (int i = 0; i < nv; i++) {
+        lua_rawgeti(L, 1, i + 1);
+        luaL_checktype(L, -1, LUA_TTABLE);
+        for (int k = 0; k < 3; k++) lua_rawgeti(L, -1, k + 1), v[3 * i + k] = fin(luaL_checknumber(L, -1)), lua_pop(L, 1);
+        lua_pop(L, 1);
+    }
+    int with_uv = 0;
+    for (int i = 0; i < nf; i++) {
+        lua_rawgeti(L, 2, i + 1);
+        luaL_checktype(L, -1, LUA_TTABLE);
+        for (int k = 0; k < 4; k++) {
+            lua_rawgeti(L, -1, k + 1);
+            lua_Integer n = k == 3 && lua_isnil(L, -1) ? idx[4 * i + 2] + 1 : luaL_checkinteger(L, -1); /* (a triangle repeats its last) */
+            if (n < 1 || n > nv) return luaL_error(L, "mesh_new: face %d names vertex %d, of %d", i + 1, (int)n, nv);
+            idx[4 * i + k] = (uint16_t)(n - 1);
+            lua_pop(L, 1);
+        }
+        lua_getfield(L, -1, "uv");
+        if (lua_istable(L, -1)) {
+            const int n = (int)lua_rawlen(L, -1);
+            if (n != 6 && n != 8) return luaL_error(L, "mesh_new: face %d: uv takes 6 numbers (a triangle) or 8", i + 1);
+            for (int k = 0; k < 8; k++) {
+                lua_rawgeti(L, -1, k < n ? k + 1 : n - 1 + (k & 1)); /* a triangle's fourth corner is its third */
+                uv[8 * i + k] = fin(luaL_checknumber(L, -1));
+                lua_pop(L, 1);
+            }
+            with_uv++;
+        }
+        lua_pop(L, 2);
+    }
+    if (with_uv && with_uv != nf) return luaL_error(L, "mesh_new: give uv to every face or to none (%d of %d have it)", with_uv, nf);
+    mesh_model *m = mesh_model_new(v, nv, idx, with_uv ? uv : NULL, nf);
+    if (!m) return luaL_error(L, "mesh_new: out of memory");
+    models[nmodels++] = m;
+    lua_pushinteger(L, nmodels);
+    return 1;
+}
+
+static float opt_num(lua_State *L, int t, const char *k, float d) {
+    lua_getfield(L, t, k);
+    const float v = lua_isnil(L, -1) ? d : (float)fin(luaL_checknumber(L, -1));
+    lua_pop(L, 1);
+    return v;
+}
+
+static void opt_vec3(lua_State *L, int t, const char *k, float out[3]) {
+    lua_getfield(L, t, k);
+    if (lua_istable(L, -1))
+        for (int i = 0; i < 3; i++) {
+            lua_rawgeti(L, -1, i + 1);
+            if (!lua_isnil(L, -1)) out[i] = (float)fin(luaL_checknumber(L, -1));
+            lua_pop(L, 1);
+        }
+    lua_pop(L, 1);
+}
+
+/* mesh(mesh, id, {pos = {x, y, z}, rot = {rx, ry, rz}, scale, focal, cx, cy, near, light, fade, snap, cull, dither, frame}): the model
+ * turned, projected, culled, lit and sorted in C and drawn far to near with the picture on every face; returns how many faces show.
+ * light = true or {dir = {x, y, z}, ambient, gain}: ambient + gain * (dir . normal), dir toward the lamp in camera space (as
+ * the PlayStation's GTE did). fade = {near, far}: full light at near, black at far. */
+static int l_mesh(lua_State *L) {
+    const lua_Integer h = luaL_checkinteger(L, 1);
+    if (h < 1 || h > nmodels) return luaL_error(L, "mesh: no mesh %d (mesh_new gives the numbers)", (int)h);
+    const char *id = luaL_checkstring(L, 2);
+    asset *a = safe_name(id) ? gfx_asset(id) : NULL;
+    if (!a || a->missing || !gfx_pixels(a) || nov == OV_MAX || nmf == MESH_POOL) return lua_pushinteger(L, 0), 1;
+    mesh_params p = {.pos = {0, 0, 400}, .scale = 1, .focal = 160, .cx = 240, .cy = 160, .near = 1, .cull = true,
+                     .light_dir = {-0.5f, -0.5f, -0.5f}, .ambient = 0.25f, .gain = 0.75f};
+    bool dither = true;
+    int frame = 0;
+    if (lua_istable(L, 3)) {
+        opt_vec3(L, 3, "pos", p.pos), opt_vec3(L, 3, "rot", p.rot);
+        p.scale = opt_num(L, 3, "scale", 1), p.focal = opt_num(L, 3, "focal", 160), p.near = opt_num(L, 3, "near", 1);
+        p.cx = opt_num(L, 3, "cx", 240), p.cy = opt_num(L, 3, "cy", 160);
+        frame = (int)opt_num(L, 3, "frame", 0);
+        lua_getfield(L, 3, "snap"), p.snap = lua_toboolean(L, -1), lua_pop(L, 1);
+        lua_getfield(L, 3, "cull"), p.cull = lua_isnil(L, -1) ? true : lua_toboolean(L, -1), lua_pop(L, 1);
+        lua_getfield(L, 3, "dither"), dither = lua_isnil(L, -1) ? true : lua_toboolean(L, -1), lua_pop(L, 1);
+        lua_getfield(L, 3, "light");
+        if (!lua_isnil(L, -1) && lua_toboolean(L, -1)) {
+            p.lit = true;
+            if (lua_istable(L, -1)) {
+                opt_vec3(L, lua_gettop(L), "dir", p.light_dir);
+                p.ambient = opt_num(L, lua_gettop(L), "ambient", p.ambient), p.gain = opt_num(L, lua_gettop(L), "gain", p.gain);
+            }
+        }
+        lua_pop(L, 1);
+        lua_getfield(L, 3, "fade");
+        if (lua_istable(L, -1)) {
+            p.fade = true;
+            lua_rawgeti(L, -1, 1), p.fade0 = (float)fin(luaL_checknumber(L, -1)), lua_pop(L, 1);
+            lua_rawgeti(L, -1, 2), p.fade1 = (float)fin(luaL_checknumber(L, -1)), lua_pop(L, 1);
+        }
+        lua_pop(L, 1);
+    }
+    int bbox[4];
+    const int n = mesh_build(models[h - 1], &p, mfaces + nmf, MESH_POOL - nmf, bbox);
+    ov_cmd *c = n ? ov_add(OV_MESH) : NULL;
+    if (!c) return lua_pushinteger(L, 0), 1;
+    c->a = a, c->frame = (int16_t)(frame < 0 || frame >= a->frames ? 0 : frame);
+    c->str = (uint16_t)nmf, c->len = (uint16_t)n, c->flip = (uint8_t)((p.lit || p.fade ? 1 : 0) | (dither ? 2 : 0));
+    for (int i = 0; i < n; i++) /* (a face with its own uv is sampled from the whole picture, as quad does) */
+        if (!mfaces[nmf + i].uv) mfaces[nmf + i].mip = gfx_quad_mip(a, c->frame, mfaces[nmf + i].xy);
+    c->x = i16(bbox[0]), c->y = i16(bbox[1]), c->w = i16(bbox[2] - bbox[0]), c->h = i16(bbox[3] - bbox[1]);
+    nmf += n;
+    commit(c, 0, 0);
+    lua_pushinteger(L, n);
+    return 1;
+}
+
 /* frame(id, x, y, w, h [, scale [, frame]]): a box drawn from the picture's thirds: its corners once, its edges and
  * middle repeated (a nine-slice frame, as GB Studio's frame.png or a windowskin) */
 static int l_frame(lua_State *L) {
@@ -1248,7 +1398,7 @@ void draw_frame_begin(void) { /* each _draw starts on the screen, with no camera
     prof_cur.cmds = nov, prof_cur.slots = nquad; /* the frame before: all its strips are drawn */
     prof_last = prof_cur;
     memset(&prof_cur, 0, sizeof prof_cur);
-    nov = ntext = nstyle = nxf = npts = nclip = nlook = nquad = 0;
+    nov = ntext = nstyle = nxf = npts = nclip = nlook = nquad = nmf = 0;
     gfx_quad_begin();
     target = NULL, cam_x = cam_y = 0, clipping = false, view_on = false;
 }
@@ -1266,6 +1416,8 @@ void draw_free(void) {
     pic_reset();
     for (int i = 0; i < nvfont; i++) free(vfont[i].f.bits);
     nvfont = 0;
+    for (int i = 0; i < nmodels; i++) mesh_model_free(models[i]), models[i] = NULL;
+    nmodels = 0;
 }
 
 bool draw_covers_screen(void) {
@@ -1279,7 +1431,7 @@ bool draw_covers_screen(void) {
 void draw_register(lua_State *L) {
     static const luaL_Reg F[] = {
         {"text", l_text}, {"textw", l_textw}, {"rect", l_rect}, {"box", l_box}, {"shade", l_shade}, {"panel", l_panel},
-        {"plate", l_plate}, {"img", l_img}, {"quad", l_quad}, {"grad", l_grad}, {"light", l_light}, {"warp", l_warp}, {"linetint", l_linetint}, {"frame", l_frame}, {"pset", l_pset}, {"pget", l_pget}, {"line", l_line},
+        {"plate", l_plate}, {"img", l_img}, {"quad", l_quad}, {"mesh_new", l_mesh_new}, {"mesh", l_mesh}, {"grad", l_grad}, {"light", l_light}, {"warp", l_warp}, {"linetint", l_linetint}, {"frame", l_frame}, {"pset", l_pset}, {"pget", l_pget}, {"line", l_line},
         {"circ", l_circ}, {"tri", l_tri}, {"poly", l_poly}, {"cls", l_cls}, {"canvas", l_canvas}, {"target", l_target},
         {"camera", l_camera}, {"clip", l_clip}, {"imgsize", l_imgsize}, {"preload", l_preload}, {NULL, NULL}};
     lua_pushglobaltable(L);

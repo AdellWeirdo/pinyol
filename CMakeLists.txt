@@ -180,6 +180,12 @@ add_executable(span_test tests/span_test.c platform/null/hal_null.c platform/lin
 target_compile_options(span_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(span_test pinyol_core)
 add_test(NAME span COMMAND span_test) # one colour mixed into a run: the same pixels as the general mixing
+add_executable(mesh_test tests/mesh_test.c src/mesh.c)
+target_include_directories(mesh_test PRIVATE src)
+target_compile_options(mesh_test PRIVATE -Wall -Wextra -Werror ${SAN})
+target_link_libraries(mesh_test m)
+target_link_options(mesh_test PRIVATE ${SAN})
+add_test(NAME mesh COMMAND mesh_test) # mesh(): faces that show, snap, lamp, fade, ordering table, limits
 add_executable(conf_test tests/conf_test.c platform/null/hal_null.c platform/link_udp.c)
 target_compile_options(conf_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(conf_test pinyol_core)
@@ -371,6 +377,10 @@ if(Python3_FOUND)
     add_test(NAME looks_pixels COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/looks_check.py ${CMAKE_BINARY_DIR}/saves_looks)
     set_tests_properties(script_looks PROPERTIES FIXTURES_SETUP looks_shots)
     set_tests_properties(looks_pixels PROPERTIES FIXTURES_REQUIRED looks_shots)
+    # mesh() against the same cube drawn by hand with quad(): the same picture
+    add_test(NAME mesh_pixels COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/mesh_check.py ${CMAKE_BINARY_DIR}/saves_mesh)
+    set_tests_properties(script_mesh PROPERTIES FIXTURES_SETUP mesh_shots)
+    set_tests_properties(mesh_pixels PROPERTIES FIXTURES_REQUIRED mesh_shots)
   endif()
     # quad() against what a real PlayStation drew (tests/ps1cube_ref): silhouette, box and colour of a lit, textured cube
     add_test(NAME ps1cube_pixels COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/ps1cube_check.py ${CMAKE_BINARY_DIR}/saves_ps1cube)
