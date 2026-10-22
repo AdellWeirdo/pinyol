@@ -5,12 +5,13 @@
 #include "bp.h"
 #include "gfx_px.h"
 
-#define MAX_ASSETS 320
-#define SLOTS 512 /* hash of asset ids, open addressing (> MAX_ASSETS): lookups happen many times a frame */
+#define MAX_ASSETS 384 /* IL·LUSTRES has 351 picture files and a session can ask for ids that are not there too */
+#define SLOTS 1024 /* hash of asset ids, open addressing (> MAX_ASSETS, a third full at most): lookups happen many times a frame */
 
 static asset assets[MAX_ASSETS];
 static int16_t slot[SLOTS]; /* index into assets + 1; 0 = empty */
 static uint16_t oom_pixel = 0xF81F; /* stand-in if even a placeholder cannot be allocated */
+static bool table_full_said; /* the log has said the asset table is full (once a game) */
 static bool load_oom;      /* the load just made failed for want of memory, not because of the file: worth another try */
 static int fail_loads;     /* tests: this many loads find no memory (gfx_test_fail_loads) */
 #define OOM_RETRY_FRAMES 20 /* a picture that did not fit is asked for again after this many frames (a third of a second) */
@@ -30,6 +31,7 @@ void gfx_reset(void) {
         free(assets[i].pk);
     }
     nassets = 0;
+    table_full_said = false;
     nforced = 0;
     missing_id[0] = 0;
     canvas_px = 0;
@@ -316,7 +318,8 @@ static asset *lookup(const char *id, bool quiet) {
         }
         return a;
     }
-    if (nassets == MAX_ASSETS) {
+    if (nassets == MAX_ASSETS) { /* (silent until a game with more pictures than this found its fighters invisible) */
+        if (!table_full_said) table_full_said = true, hal_log("asset %s: the game has asked for %d pictures, the most there is room for: this one and any new one is a placeholder", key, MAX_ASSETS);
         if (!none.pixels) placeholder(&none, 16, 16, 1);
         return &none;
     }
