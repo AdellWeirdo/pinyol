@@ -1,5 +1,15 @@
 [
  {
+  "id": "time_fighters",
+  "title": "Plasma Heroes",
+  "description": "Puzzle arcade de combates entre figuras de la cultura: organiza el plasma por colores, detonalo y envia ataques al rival. Incluye Arcade, versus local, modos Clasico y Ultimate, tutorial y records; version 1.7.5 beta con todas las canciones completas.",
+  "author": "AdellWeirdo",
+  "license": "CC BY 4.0",
+  "issue": 7,
+  "date": "2026-10-22",
+  "cover": true
+ },
+ {
   "id": "ilustres",
   "title": "IL·LUSTRES: Combat de Llegenda",
   "description": "Joc de lluita 1v1 a la manera de la Neo Geo amb 20 il·lustres de la cultura catalana, de Dalí i Gaudí a Caballé i Peret: arcade amb rivals, set bonus i un boss final en dues fases. En català i castellà.",
