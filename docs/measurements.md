@@ -747,10 +747,26 @@ launched from the menu, three presses of A, a walk to the right, medians of the 
 Lua's drawing is 5-20 % cheaper, the script's memory 1-3 % more (the chunks), blocks of PSRAM used 74-442 instead of
 thousands, and no game is slower.
 
-Tried and left: **XIP off** (`CONFIG_SPIRAM_XIP_FROM_PSRAM` unset, which gives 1.7 MB back: 5.8 MB at the game's start) boots
-and runs but panics with `Cache disabled but cached memory region accessed` inside `tlsf_malloc` (`block_split`, from
-`read_picture`) at the first fight's loads; it was not chased. A fight of the two heaviest sheets still hitches when a SUPER
-needs room (a strip let go and loaded again, 100-300 ms); the secret fighter Tió (1 MB and 0.6 MB of sheets) was not tried.
+6. **Sheets in pieces** (`tools/pk_split.py`). Everything above left the whole sheets as the unit: with the heap as it is after
+   a fight or two, the largest block is 300-700 KB and a sheet of 600 KB still finds none with 1-3 MB free. Four heavy pairs
+   through the real VERSUS path on the board (Cerdà-Llull, Tió-Llull, Caballé-Cerdà, Llull-Tió): with whole sheets and XIP
+   off (6082 KB free at the game's start instead of 4345) a fighter was still invisible in all four: more room, the same
+   pieces of it. The game's 46 fighter sheets are now 184 pieces of 60-235 KB (10 frames each) and `PORTRAITS_L` (825 KB) 6 of 151
+   KB; `gfx.fighter` draws frame `f` from piece `f // 10`, the preload asks for the pieces. The same four pairs on the
+   XIP-on firmware (the production one): both fighters and both portraits in all four, no failed load. A SUPER in Cerdà-Llull
+   shows its background and both fighters; its start is one frame of 200 ms (the background loads then).
+7. **A canvas had no eviction.** The stage's far layer is a canvas of 320x160 (100 KB) made when a round starts, with plain
+   `malloc`; at the VS screen's end the heap of a heavy pair had 86 KB as its largest block and the game stopped with
+   `canvas "FAR": out of memory`. `gfx_canvas` now asks for its block as a picture does (`pic_malloc`: pictures not drawn
+   in this frame go one at a time, the oldest first). `tests/picmem.script` (`fail_mallocs N`: the next N first tries at a
+   block find none): a picture not drawn goes for the canvas, a drawn one stays, and with none to let go the canvas is the
+   error. Free PSRAM at the lowest point of a heavy pair: 170-490 KB, the largest block 50-110 KB, and nothing fails.
+
+Tried and left: **XIP off** (`CONFIG_SPIRAM_XIP_FROM_PSRAM` unset, which gives 1.7 MB back: 6.1 MB at the game's start). With
+the ROM's flash driver on (see the next section) it panicked with `Cache disabled but cached memory region accessed` inside
+`tlsf_malloc`, probably the same corruption as the update's (it was not chased then); with that driver off it boots and
+runs. It does not fix the fighters (point 6), so the production firmware keeps XIP on. The secret fighter Tió (1 MB and 0.6 MB of sheets) is one of the
+four pairs above.
 
 ## 2026-10-22 · The ROM's flash driver corrupted the heap on every erase (and the update from the card with it)
 

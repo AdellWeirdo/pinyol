@@ -1249,6 +1249,12 @@ turned (`angle`) or doubled (`scale` 2 as the fifth argument) it is unpacked onc
 The engine checks the whole file when it loads it (every column and run inside the file and the picture, every
 colour number inside the palette); a file that fails is drawn as a placeholder.
 
+A sheet can be cut into **pieces** of a few frames each: `tools/pk_split.py FILE.pk [--frames 10] [--remove]` writes
+`<ID>_C0.pk`, `<ID>_C1.pk`... (each a packed picture of its frames, with its own `.meta.json`: `asset`, `frames`, `order`,
+the slice of `frame_ms`). Each piece keeps the whole sheet's palette, so a `pal` picture made for the sheet works on every
+piece. The game picks the piece: frame `f` is frame `f % 10` of piece `f // 10`. Why: a picture needs one block of
+memory, and on the console a block of 600 KB is not always there ([docs/measurements.md](measurements.md), "PSRAM in pieces").
+
 ### Draw scale
 
 | Drawn at world scale (1 asset px = 2×2 screen px) | Drawn 2× on the native screen | Drawn at native size |

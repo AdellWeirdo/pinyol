@@ -254,6 +254,10 @@ least recently drawn first, until it fits. If it still finds none it is not lost
 tells the size it will have, and a third of a second later (twenty frames) it is asked for again; the log says so
 once (`no memory for N bytes`). A game that draws a fight's sheets of 600 KB each, both fighters', should preload them
 behind a still screen and leave out what it will not use soon (a SUPER's background loads in its own flash).
+Better still, cut the sheet into pieces of a few frames (`python3 tools/pk_split.py assets/SPR_HERO.pk --frames 10
+--remove` writes `SPR_HERO_C0`, `_C1`...; the game draws frame `f` as frame `f % 10` of `"SPR_HERO_C" .. f // 10`):
+pieces of 60-230 KB find their block when a whole sheet does not, and only the pieces in use stay in memory. A
+`canvas` needs one block too, and gets it the same way: pictures not drawn in this frame go for it, oldest first.
 
 ### A game's own look
 

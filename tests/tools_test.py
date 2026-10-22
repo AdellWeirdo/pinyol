@@ -143,3 +143,44 @@ r = subprocess.run([str(Path(sys.argv[1]) / "pinyol_headless"), "--game", str(fs
 assert "PASS" in r.stdout + r.stderr, (r.stdout + r.stderr)[-400:]
 print("famistudio2mod: ok")
 
+
+# pk_split: a sheet of seven frames made by png2asset --packed, split into pieces of three: every piece's columns are the
+# original's, the pieces' metas are right, and the engine loads them (a game drawing a pixel of each, through the headless)
+sys.path.insert(0, str(ROOT / "tools"))
+import pk_split  # noqa: E402
+
+sheet = out / "sheet"
+(sheet / "assets").mkdir(parents=True)
+shutil.copytree(ROOT / "tests/games/device/fonts", sheet / "fonts")
+frames = []
+for k in range(7):  # a diagonal of an opaque bar per frame: runs of different lengths, some columns empty
+    im = Image.new("RGBA", (12, 9), (0, 0, 0, 0))
+    for x in range(12):
+        for y in range(9):
+            if (x + y + k) % 5 < 2 and x > k % 3:
+                im.putpixel((x, y), (40 * k % 256, 200 - 20 * k, 90 + 10 * y, 255))
+    frames.append(im)
+strip = Image.new("RGBA", (12 * 7, 9))
+for k, f in enumerate(frames):
+    strip.paste(f, (12 * k, 0))
+strip.save(out / "sheet_src.png")
+subprocess.run([sys.executable, str(ROOT / "tools/png2asset.py"), str(out / "sheet_src.png"), str(sheet / "assets"), "SHEET",
+                "--packed", "--frames", "7", "--ms", "50"], check=True)
+whole = (sheet / "assets/SHEET.pk").read_bytes()
+written = pk_split.split_file(sheet / "assets/SHEET.pk", 3, remove=False)
+assert [p.name for p in written] == ["SHEET_C0.pk", "SHEET_C1.pk", "SHEET_C2.pk"], written
+metas = [json.loads(p.with_suffix(".meta.json").read_text()) for p in written]
+assert [m["frames"] for m in metas] == [3, 3, 1] and metas[1]["asset"] == "SHEET_C1", metas
+assert metas[2]["frame_ms"] == [50] and metas[0]["w"] == 12 and metas[0]["h"] == 9 and metas[2]["order"] == [0]
+for (f0, f1, piece), p in zip(pk_split.split(whole, 3), written):
+    assert piece == p.read_bytes() and pk_split.same_frames(whole, f0, piece)
+(sheet / "game.json").write_text(json.dumps({"id": "sheet", "title": "sheet", "engine": "pinyol@2", "main": "main.lua"}))
+(sheet / "main.lua").write_text("function _init() show(0) end function _update() end function _draw() cls(0) "
+                                "img('SHEET_C0', 0, 0) img('SHEET_C1', 20, 0, {frame = 2}) img('SHEET_C2', 40, 0) end\n")
+script = out / "sheet.script"
+script.write_text("tick 2\nexpect_lua imgsize('SHEET_C1') == 12\nexpect_lua select(3, imgsize('SHEET_C0')) == 3\n"
+                  "expect_lua select(3, imgsize('SHEET_C2')) == 1\nshot sheet\nexpect_ok\n")
+r = subprocess.run([str(Path(sys.argv[1]) / "pinyol_headless"), "--game", str(sheet), "--saves", str(out / "sheet_saves"), "--fresh",
+                    "--script", str(script)], capture_output=True, text=True)
+assert "PASS" in r.stdout + r.stderr, (r.stdout + r.stderr)[-400:]
+print("pk_split: ok")
