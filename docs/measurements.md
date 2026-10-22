@@ -798,5 +798,8 @@ this firmware has. What it touched: every erase of the flash: an update from the
 with no card, saves to the flash. (The panic of the XIP-off build above, in `tlsf_malloc`, may be the same fault.)
 
 D/IRAM left by the statics: 93 138 B with it, **83 534 B** without; the CI floor goes from 90 000 to 80 000. A console running
-a firmware older than this cannot update itself from the card (its own driver does the erase): flash it once by the cable
-(`esptool write_flash 0xf000 ota_data_initial.bin 0x20000 pinyol_console.bin`), then the card works.
+a build of main from 2026-10-21 (0ff5136, where the ROM's driver came in) or 2026-10-22 (until da2b717) cannot update itself
+from the card (its own driver does the erase): flash it once by the cable
+(`esptool write_flash 0xf000 ota_data_initial.bin 0x20000 pinyol_console.bin`), then the card works. The released firmwares are
+not affected: 0.3.0, published on 2026-10-20, was built without that driver (the sdkconfig of its tag has
+`CONFIG_SPI_FLASH_ROM_IMPL` unset, no XIP and the 64 KB cache).
