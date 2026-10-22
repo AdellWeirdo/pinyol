@@ -448,13 +448,14 @@ d1f8178, game sent to the card, volume 0, `perf` lines of the last second): each
 | Cubes | Pixels lit | Strips (CPU, both cores) | fps |
 |---:|---:|---:|---:|
 | 1 | 18.5k | about 7 ms | 59.8 |
+| 2 | 37k | 12.7 ms | 59.1 |
 | 4 | 74k | 23.9 ms | 30.0 |
 | 7 | 130k | 38.2 ms | 20.0 |
 
 About 300 ns a lit, dithered pixel (strips 23.9 ms / 74k, 38.2 ms / 130k), as in the quad tables above. With the frame at 16.7 ms
 the budget is roughly 12 ms of strips, **about 37k lit pixels a frame, a quarter of the screen**: two cubes this size, or a room
-seen through a few small faces, not a screenful of lit polygons. (That limit is from these three points, not measured at two
-cubes.) The cube itself costs little in Lua: `_draw` 1.2 ms for one, 2.5 ms for four, 3.7 ms for seven. Sources: a scratch game,
+seen through a few small faces, not a screenful of lit polygons. Two cubes (37k pixels, strips 12.7 ms) hold 59.1 fps with 0.9 ms
+to spare, so that is the edge. The cube itself costs little in Lua: `_draw` 1.2 ms for one, 2.5 ms for four, 3.7 ms for seven. Sources: a scratch game,
 not in the repo.
 
 ## The same mixer on a desktop

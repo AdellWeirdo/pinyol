@@ -66,6 +66,12 @@ lua calls3d = {} views.draw3d(cam3d, {face3d("hidden", 0)})
 expect_lua calls3d[1] == nil
 lua calls3d = {} views.draw3d(cam3d, {face3d("on_plane", 10)})
 expect_lua calls3d[1][1] == "on_plane"
+# snap: projected points land on whole pixels (x 133.33 -> 133, y -13.33 -> -13); without it they keep the fraction
+lua snapcam = {kind = "rear", ox = 100, horizon = 20, eye = 0, focal = 100, offset = 0, near = 10, snap = true}
+lua calls3d = {} views.draw3d(snapcam, {face3d("snapped", 30)})
+expect_lua calls3d[1][4] == 133 and calls3d[1][7] == -13 and calls3d[1][2] == 100 and calls3d[1][3] == 20
+lua calls3d = {} views.draw3d(cam3d, {face3d("smooth", 30)})
+expect_lua math.abs(calls3d[1][4] - 133.3333) < 0.001 and math.abs(calls3d[1][7] + 13.3333) < 0.001
 expect_lua_error views.draw3d(cam3d, {{id = "lit", corners = clipped.corners, opts = {lights = {0, 0, 0, 0}}}})
 expect_lua_error views.draw3d({kind = "unknown"}, {})
 lua bad_uv = face3d("bad", 20) bad_uv.corners[2].u = 0 / 0

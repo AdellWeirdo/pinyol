@@ -3,6 +3,7 @@
 --
 --   sx, sy, scale, order = views.project(camera, x, z, h)
 --   views.draw3d(camera, items) -- face: {id, corners = {{x,z,h,u,v} x4}, opts?}; actor: {x,z,h,draw}
+--     camera.snap = true rounds every projected point to a whole pixel, as a PlayStation did (its vertices wobble)
 --   id = views.pick(zones, x, z, fallback) -- half-open rectangles; the first matching zone wins
 -- `order` sorts far to near in ascending order. A point behind a rear camera returns nil.
 local M = {}
@@ -85,6 +86,14 @@ function M.draw3d(view, faces)
   local project = rear and M.projector(view) or function(x, z, h) return M.project(view, x, z, h) end
   -- Validate the lens even when the face list is empty or every face is hidden.
   project(0, rear and cz + near or 1, 0)
+  if view.snap then -- the PlayStation's GPU drew whole pixels, so a turning model's vertices wobble
+    local exact = project
+    project = function(x, z, h)
+      local sx, sy, scale, order = exact(x, z, h)
+      if sx == nil then return nil end
+      return math.floor(sx + 0.5), math.floor(sy + 0.5), scale, order
+    end
+  end
   local visible = {}
   for index, face in ipairs(faces) do
     assert(type(face) == "table", "views.draw3d: each item must be a table")
