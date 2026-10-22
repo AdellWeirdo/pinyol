@@ -679,3 +679,16 @@ de CPU (los dos núcleos); la misma como capa del mundo a mitad de resolución, 
 fps, intro de asalto a 53) ganaría ~5 ms de CPU por frame pasando la capa lejana al mundo, ~7,7 con las dos; la
 cercana a mitad de resolución pierde el detalle del público y la terraza, la lejana (cielo y ciudad al fondo) apenas
 se nota.
+
+Aplicado a ILUSTRES (`stage.lua`, 0719f0c) y medido en el combate real: la misma demo fija (Dalí contra Gaudí, 45
+segundos, `perf("ops")` cada segundo desde una copia del juego con la sonda), con los Lua antiguos y los nuevos sobre el
+mismo firmware:
+
+| Escenario | Strips (ms de CPU por frame) | de ellas `img` | Capas | Total |
+|---|---|---|---|---|
+| Lejana por `img` (antes) | 16,5 (máx. 23,0) | 14,5 | 0 | 16,5 |
+| Lejana en el mundo (ahora) | 9,5 (máx. 19,3) | 7,5 | 2,1 | 11,6 |
+
+Cinco ms de CPU por frame menos (−30 %) con la misma imagen en pantalla; los fps no cambian (59,1 de mediana en los
+dos, el tope del panel): el margen queda para lo que venga. Las bajadas que quedan (33 fps un segundo) son cargas de
+imágenes entre pantallas, no el dibujo.
