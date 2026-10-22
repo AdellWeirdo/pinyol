@@ -32,7 +32,8 @@ def game_id(folder: Path) -> str:
 
 def runtime_file(rel: Path) -> bool:
     if len(rel.parts) == 1:
-        return rel.suffix in {".json", ".lua"} or rel.name == "cover.rgb565"  # (its cover in the console's menu)
+        # (its cover in the console's menu; the words lang.lua reads: a game that left them out stopped in _init)
+        return rel.suffix in {".json", ".lua"} or rel.name in {"cover.rgb565", "strings.csv"}
     return rel.parts[0] in RUNTIME_DIRS or rel.suffix == ".lua"
 
 

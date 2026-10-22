@@ -88,6 +88,13 @@ assert r.returncode == 1 and "lacks ☃" in r.stdout, r.stdout
 (game / "game.json").write_text('{"id": "toolsgame", "title": "T", "engine": "pinyol@2"}')
 r = subprocess.run([sys.executable, str(ROOT / "tools/pack_game.py"), str(game), "--budget"], capture_output=True, text=True, check=True)
 assert "assets/HERO.rgb565" in r.stdout and "kind" in r.stdout, r.stdout
+# the words lang.lua reads (strings.csv at the game's top) go in the zip, for the web player, the card and the Library;
+# the pseudo-translation the checker wrote does not
+sys.path.insert(0, str(ROOT / "tools"))
+import pack_game
+import zipfile
+names = zipfile.ZipFile(pack_game.pack(game, out / "zips", False)).namelist()
+assert "toolsgame/strings.csv" in names and "toolsgame/strings.pseudo.csv" not in names, names
 print("tools_test: ok")
 
 # a FamiStudio text export as a module: four channels, the speed from the note length, a volume envelope followed
