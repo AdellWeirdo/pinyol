@@ -170,7 +170,7 @@ example exercises it, so correctness/perf on the console is unproven.
     engine in Lua; link duels with state sync (have: `link`, check at 20 msg/s); card collection in `store` (check size).
 22. **Sports (golf/tennis/skate)**: aim/power meters (have: `btnt`, `btnr`); ball + shadow sprites with scale by height
     (have); isometric or 3D-ish court by `mode7` or sprites (have).
-23. **Arcade classics**: fixed screens, canvases (have: rocas, ladrillos, paletes); maze-chase AI on a grid (`grid`,
+23. **Arcade classics**: fixed screens, canvases (have: pozo, ladrillos, paletes); maze-chase AI on a grid (`grid`,
     `distances`; unused example).
 24. **Sensor / peripheral games**: `mic`, `battery`, `led` (have: control); IMU/tilt, light sensor, rumble (gap).
 25. **Isometric**: depth sort across up to 128 OBJ (Lua sort + `spr` order, check); diamond tile maps as sprites or a
@@ -211,7 +211,7 @@ examined.
 | 20 | Life sim / pet | none | MISSING | |
 | 21 | Card / board | none | MISSING | |
 | 22 | Sports | futbol (5-a-side), paletes (pong) | PARTIAL | golf, tennis, skate missing |
-| 23 | Arcade classics | rocas, ladrillos, paletes, huevos (LCD) | COVERED | maze-chase (Pac-Man) missing |
+| 23 | Arcade classics | pozo, ladrillos, paletes, huevos (LCD) | COVERED | maze-chase (Pac-Man) missing |
 | 24 | Sensor / peripheral | control (mic, battery, LED, video) | PARTIAL | no IMU/tilt, light sensor or RTC to build on |
 | 25 | Isometric / 2.5D | isla (a grid island: heights, crates, depth-sorted sprites) | PARTIAL | no isometric tactics or skate, no map with more standing things than 128 sprites |
 | 26 | Link multiplayer | juntos (whiteboard, ball passed between screens) | PARTIAL | no competitive/co-op game |
