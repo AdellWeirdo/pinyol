@@ -250,12 +250,18 @@ static bool p01_place(int x, int y, int rot) {
 }
 
 static bool write_ppm(const char *name) {
-    static uint16_t fb[SCREEN_W * SCREEN_H];
+    /* Made when a shot is taken, not kept: as a static these 300 KB sat in the console's PSRAM, in every firmware that
+     * has the script runner, for the pictures of a big game to want (docs/measurements.md, 2026-10-22). */
+    uint16_t *fb = hal_realloc_slow(NULL, (size_t)SCREEN_W * SCREEN_H * sizeof *fb);
+    if (!fb) FAIL("no memory for a shot");
     game_render(fb);
     char path[384];
     snprintf(path, sizeof path, "%s/%s.ppm", G.save_dir, name);
     FILE *f = fopen(path, "wb");
-    if (!f) FAIL("cannot write %s", path);
+    if (!f) {
+        free(fb);
+        FAIL("cannot write %s", path);
+    }
     fprintf(f, "P6\n%d %d\n255\n", SCREEN_W, SCREEN_H);
     for (int i = 0; i < SCREEN_W * SCREEN_H; i++) {
         uint16_t c = fb[i];
@@ -263,6 +269,7 @@ static bool write_ppm(const char *name) {
         fwrite(rgb, 1, 3, f);
     }
     fclose(f);
+    free(fb);
     hal_log("shot %s", path);
     return true;
 }
