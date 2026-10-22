@@ -727,6 +727,26 @@ left the picture a one-pixel placeholder for the whole game. What changed, in th
    fight are no longer loaded behind the VS screen: about 460 KB less in the fight's 2.8 MB. A SUPER loads its own in the
    flash, when the picture stands still (seen on the board: Cerdà's L'EIXAMPLE).
 
+The same eleven games on the board before and after (the firmware of `111be0b` against the one with all of the above; each
+launched from the menu, three presses of A, a walk to the right, medians of the log's lines; the panel caps the frames at 60):
+
+| Game | fps | Lua draw ms | world ms | script KB | game_init ms |
+|---|---|---|---|---|---|
+| trece | 59.2 -> 59.3 | 0.72 -> 0.68 | 2.50 -> 2.43 | 296 -> 298 | 479 -> 425 |
+| duelo | 59.9 -> 59.8 | 0.99 -> 0.89 | 1.04 -> 0.93 | 77 -> 80 | 217 -> 207 |
+| torneo | 59.8 -> 59.8 | 1.60 -> 1.56 | 1.65 -> 1.60 | 86 -> 84 | 232 -> 231 |
+| castells | 58.5 -> 58.6 | 1.64 -> 1.53 | 1.69 -> 1.57 | 280 -> 280 | 473 -> 446 |
+| maqueta | 56.7 -> 59.4 | 4.00 -> 3.22 | 6.14 -> 5.36 | 814 -> 836 | 1082 -> 984 |
+| control | 58.3 -> 58.5 | 4.82 -> 4.11 | 5.30 -> 4.41 | 248 -> 241 | 289 -> 270 |
+| paleta | 59.7 -> 59.7 | 1.80 -> 1.54 | 5.26 -> 5.02 | 116 -> 120 | 331 -> 318 |
+| horizonte | 59.8 -> 59.8 | 1.48 -> 1.42 | 5.66 -> 5.59 | 37 -> 36 | 220 -> 221 |
+| veloz | 58.7 -> 58.8 (three runs each) | 1.72 -> 1.60 | 7.1 -> 6.9 | 51 -> 50 | 228 -> 214 |
+| isla | 59.5 -> 59.5 | 1.92 -> 1.64 | 5.08 -> 4.83 | 90 -> 93 | 240 -> 234 |
+| sima | 58.0 -> 58.0 | 0.79 -> 0.69 | 4.96 -> 4.88 | 154 -> 158 | 235 -> 229 |
+
+Lua's drawing is 5-20 % cheaper, the script's memory 1-3 % more (the chunks), blocks of PSRAM used 74-442 instead of
+thousands, and no game is slower.
+
 Tried and left: **XIP off** (`CONFIG_SPIRAM_XIP_FROM_PSRAM` unset, which gives 1.7 MB back: 5.8 MB at the game's start) boots
 and runs but panics with `Cache disabled but cached memory region accessed` inside `tlsf_malloc` (`block_split`, from
 `read_picture`) at the first fight's loads; it was not chased. A fight of the two heaviest sheets still hitches when a SUPER
