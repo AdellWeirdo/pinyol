@@ -979,6 +979,12 @@ bool audio_music_time(double *seconds) {
 
 static float *modb; /* a module's chunk before the music bus (slow memory: the console's internal RAM is counted) */
 
+void audio_free(void) { /* the player ends (after audio_reset): the mixer's own scratch let go */
+    hal_audio_lock();
+    free(modb), modb = NULL;
+    hal_audio_unlock();
+}
+
 void audio_reset(void) {
     if (!modb) modb = hal_realloc_slow(NULL, CHUNK * sizeof *modb);
     studio_reset(); /* its tracks point into the cache freed below */

@@ -271,6 +271,7 @@ static int l_raycast(lua_State *L) {
 /* The height map as bytes, kept from one frame to the next while the same picture (and the same canvas generation)
  * is asked for: the brightness of each pixel once, not once a sample. In slow memory. */
 static uint8_t *hmap;
+static int16_t *ray_ybuf;
 static int hmap_w, hmap_h;
 static const asset *hmap_src;
 static uint32_t hmap_gen;
@@ -285,6 +286,11 @@ static bool height_map(const asset *a) {
         hmap[i] = (uint8_t)(((c >> 11) * 702 + ((c >> 5) & 63) * 345 + (c & 31) * 702) >> 8); /* (R + G + B) / 3 of the 8-bit channels */
     }
     return true;
+}
+
+void ray_free(void) { /* the player ends: the voxel renderer's buffers let go */
+    free(hmap), hmap = NULL, hmap_src = NULL, hmap_w = hmap_h = 0;
+    free(ray_ybuf), ray_ybuf = NULL;
 }
 
 static int l_voxels(lua_State *L) {
@@ -309,8 +315,8 @@ static int l_voxels(lua_State *L) {
     if (sky == CANVAS_KEY) sky ^= 1; /* (the key colour is see-through on a canvas) */
     uint16_t *out = cv->pixels;
     for (int i = 0; i < W * H; i++) out[i] = sky;
-    static int16_t *ybuf; /* the lowest row still open in each column (slow memory: the console's internal RAM is counted) */
-    if (!ybuf && !(ybuf = hal_realloc_slow(NULL, MAX_W * sizeof *ybuf))) return luaL_error(L, "voxels: out of memory");
+    int16_t *ybuf = ray_ybuf; /* the lowest row still open in each column (slow memory: the console's internal RAM is counted) */
+    if (!ybuf && !(ybuf = ray_ybuf = hal_realloc_slow(NULL, MAX_W * sizeof *ybuf))) return luaL_error(L, "voxels: out of memory");
     for (int x = 0; x < W; x++) ybuf[x] = (int16_t)H;
     /* the maps are read with a mask when their sides are powers of two (the usual), a modulo otherwise */
     const int hw = hmap_w, hh = hmap_h, cw = cm->w, ch = cm->h;

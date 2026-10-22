@@ -104,6 +104,9 @@ void game_shutdown(void) {
     v2_free();
     arena_free();
     audio_reset();
+    audio_free();
+    ray_free();
+    ppu_free();
     studio_fx_free();
     gfx_reset();
     content_free();

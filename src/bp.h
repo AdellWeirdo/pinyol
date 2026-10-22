@@ -497,6 +497,9 @@ void audio_music_clock(int src);        /* 0: music() stopped the song; its cloc
 void audio_music_clock_locked(int src); /* (the same, the audio lock held: in a song's swap) */
 bool audio_music_time(double *seconds); /* how far into the song the player hears now; false: none plays */
 double audio_music_bar(void);           /* the playing song's bar in seconds (given to music(), or the WAV's own cues); 0 none */
+void audio_free(void);                  /* the player ends (after audio_reset): the mixer's scratch let go */
+void ray_free(void);                    /* lua_ray.c: the voxel renderer's buffers let go */
+void ppu_free(void);                    /* ppu.c: the frames' slow-memory scratch let go */
 void audio_reset(void);
 /* For the studio (studio.c), the audio lock held where it says so */
 int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch, bool loop, int wait, float send_d,
