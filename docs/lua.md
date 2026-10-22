@@ -248,6 +248,13 @@ level's pictures are best drawn once when it starts). So a game's art can be far
 as long as what one frame draws fits. Pictures used by the 240x160 world (sprite sheets, bitmap layers) and canvases
 always stay.
 
+On the console the pictures' 4 MB is what the heap leaves (about 3 MB for a game with a script of a megabyte),
+and a picture needs one block of that, not its sum. When a picture finds no block big enough, the ones not drawn in this frame go one at a time, the
+least recently drawn first, until it fits. If it still finds none it is not lost: a one-pixel stand-in is drawn, `imgsize`
+tells the size it will have, and a third of a second later (twenty frames) it is asked for again; the log says so
+once (`no memory for N bytes`). A game that draws a fight's sheets of 600 KB each, both fighters', should preload them
+behind a still screen and leave out what it will not use soon (a SUPER's background loads in its own flash).
+
 ### A game's own look
 
 Every game starts with the same four fonts and the same panels. What makes one look like itself:

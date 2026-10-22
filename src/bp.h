@@ -167,6 +167,11 @@ typedef struct {
     bool out;               /* let go: its data comes back from the card the next time it is asked for */
     uint32_t used;          /* the last frame it was asked for (gfx_new_frame) */
     size_t bytes;           /* its data in memory: file, pixels, mask */
+    /* no memory for it when it was asked for: a one-pixel stand-in until `retry_at`, then another try (gfx.c); the size
+     * it will have is what imgsize tells meanwhile, so a game does not take the picture for one that is not there */
+    bool oom, oom_said;
+    uint32_t retry_at;
+    int oom_w, oom_h, oom_frames;
 } asset;
 
 typedef struct {
@@ -184,7 +189,8 @@ const char *gfx_missing_asset(void); /* first required picture missing or malfor
 #define PIC_BUDGET (4u << 20)
 void gfx_new_frame(void);           /* a frame starts: what it asks for stays in memory until the next one */
 void gfx_pin(asset *a);             /* keep it: something holds pointers into its pixels */
-void gfx_set_budget(size_t bytes);  /* (tests: a small budget, to let pictures go all the time) */
+void gfx_set_budget(size_t bytes);
+void gfx_test_fail_loads(int n); /* (tests: the next n loads find no memory, as on the console when it is fragmented) */  /* (tests: a small budget, to let pictures go all the time) */
 size_t gfx_picture_bytes(void);     /* the pictures in memory now */
 asset *gfx_asset_opt(const char *id); /* the same, silent when the game leaves it out */
 bool gfx_asset_builtin(asset *a, const pinyol_pic_entry *e); /* one of the engine's own (pinyol_splash) into a */

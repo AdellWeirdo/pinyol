@@ -1203,6 +1203,10 @@ static int l_imgsize(lua_State *L) { /* imgsize(picture) -> w, h, frames, or nil
     const char *id = luaL_checkstring(L, 1);
     asset *a = safe_name(id) ? gfx_asset_opt(id) : NULL;
     if (!a || a->missing) return lua_pushnil(L), 1;
+    if (a->oom) { /* no memory for it just now, and on its way: the size it will have, not its stand-in's */
+        lua_pushinteger(L, a->oom_w), lua_pushinteger(L, a->oom_h), lua_pushinteger(L, a->oom_frames);
+        return 3;
+    }
     lua_pushinteger(L, a->w), lua_pushinteger(L, a->h), lua_pushinteger(L, a->frames);
     return 3;
 }

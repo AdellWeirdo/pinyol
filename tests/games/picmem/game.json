@@ -1,0 +1,8 @@
+{
+  "id": "picmem",
+  "title": "Picture memory",
+  "engine": "np2d@2",
+  "main": "main.lua",
+  "author": "pinyol tests",
+  "description": "A picture that finds no memory when it is asked for comes back a moment later (tests/picmem.script)."
+}

@@ -290,6 +290,7 @@ static bool text_visible(const char *s) {
 
 static bool run_line(char *cmd, char *arg) {
     if (!strcmp(cmd, "new")) { game_new(); return tick(0); }
+    if (!strcmp(cmd, "fail_loads")) { gfx_test_fail_loads(atoi(arg)); return true; } /* the next n picture loads find no memory */
     if (!strcmp(cmd, "lua") || !strcmp(cmd, "expect_lua")) { /* pinyol@2: run code / check an expression in the game */
         char msg[200];
         if (!v2_run(arg, cmd[0] == 'e', msg, sizeof msg)) FAIL("%s %s -> %s", cmd, arg, msg);

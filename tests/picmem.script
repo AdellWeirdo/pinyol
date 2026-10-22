@@ -1,0 +1,38 @@
+# A picture that finds no memory when it is asked for is not lost: a stand-in, its true size told by imgsize meanwhile,
+# and a moment later it comes back whole (as on the console, where a fragmented heap has no block for a big sheet and,
+# before this, the picture stayed missing for the whole game).
+new
+# the first load finds no memory
+fail_loads 1
+lua SHOW = true
+lua W, H, F = imgsize("SPR_BOOM")
+expect_lua W == 144 and H == 144 and F == 5
+# stand-in: one pixel, so a pixel inside the real picture is outside it
+expect_lua pget(72, 72, "SPR_BOOM") == nil
+shot picmem_waiting
+shot picmem_waiting2
+shot picmem_waiting3
+# back: the whole picture, its size unchanged
+expect_lua pget(72, 72, "SPR_BOOM") ~= nil
+lua W, H, F = imgsize("SPR_BOOM")
+expect_lua W == 144 and H == 144 and F == 5
+# loads that fail again and again keep it waiting (its size told all the while), and it comes when memory is there
+fail_loads 3
+lua SHOW2 = true
+lua W, H, F = imgsize("SPR_SHIP")
+expect_lua W == 112 and H == 40 and F == 1
+expect_lua pget(12, 2, "SPR_SHIP") == nil
+shot picmem_again1
+lua W, H, F = imgsize("SPR_SHIP")
+expect_lua W == 112 and H == 40 and F == 1 and pget(12, 2, "SPR_SHIP") == nil
+shot picmem_again2
+shot picmem_again3
+shot picmem_again4
+# (a try every two frames here, the third fails too: it is the fourth that finds memory)
+expect_lua pget(12, 2, "SPR_SHIP") == nil
+shot picmem_again5
+shot picmem_again6
+lua W, H, F = imgsize("SPR_SHIP")
+expect_lua W == 112 and H == 40 and F == 1
+expect_lua pget(12, 2, "SPR_SHIP") ~= nil
+expect_ok

@@ -11,6 +11,10 @@
 static asset assets[MAX_ASSETS];
 static int16_t slot[SLOTS]; /* index into assets + 1; 0 = empty */
 static uint16_t oom_pixel = 0xF81F; /* stand-in if even a placeholder cannot be allocated */
+static bool load_oom;      /* the load just made failed for want of memory, not because of the file: worth another try */
+static int fail_loads;     /* tests: this many loads find no memory (gfx_test_fail_loads) */
+#define OOM_RETRY_FRAMES 20 /* a picture that did not fit is asked for again after this many frames (a third of a second) */
+static int oom_retry = OOM_RETRY_FRAMES;
 static int nassets;
 static size_t canvas_px; /* all the canvases' pixels: CANVAS_MAX_PX at most */
 static size_t pic_bytes, pic_budget = PIC_BUDGET, budget_set; /* the pictures' data in memory, how much may be */
@@ -61,11 +65,24 @@ static void placeholder(asset *a, int w, int h, int frames) {
     a->missing = true;
 }
 
+/* A picture that found no memory is not a picture that is not there: a one-pixel stand-in, its size kept for imgsize, and
+ * lookup asks for it again after OOM_RETRY_FRAMES (whatever was let go meanwhile may leave a block). Before this the
+ * placeholder was for good: a fighter whose sheet came too late for the memory stayed invisible for the whole game. */
+static void oom_stub(asset *a) {
+    a->oom_w = a->w, a->oom_h = a->h, a->oom_frames = a->frames;
+    a->w = a->h = a->frames = 1;
+    a->ax = a->ay = 0;
+    a->pixels = &oom_pixel, a->mask = NULL, a->pk = NULL, a->pal = NULL, a->cols = NULL, a->bpp = 0;
+    a->bytes = 0, a->missing = false, a->out = false;
+    a->oom = true, a->retry_at = pic_frame + (uint32_t)oom_retry;
+}
+
 /* ------------------------------------------------------------------ the pictures' memory */
 
 void gfx_new_frame(void) { pic_frame++; }
 void gfx_pin(asset *a) { a->pinned = true; }
 void gfx_set_budget(size_t bytes) { pic_budget = budget_set = bytes; } /* for every game from now on */
+void gfx_test_fail_loads(int n) { fail_loads = n, oom_retry = n > 0 ? 2 : OOM_RETRY_FRAMES; } /* (a short wait to try again: the script has few frames) */
 size_t gfx_picture_bytes(void) { return pic_bytes; }
 
 static void let_go(asset *a) { /* its data freed; the rest (its name, size, anchor) stays for when it comes back */
@@ -76,25 +93,39 @@ static void let_go(asset *a) { /* its data freed; the rest (its name, size, anch
     a->bytes = 0, a->out = true;
 }
 
-/* Lets pictures go, least recently asked for first, until `need` more bytes fit the budget (all = true: every one it
- * can, as when memory itself ran out). Never one asked for in this frame (its commands draw from it), one pinned, a
- * canvas or `keep`. ponytail: a scan of every picture per one let go; a list in order of use if hundreds go a frame. */
-static void make_room(size_t need, const asset *keep, bool all) {
-    while (all || pic_bytes + need > pic_budget) {
-        asset *lru = NULL;
-        for (int i = 0; i < nassets; i++) {
-            asset *a = &assets[i];
-            if (a == keep || a->pinned || a->canvas || a->out || !a->bytes || a->used == pic_frame) continue;
-            if (!lru || a->used < lru->used) lru = a;
-        }
-        if (!lru) return;
-        let_go(lru);
+/* Lets the least recently asked for picture go. Never one asked for in this frame (its commands draw from it), one
+ * pinned, a canvas or `keep`. False when there is none to let go. ponytail: a scan of every picture per one let go; a
+ * list in order of use if hundreds go a frame. */
+static bool let_go_oldest(const asset *keep) {
+    asset *lru = NULL;
+    for (int i = 0; i < nassets; i++) {
+        asset *a = &assets[i];
+        if (a == keep || a->pinned || a->canvas || a->out || !a->bytes || a->used == pic_frame) continue;
+        if (!lru || a->used < lru->used) lru = a;
     }
+    if (!lru) return false;
+    let_go(lru);
+    return true;
+}
+
+/* Until `need` more bytes fit the budget (all = true: every picture it can let go). */
+static void make_room(size_t need, const asset *keep, bool all) {
+    while ((all || pic_bytes + need > pic_budget) && let_go_oldest(keep)) {}
+}
+
+/* malloc for a picture's data: when the heap has no block, the pictures go one at a time, the oldest first, and it asks
+ * again after each (what freed next to a free block may make one). Before, every picture not drawn this frame went at
+ * once and it asked a single time: a fight's preload, behind the VS screen, took its own earlier loads with it. */
+static void *pic_malloc(size_t n, const asset *keep) {
+    void *p = malloc(n);
+    while (!p && let_go_oldest(keep)) p = malloc(n);
+    return p;
 }
 
 /* read_file for a picture's data, with room made for it first (and everything that can go let go, then once more,
  * when memory itself runs out) */
 static char *read_picture(const char *path, long *len, const asset *keep) {
+    load_oom = false;
     FILE *f = fopen(path, "rb"); /* (once: on the card each opening walks the folder) */
     if (!f) return NULL;
     fseek(f, 0, SEEK_END);
@@ -103,7 +134,13 @@ static char *read_picture(const char *path, long *len, const asset *keep) {
     char *d = NULL;
     if (n >= 0) {
         make_room((size_t)n, keep, false);
-        if (!(d = malloc((size_t)n + 1))) make_room(0, keep, true), d = malloc((size_t)n + 1);
+        if (fail_loads > 0) fail_loads--;
+        else d = pic_malloc((size_t)n + 1, keep);
+        if (!d) { /* not the file's fault: a block this big is not there (free memory in pieces, as a heap that has run a while) */
+            load_oom = true;
+            if (!keep || !keep->oom_said) hal_log("picture %s: no memory for %ld bytes, tried again in a moment", path, n);
+            if (keep) ((asset *)keep)->oom_said = true; /* (said once: the tries go on every third of a second) */
+        }
     }
     if (d && fread_chunked(d, (size_t)n, f) != (size_t)n) free(d), d = NULL;
     fclose(f);
@@ -113,9 +150,7 @@ static char *read_picture(const char *path, long *len, const asset *keep) {
 
 static void *alloc_picture(size_t n, const asset *keep) { /* malloc, with room made the same way */
     make_room(n, keep, false);
-    void *p = malloc(n);
-    if (!p) make_room(0, keep, true), p = malloc(n);
-    return p;
+    return pic_malloc(n, keep);
 }
 
 static inline unsigned rd16(const uint8_t *p) { return p[0] | p[1] << 8; }
@@ -169,6 +204,7 @@ static bool load_packed(asset *a) {
     long len = 0;
     snprintf(path, sizeof path, "%s/assets/%s.pk", G.game_dir, a->id);
     uint8_t *pk = (uint8_t *)read_picture(path, &len, a);
+    if (!pk && load_oom) return false; /* (said already; load_asset puts the stand-in) */
     const char *why = pk_take(a, pk, len);
     if (why) {
         hal_log("asset %s: %s", a->id, why);
@@ -218,6 +254,7 @@ static bool load_asset(asset *a) {
     }
     if (packed) {
         if (load_packed(a)) return true;
+        if (load_oom) return oom_stub(a), true;
         placeholder(a, a->w, a->h, a->frames);
         return true; /* the declared geometry, a checkerboard */
     }
@@ -227,6 +264,7 @@ static bool load_asset(asset *a) {
     size_t npx = (size_t)a->w * a->h * a->frames;
     snprintf(path, sizeof path, "%s/assets/%s.rgb565", G.game_dir, a->id);
     uint8_t *raw = (uint8_t *)read_picture(path, &len, a);
+    if (!raw && load_oom) return oom_stub(a), true;
     if (!raw || (size_t)len != npx * 2) {
         hal_log("asset %s: pixel file size %ld, expected %zu", a->id, len, npx * 2);
         free(raw);
@@ -269,7 +307,10 @@ static asset *lookup(const char *id, bool quiet) {
     if (slot[h]) {
         asset *a = &assets[slot[h] - 1];
         a->used = pic_frame;
-        if (a->out) { /* let go earlier: back from the card, as it was */
+        if (a->oom && pic_frame >= a->retry_at) { /* it found no memory last time: whatever went since may have left some */
+            a->oom = false, a->pixels = NULL; /* (the stand-in is static) */
+            if (!load_asset(a)) placeholder(a, a->w, a->h, a->frames);
+        } else if (a->out) { /* let go earlier: back from the card, as it was */
             a->out = false;
             if (!load_asset(a)) placeholder(a, a->w, a->h, a->frames);
         }
