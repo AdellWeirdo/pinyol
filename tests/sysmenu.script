@@ -35,6 +35,22 @@ press A
 expect_menu closed
 tick 3
 expect_lua n == 4 and rang == false
+# menuitem(label) takes an item away and menuitem() all of them (both failed while an item existed to take away)
+lua other = false; menuitem("Otra", function() other = true end); menuitem("Sonar")
+tick 60
+press MENU
+press DOWN
+press A
+expect_menu closed
+expect_lua other == true and rang == false
+lua menuitem()
+tick 60
+press MENU
+press DOWN
+press A
+expect_menu closed
+tick 3
+expect_lua n == 4 and rang == false
 # a game that reads MENU keeps its taps; MENU held a second opens the menu anyway, and letting go then does not close it
 lua read_menu = true
 press MENU

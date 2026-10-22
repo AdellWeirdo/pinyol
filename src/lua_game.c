@@ -1274,14 +1274,15 @@ static int l_perf(lua_State *L) { /* perf() -> ms of the last _update, _draw, pi
  * player chooses it, with the menu closed; menuitem(label) takes that item away; menuitem() takes all of them. */
 #define MENU_ITEMS 3
 static int l_menuitem(lua_State *L) {
-    lua_getfield(L, LUA_REGISTRYINDEX, "pinyol.menu");
-    if (lua_isnoneornil(L, 1)) { /* all gone */
+    const int args = lua_gettop(L); /* (before anything is pushed: a call with no label or one has its own arguments) */
+    if (args == 0 || lua_isnil(L, 1)) { /* all gone */
         lua_pushnil(L), lua_setfield(L, LUA_REGISTRYINDEX, "pinyol.menu");
         return 0;
     }
-    if (lua_isnil(L, -1)) lua_pop(L, 1), lua_newtable(L), lua_pushvalue(L, -1), lua_setfield(L, LUA_REGISTRYINDEX, "pinyol.menu");
     const char *label = luaL_checkstring(L, 1);
     if (strlen(label) > 32) return luaL_error(L, "menuitem: a label of 32 characters at most");
+    lua_getfield(L, LUA_REGISTRYINDEX, "pinyol.menu");
+    if (lua_isnil(L, -1)) lua_pop(L, 1), lua_newtable(L), lua_pushvalue(L, -1), lua_setfield(L, LUA_REGISTRYINDEX, "pinyol.menu");
     const int t = lua_gettop(L), n = (int)lua_rawlen(L, t);
     int at = 0;
     for (int i = 1; i <= n && !at; i++) { /* the same label: that item */
@@ -1289,7 +1290,7 @@ static int l_menuitem(lua_State *L) {
         if (!strcmp(lua_tostring(L, -1), label)) at = i;
         lua_pop(L, 2);
     }
-    if (lua_isnoneornil(L, 2)) { /* taken away */
+    if (args < 2 || lua_isnil(L, 2)) { /* taken away */
         if (at) {
             for (int i = at; i < n; i++) lua_rawgeti(L, t, i + 1), lua_rawseti(L, t, i);
             lua_pushnil(L), lua_rawseti(L, t, n);
