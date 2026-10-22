@@ -7,6 +7,27 @@ on:
     types: [opened, edited, labeled]
 permissions: {}
 jobs:
+  notify:
+    # mail to the maintainer for every game sent with the form; "opened" only, so the extra "labeled" run stays quiet.
+    # Needs the repo secrets MAIL_USERNAME / MAIL_PASSWORD (SMTP login, e.g. a Gmail app password) and MAIL_TO.
+    if: github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'biblioteca')
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - uses: dawidd6/action-send-mail@v6
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          to: ${{ secrets.MAIL_TO }}
+          from: pinyol Biblioteca <${{ secrets.MAIL_USERNAME }}>
+          subject: "Biblioteca: nuevo juego de ${{ github.event.issue.user.login }} (#${{ github.event.issue.number }})"
+          body: |
+            ${{ github.event.issue.user.login }} ha enviado un juego a la Biblioteca:
+            ${{ github.event.issue.title }}
+            ${{ github.event.issue.html_url }}
   check:
     if: contains(github.event.issue.labels.*.name, 'biblioteca') && (github.event.action != 'labeled' || github.event.label.name == 'aprobado')
     # here, not on the workflow: an issue sent with the form is "opened" and "labeled" (biblioteca) at once, and that
