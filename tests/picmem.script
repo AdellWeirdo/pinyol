@@ -35,4 +35,22 @@ shot picmem_again6
 lua W, H, F = imgsize("SPR_SHIP")
 expect_lua W == 112 and H == 40 and F == 1
 expect_lua pget(12, 2, "SPR_SHIP") ~= nil
+# A canvas needs one block too (the far layer of a fight's stage, 100 KB, on the console, when the VS screen's
+# loads have filled the heap): a picture not drawn in this frame goes for it, and only a canvas that no picture's
+# going helps is an error (before, a heap without the block stopped the game: canvas "FAR": out of memory).
+lua SHOW, SHOW2 = true, true
+shot picmem_canvas1
+lua SHOW2 = false
+shot picmem_canvas2
+# the first try finds no block: the ship, not drawn in this frame, goes; the boom, drawn in it, stays
+fail_mallocs 1
+lua canvas("FAR", 320, 160)
+expect_lua imgsize("FAR") == 320
+# nothing is left that may go: no block, no canvas
+fail_mallocs 1
+expect_lua_error canvas("NEAR", 320, 160)
+# (the picture that went comes back when it is asked for)
+lua SHOW2 = true
+shot picmem_canvas3
+expect_lua pget(12, 2, "SPR_SHIP") ~= nil
 expect_ok

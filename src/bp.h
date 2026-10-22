@@ -189,8 +189,9 @@ const char *gfx_missing_asset(void); /* first required picture missing or malfor
 #define PIC_BUDGET (4u << 20)
 void gfx_new_frame(void);           /* a frame starts: what it asks for stays in memory until the next one */
 void gfx_pin(asset *a);             /* keep it: something holds pointers into its pixels */
-void gfx_set_budget(size_t bytes);
-void gfx_test_fail_loads(int n); /* (tests: the next n loads find no memory, as on the console when it is fragmented) */  /* (tests: a small budget, to let pictures go all the time) */
+void gfx_set_budget(size_t bytes);  /* (tests: a small budget, to let pictures go all the time) */
+void gfx_test_fail_loads(int n); /* (tests: the next n loads find no memory, as on the console when it is fragmented) */
+void gfx_test_fail_mallocs(int n); /* (tests: the next n first tries at a block find none, a picture let go makes one) */
 size_t gfx_picture_bytes(void);     /* the pictures in memory now */
 asset *gfx_asset_opt(const char *id); /* the same, silent when the game leaves it out */
 bool gfx_asset_builtin(asset *a, const pinyol_pic_entry *e); /* one of the engine's own (pinyol_splash) into a */

@@ -14,6 +14,7 @@ static uint16_t oom_pixel = 0xF81F; /* stand-in if even a placeholder cannot be 
 static bool table_full_said; /* the log has said the asset table is full (once a game) */
 static bool load_oom;      /* the load just made failed for want of memory, not because of the file: worth another try */
 static int fail_loads;     /* tests: this many loads find no memory (gfx_test_fail_loads) */
+static int fail_mallocs;   /* tests: this many first tries at a block for a picture or canvas find none (gfx_test_fail_mallocs) */
 #define OOM_RETRY_FRAMES 20 /* a picture that did not fit is asked for again after this many frames (a third of a second) */
 static int oom_retry = OOM_RETRY_FRAMES;
 static int nassets;
@@ -85,6 +86,7 @@ void gfx_new_frame(void) { pic_frame++; }
 void gfx_pin(asset *a) { a->pinned = true; }
 void gfx_set_budget(size_t bytes) { pic_budget = budget_set = bytes; } /* for every game from now on */
 void gfx_test_fail_loads(int n) { fail_loads = n, oom_retry = n > 0 ? 2 : OOM_RETRY_FRAMES; } /* (a short wait to try again: the script has few frames) */
+void gfx_test_fail_mallocs(int n) { fail_mallocs = n; }
 size_t gfx_picture_bytes(void) { return pic_bytes; }
 
 static void let_go(asset *a) { /* its data freed; the rest (its name, size, anchor) stays for when it comes back */
@@ -119,7 +121,7 @@ static void make_room(size_t need, const asset *keep, bool all) {
  * again after each (what freed next to a free block may make one). Before, every picture not drawn this frame went at
  * once and it asked a single time: a fight's preload, behind the VS screen, took its own earlier loads with it. */
 static void *pic_malloc(size_t n, const asset *keep) {
-    void *p = malloc(n);
+    void *p = fail_mallocs > 0 ? (fail_mallocs--, NULL) : malloc(n);
     while (!p && let_go_oldest(keep)) p = malloc(n);
     return p;
 }
@@ -364,8 +366,8 @@ const char *gfx_canvas(const char *id, int w, int h, const asset *from, asset **
     if (!a) {
         if (canvas_px + (size_t)w * h > CANVAS_MAX_PX) return "no room for it: 3 MB of canvases in all";
         if (nassets == MAX_ASSETS) return "too many pictures";
-        uint16_t *px = malloc((size_t)w * h * 2);
-        uint8_t *mask = malloc((size_t)stride * h);
+        uint16_t *px = pic_malloc((size_t)w * h * 2, NULL); /* (a fight's pictures fill the heap: the oldest go for it, as for a picture) */
+        uint8_t *mask = pic_malloc((size_t)stride * h, NULL);
         if (!px || !mask) {
             free(px), free(mask);
             return "out of memory";
