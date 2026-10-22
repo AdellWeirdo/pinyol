@@ -157,7 +157,7 @@ function _draw()
     text(lang.tr("high") .. " " .. string.format("%06d", high), 240, 252, {font = "hud", color = 0x7088C0, align = "center"})
     if (T // 30) % 2 == 0 then text(lang.tr("press"), 240, 270, {font = "vector_arcade_title", color = 0xFFFFFF, align = "center"}) end
     text(lang.tr("controls"), 240, 291, {font = "hud_s", color = 0x6078B0, align = "center"})
-    text(lang.tr("hint"), 240, 303, {font = "hud_s", color = 0x4A5A8A, align = "center"})
+    text(lang.tr("hint"), 240, 303, {font = "hud_s", color = 0x7088C0, align = "center"})
     return
   end
   P.draw()

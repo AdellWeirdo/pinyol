@@ -61,7 +61,7 @@ function E.draw()
   if mult == 0 and head > 0 and head < n then -- the beam's way to the next line, dark, and where it is
     local _, _, px, py = at(head - 1)
     local nx, ny = at(head)
-    line(px, py, nx, ny, 0x242438)
+    line(px, py, nx, ny, 0x5060A0)
     circ(nx, ny, 3, 0xFFFFFF, true)
     circ(nx, ny, 5, 0x40608F, false)
   end
