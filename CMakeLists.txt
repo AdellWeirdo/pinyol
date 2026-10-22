@@ -372,6 +372,10 @@ if(Python3_FOUND)
     set_tests_properties(script_looks PROPERTIES FIXTURES_SETUP looks_shots)
     set_tests_properties(looks_pixels PROPERTIES FIXTURES_REQUIRED looks_shots)
   endif()
+    # quad() against what a real PlayStation drew (tests/ps1cube_ref): silhouette, box and colour of a lit, textured cube
+    add_test(NAME ps1cube_pixels COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/ps1cube_check.py ${CMAKE_BINARY_DIR}/saves_ps1cube)
+    set_tests_properties(script_ps1cube PROPERTIES FIXTURES_SETUP ps1cube_shots)
+    set_tests_properties(ps1cube_pixels PROPERTIES FIXTURES_REQUIRED ps1cube_shots)
 endif()
 # the console's menu (a game too) lists the examples as the console lists its games
 set_tests_properties(script_cirera PROPERTIES ENVIRONMENT "PINYOL_GAMES=${CMAKE_CURRENT_SOURCE_DIR}/examples")

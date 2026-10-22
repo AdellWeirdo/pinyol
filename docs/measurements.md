@@ -436,6 +436,27 @@ Cirera was identified by `hello 1 card 14964864` and MAC `7c:e8:b1:b2:89:48`. On
 
 Times are milliseconds. `views.draw3d` now validates the rear lens once per call and uses `views.projector` for actors and vertices. CPU `_draw` improved 15–23% in these scenes; raster cost did not change. The eight-face case stayed at 30.6 fps because display timing and other frame work still crossed the next presentation interval. Identical overlapping faces stress overdraw; a real scene with distinct geometry needs a separate measurement.
 
+## A lit, textured 3D cube against the real PlayStation (2026-10-23)
+
+The PSn00bSDK `examples/graphics/gte` cube (6 faces, 128x128 texture, ambient plus one light, dithered) built for a PS1, run in
+an emulator at four fixed poses, and the same cube drawn here with `quad(..., {light, dither})` from the same vertices, rotation,
+camera and light: the silhouette matches at 98-99 % (IoU) with the bounding box within 1 px, and the mean colour within 1-5 levels
+(this engine reads about 3 levels greener, not chased). Looks, geometry and lighting need no change. Cost on the Cirera (firmware
+d1f8178, game sent to the card, volume 0, `perf` lines of the last second): each cube drawn at 4/3 scale covers about 18.5k pixels
+(three faces after the backface cull).
+
+| Cubes | Pixels lit | Strips (CPU, both cores) | fps |
+|---:|---:|---:|---:|
+| 1 | 18.5k | about 7 ms | 59.8 |
+| 4 | 74k | 23.9 ms | 30.0 |
+| 7 | 130k | 38.2 ms | 20.0 |
+
+About 300 ns a lit, dithered pixel (strips 23.9 ms / 74k, 38.2 ms / 130k), as in the quad tables above. With the frame at 16.7 ms
+the budget is roughly 12 ms of strips, **about 37k lit pixels a frame, a quarter of the screen**: two cubes this size, or a room
+seen through a few small faces, not a screenful of lit polygons. (That limit is from these three points, not measured at two
+cubes.) The cube itself costs little in Lua: `_draw` 1.2 ms for one, 2.5 ms for four, 3.7 ms for seven. Sources: a scratch game,
+not in the repo.
+
 ## The same mixer on a desktop
 
 Measured on a desktop (an optimized build, `make audio_bench`): the order and the ratios, not the console's milliseconds (the

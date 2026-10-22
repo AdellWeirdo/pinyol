@@ -1,0 +1,28 @@
+{
+  "asset": "TEX_CUBE",
+  "type": "sprite",
+  "w": 128,
+  "h": 128,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    64,
+    127
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "none"
+  },
+  "memory_bytes": {
+    "pixels": 32768,
+    "mask": 0,
+    "total": 32768
+  }
+}

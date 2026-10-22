@@ -1,0 +1,14 @@
+new
+tick 5
+lua vx, vy, vz = 0, 0, 0
+tick 2
+shot ps1cube_pose0
+lua vx, vy, vz = 256, 0, 256
+tick 2
+shot ps1cube_pose1
+lua vx, vy, vz = 600, 0, 600
+tick 2
+shot ps1cube_pose2
+lua vx, vy, vz = 300, 500, 700
+tick 2
+shot ps1cube_pose3
