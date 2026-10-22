@@ -650,7 +650,10 @@ asked for, masks for power-of-two maps, a cast with an offset instead of floorf,
 canvas's pixels in PSRAM written a column at a time: a view of 120x80 shown twice as big has a quarter of them.
 On the desktop the same view draws in 0.57 ms (headless, `perf()` over twenty frames). The silhouette sprite over
 the picture (the same test game): `_draw` 0.18 ms, 59.8 fps, nothing to see against the plain picture.
-The firmware flashed at the end: D/IRAM left 91802 B.
+The firmware flashed at the end: D/IRAM left 91802 B. Found on the way: the launcher listed 64 games at most
+(LAUNCHER_MAX, and console_games()'s MAX_GAMES), and this card holds 70, so a game past the 64th could not be
+launched over the cable; both are 128 now (the list lives in PSRAM: 16 KB more there, none internal), the console
+lists 70 and launches the last.
 
 Internal RAM: ppu.c lives in IRAM (linker.lf, `ppu_inside`) with its line buffers, so code added to the line drawers
 costs IRAM six times over (the layers_x variants): the silhouette's hooks took 1.3 KB until they were moved to the

@@ -18,7 +18,7 @@
 #include "lua_api.h"
 #include "played.h"
 
-#define MAX_GAMES 64
+#define MAX_GAMES 128 /* (as the firmware's LAUNCHER_MAX) */
 
 static int l_console_games(lua_State *L) {
     static hal_game g[MAX_GAMES];
