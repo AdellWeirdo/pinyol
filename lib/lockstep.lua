@@ -93,18 +93,25 @@ end
 -- my input this tick; returns the inputs of the tick the game should run now (or nil: waiting for someone)
 function L:update(my_bits)
   if not self.started then self:start({}) end
-  -- sample mine into the frame being filled, which stands for `delay` frames ahead
-  self.pending[#self.pending + 1] = my_bits or 0
-  if #self.pending >= self.step then
-    self.local_frame = self.local_frame + 1
-    local f = self.local_frame + self.delay
-    self.mine[f] = self.pending
-    self.frames[f] = self.frames[f] or {}
-    self.frames[f][link.id()] = self.pending
-    self.pending = {}
-    self.local_frame = f
+  -- sample mine into the frame being filled, which stands for `delay` frames ahead; never more than a frame past
+  -- the one the game is at: a console waiting for the other keeps its place, so its frames stay within `history`
+  -- for one that starts later, and meanwhile it sends its last frames again, so the late one gets them
+  local at = math.floor(self.tick / self.step) + 1
+  if self.local_frame <= at then
+    self.pending[#self.pending + 1] = my_bits or 0
+    if #self.pending >= self.step then
+      self.local_frame = self.local_frame + 1
+      local f = self.local_frame + self.delay
+      self.mine[f] = self.pending
+      self.frames[f] = self.frames[f] or {}
+      self.frames[f][link.id()] = self.pending
+      self.pending = {}
+      self.local_frame = f
+      self:send_mine()
+      self.local_frame = self.local_frame - self.delay
+    end
+  elseif self.waiting % 6 == 0 then
     self:send_mine()
-    self.local_frame = self.local_frame - self.delay
   end
   self:receive()
   -- the frame the game is at

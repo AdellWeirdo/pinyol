@@ -90,6 +90,11 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
    FAT (`rename` sobre un archivo existente): arreglado (`played.c`).
 
 6. ILUSTRES (44 MB, enviado por el cable): combates a 57,6-59,8 fps, intro de asalto a 53, con 2 MB de PSRAM de margen.
+   El 22 de octubre, dos consolas por `lib/lockstep` (VERSUS > DUES CONSOLES: P1 la de id menor, sus reglas para las
+   dos, secretos solo los que tienen ambas; espera y abandono a los 10 s), probado en el headless con la otra consola
+   simulada (`link_from`), no en dos placas. Lo que enseñó: una consola que espera a la otra no puede seguir muestreando
+   tramas (se salían del `history` y la que llegaba tarde no las recibía nunca): `lockstep` ahora se para a una trama
+   de la que juega y reenvía las últimas cada 6 ticks mientras espera.
 
 7. Vistos en la pantalla real sobre horizonte: el menú del sistema, la página de ajustes, el filtro protan (1,8 ms por
    frame) y la pantalla de crash con A reiniciando. Y un abort encontrado y arreglado (9bb4905): el dibujo corre en los
