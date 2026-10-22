@@ -479,7 +479,7 @@ What the statics leave of D/IRAM (`esp_idf_size` on the map, the same build with
 |---|---|
 | Before | 73170 B |
 | FreeRTOS and ringbuf non-ISR code in flash | 84330 B (+11.2 KB) |
-| + the ROM's flash driver (`SPI_FLASH_ROM_IMPL`) | **92938 B (+19.8 KB)**, taken |
+| + the ROM's flash driver (`SPI_FLASH_ROM_IMPL`) | **92938 B (+19.8 KB)**, taken; **undone 2026-10-22: it corrupted the heap on every flash erase, see the end of this file** |
 | FreeRTOS, ringbuf, heap in flash (no ROM driver) | 97586 B (+24.4 KB), not taken: it needs the panel's SPI interrupt out of IRAM |
 
 The ROM's driver lacks only `SPI_FLASH_AUTO_SUSPEND` (off here). Not yet run on the board: check a save to the flash,
@@ -751,3 +751,36 @@ Tried and left: **XIP off** (`CONFIG_SPIRAM_XIP_FROM_PSRAM` unset, which gives 1
 and runs but panics with `Cache disabled but cached memory region accessed` inside `tlsf_malloc` (`block_split`, from
 `read_picture`) at the first fight's loads; it was not chased. A fight of the two heaviest sheets still hitches when a SUPER
 needs room (a strip let go and loaded again, 100-300 ms); the secret fighter Tió (1 MB and 0.6 MB of sheets) was not tried.
+
+## 2026-10-22 · The ROM's flash driver corrupted the heap on every erase (and the update from the card with it)
+
+A firmware update from the card (`firmware.bin` on the card's root) ended on the console's screen with «La actualización no
+vale». The log of the boot, read with the update's file moved into a game folder the cable can write (a scratch firmware that
+looks for it in `games/otatest/`):
+
+```
+E bootloader_mmap: spi_flash_mmap failed: 0x101
+E esp_image: bootloader_mmap(0x2e0020, 0xfa56c) failed
+ota: ... not installed: ESP_ERR_OTA_VALIDATE_FAILED
+Guru Meditation Error: Core 0 panic'ed (StoreProhibited)   <- in tlsf_malloc, from fseek, 0x0863086f: pixels where a heap block's list was
+```
+
+`0x101` is `ESP_ERR_NO_MEM` from the small internal blocks the mapping asks for: the heap was already corrupt. With
+`heap_caps_check_integrity_all()` between the steps of the update:
+
+| Step | Heap |
+|---|---|
+| start, file opened and renamed, partition found | ok |
+| `esp_partition_erase_range(ota_1, 0, 1.9 MB)` returns `ESP_OK` | **corrupt** |
+| every later step | corrupt; the verification read `invalid segment length 0x11111111` |
+
+The same firmware with `CONFIG_SPI_FLASH_ROM_IMPL` unset (nothing else changed) keeps the heap ok through all of it, writes the
+1 889 456 bytes, restarts and says `firmware 4b182ce in ota_1`, `ota: this firmware is kept`. So the ROM's flash driver,
+taken on 2026-10-21 for 9.6 KB of D/IRAM ("not yet run on the board: check a save to the flash, a game sent over the cable, an
+OTA", the note said), corrupts memory on a flash erase, together with the code run from PSRAM (XIP) and the data cache at 32 KB
+this firmware has. What it touched: every erase of the flash: an update from the card, a game sent over the cable to a console
+with no card, saves to the flash. (The panic of the XIP-off build above, in `tlsf_malloc`, may be the same fault.)
+
+D/IRAM left by the statics: 93 138 B with it, **83 534 B** without; the CI floor goes from 90 000 to 80 000. A console running
+a firmware older than this cannot update itself from the card (its own driver does the erase): flash it once by the cable
+(`esptool write_flash 0xf000 ota_data_initial.bin 0x20000 pinyol_console.bin`), then the card works.

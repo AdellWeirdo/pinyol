@@ -252,7 +252,7 @@ l'escriu a la targeta (o, sense targeta, a la seva flash) i l'arrenca.
 uv run --with pyserial tools/send_game.py games/elmeujoc     # la carpeta d'un joc, o el seu .zip
 ```
 
-El firmware també grava jocs a la flash, així que la consola funciona sense targeta: `examples/hola` per defecte, o una llista, `idf.py -DFLASH_GAME="/abs/a;/abs/b" build` (i llavors grava també `build/game.bin`, a 0x420000). Qualsevol altre joc va a la microSD (FAT32) com a `games/<id>/`. Mantenir MENU premut dos segons surt d'un joc en Lua cap a la llista. Per actualitzar el firmware més endavant, copia `build/pinyol_console.bin` a la targeta com a `firmware.bin`.
+El firmware també grava jocs a la flash, així que la consola funciona sense targeta: `examples/hola` per defecte, o una llista, `idf.py -DFLASH_GAME="/abs/a;/abs/b" build` (i llavors grava també `build/game.bin`, a 0x420000). Qualsevol altre joc va a la microSD (FAT32) com a `games/<id>/`. Mantenir MENU premut dos segons surt d'un joc en Lua cap a la llista. Per actualitzar el firmware més endavant, copia `build/pinyol_console.bin` a la targeta com a `firmware.bin` (una consola amb un firmware anterior al 22 d'octubre de 2026 no pot: el seu driver de flash corrompia la memòria en esborrar; grava-la una vegada pel cable, `esptool write_flash 0xf000 ota_data_initial.bin 0x20000 pinyol_console.bin`).
 
 La consola arrenca al menú de **Cirera**, que és alhora un joc de pinyol ([firmware/cirera](firmware/cirera)) gravat a
 la flash amb el firmware: una intro animada i després cada joc com una carta amb la seva portada, per triar amb la
