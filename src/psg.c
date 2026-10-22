@@ -69,6 +69,12 @@ static inline float wave(voice *v) {
     case PSG_SAW: return 2 * p - 1;
     case PSG_SINE: return sine[(int)(p * SINE_N) & (SINE_N - 1)];
     case PSG_WAVE: return level[v->n.table[(int)(p * 32) & 31]];
+    case PSG_FM: { /* the carrier's phase bent by the modulator, as deep as the envelope is high: bright at the start */
+        float mp = p * v->n.fm_ratio;
+        mp -= (float)(int)mp;
+        const float m = sine[(int)(mp * SINE_N) & (SINE_N - 1)];
+        return sine[(int)((p + v->n.fm_index * v->env * m) * SINE_N) & (SINE_N - 1)];
+    }
     default: return v->noise;
     }
 }

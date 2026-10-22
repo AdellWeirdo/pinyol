@@ -16,6 +16,14 @@ function _init()
     canvas("SL" .. i, 16, 16) target("SL" .. i) circ(8, 8, 7 - i * 2, 0x40FF00 + i * 0x4000, true) target()
   end
   ship = sheet("SHIP")
+  canvas("HM", 64, 64) target("HM") -- the hills: a slope rising to the north, a bump in the middle
+  for y = 0, 63 do for x = 0, 63 do
+    local h = math.floor((63 - y) * 2 + (math.abs(x - 32) < 8 and math.abs(y - 32) < 8 and 80 or 0))
+    h = math.min(255, h) pset(x, y, h << 16 | h << 8 | h)
+  end end
+  target()
+  canvas("CM", 64, 64) target("CM") for y = 0, 63 do for x = 0, 63 do pset(x, y, 0x208020 + (x % 2) * 0x102010) end end target()
+  canvas("VX", 240, 160)
   car = stack.new({"SL0", "SL1", "SL2"}, {w = 16, h = 16, spacing = 2, scale = 1, steps = 8})
   pond = water.new({x = 0, y = 200, w = 480, springs = 24, colour = 0x2060C0, deep = 0x103060, depth = 100})
   rd = road.new({layer = 1, row = 5, map_w = 128, horizon = 48, stripe_pal = {{1, 0x3C9C3C, 0x2C7C2C}}})
@@ -46,6 +54,10 @@ function _draw()
     car:draw(100, 100, angle)
   elseif mode == "water" then
     pond:draw()
+  elseif mode == "voxel" then -- the hills seen from the south, the sky above the horizon
+    line_off()
+    voxels("VX", {height = "HM", colour = "CM", x = 32, y = 60, angle = -90, z = 140, horizon = 40, distance = 120, scale = 60, sky = 0x80C0FF})
+    img("VX", 0, 0, {scale = 2})
   elseif mode == "sil" then -- the ship behind the picture: its silhouette shows through, red, half
     line_off() -- (the ramp's per-line scroll, from the mode before, would shear the picture)
     bg(1, {image = "PIC", prio = 0})

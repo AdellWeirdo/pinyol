@@ -12,17 +12,19 @@
 
 #define MADE_BYTES (1024 * 1024) /* all of a game's made sounds: a minute of them */
 
-static const char *const WAVES[] = {"square", "triangle", "saw", "sine", "noise", NULL};
+static const char *const WAVES[] = {"square", "triangle", "saw", "sine", "noise", "fm", NULL};
+static int wave_of(int option) { return option == 5 ? PSG_FM : option; } /* (the table wave, PSG_WAVE, has no name: a table is given) */
+static int wave_name(int wave) { return wave == PSG_FM ? 5 : wave; }
 
 /* the made sounds' numbers, as a table and back: names as in docs/lua.md */
 #define FIELDS(X)                                                                                                     \
     X(freq) X(freq_min) X(slide) X(slide_accel) X(vibrato) X(vibrato_speed) X(arp) X(arp_time) X(duty) X(duty_sweep) \
     X(attack) X(sustain) X(punch) X(decay) X(lowpass) X(lowpass_sweep) X(resonance) X(highpass) X(highpass_sweep)    \
-    X(volume)
+    X(volume) X(fm_ratio) X(fm_index)
 
 static void params_from(lua_State *L, int t, synth_params *p) {
     lua_getfield(L, t, "wave");
-    if (!lua_isnil(L, -1)) p->wave = luaL_checkoption(L, -1, NULL, WAVES);
+    if (!lua_isnil(L, -1)) p->wave = wave_of(luaL_checkoption(L, -1, NULL, WAVES));
     lua_pop(L, 1);
 #define READ(f) p->f = opt_float(L, t, #f, p->f, -1e6f, 1e6f);
     FIELDS(READ)
@@ -34,7 +36,7 @@ static void params_from(lua_State *L, int t, synth_params *p) {
 
 static void params_to(lua_State *L, const synth_params *p) {
     lua_createtable(L, 0, 24);
-    lua_pushstring(L, WAVES[p->wave]), lua_setfield(L, -2, "wave");
+    lua_pushstring(L, WAVES[wave_name(p->wave)]), lua_setfield(L, -2, "wave");
 #define WRITE(f) lua_pushnumber(L, p->f), lua_setfield(L, -2, #f);
     FIELDS(WRITE)
 #undef WRITE
@@ -395,8 +397,9 @@ static int l_music_beat(lua_State *L) {
         lua_pushinteger(L, mbar), lua_pushinteger(L, mbeat), lua_pushnumber(L, mfrac);
         return 3;
     }
-    if (!(song_bar > 0) || !audio_music_time(&t)) return lua_pushnil(L), 1;
-    const double bars = t / song_bar, beat = (bars - floor(bars)) * song_beats;
+    const double bar = song_bar > 0 ? song_bar : audio_music_bar(); /* (a WAV's own cue points give it when music() was not told) */
+    if (!(bar > 0) || !audio_music_time(&t)) return lua_pushnil(L), 1;
+    const double bars = t / bar, beat = (bars - floor(bars)) * song_beats;
     lua_pushinteger(L, (lua_Integer)floor(bars) + 1);
     lua_pushinteger(L, (lua_Integer)floor(beat) + 1);
     lua_pushnumber(L, beat - floor(beat));
@@ -426,7 +429,7 @@ static int l_tone(lua_State *L) {
     float hz = lua_type(L, 2) == LUA_TSTRING ? psg_note_hz(lua_tostring(L, 2)) : (float)luaL_checknumber(L, 2);
     if (!(hz > 0 && hz < AUDIO_HZ / 2)) return luaL_error(L, "tone: '%s' is not a note or a frequency", luaL_tolstring(L, 2, NULL));
     psg_note n = {.wave = PSG_SQUARE, .freq = hz, .vol = 0.5f, .duty = 0.5f, .attack = 0.005f, .decay = 0.25f,
-                  .release = 0.03f};
+                  .release = 0.03f, .fm_ratio = 2, .fm_index = 1};
     if (!lua_isnoneornil(L, 3)) {
         luaL_checktype(L, 3, LUA_TTABLE);
         lua_getfield(L, 3, "wave");
@@ -439,9 +442,10 @@ static int l_tone(lua_State *L) {
                 n.table[i] = (uint8_t)(v < 0 ? 0 : v > 15 ? 15 : (int)v);
                 lua_pop(L, 1);
             }
-        } else if (!lua_isnil(L, -1)) n.wave = (uint8_t)luaL_checkoption(L, -1, NULL, WAVES);
+        } else if (!lua_isnil(L, -1)) n.wave = (uint8_t)wave_of(luaL_checkoption(L, -1, NULL, WAVES));
         lua_pop(L, 1);
         n.lfsr7 = opt_int(L, 3, "lfsr", 15) == 7, n.bend = opt_float(L, 3, "bend", 0, -48, 48);
+        n.fm_ratio = opt_float(L, 3, "fm_ratio", 2, 0.01f, 32), n.fm_index = opt_float(L, 3, "fm_index", 1, 0, 16);
         lua_getfield(L, 3, "vibrato");
         if (lua_istable(L, -1)) {
             int vt = lua_absindex(L, -1);

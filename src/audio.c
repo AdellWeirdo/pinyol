@@ -183,13 +183,34 @@ static double mus_last; /* the last time given: it never goes back */
 
 static uint32_t rd32(const uint8_t *p) { return p[0] | (p[1] << 8) | (p[2] << 16) | ((uint32_t)p[3] << 24); }
 
-bool wav_parse(FILE *f, long *data_start, long *data_len, int *chans) {
-    uint8_t h[12], c[8], fmt[16];
+bool wav_parse(FILE *f, long *data_start, long *data_len, int *chans) { return wav_parse_marks(f, data_start, data_len, chans, NULL); }
+
+/* The same, and the file's own markers if asked: the loop's start from its smpl chunk (what a DAW or Audacity writes for a
+ * loop region) and its first two cue points (cue chunk), in sample frames; they usually sit after the data chunk, so the
+ * whole file is walked. */
+bool wav_parse_marks(FILE *f, long *data_start, long *data_len, int *chans, wav_marks *m) {
+    uint8_t h[12], c[8], fmt[16], b[64]; /* (b: a smpl chunk's header and first loop, 60 bytes) */
+    if (m) memset(m, 0, sizeof *m);
     if (fread(h, 1, 12, f) != 12 || memcmp(h, "RIFF", 4) || memcmp(h + 8, "WAVE", 4)) return false;
-    bool fmt_ok = false;
+    bool fmt_ok = false, data_ok = false;
     int ch = 0;
     while (fread(c, 1, 8, f) == 8) {
         long size = (long)rd32(c + 4);
+        if (m && !memcmp(c, "smpl", 4) && size >= 36 + 24) { /* the first loop's start */
+            if (fread(b, 1, 36 + 24, f) != 36 + 24) break;
+            if (rd32(b + 28) >= 1) m->loop = (long)rd32(b + 36 + 8);
+            fseek(f, size + (size & 1) - (36 + 24), SEEK_CUR);
+        } else if (m && !memcmp(c, "cue ", 4) && size >= 4) { /* the first two points, by sample offset */
+            if (fread(b, 1, 4, f) != 4) break;
+            const long n = (long)rd32(b);
+            long read = 4;
+            for (long i = 0; i < n && i < 2 && read + 24 <= size; i++, read += 24) {
+                if (fread(b, 1, 24, f) != 24) break;
+                m->cue[m->ncue++] = (long)rd32(b + 20);
+            }
+            if (m->ncue == 2 && m->cue[1] < m->cue[0]) { long t = m->cue[0]; m->cue[0] = m->cue[1], m->cue[1] = t; }
+            fseek(f, size + (size & 1) - read, SEEK_CUR);
+        } else
         if (!memcmp(c, "fmt ", 4)) {
             if (size < 16 || fread(fmt, 1, 16, f) != 16) return false;
             int format = fmt[0] | (fmt[1] << 8), bits = fmt[14] | (fmt[15] << 8);
@@ -203,12 +224,14 @@ bool wav_parse(FILE *f, long *data_start, long *data_len, int *chans) {
             long frame = 2L * (ch > 0 ? ch : 1);
             *data_len = (size < avail ? size : avail) / frame * frame;
             if (chans) *chans = ch;
-            return fmt_ok && *data_len >= frame;
+            data_ok = fmt_ok && *data_len >= frame;
+            if (!m || size > avail) break; /* (no markers wanted, or a truncated file: nothing past the data) */
+            fseek(f, *data_start + size + (size & 1), SEEK_SET);
         } else {
             fseek(f, size + (size & 1), SEEK_CUR);
         }
     }
-    return false;
+    return data_ok;
 }
 
 static bool is_missing(const char *id) {
@@ -222,12 +245,12 @@ static void mark_missing(const char *id) {
 }
 
 /* Opens and validates <id>.wav; NULL (logged once) if absent or in the wrong format. */
-static FILE *open_wav(const char *id, long *start, long *len, int *chans, bool quiet) {
+static FILE *open_wav(const char *id, long *start, long *len, int *chans, bool quiet, wav_marks *m) {
     if (!id || !*id || is_missing(id)) return NULL;
     char path[384];
     snprintf(path, sizeof path, "%s/audio/%s.wav", G.game_dir, id);
     FILE *f = game_has(path + strlen(G.game_dir) + 1) ? fopen(path, "rb") : NULL;
-    if (f && wav_parse(f, start, len, chans)) {
+    if (f && wav_parse_marks(f, start, len, chans, m)) {
         fseek(f, *start, SEEK_SET);
         return f;
     }
@@ -304,7 +327,7 @@ static bool open_into(int slot, const char *id, bool loop, float gain, int ms, f
     int chans = 1;
     FILE *f = open_spum(id, &start, &len, &chans, &samples, &loop_sample, false);
     const bool adpcm = f != NULL;
-    if (!f) f = open_wav(id, &start, &len, &chans, false);
+    if (!f) f = open_wav(id, &start, &len, &chans, false, NULL);
     if (f && chans != 1) {
         hal_log("audio %s must be mono", id);
         fclose(f);
@@ -401,11 +424,15 @@ static int open_cue(stream *s, const char *cue, float loop_at_s, float bar_s) {
     int chans = 1;
     FILE *f = open_spum(cue, &start, &len, &chans, &samples, &loop_sample, false);
     const bool adpcm = f != NULL;
-    if (!f) f = open_wav(cue, &start, &len, &chans, false);
+    wav_marks marks = {0};
+    if (!f) f = open_wav(cue, &start, &len, &chans, false, &marks);
     if (!f) return 0;
     if (!(loop_at_s >= 0 && loop_at_s < 3600)) loop_at_s = 0; /* also NaN */
     if (!(bar_s > 0 && bar_s < 60)) bar_s = 0;
     long frame = 2L * chans, at = (long)(loop_at_s * AUDIO_HZ) * frame;
+    /* the file's own markers serve when the game gave none: the loop from its smpl chunk, the bar between its first two cues */
+    if (loop_at_s == 0 && marks.loop > 0) at = marks.loop * frame;
+    if (bar_s == 0 && marks.ncue == 2 && marks.cue[1] > marks.cue[0] && marks.cue[1] - marks.cue[0] < 60L * AUDIO_HZ) bar_s = (float)(marks.cue[1] - marks.cue[0]) / AUDIO_HZ;
     *s = (stream){.f = f, .start = start, .len = len, .chans = chans, .loop = true,
                   .loop_at = at < len ? at : 0, .bar = (long)(bar_s * AUDIO_HZ) * frame};
     snprintf(s->id, sizeof s->id, "%s", cue);
@@ -581,7 +608,7 @@ void audio_user(float gain) { /* the console's volume: a game's volume() is insi
 static int16_t *load_clip(const char *id, int *n, bool quiet) {
     long start = 0, len = 0;
     int chans = 1;
-    FILE *f = open_wav(id, &start, &len, &chans, quiet);
+    FILE *f = open_wav(id, &start, &len, &chans, quiet, NULL);
     if (!f) return NULL;
     long count = len / 2 < SFX_MAX_SAMPLES ? len / 2 : SFX_MAX_SAMPLES;
     int16_t *pcm = chans == 1 ? malloc(sizeof(int16_t) * (size_t)count) : NULL;
@@ -921,6 +948,14 @@ void audio_music_clock(int src) {
 
 static bool music_sounds(void) { return mus_src == 1 ? st[S_MUS].f != NULL : mus_src == 2 ? mod_playing() : mus_src == 3 && midi_playing(); }
 
+double audio_music_bar(void) { /* the playing song's bar in seconds (as music() was told, or the WAV's own cues); 0: none */
+    hal_audio_lock();
+    const stream *s = &st[S_MUS];
+    const double bar = s->f && s->bar > 0 && s->chans > 0 ? (double)s->bar / (2.0 * s->chans * AUDIO_HZ) : 0;
+    hal_audio_unlock();
+    return bar;
+}
+
 bool audio_music_time(double *seconds) {
     hal_audio_lock();
     bool on = music_sounds();
@@ -942,7 +977,10 @@ bool audio_music_time(double *seconds) {
     return true;
 }
 
+static float *modb; /* a module's chunk before the music bus (slow memory: the console's internal RAM is counted) */
+
 void audio_reset(void) {
+    if (!modb) modb = hal_realloc_slow(NULL, CHUNK * sizeof *modb);
     studio_reset(); /* its tracks point into the cache freed below */
     hal_audio_lock();
     for (int i = 0; i < NSTREAMS; i++) close_stream(&st[i]);
@@ -1103,8 +1141,7 @@ static void mix_core(int16_t *out, int n, bool stereo) {
             ramp_next(&bus_mus);
         }
         if (!paused && music_sounds()) mus_clock += m; /* (before a module may end) */
-        if (!paused && mod_playing()) { /* a module goes through the music bus like a WAV: the bus's gain, the duck, the lowpass */
-            static float modb[CHUNK];
+        if (!paused && mod_playing() && modb) { /* a module goes through the music bus like a WAV: the bus's gain, the duck, the lowpass */
             memset(modb, 0, (size_t)m * sizeof *modb);
             mod_mix(modb, m);
             const float g = bus_mus.v;

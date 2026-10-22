@@ -67,6 +67,11 @@ for y in range(60, 76):  # the ship's 16 x 16 box
 assert changed > 20, changed
 assert sp[10, 10] == pp[10, 10] and sp[470, 310] == pp[470, 310]  # away from the ship, the picture as it was
 
+vx = shot("looks_voxel").load()  # the hills: sky at the top, ground at the bottom, and the ground is green
+assert near(vx[240, 6], (128, 192, 255)), vx[240, 6]
+assert not near(vx[240, 300], (128, 192, 255)) and vx[240, 300][1] > vx[240, 300][0], vx[240, 300]
+assert not near(vx[40, 300], (128, 192, 255)), vx[40, 300]
+
 ap = affine.load()
 for y in range(0, 320, 6):
     row = {ap[x, y] for x in range(0, 480, 5)}

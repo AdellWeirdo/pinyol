@@ -1,5 +1,6 @@
 /* Pixel access on a surface (bp.h), shared by the drawing files: gfx.c, gfx_style.c. */
 #pragma once
+#include "bluenoise.h"
 #include "bp.h"
 
 static inline uint16_t blend50(uint16_t a, uint16_t b) { return ((a & 0xF7DE) >> 1) + ((b & 0xF7DE) >> 1); }
@@ -14,9 +15,8 @@ static inline uint16_t *at(const surface *s, int x, int y) {
 }
 static inline uint16_t bswap16(uint16_t v) { return (uint16_t)(v << 8 | v >> 8); }
 static inline uint16_t stored(const surface *s, uint16_t c) { return s->swap ? bswap16(c) : c; } /* a colour as kept in s */
-static inline bool dithered(const surface *s, int x, int y) { /* a pixel the dissolve leaves as it was (bp.h) */
-    static const uint8_t BAYER[16] = {0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
-    return BAYER[((y >> 1) & 3) * 4 + ((x >> 1) & 3)] < s->dither;
+static inline bool dithered(const surface *s, int x, int y) { /* a pixel the dissolve leaves as it was (bp.h): blue noise, in 2x2 cells */
+    return BLUE_NOISE[((y >> 1) & 31) * 32 + ((x >> 1) & 31)] < s->dither * 16;
 }
 
 /* The three blends that move a channel by an amount and hold it to its range (BLEND_ADD, BLEND_SUB, BLEND_QUARTER):

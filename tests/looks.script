@@ -31,6 +31,9 @@ shot looks_affine
 lua mode = "sil"
 tick 1
 shot looks_sil
+lua mode = "voxel"
+tick 1
+shot looks_voxel
 lua mode = "road"
 tick 3
 shot looks_road

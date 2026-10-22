@@ -258,4 +258,105 @@ static int l_raycast(lua_State *L) {
     return 2;
 }
 
-void ray_register(lua_State *L) { lua_register(L, "raycast", l_raycast); }
+/* Voxel Space (Comanche, 1992): a landscape from a height map and a colour map, a column at a time, nearest first
+ * so what stands nearer hides what lies behind (a y-buffer per column). Onto a canvas, as raycast draws.
+ *
+ *   voxels("VIEW", {height = "HILLS", colour = "HILLS_C", x = 100, y = 100, angle = 0, z = 80, horizon = 60,
+ *                   distance = 300, fov = 90, scale = 120, sky = 0x9ED6F0, fog = 200})
+ *
+ * height: a picture or canvas whose brightness is the ground's height (0..255); colour: one the same size (or any:
+ * both wrap); x, y the camera on the map, angle in degrees (0 east, 90 south), z its height, horizon the screen row
+ * of the far horizon, distance how far it looks (in map pixels), scale how tall the hills are drawn, fog the
+ * distance from which the ground fades to the sky's colour (0: none). Columns run until the view is filled. */
+/* The height map as bytes, kept from one frame to the next while the same picture (and the same canvas generation)
+ * is asked for: the brightness of each pixel once, not once a sample. In slow memory. */
+static uint8_t *hmap;
+static int hmap_w, hmap_h;
+static const asset *hmap_src;
+static uint32_t hmap_gen;
+
+static bool height_map(const asset *a) {
+    if (hmap && hmap_src == a && hmap_gen == a->gen && hmap_w == a->w && hmap_h == a->h) return true;
+    uint8_t *m = hal_realloc_slow(hmap, (size_t)a->w * a->h);
+    if (!m) return false;
+    hmap = m, hmap_w = a->w, hmap_h = a->h, hmap_src = a, hmap_gen = a->gen;
+    for (int i = 0; i < a->w * a->h; i++) {
+        const uint16_t c = a->pixels[i];
+        hmap[i] = (uint8_t)(((c >> 11) * 702 + ((c >> 5) & 63) * 345 + (c & 31) * 702) >> 8); /* (R + G + B) / 3 of the 8-bit channels */
+    }
+    return true;
+}
+
+static int l_voxels(lua_State *L) {
+    const char *id = luaL_checkstring(L, 1);
+    asset *cv = safe_name(id) ? gfx_asset_opt(id) : NULL;
+    if (!cv || !cv->canvas) return luaL_error(L, "voxels \"%s\": not a canvas (make one with canvas())", id);
+    luaL_checktype(L, 2, LUA_TTABLE);
+    const char *hid = opt_str(L, 2, "height"), *cid = opt_str(L, 2, "colour");
+    if (!cid) cid = opt_str(L, 2, "color");
+    const asset *hm = hid && safe_name(hid) ? gfx_asset_opt(hid) : NULL;
+    const asset *cm = cid && safe_name(cid) ? gfx_asset_opt(cid) : hm;
+    if (!hm || hm->w < 1 || hm->h < 1 || !hm->pixels) return luaL_error(L, "voxels: height needs a canvas or a plain (not packed) picture");
+    if (!cm || cm->w < 1 || cm->h < 1 || !cm->pixels) return luaL_error(L, "voxels: colour needs a picture or canvas with colours");
+    if (!height_map(hm)) return luaL_error(L, "voxels: out of memory");
+    const int W = cv->w > MAX_W ? MAX_W : cv->w, H = cv->h > MAX_H ? MAX_H : cv->h;
+    const float px = opt_float(L, 2, "x", 0, -1e6f, 1e6f), py = opt_float(L, 2, "y", 0, -1e6f, 1e6f);
+    const float ang = opt_float(L, 2, "angle", 0, -NUM_MAX, NUM_MAX) * DEG, fov = opt_float(L, 2, "fov", 90, 10, 170) * DEG;
+    const float cz = opt_float(L, 2, "z", 80, -1e4f, 1e4f), scale = opt_float(L, 2, "scale", 120, 1, 1e4f);
+    const float horizon = opt_float(L, 2, "horizon", (float)H / 2, -1e4f, 1e4f), dist = opt_float(L, 2, "distance", 300, 2, 4000);
+    const float fog = opt_float(L, 2, "fog", 0, 0, 1e5f);
+    uint16_t sky = to565(opt_int(L, 2, "sky", 0x9ED6F0));
+    if (sky == CANVAS_KEY) sky ^= 1; /* (the key colour is see-through on a canvas) */
+    uint16_t *out = cv->pixels;
+    for (int i = 0; i < W * H; i++) out[i] = sky;
+    static int16_t *ybuf; /* the lowest row still open in each column (slow memory: the console's internal RAM is counted) */
+    if (!ybuf && !(ybuf = hal_realloc_slow(NULL, MAX_W * sizeof *ybuf))) return luaL_error(L, "voxels: out of memory");
+    for (int x = 0; x < W; x++) ybuf[x] = (int16_t)H;
+    /* the maps are read with a mask when their sides are powers of two (the usual), a modulo otherwise */
+    const int hw = hmap_w, hh = hmap_h, cw = cm->w, ch = cm->h;
+    const bool hpow = !(hw & (hw - 1)) && !(hh & (hh - 1)), cpow = !(cw & (cw - 1)) && !(ch & (ch - 1));
+    const uint16_t *cpx = cm->pixels;
+    const float k = tanf(fov / 2), dxv = cosf(ang), dyv = sinf(ang), plx = -dyv * k, ply = dxv * k;
+    const int sr = sky >> 11, sg = (sky >> 5) & 63, sb = sky & 31;
+    const float BIG = 1048576.0f; /* added before the cast: the coordinates positive, a multiple of every power of two below it */
+    /* z outwards in steps that grow 1 % each, the same for every column (the rays fan from the camera) */
+    for (float z = 1, dz = 1; z < dist; z += dz, dz *= 1.01f) {
+        const float zs = scale / z, base = cz * zs + horizon;
+        const int f = fog > 0 ? (z >= fog ? 16 : (int)(z / fog * 10)) : 0; /* 16ths of the sky's colour mixed in */
+        const float rx = dxv * z, ry = dyv * z, sx = plx * z, sy_ = ply * z; /* this ring: the middle, and its span across */
+        for (int x = 0; x < W; x++) {
+            const int16_t open = ybuf[x];
+            if (open <= 0) continue;
+            const float cam = 2.0f * (float)x / (float)W - 1.0f;
+            const float mx = px + rx + sx * cam, my = py + ry + sy_ * cam;
+            int ix = (int)(mx + BIG), iy = (int)(my + BIG);
+            int hx, hy;
+            if (hpow) hx = ix & (hw - 1), hy = iy & (hh - 1);
+            else hx = ix % hw, hy = iy % hh;
+            const int h = hmap[hy * hw + hx];
+            int sy = (int)(base - (float)h * zs);
+            if (sy < 0) sy = 0;
+            if (sy >= open) continue;
+            int cx, cy;
+            if (cpow) cx = ix & (cw - 1), cy = iy & (ch - 1);
+            else cx = ix % cw, cy = iy % ch;
+            uint16_t c = cpx[cy * cw + cx];
+            if (f > 0) { /* towards the sky's colour */
+                const int r = c >> 11, g = (c >> 5) & 63, b = c & 31;
+                c = (uint16_t)(((r * (16 - f) + sr * f) >> 4) << 11 | ((g * (16 - f) + sg * f) >> 4) << 5 | ((b * (16 - f) + sb * f) >> 4));
+            }
+            if (c == CANVAS_KEY) c ^= 1;
+            uint16_t *col = out + sy * W + x;
+            for (int y = sy; y < open; y++, col += W) *col = c;
+            ybuf[x] = (int16_t)sy;
+        }
+    }
+    memset(cv->mask, 0xFF, (size_t)((cv->w + 7) / 8) * cv->h); /* the view covers its canvas */
+    cv->gen++;
+    return 0;
+}
+
+void ray_register(lua_State *L) {
+    lua_register(L, "raycast", l_raycast);
+    lua_register(L, "voxels", l_voxels);
+}

@@ -34,8 +34,6 @@ typedef struct { int ey, up; uint16_t r[32], g[64], b[32]; } fade_lut;
 typedef struct {
     uint32_t top[PPU_W], under[PPU_W]; /* PX(colour, id) */
     uint8_t show[PPU_W];   /* with windows: the layer bits and PPU_FX that show at x */
-    uint8_t sil[PPU_W];    /* an OBJ_SIL sprite had a pixel at x (cleared each line while any is drawn) */
-    bool drew_sil;         /* one crossed this line */
     uint8_t objwin[PPU_W]; /* the object window's shape on this line */
     bool win;              /* this line has windows */
     fade_lut fade;         /* the last fade's tables */
@@ -46,11 +44,24 @@ typedef struct {
 
 static lines LB[2] = {{.fade.ey = -1}, {.fade.ey = -1}}; /* one per core */
 
+static void sil_map(void); /* (with the frame's preparation, below) */
+
+/* The palettes of a frame that replaces entries on some lines (line_pal): each core's copy of the registers' palettes,
+ * made once a frame, with the line's own entries written over it (line_palettes). */
+typedef struct {
+    uint16_t pal[2][256]; /* [0] the backgrounds', [1] the sprites' */
+    uint8_t n[2], idx[2][PPU_LINE_PALS]; /* the entries the last line changed */
+    uint32_t frame;
+} linepals;
+static linepals *PS; /* one per core, in slow memory (2 KB: made the first frame a game replaces entries on a line) */
+
+
 static struct {
     uint32_t rows[PPU_H][PPU_OBJS / 32]; /* per line, a bit per sprite whose box crosses it (sprite i: word i / 32) */
     uint32_t pri[4][PPU_OBJS / 32];      /* per priority, a bit per drawn sprite; high bits draw first (127 under 0) */
     bool any_objwin;
-    bool any_sil;  /* an OBJ_SIL sprite is drawn this frame: the lines keep where they were */
+    bool any_sil;     /* an OBJ_SIL sprite is drawn this frame */
+    uint8_t *silmap;  /* where OBJ_SIL sprites have pixels, a bit per screen pixel (30 bytes a line; slow memory, made when first needed) */
     bool track; /* keep the pixel under the top one (an alpha blend needs it) */
 } F;
 
@@ -403,14 +414,6 @@ ALWAYS void obj_line_x(lines *L, const ppu_obj *o, int y, bool win, bool track, 
     uint32_t id = (uint32_t)(ID_OBJ | (o->mode == OBJ_BLEND ? ID_BLEND : 0)) << 16;
     L->drew |= PPU_OBJ;
     if (o->mode == OBJ_BLEND) L->drew_blend = true;
-    if (o->mode == OBJ_SIL) { /* where it has pixels (and may show): a background drawn after it leaves its silhouette there */
-        L->drew_sil = true;
-        int sy = mh > 1 ? y - y % mh : y;
-        for (int x = xa; x < xb; x++) {
-            uint16_t c;
-            if ((!win || (L->show[x] & PPU_OBJ)) && obj_pixel(o, x, sy, opal, &c)) L->sil[x] = 1;
-        }
-    }
     if (o->affine < 0 && mw == 1 && mh == 1 && o->idx) { /* a plain indexed sprite: its source row, read straight */
         int v = y - o->y;
         if (o->vflip) v = o->h - 1 - v;
@@ -524,11 +527,37 @@ static void prepare(void) {
         int y0 = by < 0 ? 0 : by, y1 = by + bh > PPU_H ? PPU_H : by + bh;
         if (bx >= PPU_W || bx + bw <= 0 || y0 >= y1) continue; /* off screen: no line would draw it */
         blend_obj |= o->mode == OBJ_BLEND;
-        F.any_sil |= o->mode == OBJ_SIL;
+        if (o->mode == OBJ_SIL) F.any_sil = true;
         F.pri[o->prio & 3][i >> 5] |= 1u << (i & 31);
         for (int y = y0; y < y1; y++) F.rows[y][i >> 5] |= 1u << (i & 31);
     }
     F.track = PPU.fx.mode == FX_ALPHA || blend_obj;
+    if (F.any_sil) sil_map(); /* (once a frame, here on the game's thread: nothing of it in the lines' hot code) */
+    if ((PPU.line.pal_bg || PPU.line.pal_obj) && !PS) PS = hal_realloc_slow(NULL, 2 * sizeof *PS);
+}
+
+/* Where the OBJ_SIL sprites have pixels this frame, a bit per screen pixel: a background drawn over one of them leaves
+ * the silhouette there (sil_apply). Few sprites are such: their pixels are read once here, not in the lines' drawing. */
+static void sil_map(void) {
+    const int stride = (PPU_W + 7) / 8;
+    if (!F.silmap && !(F.silmap = hal_realloc_slow(NULL, (size_t)stride * PPU_H))) { F.any_sil = false; return; }
+    memset(F.silmap, 0, (size_t)stride * PPU_H);
+    for (int i = 0; i < PPU_OBJS; i++) {
+        const ppu_obj *o = &PPU.obj[i];
+        if (!o->on || o->mode != OBJ_SIL || !o->w || !o->h || (!o->idx && !o->rgb)) continue;
+        int bx, by, bw, bh;
+        obj_box(o, &bx, &by, &bw, &bh);
+        const int x0 = bx < 0 ? 0 : bx, x1 = bx + bw > PPU_W ? PPU_W : bx + bw, y0 = by < 0 ? 0 : by, y1 = by + bh > PPU_H ? PPU_H : by + bh;
+        const int mw = o->mosaic ? PPU.mosaic.obj_w : 1, mh = o->mosaic ? PPU.mosaic.obj_h : 1;
+        for (int y = y0; y < y1; y++) {
+            uint8_t *row = F.silmap + y * stride;
+            const int sy = mh > 1 ? y - y % mh : y;
+            for (int x = x0; x < x1; x++) {
+                uint16_t c;
+                if (obj_pixel(o, mw > 1 ? x - x % mw : x, sy, PPU.obj_pal, &c)) row[x >> 3] |= (uint8_t)(1 << (x & 7));
+            }
+        }
+    }
 }
 
 static void windows(lines *L, int y) { /* what shows where: outside, then the object window, window 1, window 0 */
@@ -553,15 +582,14 @@ static void windows(lines *L, int y) { /* what shows where: outside, then the ob
 
 /* The palettes of a frame that replaces entries on some lines (line_pal): each core keeps a copy of the registers' palettes, made once a
  * frame, and on each line puts back what the line before changed and writes what this one changes: a handful of entries, not 2 x 512 bytes. */
-static struct {
-    uint16_t pal[2][256]; /* [0] the backgrounds', [1] the sprites' */
-    uint8_t n[2], idx[2][PPU_LINE_PALS]; /* the entries the last line changed */
-    uint32_t frame;
-} PS[2];
 static uint32_t frame_no;
 
 static __attribute__((noinline, cold)) void line_palettes(lines *L, int y) {
-    typeof(PS[0]) *s = &PS[L - LB];
+    if (!PS) { /* (no memory for the copies: the registers' palettes, the line's changes not seen) */
+        L->bgp = PPU.bg_pal, L->objp = PPU.obj_pal;
+        return;
+    }
+    linepals *s = &PS[L - LB];
     const uint16_t *base[2] = {PPU.bg_pal, PPU.obj_pal};
     const ppu_line_pal *tab[2] = {PPU.line.pal_bg, PPU.line.pal_obj};
     if (s->frame != frame_no) {
@@ -576,7 +604,7 @@ static __attribute__((noinline, cold)) void line_palettes(lines *L, int y) {
     L->bgp = s->pal[0], L->objp = s->pal[1];
 }
 
-static void compose(lines *L, int y, uint16_t *out) {
+static __attribute__((noinline)) void compose(lines *L, int y, uint16_t *out) { /* (its own function: in IRAM on the console; line() is not) */
     const bool lp = PPU.line.pal_bg || PPU.line.pal_obj; /* this frame replaces palette entries on some lines */
     if (__builtin_expect(lp, 0)) line_palettes(L, y);
     uint32_t back = PX(PPU.line.backdrop ? PPU.line.backdrop[y] : lp ? L->bgp[0] : PPU.bg_pal[0], ID_BACK);
@@ -641,17 +669,19 @@ static void compose(lines *L, int y, uint16_t *out) {
     }
 }
 
-static void line(lines *L, int y, uint16_t *out) {
-    L->drew_sil = false;
-    if (F.any_sil) memset(L->sil, 0, PPU_W);
-    compose(L, y, out);
-    if (!L->drew_sil) return;
-    /* an OBJ_SIL sprite's pixel that a background drawn after it covered (the top is a background's): its silhouette, a
-     * flat colour mixed over what covers it, as a hero walking behind a house shows through it */
+/* An OBJ_SIL sprite's pixels that a background drawn after it covered (the top is a background's): its silhouette, a
+ * flat colour mixed over what covers it, as a hero walking behind a house shows through it. (On the console, in flash.) */
+static __attribute__((noinline)) void sil_apply(const lines *L, int y, uint16_t *out) {
+    const uint8_t *row = F.silmap + y * ((PPU_W + 7) / 8);
     const int a = PPU.sil.alpha, b = 16 - a;
     const uint16_t c = PPU.sil.colour;
     for (int x = 0; x < PPU_W; x++)
-        if (L->sil[x] && ((L->top[x] >> 16) & 7) < ID_OBJ) out[x] = blend(c, out[x], a, b);
+        if ((row[x >> 3] >> (x & 7)) & 1 && (!L->win || (L->show[x] & PPU_OBJ)) && ((L->top[x] >> 16) & 7) < ID_OBJ) out[x] = blend(c, out[x], a, b);
+}
+
+static void line(lines *L, int y, uint16_t *out) {
+    compose(L, y, out);
+    if (F.any_sil) sil_apply(L, y, out);
 }
 
 static void render_part(int part, void *frame) { /* every other line, from line `part` */

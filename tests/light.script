@@ -1,0 +1,15 @@
+# lib/light: a lamp straight ahead lights the surface facing out fully and leaves the one facing up at the ambient; moved
+# over the top, the other way round; nil is flat light; the shade of one surface as a number
+new
+tick 1
+lua lamp:set(0, 0, 1)
+expect_lua lamp.lit[1] == 0x808080 and lamp.lit[2] == 0x1A1A1A and lamp.lit[3] == 0x0D2606
+lua lamp:set(0, -1, 0)
+expect_lua lamp.lit[2] == 0x808080 and lamp.lit[1] == 0x1A1A1A
+lua lamp:set(0, -1, 1)
+expect_lua lamp.lit[1] > 0x1A1A1A and lamp.lit[1] < 0x808080 and lamp.lit[1] == lamp.lit[2]
+lua lamp:set(nil)
+expect_lua lamp.lit[1] == 0x808080 and lamp.lit[3] == 0x40C020
+expect_lua light.shade({0, 0, 1}, {0, 0, 5}, 0) == 1 and light.shade({0, 0, 1}, {0, 0, -1}, 0.3) == 0.3
+expect_lua math.abs(light.shade({1, 0, 0}, {1, 0, 1}, 0) - 0.70710678) < 1e-5
+expect_ok

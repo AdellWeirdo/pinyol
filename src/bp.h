@@ -496,6 +496,7 @@ void audio_pause(bool paused);
 void audio_music_clock(int src);        /* 0: music() stopped the song; its clock from 0 (1 WAV, 2 module) */
 void audio_music_clock_locked(int src); /* (the same, the audio lock held: in a song's swap) */
 bool audio_music_time(double *seconds); /* how far into the song the player hears now; false: none plays */
+double audio_music_bar(void);           /* the playing song's bar in seconds (given to music(), or the WAV's own cues); 0 none */
 void audio_reset(void);
 /* For the studio (studio.c), the audio lock held where it says so */
 int audio_voice_start_locked(const int16_t *pcm, int n, float gain, float pitch, bool loop, int wait, float send_d,
@@ -543,7 +544,8 @@ void audio_force_missing(const char *id);
 
 /* Synthesised voices (psg.c), mixed with the rest: notes instead of recordings. */
 #define PSG_VOICES 4
-enum { PSG_SQUARE, PSG_TRIANGLE, PSG_SAW, PSG_SINE, PSG_NOISE, PSG_WAVE /* a table, as the GBA's wave channel */ };
+enum { PSG_SQUARE, PSG_TRIANGLE, PSG_SAW, PSG_SINE, PSG_NOISE, PSG_WAVE /* a table, as the GBA's wave channel */,
+       PSG_FM /* two operators: a sine bent by another at fm_ratio times its pitch, fm_index deep (the index follows the envelope) */ };
 typedef struct {
     uint8_t wave;        /* PSG_* */
     float freq, vol;     /* Hz; 0..1 */
@@ -556,6 +558,7 @@ typedef struct {
     bool lfsr7;          /* noise: a 7-bit shift register (a metallic, pitched noise) instead of 15 */
     float vib_depth, vib_speed, vib_delay; /* vibrato: cents each way, Hz, seconds before it starts */
     float bend;          /* semitones above the note: live, with psg_set */
+    float fm_ratio, fm_index; /* PSG_FM: the modulator's pitch as a multiple of the note's (2), and how far it bends the phase (1: a cycle) */
 } psg_note;
 typedef struct { float vol; bool set_bend; float bend; } psg_mod; /* vol < 0: unchanged */
 void psg_set(int voice, const psg_mod *m); /* a note that sounds, changed: its volume, its bend */
@@ -578,6 +581,7 @@ typedef struct {
     float lowpass, lowpass_sweep, resonance; /* 0..1 (1 open), per second, 0..1 */
     float highpass, highpass_sweep;       /* 0..1 (0 open), per second */
     float repeat, volume;                 /* seconds before it starts again (0: never), 0..1 */
+    float fm_ratio, fm_index;             /* PSG_FM: the modulator's ratio (2) and depth (1), the depth falling over the sound */
     uint32_t seed;                        /* the noise's */
 } synth_params;
 void synth_defaults(synth_params *p);
@@ -619,6 +623,8 @@ void music_zone_changed(void);
 void music_reset(void);
 void sound(const char *what);      /* named UI/feedback sound from music.json "sfx" */
 bool wav_parse(FILE *f, long *data_start, long *data_len, int *chans);
+typedef struct { long loop, cue[2]; int ncue; } wav_marks; /* a WAV's own loop start (smpl) and first two cue points, in frames */
+bool wav_parse_marks(FILE *f, long *data_start, long *data_len, int *chans, wav_marks *m); /* m may be NULL */
 
 /* ------------------------------------------------------------------ ui.c */
 void ui_toast(const char *msg);

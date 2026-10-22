@@ -639,3 +639,18 @@ it out by frames: about 7 % of a core for eight channels at 22050 Hz with linear
 internal RAM (D/IRAM left 90222 B, as before IBXM), the module's samples (as 16-bit), patterns and replay in PSRAM
 (43 KB for the dense one). `music_beat()` on the XM after 25 s said bar 14, beat 1 (a line every 120 ms, a bar
 every 1.92 s); the queued XM came in at the bar line (`music_queued()` true until then).
+
+## 2026-10-22 · The batch: markers, blue noise, FM, voxels, light, rollback, FamiStudio
+
+The voxel landscape on the console, first cut (the looks test game's view: 240x160, distance 120, a 64x64 map):
+`_draw` 21-28 ms, 20-24 fps. Its cost was in the inner loop: two floorf, four modulos and the brightness of the
+height map worked out again for every sample. Rewritten (the height map kept as bytes while the same picture is
+asked for, masks for power-of-two maps, a cast with an offset instead of floorf, the buffers in slow memory); the
+console's USB hung before the second measure (a replug, then `lua:mode = "voxel"` on the looks game). On the
+desktop the same view draws in 0.57 ms (headless, `perf()` over twenty frames).
+
+Internal RAM: ppu.c lives in IRAM (linker.lf, `ppu_inside`) with its line buffers, so code added to the line drawers
+costs IRAM six times over (the layers_x variants): the silhouette's hooks took 1.3 KB until they were moved to the
+frame's preparation (sil_map, once a frame on the game's thread) and to flash (sil_apply, line). The per-line palette
+copies (2 KB, a game that replaces entries on a line) went to slow memory. D/IRAM left: 91838 B (90222 before the
+batch; the floor in CI is 90000).

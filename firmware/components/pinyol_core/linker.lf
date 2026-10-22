@@ -20,4 +20,7 @@ entries:
     ppu (ppu_inside)
     ppu:layers_lp (default)
     ppu:layers_plain_lp (default)
+    ppu:sil_apply (default)
+    ppu:sil_map (default)
+    ppu:line (default)
     studio_fx (ppu_inside)

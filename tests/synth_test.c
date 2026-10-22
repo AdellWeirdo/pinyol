@@ -17,10 +17,34 @@ static int failures, checks;
 static int16_t a[MAX], b[MAX];
 static int16_t out[AUDIO_HZ * 2];
 
+static int16_t *copy(const int16_t *p, int n);
+
 static int peak(const int16_t *p, int n) {
     int m = 0;
     for (int i = 0; i < n; i++) m = abs(p[i]) > m ? abs(p[i]) : m;
     return m;
+}
+
+static int differs(const int16_t *p, const int16_t *q, int n) { /* samples that are not the same */
+    int d = 0;
+    for (int i = 0; i < n; i++) d += p[i] != q[i];
+    return d;
+}
+
+static void fm_checks(void) { /* an FM sound has energy, and is not the plain sine it starts from, and its ratio matters */
+    synth_params s, f, g;
+    synth_defaults(&s), s.wave = PSG_SINE, s.freq = 330, s.sustain = 0.2f, s.decay = 0.3f;
+    f = s, f.wave = PSG_FM, f.fm_ratio = 3.5f, f.fm_index = 2;
+    g = f, g.fm_ratio = 1;
+    int n = synth_render(&s, a, MAX), m = synth_render(&f, b, MAX);
+    CHECK(n == m && n > AUDIO_HZ / 4);
+    CHECK(peak(b, m) > 3000 && differs(a, b, n) > n / 2);
+    int16_t *fb = copy(b, m);
+    int k = synth_render(&g, b, MAX);
+    CHECK(k == m && differs(fb, b, k) > k / 2);
+    free(fb);
+    synth_clamp(&g);
+    CHECK(g.wave == PSG_FM); /* (the clamp keeps it) */
 }
 
 static int16_t *copy(const int16_t *p, int n) {
@@ -30,6 +54,7 @@ static int16_t *copy(const int16_t *p, int n) {
 }
 
 int main(void) {
+    fm_checks();
     static const char *kinds[] = {"coin", "laser", "explosion", "powerup", "hit", "jump", "blip", "random"};
     for (int k = 0; k < 8; k++)
         for (uint32_t seed = 1; seed <= 40; seed++) { /* every recipe, many seeds: a sound, in range, the same twice */

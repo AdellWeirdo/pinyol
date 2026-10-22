@@ -89,3 +89,57 @@ assert r.returncode == 1 and "lacks ☃" in r.stdout, r.stdout
 r = subprocess.run([sys.executable, str(ROOT / "tools/pack_game.py"), str(game), "--budget"], capture_output=True, text=True, check=True)
 assert "assets/HERO.rgb565" in r.stdout and "kind" in r.stdout, r.stdout
 print("tools_test: ok")
+
+# a FamiStudio text export as a module: four channels, the speed from the note length, a volume envelope followed
+FS_TEXT = """Project Version="4.1.0" TempoMode="FamiStudio" Name="Prueba" Author="pinyol"
+	Instrument Name="Lead"
+		Envelope Type="Volume" Length="4" Values="15,12,8,4"
+		Envelope Type="DutyCycle" Length="1" Values="1"
+	Instrument Name="Bass"
+		Envelope Type="Volume" Length="1" Values="15"
+	Song Name="Cancion" Length="2" LoopPoint="1" PatternLength="16" BeatLength="4" NoteLength="6" Groove="6"
+		Channel Type="Square1"
+			Pattern Name="A"
+				Note Time="0" Value="C4" Instrument="Lead"
+				Note Time="4" Value="E4" Instrument="Lead"
+				Note Time="8" Value="G4" Instrument="Lead" Duration="12"
+				Note Time="12" Value="Stop"
+			PatternInstance Time="0" Pattern="A"
+			PatternInstance Time="1" Pattern="A"
+		Channel Type="Square2"
+		Channel Type="Triangle"
+			Pattern Name="B"
+				Note Time="0" Value="C3" Instrument="Bass"
+				Note Time="8" Value="G2" Instrument="Bass"
+			PatternInstance Time="0" Pattern="B"
+		Channel Type="Noise"
+			Pattern Name="N"
+				Note Time="0" Value="C4" Instrument="Bass"
+				Note Time="2" Value="Stop"
+			PatternInstance Time="1" Pattern="N"
+"""
+fs = out / "cancion.txt"
+fs.write_text(FS_TEXT, encoding="utf-8")
+fsgame = out / "fsgame"
+(fsgame / "audio").mkdir(parents=True)
+shutil.copytree(ROOT / "tests/games/device/fonts", fsgame / "fonts")
+(fsgame / "game.json").write_text(json.dumps({"id": "fsgame", "title": "fs", "engine": "pinyol@2", "main": "main.lua"}))
+(fsgame / "main.lua").write_text("function _init() music('FS') end function _update() end function _draw() cls(0) end\n")
+subprocess.run([sys.executable, str(ROOT / "tools/famistudio2mod.py"), str(fs), str(fsgame / "audio/FS.mod"), "--song", "Cancion"], check=True)
+mod = (fsgame / "audio/FS.mod").read_bytes()
+assert mod[1080:1084] == b"M.K." and mod[950] == 2 and mod[951] == 1, (mod[950], mod[951])  # two positions, the loop at the second
+names = [mod[20 + i * 30:20 + i * 30 + 22].rstrip(b"\0") for i in range(31)]
+assert b"square1" in names and b"triangle" in names and b"noise" in names, names[:4]
+pat0 = mod[1084:1084 + 1024]
+assert pat0[2 * 4 + 2] & 15 == 0xF and pat0[2 * 4 + 3] == 150 and pat0[3 * 4 + 2] & 15 == 0xF and pat0[3 * 4 + 3] == 6, "the tempo and the speed"
+assert pat0[0] & 15 == 428 >> 8 and pat0[1] == 428 & 255, "C4 is period 428"
+assert pat0[4 * 16 + 2] & 15 == 0xC and pat0[4 * 16 + 3] == 64, "the envelope: full at the note"  # E4 at row 4: volume 15 -> 64
+assert pat0[1 * 16 + 2] & 15 == 0xC and pat0[1 * 16 + 3] < 64, "and falling a row later"
+assert pat0[12 * 16 + 3] == 0, "the stop"
+assert pat0[15 * 16 + 3 * 4 + 2] & 15 == 0xD, "a pattern of 16 notes breaks at its end"
+script = out / "fs.script"
+script.write_text("tick 5\nexpect_lua music_beat() ~= nil\ntick 60\nexpect_lua music_beat() ~= nil\nexpect_ok\n")
+r = subprocess.run([str(Path(sys.argv[1]) / "pinyol_headless"), "--game", str(fsgame), "--fresh", "--script", str(script)], capture_output=True, text=True)
+assert "PASS" in r.stdout + r.stderr, (r.stdout + r.stderr)[-400:]
+print("famistudio2mod: ok")
+

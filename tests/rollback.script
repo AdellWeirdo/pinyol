@@ -1,0 +1,27 @@
+# rollback: a console (0x42) joins; the game runs every tick without waiting, guessing 0x42 presses nothing
+new
+tick 2
+link_from 42 {"f":0,"i":[]}
+tick 1
+expect_lua started == true and rawlen(rb.players) == 2 and rb.tick == 1
+tick 9
+expect_lua rb.tick == 10 and rb.rollbacks == 0 and pos[0x42] == 0
+expect_link_sent "f":
+# 0x42's frame 2 (ticks 3..5) arrives late, with three RIGHTs where nothing was guessed: the ticks since are run again
+# with the truth (frame 1 is the known empty one of the delay), and from then on 0x42 is guessed to keep pressing RIGHT:
+# 3 for the frame, 4 for the ticks since, 1 for this tick
+link_from 42 {"f":2,"i":[[8,8,8],[0,0,0]]}
+tick 1
+expect_lua rb.rollbacks == 1 and rb.rolled >= 6 and pos[0x42] == 8 and rb.tick == 11
+# 3 more ticks give 3 more; then frame 3 (ticks 6..8) says nothing was pressed: back to tick 6, and the guesses after it
+# become nothing too
+tick 3
+expect_lua pos[0x42] == 11 and rb.rollbacks == 1
+link_from 42 {"f":3,"i":[[0,0,0],[8,8,8]]}
+tick 1
+expect_lua rb.rollbacks == 2 and pos[0x42] == 3
+# mine: LEFT for a frame counts at once (delay 1: one frame later), with no rollback on my side
+hold LEFT 3
+tick 6
+expect_lua pos[link.id()] == -3 and rb.rollbacks == 2
+expect_ok

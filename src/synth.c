@@ -31,13 +31,14 @@ static float range(uint32_t *s, float a, float b) { return a + (b - a) * rnd(s);
 
 void synth_defaults(synth_params *p) {
     *p = (synth_params){.wave = PSG_SQUARE, .freq = 440, .vibrato_speed = 6, .arp = 1, .duty = 0.5f, .sustain = 0.1f,
-                        .decay = 0.2f, .lowpass = 1, .volume = 0.5f, .seed = 1};
+                        .decay = 0.2f, .lowpass = 1, .volume = 0.5f, .fm_ratio = 2, .fm_index = 1, .seed = 1};
 }
 
 static float clampf(float v, float lo, float hi) { return v != v ? lo : v < lo ? lo : v > hi ? hi : v; }
 
 void synth_clamp(synth_params *p) { /* a game's numbers made safe: finite, in range, at most SYNTH_MAX_S long */
-    p->wave = p->wave > PSG_NOISE ? PSG_SQUARE : p->wave;
+    p->wave = p->wave > PSG_NOISE && p->wave != PSG_FM ? PSG_SQUARE : p->wave;
+    p->fm_ratio = clampf(p->fm_ratio, 0.01f, 32), p->fm_index = clampf(p->fm_index, 0, 16);
     p->freq = clampf(p->freq, 1, 20000), p->freq_min = clampf(p->freq_min, 0, 20000);
     p->slide = clampf(p->slide, -100000, 100000), p->slide_accel = clampf(p->slide_accel, -1000000, 1000000);
     p->vibrato = clampf(p->vibrato, 0, 1), p->vibrato_speed = clampf(p->vibrato_speed, 0, 100);
@@ -103,6 +104,14 @@ int synth_render(const synth_params *in, int16_t *out, int max) {
             case PSG_TRIANGLE: x = phase < 0.5f ? 2 * phase - 0.5f : 1.5f - 2 * phase; break;
             case PSG_SAW: x = 0.5f - phase; break;
             case PSG_SINE: x = 0.5f * sine_at(phase); break;
+            case PSG_FM: { /* the depth falls over the sound's length: a bell, an electric piano */
+                float mp = phase * p.fm_ratio;
+                mp -= floorf(mp);
+                float cp = phase + p.fm_index * (1 - (float)n / (float)(total > 0 ? total : 1)) * sine_at(mp);
+                cp -= floorf(cp);
+                x = 0.5f * sine_at(cp);
+                break;
+            }
             default: x = 0.5f * noise[(int)(phase * NOISE_N) % NOISE_N]; break;
             }
             /* a resonant lowpass (open at 1) and a highpass after it, sweeping as they go */

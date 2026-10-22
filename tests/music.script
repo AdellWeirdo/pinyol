@@ -74,6 +74,19 @@ lua bar, beat = music_beat()
 expect_lua bar == 1 and beat == 2
 lua music()
 tick 70
+# A WAV's own markers (MARKED.wav: a loop from 0.25 s in its smpl chunk, cue points at 0 and 0.5 s) serve when music() is
+# told no bar nor loop_at: music_beat() counts bars of half a second, and the song goes round to 0.25 s
+lua music("MARKED")
+tick 2
+lua bar, beat = music_beat()
+expect_lua bar == 1 and beat == 1
+tick 33
+lua bar, beat = music_beat()
+expect_lua bar == 2
+tick 36
+expect_lua music_time() ~= nil and music_time() > 1.0
+lua music()
+tick 70
 # a module asked for at the bar while nothing plays starts at once; a plain music() drops one waiting
 lua music("LOOP", 0, {at = "bar"})
 expect_lua music_queued() == false and music_beat() ~= nil

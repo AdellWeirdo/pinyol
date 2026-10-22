@@ -36,24 +36,33 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
   ángulos en canvases), `lib/water` (muelles), `lib/road` (carretera pseudo-3D sobre `line_affine`). Comprobado por
   píxel en `tests/looks_check.py`. **Hecho el 22 de octubre:** visibilidad 2D (`g:fov`, shadowcasting en C sobre la
   rejilla; `g:sees`, línea de visión) y silueta tras paredes (`SILHOUETTE` en `spr`, `silhouette(color, fuerza)`: el PPU
-  mezcla el color donde un fondo más cercano tapa al sprite). **No hecho:** dither de ruido azul, cleanEdge, Voxel
-  Space, luz normal por paleta, mallas 3D.
+  mezcla el color donde un fondo más cercano tapa al sprite); el mismo día, dither de ruido azul (`src/bluenoise.h`,
+  32×32 por void-and-cluster, en el disolvente de `shade`/`img`), Voxel Space (`voxels()`, terreno de Comanche sobre un
+  canvas) y luz por paleta (`lib/light`: entradas que son superficies, iluminadas desde la dirección de la lámpara).
+  **No hecho:** cleanEdge (un escalado de 240→480 por píxel con pendientes: en la ESP32 no cabe en el frame; la
+  consola escala ×2 por DMA), mallas 3D.
 
 - **Fase 4, hecho:** música adaptativa (`music(id, fade, {bar, beats, loop_at, layers, at = "bar"})`: la canción nueva
   espera aparcada y el mezclador la cambia en la línea de compás; `music_beat()`, `music_queued()`), `lib/brain` (IA de
   utilidad), `lib/rng` (Squirrel noise, flujos por semilla, fbm), `lib/gen` (cuevas, BSP, paseo, salas de Spelunky,
   `connected`), `lib/chain` (cadenas, patas que dan pasos, FABRIK, dos huesos), `lib/steer` (seek/flee/arrive/wander/
   pursue/separate/flock y un hash espacial), `grid`: `l:scale`, `l:mix`, `g:rescan` (mapas de huida de Brogue).
-  **Hecho el 22 de octubre:** XM/S3M (IBXM de Martin Cameron, BSD; `music("ID")` encuentra `.mod`, `.xm` o `.s3m`, con
+  **Hecho el 22 de octubre:** voz FM (`wave = "fm"` en `tone` y `sound`: dos operadores, `fm_ratio`, `fm_index` que sigue
+  la envolvente), marcadores propios del WAV (`smpl` para el bucle, dos `cue` para el compás, cuando `music()` no los
+  da), y XM/S3M (IBXM de Martin Cameron, BSD; `music("ID")` encuentra `.mod`, `.xm` o `.s3m`, con
   compás, cola y parada en la línea como los `.mod`; `tests/make_tracker.py` genera los tres módulos de prueba). En la
   placa, un XM de ocho canales cuesta el 7 % de un núcleo y nada de RAM interna (docs/measurements.md).
-  **No hecho:** voz FM, importar `.uge`/FamiStudio, marcadores en WAV.
+  `tools/famistudio2mod.py` convierte la exportación de texto de FamiStudio en un `.mod` de cuatro canales (duty, triángulo,
+  ruido; envolvente de volumen fila a fila; sin arpegios ni DPCM). **No hecho:** `.uge` (hUGETracker, binario y por versión).
 
 - **Fase 5, hecho:** `lib/lockstep` (juego en paso sobre `link`: solo botones, tramas de 3 ticks con repetición,
   retardo de 2 tramas), registro de la consola (`played.json`: partidas, tiempo, última vez, favoritos, logros),
   `achieve()`/`achievements()` con `game.json "achievements"`, `console_played()`/`console_favourite()`, y el menú de
-  Cirera ordena favoritos y recientes, muestra partidas/tiempo/logros y C marca favorito. **No hecho:** ESP-NOW v2
-  (hace falta placa), rollback, Download Play, tarjetas tipo StreetPass, estantería de logros en la Biblioteca.
+  Cirera ordena favoritos y recientes, muestra partidas/tiempo/logros y C marca favorito. **Hecho el 22 de octubre:**
+  `lib/rollback` (netcode con retroceso sobre el transporte de `lockstep`: el juego da `save`/`load`/`run`, corre sin
+  esperar, adivina y rehace los ticks cuando llega la verdad; probado en headless con una consola fingida por el guion).
+  **No hecho:** ESP-NOW v2, Download Play y tarjetas tipo StreetPass (hacen falta dos placas), estantería de logros en
+  la Biblioteca.
 
 - **Fase 6, hecho:** `tools/ase2asset.py` (lee el `.aseprite`: capas, cels comprimidos y enlazados, paletas, tags,
   slices → imagen + `<id>_anims.lua`), `tools/ldtk2asset.py` (export simplificado: fondo o tiles, IntGrid, entidades →

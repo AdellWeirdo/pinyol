@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""The small tracker modules the tests play (tests/games/music/audio): a ProTracker LOOP.mod, a FastTracker LOOPX.xm
+"""The small modules and WAVs the tests play (tests/games/music/audio): a ProTracker LOOP.mod, a FastTracker LOOPX.xm
 and a Scream Tracker LOOPS.s3m, each one pattern of 64 rows with a square-wave sample struck on the first line of
-each bar of sixteen, at speed 1 (a line every 20 ms at 125 BPM, a bar 320 ms), so a script can count their bars.
-    python3 tests/make_tracker.py            # writes the three files
+each bar of sixteen, at speed 1 (a line every 20 ms at 125 BPM, a bar 320 ms), so a script can count their bars; and
+MARKED.wav, a second of a tone with its own markers (a loop from 0.25 s in a smpl chunk, cue points at 0 and 0.5 s).
+    python3 tests/make_tracker.py            # writes the four files
 """
 import struct
 from pathlib import Path
@@ -101,9 +102,23 @@ def s3m() -> bytes:
     return bytes(body)
 
 
+def marked() -> bytes:
+    """A second of a 440 Hz tone, 22050 Hz mono PCM16, with a smpl loop starting at 0.25 s and two cue points, at 0 and 0.5 s,
+    written after the data chunk as DAWs do."""
+    import math
+    rate = 22050
+    pcm = b"".join(struct.pack("<h", int(12000 * math.sin(2 * math.pi * 440 * i / rate))) for i in range(rate))
+    fmt = struct.pack("<HHIIHH", 1, 1, rate, rate * 2, 2, 16)
+    smpl = struct.pack("<IIIIIIIII", 0, 0, 1000000000 // rate, 60, 0, 0, 0, 1, 0) + struct.pack("<IIIIII", 0, 0, rate // 4, rate - 1, 0, 0)
+    cue = struct.pack("<I", 2) + struct.pack("<IIIIII", 1, 0, 0x61746164, 0, 0, 0) + struct.pack("<IIIIII", 2, rate // 2, 0x61746164, 0, 0, rate // 2)
+    chunks = b"fmt " + struct.pack("<I", len(fmt)) + fmt + b"data" + struct.pack("<I", len(pcm)) + pcm
+    chunks += b"smpl" + struct.pack("<I", len(smpl)) + smpl + b"cue " + struct.pack("<I", len(cue)) + cue
+    return b"RIFF" + struct.pack("<I", 4 + len(chunks)) + b"WAVE" + chunks
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, make in (("LOOP.mod", mod), ("LOOPX.xm", xm), ("LOOPS.s3m", s3m)):
+    for name, make in (("LOOP.mod", mod), ("LOOPX.xm", xm), ("LOOPS.s3m", s3m), ("MARKED.wav", marked)):
         data = make()
         (OUT / name).write_bytes(data)
         print(f"{name}: {len(data)} bytes")
