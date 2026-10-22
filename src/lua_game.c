@@ -14,6 +14,7 @@
 #include <time.h>
 
 #include "bp.h"
+#include "lua_mem.h"
 #include "lauxlib.h"
 #include "lua.h"
 #include "lualib.h"
@@ -239,16 +240,15 @@ static int l_screen(lua_State *L) { /* screen(1 or 2): the top or the bottom (th
 
 /* ------------------------------------------------------------------ the sandbox */
 
-static void *alloc(void *ud, void *p, size_t osize, size_t nsize) {
-    (void)ud;
+static void *alloc(void *ud, void *p, size_t osize, size_t nsize) { /* the quota's; the memory is lua_mem.c's */
     if (!p) osize = 0;
     if (!nsize) {
-        free(p);
+        lua_mem_alloc(ud, p, osize, 0);
         mem_used -= osize;
         return NULL;
     }
     if (mem_used - osize + nsize > mem_quota) return NULL; /* Lua raises "not enough memory" */
-    void *q = hal_realloc_slow(p, nsize);
+    void *q = lua_mem_alloc(ud, p, osize, nsize);
     if (q) mem_used = mem_used - osize + nsize;
     return q;
 }
@@ -1784,6 +1784,7 @@ void v2_free(void) {
     device_reset();
     if (Ls) lua_close(Ls);
     Ls = NULL;
+    lua_mem_reset(); /* (Lua's chunks go back to the heap: nothing of the state is left) */
     prof_new_state(); /* (the profiler itself is the platform's: it outlives a game's restart; prof_stop at its end) */
     post_free();
     splash_ref = LUA_NOREF;

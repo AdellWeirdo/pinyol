@@ -204,6 +204,10 @@ add_executable(synth_test tests/synth_test.c platform/null/hal_null.c platform/l
 target_compile_options(synth_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(synth_test pinyol_core)
 add_test(NAME synth COMMAND synth_test)
+add_executable(lua_mem_test tests/lua_mem_test.c platform/null/hal_null.c platform/link_udp.c)
+target_compile_options(lua_mem_test PRIVATE -Wall -Wextra -Werror ${SAN})
+target_link_libraries(lua_mem_test pinyol_core)
+add_test(NAME lua_mem COMMAND lua_mem_test) # Lua's memory: random blocks across the small/big border, contents and alignment checked, chunks back at the reset
 add_executable(audio_voice_test tests/audio_voice_test.c platform/null/hal_null.c platform/link_udp.c)
 target_compile_options(audio_voice_test PRIVATE -Wall -Wextra -Werror ${SAN})
 target_link_libraries(audio_voice_test pinyol_core)
