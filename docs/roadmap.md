@@ -95,6 +95,13 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
    simulada (`link_from`), no en dos placas. Lo que enseñó: una consola que espera a la otra no puede seguir muestreando
    tramas (se salían del `history` y la que llegaba tarde no las recibía nunca): `lockstep` ahora se para a una trama
    de la que juega y reenvía las últimas cada 6 ticks mientras espera.
+   El mismo día, en ILUSTRES: TECH! (A+C al ser agarrado rompe la proyección, GDD 4.6) y CONTRAATAC! (el especial
+   pedido bloqueando, por un stock, GDD 5.1); bloqueo aéreo y barra de guardia descartados (no están en el GDD y mueven
+   el balance medido por parejas). Pendiente de placa: `cps2bench` (`juegos/ILUSTRES-ESP/tests/cps2bench`: `sh make.sh` lo monta y lo manda),
+   que dibuja el escenario de ILUSTRES de tres maneras diez segundos cada una (todo overlay como hoy; capa lejana en el
+   mundo a 240×160; lejana y cercana en el mundo) para saber cuántos ms libera cada una. Suelo en perspectiva: no hace
+   falta nada nuevo en C: `warp` con `rows` para una franja, bandas `clip`+`img` como torneo (36 bandas a 60-61 fps) o
+   `line_scroll_ramp` si la capa pasa al mundo.
 
 7. Vistos en la pantalla real sobre horizonte: el menú del sistema, la página de ajustes, el filtro protan (1,8 ms por
    frame) y la pantalla de crash con A reiniciando. Y un abort encontrado y arreglado (9bb4905): el dibujo corre en los
