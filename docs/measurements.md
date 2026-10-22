@@ -660,3 +660,22 @@ costs IRAM six times over (the layers_x variants): the silhouette's hooks took 1
 frame's preparation (sil_map, once a frame on the game's thread) and to flash (sil_apply, line). The per-line palette
 copies (2 KB, a game that replaces entries on a line) went to slow memory. D/IRAM left: 91838 B (90222 before the
 batch; the floor in CI is 90000).
+
+## 2026-10-22 · CPS2: un escenario de ILUSTRES en el overlay o en el mundo
+
+`juegos/ILUSTRES-ESP/tests/cps2bench` (Cadaqués: BG_FAR de 640×320 y BG_NEAR de 720 de ancho, dos luchadores de
+312×272, la cámara barriendo el escenario), diez segundos por modo, `perf("ops")` y `perf()` una vez por segundo en la
+consola:
+
+| Modo | Strips (ms de CPU por frame, los dos núcleos sumados) | Capas del mundo (ms) | Total |
+|---|---|---|---|
+| Todo en el overlay con `img` (como dibuja ILUSTRES) | 12,6 (`img`) | 0 | 12,6 |
+| Capa lejana en el mundo (canvas de 320×160, el PPU la dobla), el resto en el overlay | 5,6 | 2,1 | 7,7 |
+| Lejana y cercana en el mundo, solo los luchadores en el overlay | 1,9 | 3,0 | 4,9 |
+
+Las líneas `perf:` del firmware dan 60 fps y «render 16.15 ms» en los tres modos: con TE lock, render es el periodo
+del panel, no el coste; para comparar hay que mirar `perf("ops")`. Una imagen de 480×320 por `img` cuesta unos 7 ms
+de CPU (los dos núcleos); la misma como capa del mundo a mitad de resolución, unos 2. ILUSTRES (combates a 57,6-59,8
+fps, intro de asalto a 53) ganaría ~5 ms de CPU por frame pasando la capa lejana al mundo, ~7,7 con las dos; la
+cercana a mitad de resolución pierde el detalle del público y la terraza, la lejana (cielo y ciudad al fondo) apenas
+se nota.

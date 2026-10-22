@@ -97,9 +97,10 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
    de la que juega y reenvía las últimas cada 6 ticks mientras espera.
    El mismo día, en ILUSTRES: TECH! (A+C al ser agarrado rompe la proyección, GDD 4.6) y CONTRAATAC! (el especial
    pedido bloqueando, por un stock, GDD 5.1); bloqueo aéreo y barra de guardia descartados (no están en el GDD y mueven
-   el balance medido por parejas). Pendiente de placa: `cps2bench` (`juegos/ILUSTRES-ESP/tests/cps2bench`: `sh make.sh` lo monta y lo manda),
-   que dibuja el escenario de ILUSTRES de tres maneras diez segundos cada una (todo overlay como hoy; capa lejana en el
-   mundo a 240×160; lejana y cercana en el mundo) para saber cuántos ms libera cada una. Suelo en perspectiva: no hace
+   el balance medido por parejas). Medido en la placa (`juegos/ILUSTRES-ESP/tests/cps2bench`, `sh make.sh`; docs/measurements.md): el escenario de
+   ILUSTRES todo en el overlay cuesta 12,6 ms de CPU por frame en strips; con la capa lejana en el mundo (canvas a
+   mitad, el PPU la dobla) 5,6 + 2,1 de capas; con las dos en el mundo 1,9 + 3,0. Pasar la lejana al mundo libera
+   ~5 ms de CPU por frame sin que se note; la cercana a mitad pierde el público. Decisión de Pau. Suelo en perspectiva: no hace
    falta nada nuevo en C: `warp` con `rows` para una franja, bandas `clip`+`img` como torneo (36 bandas a 60-61 fps) o
    `line_scroll_ramp` si la capa pasa al mundo.
 
