@@ -803,3 +803,27 @@ from the card (its own driver does the erase): flash it once by the cable
 (`esptool write_flash 0xf000 ota_data_initial.bin 0x20000 pinyol_console.bin`), then the card works. The released firmwares are
 not affected: 0.3.0, published on 2026-10-20, was built without that driver (the sdkconfig of its tag has
 `CONFIG_SPI_FLASH_ROM_IMPL` unset, no XIP and the 64 KB cache).
+
+## 2026-10-22 · Vector drawing: the call is what costs, not the pixels
+
+Pozo (the vector look's example) first drew every ring and lane of its well as a filled `poly` quad, then as lines, then
+with a glow on a canvas under the lines. Each step was found out with `perf("ops")` (what each kind of drawing command
+costs in the strips) and `perf("lua")` (which function of the game spends the Lua time) on the board. A filled `poly` cost
+about 140 us in the strips, a `line` about 20, and each call from Lua to C some 15 us on top.
+
+| What the frame draws (Pozo in its demo, some 100 strokes a frame) | `_draw` | fps on the console |
+|---|---|---|
+| a filled quad for every ring and lane (105 to 180 `poly` a frame: 11.5 to 20.5 ms in the strips) | 8.3-9.1 ms | 30 |
+| every side a `line`, the glow on a canvas under them (a `shade` of it each frame) | 11.9 ms | 30 |
+| the same, the canvas cleared each frame instead | 9.3-9.9 ms | 30 |
+| the well's line ends worked out once, only the last frame's glow erased | 9.9-10 ms | 30-32 |
+| one outline per ring, `poly(points, colour, false)`, the glow canvas at half size | 8.0-8.3 ms | 34-38 |
+| the same with the glow canvas turned off | 3.5-4.2 ms | 59.3-59.6 |
+| **outlines, the glow as a dimmer copy one pixel over (two for the heaviest), every glow first and then every core** | 3.1-4.5 ms | **59.3-59.9** |
+
+What the table says: the glow canvas cost 4 to 5 ms a frame whichever way it was filled (a bitmap layer of 240×160 in
+PSRAM is 1.2 to 1.35 ms before anything is drawn on it, and a `shade` of it 2.5 ms; what is drawn into it runs in `_draw`);
+an outline of any number of corners is ONE call, so a whole well (a ring, a few lanes in one path, the far ring) is five
+or six calls, not a hundred; and the two passes keep one stroke's glow from covering another stroke's bright core.
+`explain.lua` (the menu's "Cómo funciona") keeps working because the frame's strokes are in a list (`vec.snapshot()`),
+not only on the screen.

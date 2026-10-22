@@ -1,0 +1,29 @@
+key,es,ca,en
+title,POZO,POU,WELL
+press,PULSA A,PREM A,PRESS A
+demo,DEMO,DEMO,DEMO
+high,RÉCORD,RÈCORD,HIGH SCORE
+score,PUNTOS,PUNTS,SCORE
+level,NIVEL {n},NIVELL {n},LEVEL {n}
+lives,VIDAS,VIDES,LIVES
+game_over,FIN DE LA PARTIDA,FI DE LA PARTIDA,GAME OVER
+new_record,¡NUEVO RÉCORD!,NOU RÈCORD!,NEW HIGH SCORE!
+controls,Izquierda y derecha: mover · A: disparar · B: limpiar,Esquerra i dreta: moure · A: disparar · B: netejar,Left and right: move · A: fire · B: clear
+hint,MENÚ: Cómo funciona,MENÚ: Com funciona,MENU: How it works
+extra,VIDA EXTRA,VIDA EXTRA,EXTRA LIFE
+how,Cómo funciona,Com funciona,How it works
+ex_title,Así dibuja el haz,Així dibuixa el feix,How the beam draws
+ex_1,"No hay píxeles: un haz de electrones recorre cada línea de punta a punta, encendido, y salta a la siguiente, apagado.","No hi ha píxels: un feix d'electrons recorre cada línia de punta a punta, encès, i salta a la següent, apagat.","There are no pixels: a beam of electrons runs along each line from end to end, lit, and jumps to the next one, dark."
+ex_2,"Esta imagen son {n} líneas, repetidas 60 veces por segundo en el mismo orden.","Aquesta imatge són {n} línies, repetides 60 vegades per segon en el mateix ordre.","This picture is {n} lines, drawn again 60 times a second in the same order."
+ex_3,El fósforo sigue brillando un instante: lo último que dibujó el haz luce más y lo antiguo se apaga.,El fòsfor segueix brillant un instant: l'últim que va dibuixar el feix llueix més i l'antic s'apaga.,The phosphor keeps glowing for a moment: what the beam drew last shines most and the old fades.
+ex_4,Con más de {max} líneas el haz no llega a tiempo y la imagen parpadea.,Amb més de {max} línies el feix no arriba a temps i la imatge parpelleja.,With more than {max} lines the beam cannot keep up and the picture flickers.
+ex_slow,Cámara lenta: {k} veces más despacio,Càmera lenta: {k} vegades més a poc a poc,Slow motion: {k} times slower
+ex_keys,A: repetir · Arriba: más líneas · Izq. y der.: velocidad · B: volver,A: repetir · Amunt: més línies · Esq. i dr.: velocitat · B: tornar,A: replay · Up: more lines · Left and right: speed · B: back
+ach_primera,Primera pieza,Primera peça,First piece
+ach_descarga,Descarga,Descàrrega,Discharge
+ach_curioso,El haz de cerca,El feix de prop,The beam up close
+ach_hondo,En lo hondo,Al fons,Deep down
+ach_diezmil,Diez mil,Deu mil,Ten thousand
+ex_live,{k}× las líneas: {total}. El haz solo llega a {max} y el resto parpadea.,{k}× les línies: {total}. El feix només arriba a {max} i la resta parpelleja.,{k}× the lines: {total}. The beam only reaches {max} and the rest flickers.
+ex_calm,(El parpadeo está apagado en Ajustes.),(El parpelleig està apagat a Ajustos.),(Flicker is off in Settings.)
+ex_live_ok,{k}× las líneas: {total}. Al haz le da tiempo a dibujarlas todas.,{k}× les línies: {total}. Al feix li dóna temps de dibuixar-les totes.,{k}× the lines: {total}. The beam has time to draw them all.

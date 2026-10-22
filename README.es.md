@@ -32,7 +32,7 @@ Un juego se parece a la consola para la que está hecho, y el motor los mueve to
 | ![Un rompeladrillos de PICO-8: 128x128 en dieciséis colores](docs/looks/pico8.png) | ![Una maquinita LCD: un cocinero que recoge huevos, figuras encendidas o apagadas](docs/looks/lcd.png) |
 | **PICO-8**: [ladrillos](examples/ladrillos), sin imágenes | **Maquinita LCD**: [huevos](examples/huevos), todo polígonos |
 | ![Un juego vectorial: líneas brillantes sobre negro](docs/looks/vector.png) | ![Un matamarcianos vertical, girado: se juega con la consola de lado](docs/looks/vertical.png) |
-| **Recreativa vectorial**: [rocas](examples/rocas), sin imágenes | **Pantalla vertical**: [tormenta](examples/tormenta), con la consola de lado |
+| **Recreativa vectorial**: [pozo](examples/pozo), sin imágenes | **Pantalla vertical**: [tormenta](examples/tormenta), con la consola de lado |
 | ![Un laberinto en primera persona: pasillos de piedra y un fantasma, a lo Wolfenstein](docs/looks/firstperson.png) | ![Una pantalla de carga de ZX Spectrum: un minero en una cueva de cristal, dos colores por bloque](docs/looks/loading.png) |
 | **Primera persona**: [laberinto](examples/laberinto), `raycast()` | **ZX Spectrum**: la carga de cinta de [cinta](examples/cinta) |
 | ![La sala de un castillo gótico: brillos de vela, un fantasma a medias y una cazadora con látigo](docs/looks/32bits.png) | ![El jefe calavera girando y creciendo, sus bolas de fuego brillando](docs/looks/32bits_boss.png) |
@@ -144,7 +144,7 @@ Te queda un juego pequeño para cambiar: una sala más grande que la pantalla, u
 | [veloz](examples/veloz) | un plataformas de velocidad como los de las consolas de 16 bits: un mar movido línea a línea, un cielo en degradado, charcos transparentes, un título en Mode 7; un pangolín que se hace bola |
 | [ladrillos](examples/ladrillos) | un rompeladrillos como un cartucho de PICO-8: una pantalla de 128x128 en sus dieciséis colores, dibujada de nuevo cada frame; sin imágenes |
 | [huevos](examples/huevos) | una maquinita LCD: figuras encendidas o apagadas (sus fantasmas se siguen viendo) sobre una imagen impresa, un paso y un pitido cada vez |
-| [rocas](examples/rocas) | un juego vectorial de recreativa: líneas brillantes con resplandor, hasta las letras; sin imágenes |
+| [pozo](examples/pozo) | un tirador vectorial de recreativa en un pozo geométrico: líneas brillantes con resplandor, hasta las letras, sin imágenes; su menú repite un fotograma línea a línea, como lo dibujaba el haz |
 | [tormenta](examples/tormenta) | un matamarcianos vertical para jugar con la consola de lado: un lienzo de pie que se ve girado, cientos de balas |
 | [laberinto](examples/laberinto) | primera persona como la dibujaba Wolfenstein 3D: raycast() dibuja el laberinto desde dentro, con texturas y niebla, fantasmas y gemas de pie en él |
 | [gotico](examples/gotico) | la sala de un castillo de noche como la dibujaban las consolas de 32 bits: luz de velas sumada, un fantasma y las estelas de un dash vistos a medias, un jefe calavera que gira y crece |

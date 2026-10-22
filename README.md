@@ -32,7 +32,7 @@ takes them again).
 | ![A PICO-8 brick breaker: 128x128 in sixteen colours](docs/looks/pico8.png) | ![A pocket LCD game: a cook catching eggs, figures on or off](docs/looks/lcd.png) |
 | **PICO-8**: [ladrillos](examples/ladrillos), no pictures | **Pocket LCD**: [huevos](examples/huevos), all polygons |
 | ![A vector arcade game: glowing lines on black](docs/looks/vector.png) | ![A vertical shoot-'em-up, shown turned: hold the console on its side](docs/looks/vertical.png) |
-| **Vector arcade**: [rocas](examples/rocas), no pictures | **Vertical screen**: [tormenta](examples/tormenta), the console on its side |
+| **Vector arcade**: [pozo](examples/pozo), no pictures | **Vertical screen**: [tormenta](examples/tormenta), the console on its side |
 | ![A first-person maze: stone corridors and a ghost, Wolfenstein-style](docs/looks/firstperson.png) | ![A ZX Spectrum loading screen: a miner in a crystal cave, two colours a block](docs/looks/loading.png) |
 | **First person**: [laberinto](examples/laberinto), `raycast()` | **ZX Spectrum**: [cinta](examples/cinta)'s tape loading |
 | ![A gothic castle hall: candle glows, a half-seen ghost and a huntress with a whip](docs/looks/32bits.png) | ![The skull boss turning and swelling, its fireballs glowing](docs/looks/32bits_boss.png) |
@@ -146,7 +146,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [veloz](examples/veloz) | a speed platformer as the 16-bit consoles': a sea moved line by line, a sky in a gradient, pools seen through, a Mode 7 title; a pangolin that rolls into a ball |
 | [ladrillos](examples/ladrillos) | a brick breaker as a PICO-8 cartridge: a 128x128 screen in its sixteen colours, drawn again every frame; no pictures |
 | [huevos](examples/huevos) | a pocket LCD game: figures on or off (their ghosts still show) over a printed picture, a step and a beep at a time |
-| [rocas](examples/rocas) | a vector arcade game: bright lines with a glow, even the letters; no pictures |
+| [pozo](examples/pozo) | a vector arcade shooter down a geometric well: bright lines with a glow, even the letters, no pictures; its menu replays a frame line by line, as the beam drew it |
 | [tormenta](examples/tormenta) | a vertical shoot-'em-up played with the console on its side: a standing canvas shown turned, hundreds of bullets |
 | [laberinto](examples/laberinto) | first person as Wolfenstein 3D drew it: raycast() draws the maze from inside, textured and fogged, ghosts and gems standing in it |
 | [gotico](examples/gotico) | a castle hall at night as the 32-bit consoles drew it: candle light added, a ghost and a dash's afterimages half seen through, a skull boss that turns and swells |

@@ -1,0 +1,36 @@
+{
+  "id": "pozo",
+  "title": "Pozo",
+  "subtitle": "Vectorial",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un tirador en un pozo geométrico, como en las máquinas vectoriales: solo líneas brillantes sobre negro, un cañón que se desliza por el borde y enemigos que trepan por el fondo. Y un menú que enseña cómo dibuja el haz.",
+  "achievements": [
+    {
+      "id": "primera",
+      "name": "Primera pieza",
+      "description": "Destruye tu primer enemigo."
+    },
+    {
+      "id": "descarga",
+      "name": "Descarga",
+      "description": "Usa el limpiador de pantalla."
+    },
+    {
+      "id": "curioso",
+      "name": "El haz de cerca",
+      "description": "Mira cómo dibuja el haz en «Cómo funciona»."
+    },
+    {
+      "id": "hondo",
+      "name": "En lo hondo",
+      "description": "Llega al nivel 5."
+    },
+    {
+      "id": "diezmil",
+      "name": "Diez mil",
+      "description": "Pasa de 10 000 puntos."
+    }
+  ]
+}

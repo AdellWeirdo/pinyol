@@ -1,0 +1,132 @@
+# Pozo: the title, a game, the claw moving and firing, a shot that kills a garra (score, first achievement), a nodriza that
+# splits in two, a spike that shortens, the zapper (clears the well once, takes one enemy the second time), the claw caught
+# on the rim, the dive to the next level (crashing on a spike), the end of the game, the title playing itself, "Cómo
+# funciona" from the console's menu, the three languages and the beam's flicker. Nothing but lines.
+tick 40
+expect_lua state == "title"
+shot pozo_titulo
+press A
+expect_lua state == "play" and G.level == 1 and G.lives == 3 and G.score == 0
+# the claw: one lane a press, and it holds
+lua lane0 = G.me.lane
+press RIGHT
+expect_lua G.me.lane == lane0 % 16 + 1
+press LEFT
+expect_lua G.me.lane == lane0
+tick 100
+# a garra in the claw's lane, half way up: one shot kills it, 150 points, the first achievement
+lua G.queue = {"garra"} G.spawn_t = 999999 G.foes = {{kind = "garra", lane = G.me.lane, d = 0.5, t = 0, v = 0}}
+hold A 2
+tick 25
+expect_lua G.score == 150 and G.kills == 1 and achievements()[1].done == true
+shot pozo_disparo
+# a nodriza splits in two garras, one in each lane beside it
+lua G.foes = {{kind = "nodriza", lane = G.me.lane, d = 0.7, t = 0, v = 0}}
+hold A 2
+tick 25
+lua n = 0 for _ in ipairs(G.foes) do n = n + 1 end
+expect_lua n == 2 and G.score == 250
+# a spike: a shot takes a bit off its near end
+lua G.foes = {} G.spikes = {[G.me.lane] = 0.6}
+hold A 2
+tick 25
+expect_lua G.spikes[G.me.lane] > 0.62 and G.score == 251
+lua G.spikes = {}
+# the zapper: the first use clears the well, the second takes one enemy, the third does nothing
+lua G.foes = {{kind = "garra", lane = 3, d = 0.4, t = 0, v = 0}, {kind = "garra", lane = 7, d = 0.6, t = 0, v = 0}, {kind = "nodriza", lane = 11, d = 0.8, t = 0, v = 0}}
+press B
+tick 2
+lua n = 0 for _ in ipairs(G.foes) do n = n + 1 end
+expect_lua n == 0 and G.zaps == 1 and achievements()[2].done == true
+shot pozo_descarga
+lua G.foes = {{kind = "garra", lane = 3, d = 0.4, t = 0, v = 0}, {kind = "garra", lane = 7, d = 0.2, t = 0, v = 0}}
+press B
+tick 2
+lua n = 0 for _ in ipairs(G.foes) do n = n + 1 end
+expect_lua n == 1 and G.zaps == 2
+press B
+tick 2
+lua n = 0 for _ in ipairs(G.foes) do n = n + 1 end
+expect_lua n == 1 and G.zaps == 2
+# a garra on the rim in the claw's lane catches it: a life, an explosion, then the claw is back and safe for a moment
+lua G.queue = {"garra"} G.spawn_t = 999999 G.foes = {} G.me.safe = 0 G.foes[1] = {kind = "garra", lane = G.me.lane, d = 0, rim = true, t = 0, v = 0.003}
+tick 4
+expect_lua G.mode == "dying" and G.lives == 2
+shot pozo_atrapada
+tick 90
+expect_lua G.me.dead == 0 and G.me.safe > 0
+# the dive to the next level; a spike in the claw's lane is where it crashes
+lua G.queue = {} G.foes = {} G.spikes = {[G.me.lane] = 0.3}
+tick 4
+expect_lua G.mode == "warp"
+tick 40
+expect_lua G.crashed == true and G.lives == 1
+shot pozo_salto
+tick 80
+expect_lua G.level == 2 and G.mode == "play"
+shot pozo_nivel2
+# the wells change shape and colour; level 5 is an achievement
+lua G.begin_level(5)
+expect_lua achievements()[4].done == true
+tick 30
+shot pozo_nivel5
+# ten thousand points
+lua G.score = 9900 G.foes = {{kind = "garra", lane = G.me.lane, d = 0.5, t = 0, v = 0}}
+hold A 2
+tick 25
+expect_lua G.score >= 10000 and achievements()[5].done == true
+# the beam's flicker: past its budget of lines the picture drops some
+lua G.vec.budget = 10
+tick 3
+expect_lua G.vec.drop > 0
+lua G.vec.budget = 300
+tick 3
+expect_lua G.vec.drop == 0
+# the last life: caught, and the game is over; the record is kept
+lua G.lives = 1 G.queue = {} G.me.safe = 0 G.foes = {{kind = "garra", lane = G.me.lane, d = 0, rim = true, t = 0, v = 0.003}}
+tick 100
+expect_lua state == "over" and stored("high", 0) == G.score
+shot pozo_fin
+tick 80
+press A
+tick 3
+expect_lua state == "title"
+# the title plays itself after a few seconds, and any button stops it
+tick 430
+expect_lua state == "demo"
+tick 400
+shot pozo_demo
+expect_lua G.score > 0
+press A
+tick 3
+expect_lua state == "title"
+# "Cómo funciona": the console's menu, its item, the replay of the frame's lines, back with B
+press A
+tick 60
+press MENU
+tick 3
+expect_menu open
+press DOWN
+press A
+tick 4
+expect_lua state == "explain" and achievements()[3].done == true
+tick 40
+shot pozo_haz
+press RIGHT
+press A
+tick 10
+press UP
+press UP
+tick 20
+shot pozo_haz_lineas
+expect_lua state == "explain"
+press B
+tick 3
+expect_lua state == "play"
+# the language: the game's texts follow the console's
+lua require("lang").set("ca")
+expect_lua require("lang").tr("press") == "PREM A" and require("lang").tr("level", {n = 3}) == "NIVELL 3"
+lua require("lang").set("en")
+expect_lua require("lang").tr("game_over") == "GAME OVER"
+lua require("lang").set("es")
+expect_ok

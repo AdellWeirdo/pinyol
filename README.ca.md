@@ -32,7 +32,7 @@ Un joc s'assembla a la consola per a la qual està fet, i el motor els mou tots:
 | ![Un trencamaons de PICO-8: 128x128 en setze colors](docs/looks/pico8.png) | ![Una maquineta LCD: un cuiner que recull ous, figures enceses o apagades](docs/looks/lcd.png) |
 | **PICO-8**: [ladrillos](examples/ladrillos), sense imatges | **Maquineta LCD**: [huevos](examples/huevos), tot polígons |
 | ![Un joc vectorial: línies brillants sobre negre](docs/looks/vector.png) | ![Un matamarcians vertical, girat: es juga amb la consola de costat](docs/looks/vertical.png) |
-| **Recreativa vectorial**: [rocas](examples/rocas), sense imatges | **Pantalla vertical**: [tormenta](examples/tormenta), amb la consola de costat |
+| **Recreativa vectorial**: [pozo](examples/pozo), sense imatges | **Pantalla vertical**: [tormenta](examples/tormenta), amb la consola de costat |
 | ![Un laberint en primera persona: passadissos de pedra i un fantasma, a l'estil de Wolfenstein](docs/looks/firstperson.png) | ![Una pantalla de càrrega de ZX Spectrum: un miner en una cova de cristall, dos colors per bloc](docs/looks/loading.png) |
 | **Primera persona**: [laberinto](examples/laberinto), `raycast()` | **ZX Spectrum**: la càrrega de cinta de [cinta](examples/cinta) |
 | ![La sala d'un castell gòtic: llums d'espelma, un fantasma mig vist i una caçadora amb fuet](docs/looks/32bits.png) | ![El cap calavera girant i creixent, les seves boles de foc brillant](docs/looks/32bits_boss.png) |
@@ -145,7 +145,7 @@ Et queda un joc petit per canviar: una sala més gran que la pantalla, un person
 | [veloz](examples/veloz) | un joc de plataformes de velocitat com els de les consoles de 16 bits: un mar mogut línia a línia, un cel en degradat, tolls transparents, un títol en Mode 7; un pangolí que es fa una bola |
 | [ladrillos](examples/ladrillos) | un trencamaons com un cartutx de PICO-8: una pantalla de 128x128 en els seus setze colors, dibuixada de nou cada frame; sense imatges |
 | [huevos](examples/huevos) | una maquineta LCD: figures enceses o apagades (els seus fantasmes encara es veuen) sobre una imatge impresa, un pas i un xiulet cada vegada |
-| [rocas](examples/rocas) | un joc vectorial de recreativa: línies brillants amb resplendor, fins i tot les lletres; sense imatges |
+| [pozo](examples/pozo) | un tirador vectorial de recreativa en un pou geomètric: línies brillants amb resplendor, fins i tot les lletres, sense imatges; el seu menú repeteix un fotograma línia a línia, com el dibuixava el feix |
 | [tormenta](examples/tormenta) | un matamarcians vertical per jugar amb la consola de costat: un llenç dret que es veu girat, centenars de bales |
 | [laberinto](examples/laberinto) | primera persona com la dibuixava Wolfenstein 3D: raycast() dibuixa el laberint des de dins, amb textures i boira, fantasmes i gemmes drets a dins |
 | [gotico](examples/gotico) | la sala d'un castell de nit com la dibuixaven les consoles de 32 bits: llum d'espelmes sumada, un fantasma i els rastres d'un dash mig vistos, un cap calavera que gira i creix |

@@ -43,7 +43,7 @@ text, made with `uv run tools/font2fnt.py --pack <look> games/<id>`: the 37 pack
 Not every look needs an image model. The small ones (Game Boy, Spectrum, 16-bit, PICO-8, LCD, vector, first person)
 are best **drawn by code** in the game's `art.py`, from pictures written as text and simple shapes, as their examples
 do: no quota, and pixels exactly where they should be. A game can even draw everything while it runs, with no
-pictures at all (`examples/inventos`, `rocas`, `ladrillos`, `huevos`, `tormenta`).
+pictures at all (`examples/inventos`, `pozo`, `ladrillos`, `huevos`, `tormenta`).
 Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and CPS2.
 
 ### Game Boy: `examples/bolsillo`
@@ -138,10 +138,15 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
 - Things move a step at a time with a beep, faster as the score grows; the score in seven-segment digits.
 - All polygons (`poly`, `circ`, `rect`): no pictures.
 
-### Vector arcade: `examples/rocas`
+### Vector arcade: `examples/pozo`
 
-- Nothing but bright lines on black, at the screen's full resolution, each with a soft glow (a dim copy one pixel to
-  each side, then the line); letters made of strokes too.
+- Nothing but bright lines on black, at the screen's full resolution, each with a soft glow (a dim copy one pixel over,
+  two for the heavy ones, drawn first and then the line); letters made of strokes too (`vec.lua` has the stroke font).
+- On the console a drawing command costs by its call, not its pixels (`docs/measurements.md`, "Vector drawing"): so an
+  outline is ONE `poly(points, colour, false)`, the frame's strokes are kept in a list and drawn in two passes (every
+  glow, then every core), and there is no glow picture under the lines (it cost 4 to 5 ms a frame).
+- Keeping the strokes in a list is also what lets the console's menu item "Cómo funciona" replay the frame line by
+  line, as the beam drew it, and show what happens past the beam's budget (the lines that flicker).
 - No pictures at all.
 
 ### First person: `examples/laberinto`
