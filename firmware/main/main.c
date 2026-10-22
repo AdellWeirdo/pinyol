@@ -196,14 +196,18 @@ static struct { int64_t world, wait, first, rest; } strip_us; /* where a frame's
 static void perf_report(void) {
     int64_t now = esp_timer_get_time();
     if (now - perf.since < PERF_WINDOW_US || !perf.ticks || !perf.frames) return;
+    multi_heap_info_t psram;
+    heap_caps_get_info(&psram, MALLOC_CAP_SPIRAM);
     hal_log("perf: tick %.2f ms, render %.2f ms, present %.2f ms, %.1f fps | audio %.0f%% of a core, %d underruns |"
-            " battery %.2f V%s | free internal %u KB, PSRAM %u KB, core 1 stack %u B unused",
+            " battery %.2f V%s | free internal %u KB, PSRAM %u KB (largest block %u KB; %u blocks used, %u free), core 1 stack %u B unused",
             perf.tick / 1000.0 / perf.ticks, perf.render / 1000.0 / perf.frames,
             display_present_us / 1000.0 / perf.frames, perf.frames * 1e6 / (now - perf.since),
             audio_out_blocks ? 100.0 * audio_out_mix_us / (now - perf.since) : 0.0, audio_out_underruns,
             power_volts(), power_usb() ? " (USB)" : "",
             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024),
+            (unsigned)(psram.largest_free_block / 1024), /* (a picture needs one block, not the sum) */
+            (unsigned)psram.allocated_blocks, (unsigned)psram.free_blocks,
             part1_task ? (unsigned)uxTaskGetStackHighWaterMark(part1_task) : 0u);
     static const char *const tasks[] = {"audio", "display", "saves", "power"}; /* each task's stack, its least ever unused */
     char st[96];

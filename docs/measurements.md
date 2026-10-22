@@ -692,3 +692,42 @@ mismo firmware:
 Cinco ms de CPU por frame menos (−30 %) con la misma imagen en pantalla; los fps no cambian (59,1 de mediana en los
 dos, el tope del panel): el margen queda para lo que venga. Las bajadas que quedan (33 fps un segundo) son cargas de
 imágenes entre pantallas, no el dibujo.
+
+## 2026-10-22 · PSRAM in pieces: why a fighter went missing, and what gave the memory back
+
+Playing IL·LUSTRES on the board a fighter was not drawn (Dalí against Rodoreda, in VERSUS and in the arcade): the log said
+`asset SPR_RODOREDA: not a packed picture`, `imgsize` gave nil, and the hits still counted. The same fight worked on the
+firmware of `95efeb7` (where the 2 MB of margin was measured) and failed on today's, with the game as it was before today
+as well. The firmware's per-second line now ends with `(largest block N KB; U blocks used, F free)` of PSRAM:
+
+| Where | Free PSRAM | Largest block | Blocks used |
+|---|---|---|---|
+| a fight, before | 1.0-1.6 MB | 320-624 KB | 11 500-14 300 |
+| the same, Lua's memory in chunks | 0.7-1.7 MB | 256-752 KB | 530-640 |
+
+So it was not the sum but the pieces: Lua's small objects, twelve thousand blocks of the heap, scattered between the
+pictures, and a sheet of 609 KB (a fighter's first strip; the VS screen's portraits are 825 KB) found no block. A failed load
+left the picture a one-pixel placeholder for the whole game. What changed, in the order it was found:
+
+1. **`src/lua_mem.c`**: Lua's objects up to 256 bytes are cut from 32 KB chunks taken whole from the heap (a freed one waits on
+   its size's list; every chunk goes back when the game ends). Blocks used 12 000 -> 500; `game_init` of IL·LUSTRES 791 ms
+   -> 700 ms (the heap is asked less often). `tests/lua_mem_test.c`: 400 000 random operations across the small/big border
+   with each block's contents checked, alignment, and the chunks' count.
+2. **300 KB of PSRAM that nothing used**: `script.c` kept the screenshot's frame in a static in every firmware (the 480x320
+   buffer of the `shot` command, `fb` in the link map). It is made when a shot is taken. Free PSRAM at the game's start
+   4054 -> 4345 KB. (The map: 709 KB of PSRAM statics, 720 KB of read-only data and 1 MB of code run from PSRAM, the XIP.)
+3. **Eviction**: when a picture found no block, every picture not drawn in that frame went at once and it asked once. A fight's
+   preload (one picture every 4 ticks behind the VS screen) took its own earlier loads with it. Now the pictures go one at a
+   time, the least recently drawn first, asking again after each (`pic_malloc`): the pair Cerdà and Llull (730 + 791 KB the
+   first strips, 41 failed loads in the log) loaded with none.
+4. **A load that fails is tried again** (a third of a second later) instead of being a placeholder for good: a one-pixel
+   stand-in, `imgsize` tells the size it will have, the log says it once. `tests/picmem.script` (`fail_loads N` makes the
+   next N loads find no memory).
+5. **The game** (IL·LUSTRES, `main.lua`'s preload): a SUPER's background (155 KB each) and the effects of fighters not in the
+   fight are no longer loaded behind the VS screen: about 460 KB less in the fight's 2.8 MB. A SUPER loads its own in the
+   flash, when the picture stands still (seen on the board: Cerdà's L'EIXAMPLE).
+
+Tried and left: **XIP off** (`CONFIG_SPIRAM_XIP_FROM_PSRAM` unset, which gives 1.7 MB back: 5.8 MB at the game's start) boots
+and runs but panics with `Cache disabled but cached memory region accessed` inside `tlsf_malloc` (`block_split`, from
+`read_picture`) at the first fight's loads; it was not chased. A fight of the two heaviest sheets still hitches when a SUPER
+needs room (a strip let go and loaded again, 100-300 ms); the secret fighter Tió (1 MB and 0.6 MB of sheets) was not tried.

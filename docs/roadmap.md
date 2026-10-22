@@ -103,6 +103,11 @@ Ya cubierto, no repetir: hit-stop (`juice.freeze`), buffer de salto (`btnb`), ma
    ~5 ms de CPU por frame sin que se note; la cercana a mitad pierde el público. Decisión de Pau. Suelo en perspectiva: no hace
    falta nada nuevo en C: `warp` con `rows` para una franja, bandas `clip`+`img` como torneo (36 bandas a 60-61 fps) o
    `line_scroll_ramp` si la capa pasa al mundo.
+   Y lo que apareció al jugarlo en la placa (22 de octubre): un luchador sin dibujar (`asset SPR_RODOREDA: not a packed
+   picture`), no por falta de memoria sino por trozos: 12 000 bloques de Lua entre las imágenes dejaban 1,5 MB libres con
+   un bloque mayor de 320 KB, y un fallo de carga era para toda la partida. Arreglado en el motor (los objetos pequeños de
+   Lua en trozos de 32 KB, las imágenes se sueltan de una en una, una carga sin memoria se reintenta, 300 KB estáticos de
+   las capturas fuera) y en el juego (precarga sin los fondos de SUPER): ver docs/measurements.md, «PSRAM in pieces».
 
 7. Vistos en la pantalla real sobre horizonte: el menú del sistema, la página de ajustes, el filtro protan (1,8 ms por
    frame) y la pantalla de crash con A reiniciando. Y un abort encontrado y arreglado (9bb4905): el dibujo corre en los
