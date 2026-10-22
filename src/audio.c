@@ -985,8 +985,11 @@ void audio_free(void) { /* the player ends (after audio_reset): the mixer's own 
     hal_audio_unlock();
 }
 
-void audio_reset(void) {
+void audio_module_ready(void) { /* a module is about to play (modplay.c, the game's thread): the mixer's chunk for it */
     if (!modb) modb = hal_realloc_slow(NULL, CHUNK * sizeof *modb);
+}
+
+void audio_reset(void) {
     studio_reset(); /* its tracks point into the cache freed below */
     hal_audio_lock();
     for (int i = 0; i < NSTREAMS; i++) close_stream(&st[i]);

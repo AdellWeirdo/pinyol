@@ -55,11 +55,6 @@ typedef struct {
 } linepals;
 static linepals *PS; /* one per core, in slow memory (2 KB: made the first frame a game replaces entries on a line) */
 
-void ppu_free(void) { /* the player ends: what the frames made in slow memory let go (the next game makes it again) */
-    free(F.silmap), F.silmap = NULL, F.any_sil = false;
-    free(PS), PS = NULL;
-}
-
 
 static struct {
     uint32_t rows[PPU_H][PPU_OBJS / 32]; /* per line, a bit per sprite whose box crosses it (sprite i: word i / 32) */
@@ -69,6 +64,11 @@ static struct {
     uint8_t *silmap;  /* where OBJ_SIL sprites have pixels, a bit per screen pixel (30 bytes a line; slow memory, made when first needed) */
     bool track; /* keep the pixel under the top one (an alpha blend needs it) */
 } F;
+
+void ppu_free(void) { /* the player ends: what the frames made in slow memory let go (the next game makes it again) */
+    free(F.silmap), F.silmap = NULL, F.any_sil = false;
+    free(PS), PS = NULL;
+}
 
 #define ALWAYS static inline __attribute__((always_inline))
 

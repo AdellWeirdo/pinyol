@@ -15,6 +15,8 @@
  *
  * A downloaded game's map and numbers are checked: rows and columns are bounded, a ray stops after RAY_STEPS
  * squares, positions are made finite. */
+#include <stdlib.h>
+
 #include "lua_api.h"
 
 #define MAX_ROWS 256

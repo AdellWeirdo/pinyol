@@ -120,6 +120,7 @@ static bool load(const char *path, song_t *out) { /* into out (a scratch: nothin
 }
 
 bool mod_play(const char *path, float g) {
+    audio_module_ready();
     take_out();
     song_t fresh;
     if (!load(path, &fresh)) return false;
@@ -136,6 +137,7 @@ bool mod_play(const char *path, float g) {
 
 bool mod_queue(const char *path, float g) {
     if (!playing) return mod_play(path, g);
+    audio_module_ready();
     take_out();
     song_t fresh;
     if (!load(path, &fresh)) return false;
