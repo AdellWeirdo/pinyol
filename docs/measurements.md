@@ -645,9 +645,12 @@ every 1.92 s); the queued XM came in at the bar line (`music_queued()` true unti
 The voxel landscape on the console, first cut (the looks test game's view: 240x160, distance 120, a 64x64 map):
 `_draw` 21-28 ms, 20-24 fps. Its cost was in the inner loop: two floorf, four modulos and the brightness of the
 height map worked out again for every sample. Rewritten (the height map kept as bytes while the same picture is
-asked for, masks for power-of-two maps, a cast with an offset instead of floorf, the buffers in slow memory); the
-console's USB hung before the second measure (a replug, then `lua:mode = "voxel"` on the looks game). On the
-desktop the same view draws in 0.57 ms (headless, `perf()` over twenty frames).
+asked for, masks for power-of-two maps, a cast with an offset instead of floorf, the buffers in slow memory):
+`_draw` 14.6 ms, 30 fps (the frame no longer fits in 16.7 ms, so the panel's scan halves it). The rest is the
+canvas's pixels in PSRAM written a column at a time: a view of 120x80 shown twice as big has a quarter of them.
+On the desktop the same view draws in 0.57 ms (headless, `perf()` over twenty frames). The silhouette sprite over
+the picture (the same test game): `_draw` 0.18 ms, 59.8 fps, nothing to see against the plain picture.
+The firmware flashed at the end: D/IRAM left 91802 B.
 
 Internal RAM: ppu.c lives in IRAM (linker.lf, `ppu_inside`) with its line buffers, so code added to the line drawers
 costs IRAM six times over (the layers_x variants): the silhouette's hooks took 1.3 KB until they were moved to the
