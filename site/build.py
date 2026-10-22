@@ -139,7 +139,7 @@ def stats(np2d: Path) -> dict:
         tests = next((int(l.split(":")[1]) for l in listed.splitlines() if l.startswith("Total Tests:")), 0)
     commits = int(subprocess.run(["git", "-C", str(np2d), "rev-list", "--count", "HEAD"], capture_output=True, text=True,
                                  check=True).stdout)
-    examples = sum(1 for p in (np2d / "examples").iterdir() if (p / "game.json").exists())
+    examples = len(page.example_ids())  # the games the site plays, as the home page says
     if not tests:
         raise SystemExit(f"no test count: build the engine first (cmake -B build && cmake --build build in {np2d})")
     return {"c_lines": c_lines, "tests": tests, "commits": commits, "examples": examples}

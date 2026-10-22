@@ -174,7 +174,7 @@ def stats_band(board: dict, tests: int) -> str:
     items = [
         (str(round(heaviest)), "%", "de un núcleo en la escena más pesada: capa afín, cuatro capas y 128 sprites"),
         (num(PANEL_MS), "ms", f"para enviar un fotograma entero al panel; solo el cable se lleva {num(WIRE_MS)}"),
-        (str(audio), "%", "de un núcleo para el sonido mientras se juega"),
+        (str(audio), "%", "de un núcleo para el sonido de un juego sencillo; con música en capas, hasta el 18 %"),
         (str(tests), "", "pruebas que juegan solas y comparan cada fotograma, en cada cambio"),
     ]
     li = "".join(f'<li><b><span data-count="{v.replace(",", ".")}" data-dec="{1 if "," in v else 0}">{v}</span>'

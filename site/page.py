@@ -94,6 +94,11 @@ CODEX = [
 ]
 
 
+def example_ids() -> list[str]:
+    """Every example game the site plays: the looks', the other examples and Codex's ladder."""
+    return [k["example"] for k in LOOKS] + [g for g, _ in OTHERS] + [j["id"] for j in CODEX]
+
+
 def play_url(gid: str) -> str:
     """A game played on the Juega tab (the bare player, play/player.html, is the tab's frame and the editor's)."""
     return f"{HOME}juega/?juego={gid}"
@@ -131,7 +136,7 @@ def hero() -> str:
 <h1 id="hero-title">Un motor, doce épocas</h1>
 <p class="lede"><img class="wordmark" src="img/wordmark.png" alt="pinyol" width="65" height="26"> hace juegos con el aspecto de las consolas de los 80 y los 90 y los mueve a 60 fps en una consola de bolsillo con un ESP32‑S3. Dile a tu agente de código qué aspecto quieres y te hace el juego. Aquí puedes jugar a todos.</p>
 <div class="actions"><a class="btn btn-primary" href="{HOME}juega/">Jugar ahora</a><a class="btn btn-ghost" href="{HOME}crear/">Crear un juego</a><a class="btn btn-ghost" href="{REPO}">Ver el código</a></div>
-<p class="meta">Código MIT · arte y sonido CC0 · {len(LOOKS) + len(OTHERS) + len(CODEX)} juegos de ejemplo</p>
+<p class="meta">Código MIT · arte y sonido CC0 · {len(example_ids())} juegos de ejemplo</p>
 </div>
 <div><div class="board" data-live role="img" aria-label="La consola (una placa Freenove FNK0104N) arrancando: la intro de pinyol, el menú de Cirera con sus juegos y algunos de ellos en marcha">
 <span class="hole tl"></span><span class="hole bl"></span><span class="hole tr"></span><span class="hole br"></span>
@@ -218,14 +223,13 @@ def make_one() -> str:
 
 def engine() -> str:
     """What the engine brings, for whoever is about to make a game (the Crear tab): the facts of docs/lua.md."""
-    parts = [("Imagen", "Una consola virtual como la Game Boy Advance: 240×160 con cuatro capas, 128 sprites, paletas, transparencias y efectos por línea, y encima textos y paneles a 480×320."),
-             ("Mundos", "Mode 7, primera persona a lo Wolfenstein 3D, enjambres de cientos de balas, cuadrículas y niveles dibujados en Tiled."),
-             ("Sonido", "Efectos hechos con recetas o con números, cuatro voces de sintetizador como las de la Game Boy Advance, música en capas que entran y salen, y módulos .mod de hasta 32 canales."),
+    parts = [("Imagen", "Una consola virtual como la Game Boy Advance: 240×160 con cuatro capas, 128 sprites, paletas, transparencias y efectos por línea, y encima textos y paneles a 480×320. Además, caras 3D con textura al estilo PlayStation, luces, partículas y animación de recortes."),
+             ("Mundos", "Mode 7, primera persona a lo Wolfenstein 3D, paisajes de vóxeles, cuadrículas con campo de visión y búsqueda de caminos, mazmorras generadas, enjambres de cientos de balas y niveles dibujados en Tiled o LDtk."),
+             ("Sonido", "Efectos hechos con recetas o con números, cuatro voces de sintetizador como las de la Game Boy Advance, instrumentos, reverbs de PlayStation, música en capas que cambia en el compás y módulos .mod, .xm y .s3m."),
              ("El studio", "Un secuenciador de pasos dentro del audio: pistas de sonidos y un bajo ácido como el de una TB-303, con eco, reverb y Lo-fi GBA. Cada paso suena en su muestra exacta, y un patrón nuevo entra justo en el siguiente compás."),
-             ("La consola", "Pantalla táctil, micrófono, el LED y la batería, vídeo desde la tarjeta y partidas entre consolas cercanas, sin router."),
-             ("Para programar", "Lua, con librerías dentro: física, partículas, historias, teclado y el kit de aventuras. Las partidas se guardan sin congelar el juego, y un guion prueba cada juego solo.")]
-    items = "".join(f'<li class="engine-card{" new" if name == "El studio" else ""}"><h3>{escape(name)}</h3>'
-                    + ('<span class="chip">Nuevo</span>' if name == "El studio" else "") + f"<p>{escape(text)}</p></li>" for name, text in parts)
+             ("La consola", "Pantalla táctil con lápiz y varios dedos, micrófono, el LED y la batería, vídeo desde la tarjeta y partidas entre consolas cercanas, sin router. El menú se abre sobre cualquier juego, con ajustes, favoritos y logros."),
+             ("Para programar", "Lua, con más de treinta librerías dentro: física, partículas, historias, cámara, escenas, inteligencia artificial, niveles generados, el movimiento de Celeste y el kit de aventuras. Las partidas se guardan sin congelar el juego, un guion prueba cada juego solo y un perfilador dice dónde se va el tiempo.")]
+    items = "".join(f'<li class="engine-card"><h3>{escape(name)}</h3><p>{escape(text)}</p></li>' for name, text in parts)
     return f"""<section id="motor" aria-labelledby="motor-t"><div class="wrap">
 <h2 id="motor-t">Lo que trae el motor</h2>
 <p class="intro">Todo esto funciona igual en la consola, en el ordenador y en el navegador, y tu agente lo conoce porque está en las instrucciones del repositorio.</p>
@@ -397,7 +401,7 @@ def desktop() -> str:
 <h2 id="escritorio-t">Cirera en tu ordenador</h2>
 <p class="intro">La consola, hecha aplicación para Mac, Windows y Linux: su menú, los juegos de ejemplo dentro y cualquier juego de la Biblioteca. Es el mismo motor, así que el juego es el mismo, con teclado o con mando.</p>
 <div class="dl-row">{download("mac", f"{dl}/Cirera-mac.zip", "Descargar para Mac", "Intel y Apple Silicon")}{download("windows", f"{dl}/Cirera-windows.zip", "Descargar para Windows", "64 bits")}{download("linux", f"{dl}/Cirera-linux-x86_64.tar.gz", "Descargar para Linux", "x86_64")}</div>
-<p class="meta">Mac: macOS 11 o posterior, una sola aplicación para los Mac con Intel y con Apple Silicon · Windows 10 o posterior · Linux: Ubuntu 22.04, Debian 12 o posteriores · unos 9 MB</p>
+<p class="meta">Mac: macOS 11 o posterior, una sola aplicación para los Mac con Intel y con Apple Silicon · Windows 10 o posterior · Linux: Ubuntu 22.04, Debian 12 o posteriores · entre 10 y 12 MB</p>
 <p class="meta">¿Linux en ARM, como una Raspberry Pi con el sistema de 64 bits? <a href="{dl}/Cirera-linux-aarch64.tar.gz" data-goatcounter-click="cirera-linux-arm">Descárgala para ARM</a>.</p>
 <ol class="steps">
 <li><h3>Ábrela la primera vez</h3><p>Aún no está firmada por Apple ni por Microsoft, así que el sistema te avisa la primera vez.</p>
@@ -484,9 +488,15 @@ def days() -> str:
         ("2026-10-14", "14 oct.", "Los aspectos de doce consolas, la vista en primera persona, las instrucciones para que un agente haga juegos, la web y la Biblioteca."),
         ("2026-10-15", "15 oct.", "La web y el editor en tres idiomas, los juegos de Codex e IL·LUSTRES en la Biblioteca."),
         ("2026-10-16", "16 oct.", "El studio de sonido, un secuenciador con sintetizador y efectos. La web, en pestañas, con la pestaña Juega y una página y un ranking para cada juego."),
+        ("2026-10-17", "17 oct.", "Comentarios y votos en cada juego, y el 3D al estilo PlayStation medido en la placa: luces, deformaciones, perspectiva y recortes."),
+        ("2026-10-18", "18 oct.", "Caras 3D con textura y cámaras, animación de recortes, partículas con brillo y una librería de transiciones."),
+        ("2026-10-19", "19 oct.", "Instrumentos, envíos y eco para el sonido, mezclas fieles a la Game Boy Advance y un pinball con física de verdad."),
+        ("2026-10-20", "20 oct.", "Lápiz y varios dedos en la pantalla táctil, dos pantallas en el simulador, la careta POWERED BY PINYOL en todos los juegos, Lua al doble de velocidad, once ejemplos nuevos y el firmware 0.3.0."),
+        ("2026-10-21", "21 oct.", "El menú de la consola sobre cualquier juego, con ajustes, favoritos y logros; partidas entre consolas por radio; movimiento al estilo de Celeste; y el código desde la PSRAM, que acelera el mundo hasta un 30 %."),
+        ("2026-10-22", "22 oct.", "Módulos XM y S3M, canciones de FamiStudio, vuelta atrás (rollback) entre consolas, campo de visión en cuadrículas, la memoria de la consola reordenada y el firmware 0.4.0."),
     ]
     li = "".join(f'<li><time datetime="{d}">{label}</time><p>{escape(t)}</p></li>' for d, label, t in items)
-    return f"""<div class="days reveal"><h3>Seis días en el repositorio</h3><ol>{li}</ol></div>"""
+    return f"""<div class="days reveal"><h3>Doce días en el repositorio</h3><ol>{li}</ol></div>"""
 
 
 def thousands(v: int) -> str:
