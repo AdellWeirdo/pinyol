@@ -969,3 +969,19 @@ with a bot playing the first mission (one cook, unhurt), 10 s per sample, firmwa
 script memory 0.31-0.35 MB. The low points are the busiest street fights (tractor, drones and explosions on screen); the end of the run is 60 fps.
 PSRAM is the tight resource: 72-440 KB free with the largest block between 19 and 66 KB, so a new picture must come in pieces (see the 10-frame
 pieces and `tools/pk_split.py`); no "no memory" message appeared in the run. Not measured: the boss fight and the six cooks one by one.
+
+
+## 2026-10-23 · What the new world effects cost on the console (img outline, distort, crt)
+
+A silent copy drew a 240x160 bitmap layer and switched one effect on for 6 s at a time (firmware of the day, 60 fps = 16.3 ms of `render`):
+
+| Effect | World | fps |
+|---|---|---|
+| nothing | 0.9-2.0 ms | 59.7 |
+| `crt({scan = 0.3})` | 2.2 ms (1.3 more) | 60 |
+| `crt({scan = 0.3, persist = 0.6})` | 3.3 to 11 ms, varying (the glow copy lives in PSRAM) | 39 to 59 |
+| `distort`: a heat zone of 40 rows and a water zone of 80 rows, full width | 6.8 ms (5 more); the first version worked a sine out for every pixel of the water and took 27.6 ms (21.7 fps), now one a column | 56 |
+| `img` with `outline` on six chef frames (176x120 each, 30 draws) | strips 6.5 ms against 6.1 for the six plain | 59.5 |
+
+So: scanlines are free, an outline costs the extra draws and little else, zones cost what their area costs, and persistence is the one to measure in your own game
+(it moves 77 KB through PSRAM twice a frame). Memory was untouched except persistence's 77 KB of PSRAM.
