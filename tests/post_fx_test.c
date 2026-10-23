@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "bp.h"
 #include "post.h"
 
 #define W 32
@@ -45,12 +46,24 @@ int main(void) {
         if (y < 8 || y > 15)
             for (int x = 0; x < W; x++) CHECK(px[y * W + x] == ref[y * W + x], "water changed row %d outside", y);
 
-    for (int i = 0; i < W * H; i++) px[i] = WHITE;
     post_crt(true, 0.5f, 0);
-    CHECK(post_any(), "crt stays on");
-    post_apply(px, W, H);
-    CHECK(px[0] == WHITE && px[W] != WHITE && (px[W] >> 11) <= 16, "scanlines: row 0 clear, row 1 dimmed by half, got %04x", px[W]);
-    CHECK(px[2 * W] == WHITE && px[3 * W] == px[W], "scanlines every second row");
+    CHECK(post_scan() == 128 && !post_any(), "scanlines alone leave the world alone (they are drawn on the screen), scan = %d", post_scan());
+    post_crt(true, 0, 0);
+    CHECK(post_scan() == 256, "no scanlines");
+    { /* the screen's rows: odd frame rows dimmed, windows of the frame agree */
+        static uint16_t fr[W * H];
+        for (int i = 0; i < W * H; i++) fr[i] = WHITE;
+        surface all = {.px = fr, .w = W, .h = H};
+        gfx_scanlines(&all, 128);
+        CHECK(fr[0] == WHITE && fr[2 * W] == WHITE && fr[W] != WHITE && fr[W] == fr[3 * W], "odd rows dimmed, got %04x %04x", fr[0], fr[W]);
+        CHECK((fr[W] >> 11) == 15 && ((fr[W] >> 5) & 63) == 31 && (fr[W] & 31) == 15, "half the light, got %04x", fr[W]);
+        for (int i = 0; i < W * H; i++) fr[i] = WHITE;
+        surface win = gfx_clip(&all, 0, 5, W, 6); /* frame rows 5..10: rows 5, 7, 9 are the odd ones */
+        gfx_scanlines(&win, 128);
+        int dim = 0;
+        for (int y = 0; y < H; y++) dim += fr[y * W] != WHITE ? 1 : 0;
+        CHECK(dim == 3 && fr[5 * W] != WHITE && fr[6 * W] == WHITE && fr[9 * W] != WHITE && fr[11 * W] == WHITE, "a window dims its own odd rows only, %d", dim);
+    }
 
     post_crt(true, 0, 0.5f); /* persistence: a white frame, then a black one leaves half the glow, then a quarter */
     for (int i = 0; i < W * H; i++) px[i] = WHITE;

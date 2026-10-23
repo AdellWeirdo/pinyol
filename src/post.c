@@ -37,7 +37,9 @@ void post_free(void) { /* a game ended */
     crt.on = false, frames = 0;
 }
 
-bool post_any(void) { return nshocks > 0 || nzones > 0 || crt.on; }
+bool post_any(void) { return nshocks > 0 || nzones > 0 || (crt.on && crt.persist > 0); }
+
+int post_scan(void) { return crt.on ? (int)((1 - crt.scan) * 256) : 256; }
 
 void post_crt(bool on, float scan, float persist) {
     crt.on = on, crt.scan = scan < 0 ? 0 : scan > 1 ? 1 : scan, crt.persist = persist < 0 ? 0 : persist > 0.95f ? 0.95f : persist;
@@ -139,32 +141,22 @@ static inline uint16_t scale565(uint16_t c, int k) {
     return (uint16_t)(((((c >> 11) * k) >> 8) << 11) | (((((c >> 5) & 63) * k) >> 8) << 5) | (((c & 31) * k) >> 8));
 }
 
-/* The glass: the last frame's glow decays (persist) and stays where the new frame is darker, a channel at a time; then every second row of the
- * picture is dimmed (scan) as the gaps between a tube's lines. The glow is kept before the lines are dimmed, so they do not feed back. */
+/* The glow: the last frame's decays (persist) and stays where the new frame is darker, a channel at a time. (The scanlines are not here:
+ * they are drawn on the whole screen, at its own resolution, by gfx_scanlines.) */
 static void apply_crt(uint16_t *world, int w, int h) {
     const int n = w * h;
-    if (crt.persist > 0) {
-        if (phos_n != n) {
-            phos = hal_realloc_slow(phos, (size_t)n * sizeof *phos);
-            phos_n = phos ? n : 0;
-            if (phos) memcpy(phos, world, (size_t)n * sizeof *phos);
-        }
-        if (phos) {
-            const int k = (int)(crt.persist * 256);
-            for (int i = 0; i < n; i++) {
-                const uint16_t p = scale565(phos[i], k), c = world[i];
-                const uint16_t r = (p >> 11) > (c >> 11) ? p & 0xF800 : c & 0xF800, g = ((p >> 5) & 63) > ((c >> 5) & 63) ? p & 0x07E0 : c & 0x07E0,
-                               b = (p & 31) > (c & 31) ? p & 31 : c & 31;
-                world[i] = phos[i] = (uint16_t)(r | g | b);
-            }
-        }
+    if (phos_n != n) {
+        phos = hal_realloc_slow(phos, (size_t)n * sizeof *phos);
+        phos_n = phos ? n : 0;
+        if (phos) memcpy(phos, world, (size_t)n * sizeof *phos);
     }
-    if (crt.scan > 0) {
-        const int k = (int)((1 - crt.scan) * 256);
-        for (int y = 1; y < h; y += 2) {
-            uint16_t *row = world + (size_t)y * w;
-            for (int x = 0; x < w; x++) row[x] = scale565(row[x], k);
-        }
+    if (!phos) return;
+    const int k = (int)(crt.persist * 256);
+    for (int i = 0; i < n; i++) {
+        const uint16_t p = scale565(phos[i], k), c = world[i];
+        const uint16_t r = (p >> 11) > (c >> 11) ? p & 0xF800 : c & 0xF800, g = ((p >> 5) & 63) > ((c >> 5) & 63) ? p & 0x07E0 : c & 0x07E0,
+                       b = (p & 31) > (c & 31) ? p & 31 : c & 31;
+        world[i] = phos[i] = (uint16_t)(r | g | b);
     }
 }
 
@@ -180,7 +172,7 @@ void post_apply(uint16_t *world, int w, int h) {
             apply_shock(world, w, h, k);
         }
     }
-    if (crt.on) apply_crt(world, w, h);
+    if (crt.on && crt.persist > 0) apply_crt(world, w, h);
     post_reset();
 }
 

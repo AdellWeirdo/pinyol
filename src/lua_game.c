@@ -900,9 +900,9 @@ static int l_distort(lua_State *L) {
     return 0;
 }
 
-/* crt(false), or crt([{scan, persist}]): the glass of a cathode-ray tube over the world's picture, from now on: `scan` (0..1, 0.25) dims every
- * second row of it, `persist` (0..0.95, 0) keeps that much of the last frame's glow where the new frame is darker (a streak behind what moves).
- * The text and shapes drawn over the world stay clean. */
+/* crt(false), or crt([{scan, persist}]): the glass of a cathode-ray tube, from now on: `scan` (0..1, 0.25) dims every second row of the screen
+ * (480 x 320: real lines, over the picture, the text and the shapes, under the console's menu), `persist` (0..0.95, 0) keeps that much of
+ * the world's last frame where the new one is darker (a streak behind what moves; the world's 240 x 160 only). */
 static int l_crt(lua_State *L) {
     if (lua_isboolean(L, 1) && !lua_toboolean(L, 1)) return post_crt(false, 0, 0), 0;
     float scan = 0.25f, persist = 0;
@@ -1989,6 +1989,7 @@ void v2_draw(surface *s) {
     draw_profile(1u, meter.on); /* (the commands are timed only while the meter is up) */
     draw_overlay(s);
     if (meter.on) meter_draw(s);
+    if (post_scan() < 256) gfx_scanlines(s, post_scan()); /* crt(): over everything the game drew, under the console's own menu */
     sysmenu_draw(s); /* the console's menu, or the crash screen with the whole error, over everything */
 }
 
@@ -1998,10 +1999,13 @@ const char *v2_error(void) { return failed ? error : NULL; }
  * expression, came out truthy. */
 bool v2_run(const char *code, bool expr, char *msg, int n) {
     if (!Ls) return snprintf(msg, (size_t)n, "no Lua state"), false;
-    char buf[512];
-    snprintf(buf, sizeof buf, expr ? "return (%s)" : "%s", code);
+    size_t cap = strlen(code) + 16;
+    char *buf = malloc(cap);
+    if (!buf) return snprintf(msg, (size_t)n, "no memory"), false;
+    snprintf(buf, cap, expr ? "return (%s)" : "%s", code);
     arm();
     bool ran = luaL_loadbufferx(Ls, buf, strlen(buf), "=script", "t") == LUA_OK && lua_pcall(Ls, 0, 1, 0) == LUA_OK;
+    free(buf);
     draw_flush();
     if (!ran) {
         snprintf(msg, (size_t)n, "%s", lua_tostring(Ls, -1));

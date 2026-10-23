@@ -909,6 +909,15 @@ void gfx_shade(surface *s, int x, int y, int w, int h) {
     }
 }
 
+/* Every second row of the frame (by its own row number, so windows of it agree) keeps k/256 of its brightness: a tube's scanlines. */
+void gfx_scanlines(surface *s, int k) {
+    for (int y = s->y0 + ((s->y0 & 1) ? 0 : 1); y < s->y0 + s->h; y += 2)
+        for (int x = s->x0; x < s->x0 + s->w; x++) {
+            uint16_t *d = at(s, x, y), c = stored(s, *d);
+            *d = stored(s, (uint16_t)(((((c >> 11) * k) >> 8) << 11) | (((((c >> 5) & 63) * k) >> 8) << 5) | (((c & 31) * k) >> 8)));
+        }
+}
+
 void gfx_upscale2x(const surface *src, surface *dst) {
     if (step_x(dst) == 1 && !dst->x0 && !dst->y0) { /* the whole frame, row after row */
         for (int y = 0; y < src->h; y++) {
