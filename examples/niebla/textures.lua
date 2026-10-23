@@ -61,6 +61,15 @@ function M.init()
   fill("TEX_FIGURE", {176, 176, 170}); speckle({176, 176, 170}, 14, 240)
   for x = 2, 30, 5 do rect(x, 0, 1, 32, rgb(120, 122, 118)) end
   fill("TEX_HOLLOW", {18, 16, 20}); speckle({18, 16, 20}, 6, 60)
+  -- the floors in four steps of dark: the floor is drawn without light (a lit quad costs more than twice), so its brightness is chosen by the picture
+  for _, name in ipairs({"ASPHALT", "PAVING", "PLANK"}) do
+    for step, k in ipairs({0.28, 0.5, 0.75, 1.0}) do
+      local id = "TEX_" .. name .. "_" .. step
+      canvas(id, 32, 32); target(id)
+      local c = math.floor(k * 255)
+      img("TEX_" .. name, 0, 0, {mul = c << 16 | c << 8 | c})
+    end
+  end
   -- the key
   fill("TEX_GOLD", {230, 190, 70}); rect(0, 0, 32, 4, rgb(255, 230, 130))
   target()

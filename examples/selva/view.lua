@@ -15,17 +15,19 @@ local function ground_y() return M.CAM_H end -- the ground is this far below the
 function M.init()
   local s
   -- the path: slabs of 40, getting longer toward the horizon (one picture each: far ones stretch, as a PlayStation's did)
+  s = Models.solid(); s:floor(-46, 46, 0, 40, 0); s:floor(-46, 46, 40, 80, 0); models.path_near = s:build() -- (no light: it is the most of the pixels)
   s = Models.solid()
-  local z = 0
-  for _, len in ipairs({40, 40, 40, 40, 40, 80, 160, 320, 640}) do s:floor(-46, 46, z, z + len, 0) z = z + len end
+  local z = 80
+  for _, len in ipairs({40, 40, 40, 80, 160, 320, 640}) do s:floor(-46, 46, z, z + len, 0) z = z + len end
   models.path = s:build()
-  -- a row of three trees, spaced 110 apart, one side (the left; the right is the same mirrored by x)
+  -- a row of three trees, spaced 140 apart, one side (the left; the right is the same mirrored by x). Smaller than they were: the near ones are
+  -- the most of the pixels, and each is cut away when it comes too close (the mesh's `near`)
   s = Models.solid()
-  local H, W, J = {44, 58, 38}, {40, 52, 34}, {0, 6, -5} -- each tree its own height, width and place across
-  for i = 0, 2 do s:box(9, H[i + 1], 9, J[i + 1], H[i + 1] / 2, i * 110 + J[i + 1]) end
+  local H, W, J = {38, 48, 34}, {30, 40, 26}, {0, 6, -5} -- each tree its own height, width and place across
+  for i = 0, 2 do s:box(7, H[i + 1], 7, J[i + 1], H[i + 1] / 2, i * 140 + J[i + 1]) end
   models.trunks = s:build()
   s = Models.solid()
-  for i = 0, 2 do s:pyramid(W[i + 1], W[i + 1], H[i + 1] + 4, J[i + 1], H[i + 1] - 8, i * 110 + J[i + 1]) end
+  for i = 0, 2 do s:pyramid(W[i + 1], W[i + 1], H[i + 1] + 2, J[i + 1], H[i + 1] - 8, i * 140 + J[i + 1]) end
   models.leaves = s:build()
   s = Models.solid(); s:box(18, 18, 18, 0, 9, 0); models.crate = s:build()
   s = Models.solid(); s:floor(-46, 46, 0, 40, 0.5); models.pit = s:build()
@@ -38,7 +40,7 @@ local function call(model, tex, x, y, z, rot, opts) -- (one table of options reu
   local o = OPTS
   o.pos = POS
   POS[1], POS[2], POS[3] = x, y, z
-  o.rot, o.scale, o.light, o.fade = rot, nil, LIGHT, M.fog and FADE or nil
+  o.rot, o.scale, o.light, o.fade, o.near = rot, nil, LIGHT, M.fog and FADE or nil, 20
   o.snap, o.dither = M.snap, M.dither
   if opts then for k, v in pairs(opts) do o[k] = v end end
   return mesh(model, tex, o)
@@ -53,7 +55,12 @@ function M.project(x, y, z, cam)
   return M.CX + (x - cam.x) * k, M.CY + (M.CAM_H - y) * k, k
 end
 
-function M.sky(t)
+-- The sky, the sun, the hills and the ground beside the way never change: they are painted once on a picture the size of the screen and that is drawn
+-- each frame (the polygons of the hills alone were most of the strips' time on the console). Painted again when the dither is switched.
+local backdrop_dither = nil
+
+local function paint_backdrop()
+  canvas("BACKDROP", 480, 320); target("BACKDROP")
   local hy = M.CY
   grad(0, 0, 480, hy - 96, 0x0E1C34, 0x4A3468, {dither = M.dither})
   grad(0, hy - 96, 480, 96, 0x4A3468, 0xF4934C, {dither = M.dither})
@@ -79,6 +86,13 @@ function M.sky(t)
     rect(0, y0, 480, y1 - y0, c)
     y0 = y1
   end
+  target()
+  backdrop_dither = M.dither
+end
+
+function M.sky(t)
+  if backdrop_dither ~= M.dither then paint_backdrop() end
+  img("BACKDROP", 0, 0)
 end
 
 function M.haze() -- a warm band on the horizon, over the far ground and under what is near
@@ -87,17 +101,19 @@ end
 
 -- the world seen from `cam` ({x, z}): the rolling path and the two rows of trees
 function M.path(cam)
-  return call(models.path, "TEX_PATH", -cam.x, ground_y(), -(cam.z % 40) + 40, {0, 0, 0}, {fade = M.fog and FADE_FAR or nil})
+  local oz = -(cam.z % 40) + 40
+  return call(models.path_near, "TEX_PATH", -cam.x, ground_y(), oz, {0, 0, 0}, {light = false, fade = false})
+       + call(models.path, "TEX_PATH", -cam.x, ground_y(), oz, {0, 0, 0}, {fade = M.fog and FADE_FAR or nil})
 end
 
 function M.trees(cam)
   local gz = ground_y()
-  local toff = cam.z % 110
+  local toff = cam.z % 140
   local n = 0
   for _, side in ipairs({-1, 1}) do
-    local x = side * 78 - cam.x
-    n = n + call(models.trunks, "TEX_BARK", x, gz, -toff + 40, {0, 0, 0})
-    n = n + call(models.leaves, "TEX_LEAF", x, gz, -toff + 40, {0, 0, 0})
+    local x = side * 84 - cam.x
+    n = n + call(models.trunks, "TEX_BARK", x, gz, -toff + 40, {0, 0, 0}, {near = 78})
+    n = n + call(models.leaves, "TEX_LEAF", x, gz, -toff + 40, {0, 0, 0}, {near = 78})
   end
   return n
 end

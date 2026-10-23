@@ -6,7 +6,8 @@ local M = {}
 M.FOCAL, M.CX, M.CY = 200, 240, 150
 
 local cams = {}      -- {pos = {x, y, z}, target = {x, y, z}, zone = {x0, x1, z0, z1}}
-local cur, yaw, pitch, cy_, sy_, cp, sp = 1, 0, 0, 1, 0, 1, 0
+local cur, yaw, pitch, cy_, sy_, cp, sp, yaw_d, pitch_d = 1, 0, 0, 1, 0, 1, 0, 0, 0
+M.version = 0 -- one more each time the camera changes: what was worked out for it is worked out again
 M.rot = {0, 0, 0}
 
 function M.define(list) cams = list end
@@ -18,6 +19,8 @@ function M.use(i)
   yaw = math.atan(dx, dz)
   pitch = math.atan(-dy, math.sqrt(dx * dx + dz * dz)) -- looking down is positive
   cy_, sy_, cp, sp = math.cos(yaw), math.sin(yaw), math.cos(pitch), math.sin(pitch)
+  yaw_d, pitch_d = math.deg(yaw), math.deg(pitch)
+  M.version = M.version + 1
 end
 
 function M.current() return cur end
@@ -50,7 +53,7 @@ end
 -- mesh()'s `rot` for a model turned `heading` degrees in the world (forward = (sin h, cos h))
 function M.model_rot(heading)
   local r = M.rot
-  r[1], r[2], r[3] = math.deg(pitch), heading - math.deg(yaw), 0
+  r[1], r[2], r[3] = pitch_d, heading - yaw_d, 0
   return r
 end
 

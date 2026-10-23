@@ -110,14 +110,14 @@ end
 local function people(kind)
   local p, f = W.p, W.f
   if kind == "player" then
-    return People.draw_player(p.x, p.z, p.h, p.moving and p.phase or nil, View.ambient(W, p.x, p.z) + 0.2)
+    return People.draw_player(p.x, p.z, p.h, p.moving and p.phase or nil, View.ambient(p.x, p.z) + 0.2)
   end
-  return People.draw_figure(f.x, f.z, f.h, f.phase, math.max(0.26, View.ambient(W, f.x, f.z)))
+  return People.draw_figure(f.x, f.z, f.h, f.phase, math.max(0.26, View.ambient(f.x, f.z)))
 end
 
 local function grain(level) -- the picture breaks up as the Figure comes close
   if level < 0.2 then return end
-  for _ = 1, math.floor(level * 70) do
+  for _ = 1, math.floor(level * 36) do
     local g = 90 + (ticks() * 31 + _ * 17) % 140
     rect((ticks() * 37 + _ * 53) % 480, (ticks() * 19 + _ * 91) % 320, 2 + _ % 3, 1, g << 16 | g << 8 | g)
   end
