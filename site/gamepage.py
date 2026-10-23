@@ -67,7 +67,8 @@ def picker(games: list[dict]) -> str:
             f'<li><a class="pick" href="{page.play_url(g["id"])}" data-id="{g["id"]}">'
             + (f'<img src="{g["image"]}" alt="" width="240" height="160" loading="lazy" decoding="async">' if g["image"] else '<span class="noshot"></span>')
             + f'<span translate="no">{escape(g["title"])}</span></a></li>' for g in games if g["kind"] == kind)
-        out.append(f'<h3>{name}</h3><ul class="picks"{lib if kind == "library" else ""}>{items}</ul>')
+        if items or kind == "library":  # (a group with nothing in it shows nothing)
+            out.append(f'<h3>{name}</h3><ul class="picks"{lib if kind == "library" else ""}>{items}</ul>')
     return "".join(out)
 
 

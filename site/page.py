@@ -51,11 +51,10 @@ HIGHLIGHTS = {"neogeo", "cps2", "32bits", "gba", "gameboy", "spectrum"}  # the h
 HERO_EXTRA = [("loading", "La pantalla de carga de un juego de ZX Spectrum"), ("32bits_boss", "El jefe calavera girando y creciendo")]
 
 # The other examples, playable too (id, title)
-OTHERS = [
-    ("selva", "Selva"), ("niebla", "Niebla"), ("recortes", "Recortes"), ("cajas", "Cajas"),
-]
-# The older demos, no longer shown on the site (no page, no zip, not in the lists): to bring one back, move it to OTHERS
+OTHERS: list[tuple[str, str]] = []
+# The demos not shown on the site (no page, no zip, not in the lists): to bring one back, move it to OTHERS
 HIDDEN_DEMOS = [
+    ("selva", "Selva"), ("niebla", "Niebla"), ("recortes", "Recortes"), ("cajas", "Cajas"),
     ("calle", "Calle de neón"), ("nubes", "Sobre las nubes"), ("futbol", "Gol de oro"),
     ("moto", "Moto costa"), ("mazmorra", "La mazmorra"), ("carreras", "Carreras"), ("naves", "Naves"), ("aldea", "La aldea"),
     ("puzle", "Puzle"), ("inventos", "Inventos"), ("estilos", "Estilos"), ("sonidos", "Sonidos"), ("control", "Control"),
@@ -185,7 +184,7 @@ def looks(shelf: list[dict]) -> str:
 <h2 id="aspectos-t">Doce aspectos, un motor</h2>
 <p class="intro">Cada cartucho es un ejemplo jugable con las reglas de su consola: su resolución, sus colores, sus capas. Se juega con el teclado (flechas, Z y X) o, en el móvil, con los botones en pantalla. Las cifras de fps se midieron jugando en la consola real.</p>
 <ul class="shelf">{carts}</ul>
-<div class="more"><h3>Y {len(OTHERS)} ejemplos más</h3><ul>{others}</ul></div>
+{f'<div class="more"><h3>Y {len(OTHERS)} ejemplos más</h3><ul>{others}</ul></div>' if OTHERS else ''}
 </div></section>"""
 
 
