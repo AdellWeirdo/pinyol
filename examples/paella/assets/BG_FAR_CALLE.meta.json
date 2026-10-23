@@ -1,0 +1,25 @@
+{
+  "asset": "BG_FAR_CALLE",
+  "type": "background",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 189,
+  "w": 614,
+  "h": 230,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    307,
+    229
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 147756,
+    "as_rgb565": 282440
+  }
+}

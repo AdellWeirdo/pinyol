@@ -1,0 +1,31 @@
+{
+ "w": 128,
+ "h": 112,
+ "anchor": [
+  64,
+  108
+ ],
+ "faces": "right",
+ "frames": [
+  "hurt_0",
+  "hurt_1",
+  "die_0",
+  "die_1",
+  "die_2",
+  "die_3",
+  "die_4",
+  "die_5",
+  "die_6",
+  "die_7",
+  "win_0",
+  "win_1",
+  "win_2",
+  "win_3",
+  "win_4",
+  "win_5",
+  "select_0",
+  "select_1",
+  "select_2",
+  "select_3"
+ ]
+}

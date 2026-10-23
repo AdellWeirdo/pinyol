@@ -1,0 +1,46 @@
+key,es,ca,en
+how_item,Cómo funciona,Com funciona,How it works
+title_de,DE COMBATE,DE COMBAT,DE COMBATE
+title_start,EMPEZAR,COMENÇAR,START
+title_how,CÓMO FUNCIONA,COM FUNCIONA,HOW IT WORKS
+title_best,MEJOR,MILLOR,BEST
+demo,DEMO - PULSA UN BOTON,DEMO - PREM UN BOTO,DEMO - PRESS A BUTTON
+select_title,ELIGE COCINERO,TRIA CUINER,CHOOSE A COOK
+chef_estrella_name,Chef Estrella,Xef Estrella,Chef Estrella
+chef_espuma_name,Chef Espuma,Xef Escuma,Chef Espuma
+chef_pinche_name,Don Pinche,Don Pinche,Don Pinche
+chef_arrocero_name,El Maestro Arrocero,El Mestre Arrosser,The Rice Master
+chef_brioche_name,Doña Brioche,Dona Brioix,Doña Brioche
+chef_crianza_name,Sumiller Don Crianza,Sommelier Don Criança,Sommelier Don Crianza
+hud_bombs,OLLAS,OLLES,POTS
+hud_shield,ESCUDO,ESCUT,SHIELD
+hud_tractor,TRACTOR,TRACTOR,TRACTOR
+boss_name,EL GRAN GAVIOTRON,EL GRAN GAVIOTRO,THE GREAT GAVIOTRON
+boss_banner,¡EL GRAN GAVIOTRON!,EL GRAN GAVIOTRO!,THE GREAT GAVIOTRON!
+res_title,¡MISION CUMPLIDA!,MISSIO COMPLERTA!,MISSION COMPLETE!
+res_pows,Abuelas y pescadores,Àvies i pescadors,Grannies and fishermen
+res_bonus,Bonus,Bonus,Bonus
+res_foods,Platos recogidos,Plats recollits,Dishes collected
+res_kills,Gaviotas derribadas,Gavines abatudes,Gulls downed
+res_score,TOTAL,TOTAL,TOTAL
+res_press,PULSA A,PREM A,PRESS A
+end_title,¡EL PUEBLO ESTA A SALVO!,EL POBLE ES SALVAT!,THE VILLAGE IS SAFE!
+end_text,"El Gran Gaviotrón ha caído y la paella se sirve caliente. Gracias, cocinero.","El Gran Gaviotró ha caigut i la paella es serveix calenta. Gràcies, cuiner.","The Great Gaviotron is down and the paella is served hot. Thank you, cook."
+cont_title,¿CONTINUAR?,CONTINUAR?,CONTINUE?
+cont_press,PULSA A,PREM A,PRESS A
+over_title,FIN DE LA MISION,FI DE LA MISSIO,GAME OVER
+ex_help,B: salir   A: página,B: sortir   A: pàgina,B: leave   A: page
+ex_sprites_title,Sprites: hasta 380 por imagen,Sprites: fins a 380 per imatge,Sprites: up to 380 a frame
+ex_sprites_text,"Este cuadro se dibuja con {n} imágenes. El chip de la Neo Geo mostraba hasta {max} sprites a la vez, y {line} como mucho en cada línea de la pantalla: por eso el dibujo es de personajes grandes pero pocos.","Aquest quadre es dibuixa amb {n} imatges. El xip de la Neo Geo mostrava fins a {max} sprites alhora, i {line} com a molt a cada línia de la pantalla.","This frame is drawn with {n} pictures. The Neo Geo's chip showed up to {max} sprites at once, and {line} at most on each line of the screen: big characters, but few of them."
+ex_halves_title,Dos mitades clavadas en la cintura,Dues meitats clavades a la cintura,Two halves pinned at the hip
+ex_halves_text,"Cada cocinero son dos sprites: las piernas y el torso, unidos por un punto. Así cualquier forma de apuntar (arriba, delante, abajo) combina con cualquier paso: izquierda y derecha cambian la mitad de arriba.","Cada cuiner són dos sprites: les cames i el tors, units per un punt. Així qualsevol manera d'apuntar combina amb qualsevol pas.","Each cook is two sprites: legs and torso, joined at a point. So every way of aiming (up, forward, down) works with every step. Left and right change the top half."
+ex_shrink_title,Solo se puede encoger,Només es pot encongir,Only shrinking
+ex_shrink_text,"El chip de la Neo Geo solo sabía reducir sprites, nunca ampliarlos: quitaba filas y columnas de píxeles. Por eso se dibujaba todo al tamaño mayor y se encogía al alejarse.","El xip de la Neo Geo només sabia reduir sprites, mai ampliar-los: llevava files i columnes de píxels.","The Neo Geo's chip could only shrink sprites, never enlarge them: it dropped rows and columns of pixels. So everything was drawn at its largest size and shrunk when it moved away."
+ex_palettes_title,"El mismo dibujo, otras paletas","El mateix dibuix, altres paletes","One drawing, other palettes"
+ex_palettes_text,"Cada paleta de la Neo Geo tenía 15 colores y había 256. El mismo cocinero se vestía de otros colores cambiando solo la paleta: aquí, las mismas imágenes con otros tonos.",Cada paleta de la Neo Geo tenia 15 colors i n'hi havia 256. El mateix cuiner es vestia d'altres colors canviant només la paleta.,"Each Neo Geo palette had 15 colours and there were 256. The same cook was dressed in other colours by changing only the palette: here, the same pictures with other tones."
+chef_estrella_trait,Fría y precisa,Freda i precisa,Cool and precise
+chef_espuma_trait,Espuma que atraviesa a varios,Escuma que travessa diversos,Foam that pierces several
+chef_pinche_trait,Croquetas grandes que estallan,Croquetes grans que esclaten,Big croquettes that burst
+chef_arrocero_trait,"Agachado, su paellera lo protege","Ajupit, la paella el protegeix","Crouched, his pan shields him"
+chef_brioche_trait,Nata sin parar,Nata sense parar,A never-ending stream of cream
+chef_crianza_trait,Corchos lentos y potentes,Taps lents i potents,"Slow, powerful corks"

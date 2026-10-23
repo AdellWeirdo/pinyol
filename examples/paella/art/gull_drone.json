@@ -1,0 +1,32 @@
+{
+ "w": 128,
+ "h": 112,
+ "anchor": [
+  64,
+  56
+ ],
+ "frames": [
+  "fly_0",
+  "fly_1",
+  "fly_2",
+  "fly_3",
+  "fly_4",
+  "fly_5",
+  "drop_0",
+  "drop_1",
+  "drop_2",
+  "drop_3",
+  "hit_0",
+  "hit_1",
+  "die_0",
+  "die_1",
+  "die_2",
+  "die_3",
+  "die_4",
+  "die_5",
+  "die_6",
+  "die_7"
+ ],
+ "faces": "left",
+ "notes": "drop_1..3 show the released bomb under the gull; the game spawns the falling bomb (shots bomb_*) at drop_1"
+}

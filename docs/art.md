@@ -126,12 +126,26 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
 - Art by code or generated at the sprite's size. Style line: *16-bit console pixel art, 15 colours per sprite,
   bold outlines, saturated colours, no anti-aliasing*.
 
-### Neo Geo: `duelo`, `calle`, `asalto`, `nubes`, `futbol`, `moto`
+### Neo Geo: `duelo`, `calle`, `examples/paella`, `nubes`, `futbol`, `moto`
 
 - Pictures at 480×320 (`img`, `--packed`). Characters 150 to 180 pixels tall, 64 colours or more; wide layers;
   zoom (`img(..., {scale})`, a camera that zooms in); big frames, flashes (`tint`).
 - Generated art. Style line: *mid-1990s Neo Geo sprite art, 3 to 4 tones per material, hard pixel edges, no
   anti-aliasing*.
+- **`examples/paella`** (a run and gun after Metal Slug; its notes are the research: Wikipedia, the Game Developer essay "The
+  Appeal of Metal Slug", the NeoGeo development wiki's pages on sprites, palettes and shrinking, the artist Akio Oyabu's interview):
+  - **Hand-animated and funny**: Metal Slug is remembered for frames drawn by hand, far more than needed, and for comic
+    deaths. Every gull here has two ways to die (flying apart in feathers and screws, or flattened), cowards that surrender and
+    leave a dish, and the cooks are homages with invented names (no real person's face or name).
+  - **Legs and torso**: a cook is two sprites pinned at the hips (`art/chef_<id>_legs` and `_torso`, with the muzzle and the
+    grenade hand as points in the json), as Metal Slug composed its soldiers, so every aim (forward, up, down, crouched) works
+    with every step. The cooks are drawn by a paper-doll rig (`gen/chefkit.py`): the same skeleton, six different bodies.
+  - **Big and many**: the tractor is 224 px wide, the boss is six parts (body, head, wings, legs, a pot) placed on the body's
+    joints, backgrounds are painted chunks of 960 px that repeat behind a pillar, the far layer is mirrored. Every picture is
+    packed (`--packed`), sheets are cut in pieces of ten frames (`tools/pk_split.py`) so the console never needs one big block.
+  - **Neo Geo facts the menu shows**: up to 380 sprites a frame and 96 a line, sprites can only be shrunk (never grown) by
+    dropping rows and columns, 15 colours a palette and 256 palettes.
+  - **Sound**: songs as MIDI on a bank of samples (rumba, flamenco-rock, pasodoble brass), `gen/songs.py`.
 
 ### PlayStation and Saturn 2D: `examples/gotico`
 

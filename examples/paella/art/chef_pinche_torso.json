@@ -1,0 +1,140 @@
+{
+ "w": 128,
+ "h": 112,
+ "anchor": [
+  64,
+  96
+ ],
+ "pin": [
+  64,
+  96
+ ],
+ "muzzle": {
+  "aim_fwd": [
+   92,
+   94
+  ],
+  "aim_up": [
+   93,
+   73
+  ],
+  "aim_down": [
+   84,
+   102
+  ],
+  "fire_fwd_0": [
+   86,
+   86
+  ],
+  "fire_fwd_1": [
+   90,
+   90
+  ],
+  "fire_fwd_2": [
+   91,
+   94
+  ],
+  "fire_up_0": [
+   85,
+   66
+  ],
+  "fire_up_1": [
+   90,
+   69
+  ],
+  "fire_up_2": [
+   92,
+   72
+  ],
+  "fire_down_0": [
+   75,
+   103
+  ],
+  "fire_down_1": [
+   80,
+   103
+  ],
+  "fire_down_2": [
+   84,
+   102
+  ],
+  "crouch_fire_0": [
+   97,
+   85
+  ],
+  "crouch_fire_1": [
+   100,
+   89
+  ],
+  "crouch_fire_2": [
+   102,
+   93
+  ],
+  "crouch_aim": [
+   102,
+   93
+  ]
+ },
+ "grenade_hand": {
+  "throw_1": [
+   88,
+   91
+  ]
+ },
+ "stab_box": {
+  "stab_1": [
+   86,
+   97,
+   102,
+   103
+  ],
+  "stab_2": [
+   89,
+   97,
+   105,
+   103
+  ]
+ },
+ "frames": [
+  "idle_0",
+  "idle_1",
+  "idle_2",
+  "idle_3",
+  "run_0",
+  "run_1",
+  "run_2",
+  "run_3",
+  "run_4",
+  "run_5",
+  "run_6",
+  "run_7",
+  "jump_0",
+  "jump_1",
+  "crouch_0",
+  "crouch_1",
+  "aim_fwd",
+  "aim_up",
+  "aim_down",
+  "fire_fwd_0",
+  "fire_fwd_1",
+  "fire_fwd_2",
+  "fire_up_0",
+  "fire_up_1",
+  "fire_up_2",
+  "fire_down_0",
+  "fire_down_1",
+  "fire_down_2",
+  "crouch_fire_0",
+  "crouch_fire_1",
+  "crouch_fire_2",
+  "throw_0",
+  "throw_1",
+  "throw_2",
+  "throw_3",
+  "stab_0",
+  "stab_1",
+  "stab_2",
+  "stab_3",
+  "crouch_aim"
+ ]
+}

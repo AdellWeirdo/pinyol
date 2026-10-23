@@ -1,0 +1,43 @@
+{
+  "asset": "SPR_CHEF_PINCHE_FULL_C0",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 50,
+  "w": 128,
+  "h": 112,
+  "frames": 10,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "anchor": [
+    64,
+    108
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 30471,
+    "as_rgb565": 286720
+  }
+}

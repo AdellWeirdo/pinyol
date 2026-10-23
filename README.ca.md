@@ -27,8 +27,8 @@ Un joc s'assembla a la consola per a la qual està fet, i el motor els mou tots:
 | **Game Boy**: [cerezo](examples/cerezo), una aventura a l'estil Zelda | **ZX Spectrum**: [socavon](examples/socavon), una mina, des de la càrrega de cinta |
 | ![Un joc de plataformes de tresors de Game Boy Advance: una selva en quatre capes, unes ruïnes, un bolet i un cartell](docs/looks/gba.png) | ![Un joc de plataformes de velocitat de 16 bits: terra a quadres i un mar mogut línia a línia](docs/looks/16bits.png) |
 | **Game Boy Advance**: [botin](examples/botin), un joc de plataformes de tresors | **SNES / Mega Drive**: [veloz](examples/veloz), tot el seu art dibuixat amb codi |
-| ![Un joc de lluita de Neo Geo: dos lluitadors grans en un moll a la posta de sol](docs/looks/neogeo.png) | ![Un joc de lluita de CPS2: lluitadors de 15 colors sobre un terra en perspectiva](docs/looks/cps2.png) |
-| **Neo Geo**: [duelo](examples/duelo) | **CPS2**: [torneo](examples/torneo) |
+| ![Un run and gun de Neo Geo: un cuiner en un tractor per un carrer de poble, disparant a gavines mecàniques](docs/looks/neogeo.png) | ![Un joc de lluita de CPS2: lluitadors de 15 colors sobre un terra en perspectiva](docs/looks/cps2.png) |
+| **Neo Geo**: [paella](examples/paella), un run and gun | **CPS2**: [torneo](examples/torneo) |
 | ![Un trencaclosques de tombes de PICO-8: 128x128 en setze colors](docs/looks/pico8.png) | ![Una maquineta LCD: un malabarista en un circ, figures enceses o apagades](docs/looks/lcd.png) |
 | **PICO-8**: [tumba](examples/tumba), un trencaclosques de lliscament | **Maquineta LCD**: [malabar](examples/malabar), una Game & Watch |
 | ![Un joc vectorial: línies brillants sobre negre](docs/looks/vector.png) | ![Un matamarcians vertical, girat: es juga amb la consola de costat](docs/looks/vertical.png) |
@@ -132,7 +132,7 @@ Et queda un joc petit per canviar: una sala més gran que la pantalla, un person
 | [estilos](examples/estilos) | l'aspecte propi d'un joc: fonts de la biblioteca, text amb contorn i ondulat, marcs tallats d'una imatge, imatges girades |
 | [inventos](examples/inventos) | joguines sense gènere, només amb codi: pintar, terra que es trenca, estels generatius, triangles 3D, una pantalla partida |
 | [juntos](examples/juntos) | consoles que juguen juntes per l'aire (ESP-NOW, sense router): una pissarra compartida, una pilota que passa de pantalla en pantalla |
-| [asalto](examples/asalto) | un run and gun: una heroïna amb una metralladora, robots de ferralla que exploten, un tanc caminant al final d'un carrer llarg |
+| [paella](examples/paella) | un run and gun com els de Metal Slug, amb els seus propis acudits: sis cuiners (homenatges amb noms inventats) contra un exèrcit de gavines mecàniques per un port, un carrer major i una platja, un tractor amb canó de sardines, àvies per alliberar, menjar com a punts i una gavina gegant de cap; tot a 480x320 natius amb imatges empaquetades, cada cuiner fet de dos sprites clavats a la cintura (cames i tors, així qualsevol punteria va amb qualsevol pas), música en MIDI sobre un banc de mostres i un menú que explica els trucs de la Neo Geo |
 | [nubes](examples/nubes) | un matamarcians horitzontal sobre un mar de núvols: drons en formació, un cuirassat que omple el cel d'esferes (eixams) |
 | [calle](examples/calle) | un beat-em-up en un carrer de neó de nit: profunditat, grups de brètols, la càmera que s'atura a cada baralla |
 | [futbol](examples/futbol) | futbol cinc contra cinc en un camp el doble d'ample que la pantalla: quatre equipacions que són una imatge en quatre paletes |

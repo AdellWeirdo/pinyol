@@ -1,0 +1,43 @@
+{
+  "asset": "SPR_SHOTS_C2",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 50,
+  "w": 40,
+  "h": 40,
+  "frames": 10,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "anchor": [
+    20,
+    20
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 7243,
+    "as_rgb565": 32000
+  }
+}

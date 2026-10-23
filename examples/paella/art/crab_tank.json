@@ -1,0 +1,42 @@
+{
+ "w": 192,
+ "h": 128,
+ "anchor": [
+  96,
+  126
+ ],
+ "frames": [
+  "idle_0",
+  "idle_1",
+  "idle_2",
+  "idle_3",
+  "move_0",
+  "move_1",
+  "move_2",
+  "move_3",
+  "move_4",
+  "move_5",
+  "move_6",
+  "move_7",
+  "fire_0",
+  "fire_1",
+  "fire_2",
+  "fire_3",
+  "fire_4",
+  "fire_5",
+  "hit_0",
+  "hit_1",
+  "die_0",
+  "die_1",
+  "die_2",
+  "die_3",
+  "die_4",
+  "die_5",
+  "die_6",
+  "die_7",
+  "die_8",
+  "die_9"
+ ],
+ "faces": "left",
+ "notes": "cannon muzzle at about x=10, y=76 (fire_1); the pilot hides in the hatch in fire_2..3"
+}

@@ -13,7 +13,7 @@ printf 'tick 5\nlua require("core.title").leave() require("core.game").reset() G
 printf 'tick 440\npress A\ntick 10\npress A\ntick 40\nhold RIGHT 20\ntick 10\nshot spectrum\n' | shot spectrum socavon
 printf 'tick 5\nlua dbg_level(1)\ntick 30\nlua dbg_tp(43, 10)\ntick 40\nshot gba\n' | shot gba botin
 printf 'tick 10\npress A\nhold RIGHT 75\nshot 16bits\n' | shot 16bits veloz
-printf 'tick 30\npress A\ntick 100\nhold RIGHT 70\nhold A 1\ntick 7\nshot neogeo\n' | shot neogeo duelo
+printf 'tick 5\nlua dbg_play("pinche", 3300)\ntick 20\nlua dbg_tractor()\ntick 60\nlua dbg_foe("soldier", -120)\nlua dbg_foe("drone", -30)\nlua dbg_foe("soldier", 40)\ntick 25\nhold RIGHT+A 20\nshot neogeo\n' | shot neogeo paella
 printf 'tick 30\npress A\ntick 100\nhold RIGHT 50\npress B\ntick 8\nshot cps2\n' | shot cps2 torneo
 printf 'tick 20\npress A\ntick 3\npress A\ntick 40\npress DOWN\ntick 46\nshot pico8\n' | shot pico8 tumba
 printf 'tick 20\npress A\ntick 5\nhold LEFT+RIGHT 200\nshot lcd\n' | shot lcd malabar

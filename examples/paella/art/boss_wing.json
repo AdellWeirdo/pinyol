@@ -1,0 +1,43 @@
+{
+ "w": 256,
+ "h": 192,
+ "anchor": [
+  200,
+  40
+ ],
+ "frames": [
+  "rest_0",
+  "rest_1",
+  "rest_2",
+  "rest_3",
+  "open_0",
+  "open_1",
+  "open_2",
+  "open_3",
+  "fire_0",
+  "fire_1",
+  "fire_2",
+  "fire_3",
+  "hurt_0",
+  "hurt_1",
+  "broken_0",
+  "broken_1"
+ ],
+ "faces": "left",
+ "rocket_mouths": [
+  [
+   133,
+   81
+  ],
+  [
+   137,
+   89
+  ],
+  [
+   141,
+   97
+  ]
+ ],
+ "rocket_dir_deg": 166,
+ "notes": "rocket_mouths = rocket noses in the rack at rest (rack tilts with the wing a few degrees); rockets fly along rocket_dir_deg (screen degrees, 180 = left)"
+}

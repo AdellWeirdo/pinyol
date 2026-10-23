@@ -1,0 +1,103 @@
+# Paella de combate: title, choosing a chef, the mission (shooting, a tractor, a freed grandma, each kind of gull, a death and a continue), the boss, the tally, the ending, the explainer and the demo
+tick 90
+expect_lua G.state == "title"
+shot titulo
+press A
+tick 20
+expect_lua G.state == "select"
+press RIGHT
+tick 5
+shot seleccion
+press A
+tick 90
+expect_lua G.state == "play" and G.chef_id == "espuma"
+shot mision
+# running and shooting kills the first gulls
+hold RIGHT+A 240
+expect_lua dbg_state().score > 0
+shot disparo
+# each kind of enemy, one after the other
+expect_lua dbg_foe("soldier", 0) and dbg_foe("bazooka", 80) and dbg_foe("drone", 120) and dbg_foe("kamikaze", 200)
+hold RIGHT+A 200
+shot gaviotas
+expect_lua dbg_foe("crab", 100)
+hold RIGHT+A 300
+# a grandma is freed by shooting her ropes and hands over a crate
+expect_lua dbg_pow()
+hold A 100
+expect_lua dbg_pows() >= 0
+tick 120
+shot abuela
+# the tractor: land on it and drive
+expect_lua dbg_tractor()
+tick 60
+expect_lua dbg_vehicle()
+shot tractor
+hold RIGHT+A 90
+hold UP+A 40
+press C
+hold RIGHT 20
+shot tractor2
+# grenades, the knife, crouching and jumping
+press C
+tick 40
+hold DOWN+A 30
+press B
+tick 30
+# a death, a continue
+expect_lua dbg_eject()
+tick 30
+expect_lua dbg_go(1500)
+expect_lua dbg_die() >= 0
+tick 100
+expect_lua dbg_die() >= 0
+tick 100
+expect_lua dbg_die() >= 0
+tick 120
+shot continuar
+expect_lua dbg_state().state == "continue"
+press A
+tick 30
+expect_lua dbg_state().state == "play"
+# the golem: the pot opens and is hurt, the boss falls, the tally and the ending
+expect_lua dbg_boss()
+tick 400
+shot jefe
+expect_lua dbg_boss_open()
+hold RIGHT+A 120
+shot jefe2
+expect_lua dbg_boss_kill() <= 0
+tick 900
+expect_lua dbg_state().state == "results"
+shot cuenta
+tick 200
+press A
+tick 20
+expect_lua dbg_state().state == "ending"
+tick 700
+press A
+tick 30
+expect_lua G.state == "title"
+# the explainer, page by page
+expect_lua dbg_play("brioche")
+tick 20
+expect_lua dbg_explain()
+tick 3
+shot ex1
+press A
+tick 3
+shot ex2
+press A
+tick 3
+shot ex3
+press A
+tick 3
+shot ex4
+press B
+tick 5
+expect_lua G.state == "play"
+# the attract mode plays by itself
+expect_lua dbg_demo()
+tick 600
+expect_lua G.state == "demo" or G.state == "title"
+shot demo

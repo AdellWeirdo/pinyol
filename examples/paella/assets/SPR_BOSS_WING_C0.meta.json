@@ -1,0 +1,43 @@
+{
+  "asset": "SPR_BOSS_WING_C0",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 36,
+  "w": 256,
+  "h": 192,
+  "frames": 10,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "anchor": [
+    200,
+    40
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 139205,
+    "as_rgb565": 983040
+  }
+}

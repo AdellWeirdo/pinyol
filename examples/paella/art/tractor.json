@@ -1,0 +1,761 @@
+{
+ "w": 224,
+ "h": 144,
+ "anchor": [
+  112,
+  140
+ ],
+ "frames": [
+  "idle_0",
+  "idle_1",
+  "idle_2",
+  "idle_3",
+  "drive_0",
+  "drive_1",
+  "drive_2",
+  "drive_3",
+  "drive_4",
+  "drive_5",
+  "drive_6",
+  "drive_7",
+  "jump_0",
+  "jump_1",
+  "jump_2",
+  "jump_3",
+  "crouch_0",
+  "crouch_1",
+  "crouch_2",
+  "fire_0",
+  "fire_1",
+  "fire_2",
+  "fire_3",
+  "vulcan_0",
+  "vulcan_1",
+  "cannon_up_0",
+  "cannon_up_1",
+  "cannon_up_2",
+  "cannon_down_0",
+  "cannon_down_1",
+  "cannon_down_2",
+  "hit_0",
+  "hit_1",
+  "damaged_idle_0",
+  "damaged_idle_1",
+  "damaged_idle_2",
+  "damaged_idle_3",
+  "burning_0",
+  "burning_1",
+  "burning_2",
+  "burning_3",
+  "burning_4",
+  "burning_5",
+  "explode_0",
+  "explode_1",
+  "explode_2",
+  "explode_3",
+  "explode_4",
+  "explode_5",
+  "explode_6",
+  "explode_7",
+  "explode_8",
+  "explode_9",
+  "explode_10",
+  "explode_11",
+  "enter_0",
+  "enter_1",
+  "enter_2",
+  "enter_3",
+  "enter_4",
+  "enter_5",
+  "exit_0",
+  "exit_1",
+  "exit_2",
+  "exit_3",
+  "exit_4",
+  "exit_5"
+ ],
+ "faces": "right",
+ "muzzle_cannon": {
+  "idle_0": [
+   194,
+   70
+  ],
+  "idle_1": [
+   194,
+   69
+  ],
+  "idle_2": [
+   195,
+   70
+  ],
+  "idle_3": [
+   194,
+   69
+  ],
+  "drive_0": [
+   194,
+   70
+  ],
+  "drive_1": [
+   194,
+   68
+  ],
+  "drive_2": [
+   193,
+   67
+  ],
+  "drive_3": [
+   194,
+   69
+  ],
+  "drive_4": [
+   194,
+   71
+  ],
+  "drive_5": [
+   194,
+   70
+  ],
+  "drive_6": [
+   194,
+   69
+  ],
+  "drive_7": [
+   194,
+   70
+  ],
+  "jump_0": [
+   194,
+   77
+  ],
+  "jump_1": [
+   189,
+   55
+  ],
+  "jump_2": [
+   197,
+   74
+  ],
+  "jump_3": [
+   194,
+   78
+  ],
+  "crouch_0": [
+   194,
+   73
+  ],
+  "crouch_1": [
+   194,
+   76
+  ],
+  "crouch_2": [
+   194,
+   78
+  ],
+  "fire_0": [
+   183,
+   67
+  ],
+  "fire_1": [
+   187,
+   68
+  ],
+  "fire_2": [
+   192,
+   69
+  ],
+  "fire_3": [
+   194,
+   70
+  ],
+  "vulcan_0": [
+   192,
+   70
+  ],
+  "vulcan_1": [
+   194,
+   70
+  ],
+  "cannon_up_0": [
+   188,
+   43
+  ],
+  "cannon_up_1": [
+   172,
+   21
+  ],
+  "cannon_up_2": [
+   151,
+   8
+  ],
+  "cannon_down_0": [
+   194,
+   78
+  ],
+  "cannon_down_1": [
+   192,
+   86
+  ],
+  "cannon_down_2": [
+   190,
+   93
+  ],
+  "hit_0": [
+   191,
+   69
+  ],
+  "hit_1": [
+   197,
+   71
+  ],
+  "damaged_idle_0": [
+   194,
+   70
+  ],
+  "damaged_idle_1": [
+   195,
+   70
+  ],
+  "damaged_idle_2": [
+   193,
+   70
+  ],
+  "damaged_idle_3": [
+   194,
+   69
+  ],
+  "burning_0": [
+   196,
+   72
+  ],
+  "burning_1": [
+   192,
+   68
+  ],
+  "burning_2": [
+   195,
+   73
+  ],
+  "burning_3": [
+   194,
+   67
+  ],
+  "burning_4": [
+   194,
+   71
+  ],
+  "burning_5": [
+   192,
+   66
+  ],
+  "explode_0": [
+   194,
+   67
+  ],
+  "enter_0": [
+   194,
+   70
+  ],
+  "enter_1": [
+   194,
+   70
+  ],
+  "enter_2": [
+   192,
+   71
+  ],
+  "enter_3": [
+   195,
+   69
+  ],
+  "enter_4": [
+   194,
+   70
+  ],
+  "enter_5": [
+   194,
+   70
+  ],
+  "exit_0": [
+   194,
+   70
+  ],
+  "exit_1": [
+   193,
+   71
+  ],
+  "exit_2": [
+   195,
+   69
+  ],
+  "exit_3": [
+   193,
+   68
+  ],
+  "exit_4": [
+   195,
+   71
+  ],
+  "exit_5": [
+   194,
+   70
+  ]
+ },
+ "muzzle_vulcan": {
+  "idle_0": [
+   148,
+   57
+  ],
+  "idle_1": [
+   148,
+   56
+  ],
+  "idle_2": [
+   149,
+   57
+  ],
+  "idle_3": [
+   148,
+   56
+  ],
+  "drive_0": [
+   148,
+   57
+  ],
+  "drive_1": [
+   147,
+   56
+  ],
+  "drive_2": [
+   147,
+   55
+  ],
+  "drive_3": [
+   148,
+   56
+  ],
+  "drive_4": [
+   149,
+   57
+  ],
+  "drive_5": [
+   149,
+   56
+  ],
+  "drive_6": [
+   148,
+   56
+  ],
+  "drive_7": [
+   148,
+   57
+  ],
+  "jump_0": [
+   148,
+   64
+  ],
+  "jump_1": [
+   142,
+   47
+  ],
+  "jump_2": [
+   153,
+   57
+  ],
+  "jump_3": [
+   148,
+   65
+  ],
+  "crouch_0": [
+   148,
+   60
+  ],
+  "crouch_1": [
+   148,
+   63
+  ],
+  "crouch_2": [
+   148,
+   65
+  ],
+  "fire_0": [
+   137,
+   56
+  ],
+  "fire_1": [
+   141,
+   56
+  ],
+  "fire_2": [
+   146,
+   57
+  ],
+  "fire_3": [
+   148,
+   57
+  ],
+  "vulcan_0": [
+   146,
+   57
+  ],
+  "vulcan_1": [
+   148,
+   57
+  ],
+  "cannon_up_0": [
+   141,
+   50
+  ],
+  "cannon_up_1": [
+   132,
+   46
+  ],
+  "cannon_up_2": [
+   123,
+   47
+  ],
+  "cannon_down_0": [
+   149,
+   60
+  ],
+  "cannon_down_1": [
+   151,
+   62
+  ],
+  "cannon_down_2": [
+   151,
+   65
+  ],
+  "hit_0": [
+   145,
+   56
+  ],
+  "hit_1": [
+   151,
+   58
+  ],
+  "damaged_idle_0": [
+   148,
+   57
+  ],
+  "damaged_idle_1": [
+   149,
+   56
+  ],
+  "damaged_idle_2": [
+   147,
+   57
+  ],
+  "damaged_idle_3": [
+   148,
+   57
+  ],
+  "burning_0": [
+   150,
+   58
+  ],
+  "burning_1": [
+   146,
+   55
+  ],
+  "burning_2": [
+   150,
+   58
+  ],
+  "burning_3": [
+   148,
+   55
+  ],
+  "burning_4": [
+   148,
+   58
+  ],
+  "burning_5": [
+   146,
+   55
+  ],
+  "explode_0": [
+   148,
+   54
+  ],
+  "enter_0": [
+   148,
+   57
+  ],
+  "enter_1": [
+   148,
+   57
+  ],
+  "enter_2": [
+   146,
+   60
+  ],
+  "enter_3": [
+   149,
+   55
+  ],
+  "enter_4": [
+   148,
+   58
+  ],
+  "enter_5": [
+   148,
+   57
+  ],
+  "exit_0": [
+   148,
+   57
+  ],
+  "exit_1": [
+   147,
+   59
+  ],
+  "exit_2": [
+   150,
+   54
+  ],
+  "exit_3": [
+   147,
+   56
+  ],
+  "exit_4": [
+   149,
+   57
+  ],
+  "exit_5": [
+   148,
+   57
+  ]
+ },
+ "seat": [
+  73,
+  64
+ ],
+ "seat_frames": {
+  "idle_0": [
+   73,
+   64
+  ],
+  "idle_1": [
+   73,
+   63
+  ],
+  "idle_2": [
+   74,
+   64
+  ],
+  "idle_3": [
+   73,
+   63
+  ],
+  "drive_0": [
+   73,
+   64
+  ],
+  "drive_1": [
+   72,
+   63
+  ],
+  "drive_2": [
+   72,
+   63
+  ],
+  "drive_3": [
+   73,
+   63
+  ],
+  "drive_4": [
+   74,
+   64
+  ],
+  "drive_5": [
+   74,
+   63
+  ],
+  "drive_6": [
+   73,
+   63
+  ],
+  "drive_7": [
+   73,
+   64
+  ],
+  "jump_0": [
+   73,
+   71
+  ],
+  "jump_1": [
+   68,
+   62
+  ],
+  "jump_2": [
+   77,
+   58
+  ],
+  "jump_3": [
+   73,
+   73
+  ],
+  "crouch_0": [
+   73,
+   67
+  ],
+  "crouch_1": [
+   73,
+   70
+  ],
+  "crouch_2": [
+   73,
+   72
+  ],
+  "fire_0": [
+   69,
+   66
+  ],
+  "fire_1": [
+   71,
+   65
+  ],
+  "fire_2": [
+   73,
+   64
+  ],
+  "fire_3": [
+   73,
+   64
+  ],
+  "vulcan_0": [
+   72,
+   64
+  ],
+  "vulcan_1": [
+   73,
+   64
+  ],
+  "cannon_up_0": [
+   73,
+   64
+  ],
+  "cannon_up_1": [
+   73,
+   64
+  ],
+  "cannon_up_2": [
+   73,
+   64
+  ],
+  "cannon_down_0": [
+   73,
+   64
+  ],
+  "cannon_down_1": [
+   73,
+   64
+  ],
+  "cannon_down_2": [
+   73,
+   64
+  ],
+  "hit_0": [
+   70,
+   65
+  ],
+  "hit_1": [
+   76,
+   63
+  ],
+  "damaged_idle_0": [
+   73,
+   64
+  ],
+  "damaged_idle_1": [
+   74,
+   63
+  ],
+  "damaged_idle_2": [
+   72,
+   64
+  ],
+  "damaged_idle_3": [
+   73,
+   64
+  ],
+  "burning_0": [
+   75,
+   63
+  ],
+  "burning_1": [
+   71,
+   64
+  ],
+  "burning_2": [
+   75,
+   63
+  ],
+  "burning_3": [
+   73,
+   64
+  ],
+  "burning_4": [
+   73,
+   63
+  ],
+  "burning_5": [
+   71,
+   64
+  ],
+  "explode_0": [
+   73,
+   61
+  ],
+  "enter_0": [
+   73,
+   64
+  ],
+  "enter_1": [
+   73,
+   64
+  ],
+  "enter_2": [
+   71,
+   71
+  ],
+  "enter_3": [
+   74,
+   60
+  ],
+  "enter_4": [
+   73,
+   65
+  ],
+  "enter_5": [
+   73,
+   64
+  ],
+  "exit_0": [
+   73,
+   64
+  ],
+  "exit_1": [
+   72,
+   68
+  ],
+  "exit_2": [
+   75,
+   59
+  ],
+  "exit_3": [
+   72,
+   65
+  ],
+  "exit_4": [
+   74,
+   64
+  ],
+  "exit_5": [
+   73,
+   64
+  ]
+ },
+ "notes": "seat = top centre of the empty cushion (the seated chef's pin); seat_frames gives it per frame so the chef bounces with the suspension. Muzzles are the barrel mouths per frame."
+}

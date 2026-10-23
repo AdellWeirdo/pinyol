@@ -1,0 +1,25 @@
+{
+  "asset": "BG_ARENA_PLAYA",
+  "type": "background",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 208,
+  "w": 480,
+  "h": 320,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    240,
+    319
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 78015,
+    "as_rgb565": 307200
+  }
+}

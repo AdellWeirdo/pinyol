@@ -27,8 +27,8 @@ takes them again).
 | **Game Boy**: [cerezo](examples/cerezo), a Zelda-style adventure | **ZX Spectrum**: [socavon](examples/socavon), a mine, from the tape loading |
 | ![A Game Boy Advance treasure-hunting platformer: a jungle in four layers, a ruin, a mushroom and a signpost](docs/looks/gba.png) | ![A 16-bit speed platformer: checkered earth, a sea moved line by line](docs/looks/16bits.png) |
 | **Game Boy Advance**: [botin](examples/botin), a treasure-hunting platformer | **SNES / Mega Drive**: [veloz](examples/veloz), all its art drawn by code |
-| ![A Neo Geo fighting game: two big fighters on a pier at sunset](docs/looks/neogeo.png) | ![A CPS2 fighting game: fighters in 15 colours on a floor in perspective](docs/looks/cps2.png) |
-| **Neo Geo**: [duelo](examples/duelo) | **CPS2**: [torneo](examples/torneo) |
+| ![A Neo Geo run and gun: a cook on a tractor in a village street, shooting at mechanical seagulls](docs/looks/neogeo.png) | ![A CPS2 fighting game: fighters in 15 colours on a floor in perspective](docs/looks/cps2.png) |
+| **Neo Geo**: [paella](examples/paella), a run and gun | **CPS2**: [torneo](examples/torneo) |
 | ![A PICO-8 tomb puzzle: 128x128 in sixteen colours](docs/looks/pico8.png) | ![A pocket LCD game: a juggling clown in a circus, figures on or off](docs/looks/lcd.png) |
 | **PICO-8**: [tumba](examples/tumba), a sliding puzzle | **Pocket LCD**: [malabar](examples/malabar), a Game & Watch |
 | ![A vector arcade game: glowing lines on black](docs/looks/vector.png) | ![A vertical shoot-'em-up, shown turned: hold the console on its side](docs/looks/vertical.png) |
@@ -133,7 +133,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [estilos](examples/estilos) | a game's own look: fonts from the library, outlined and wavy text, frames cut from a picture, turned pictures |
 | [inventos](examples/inventos) | toys of no genre, from code alone: painting, land that breaks, generative trails, 3D triangles, a split screen |
 | [juntos](examples/juntos) | consoles playing together over the air (ESP-NOW, no router): a shared whiteboard, a ball passed from screen to screen |
-| [asalto](examples/asalto) | a run and gun: a heroine with a machine gun, scrap robots that explode, a walking tank at the end of a long street |
+| [paella](examples/paella) | a run and gun as Metal Slug's, with its own jokes: six cooks (homages with invented names) against a mechanical seagull army along a harbour, a main street and a beach, a tractor with a sardine cannon, grannies to free, food for score and a giant seagull boss; every pixel at the native 480x320 from packed pictures, each cook two sprites pinned at the hips (legs and torso, so any aim goes with any step), music as MIDI on a sample bank, and a menu that explains the Neo Geo's tricks |
 | [nubes](examples/nubes) | a horizontal shoot-em-up over a sea of clouds: drones in formation, a battleship that fills the sky with orbs (swarms) |
 | [calle](examples/calle) | a beat-em-up on a neon street at night: depth, groups of thugs, the camera stopping at each fight |
 | [futbol](examples/futbol) | five a side on a pitch twice the screen's width: four kits that are one picture in four palettes |

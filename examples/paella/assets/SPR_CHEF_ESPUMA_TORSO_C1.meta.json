@@ -1,0 +1,43 @@
+{
+  "asset": "SPR_CHEF_ESPUMA_TORSO_C1",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 48,
+  "w": 128,
+  "h": 112,
+  "frames": 10,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "anchor": [
+    64,
+    96
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 22715,
+    "as_rgb565": 286720
+  }
+}

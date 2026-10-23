@@ -1,0 +1,43 @@
+{
+  "asset": "SPR_TRACTOR_C3",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 49,
+  "w": 224,
+  "h": 144,
+  "frames": 10,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "anchor": [
+    112,
+    140
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 147314,
+    "as_rgb565": 645120
+  }
+}

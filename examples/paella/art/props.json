@@ -1,0 +1,27 @@
+{
+ "w": 128,
+ "h": 128,
+ "anchor": [
+  64,
+  126
+ ],
+ "frames": [
+  "barrel_0",
+  "barrel_1",
+  "barrel_2",
+  "barrel_3",
+  "barrel_4",
+  "barrel_5",
+  "crate_0",
+  "crate_1",
+  "crate_2",
+  "crate_3",
+  "crate_4",
+  "crate_5",
+  "buoy_0",
+  "buoy_1",
+  "buoy_2",
+  "buoy_3"
+ ],
+ "notes": "barrel_0 / crate_0 intact, 1 cracked, then breaking; buoy_* rolls (loop)"
+}

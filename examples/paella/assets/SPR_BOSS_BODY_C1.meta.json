@@ -1,0 +1,33 @@
+{
+  "asset": "SPR_BOSS_BODY_C1",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 43,
+  "w": 384,
+  "h": 320,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    192,
+    300
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 171110,
+    "as_rgb565": 1228800
+  }
+}

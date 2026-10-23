@@ -1,0 +1,76 @@
+{
+  "id": "paella",
+  "title": "Paella de combate",
+  "subtitle": "Neo Geo",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un correr y disparar a la manera de la Neo Geo: seis cocineros contra una invasión de gaviotas mecánicas en un pueblo de costa, con tractor y jefe gigante. Todo a 480x320, cada cocinero hecho de dos sprites, y un menú que enseña los trucos de la máquina.",
+  "achievements": [
+    {
+      "id": "primer_plato",
+      "name": "Primer plato",
+      "description": "Derriba a tu primera gaviota."
+    },
+    {
+      "id": "abuela_a_salvo",
+      "name": "Abuela a salvo",
+      "description": "Libera a un prisionero."
+    },
+    {
+      "id": "conductor",
+      "name": "Conductor de tractor",
+      "description": "Sube al Tractor-Cañón."
+    },
+    {
+      "id": "triturador",
+      "name": "Triturador",
+      "description": "Aplasta a cinco gaviotas con el tractor."
+    },
+    {
+      "id": "banquete",
+      "name": "Banquete",
+      "description": "Recoge los doce platos distintos en una misión."
+    },
+    {
+      "id": "pluma_dorada",
+      "name": "Pluma dorada",
+      "description": "Llega a cien mil puntos."
+    },
+    {
+      "id": "gaviotron",
+      "name": "Gran Gaviotrón",
+      "description": "Derrota al Gran Gaviotrón."
+    },
+    {
+      "id": "rescatador",
+      "name": "Rescatador",
+      "description": "Libera a todos los prisioneros de la misión."
+    },
+    {
+      "id": "sin_continuar",
+      "name": "Sin continuar",
+      "description": "Termina la misión sin usar un continue."
+    },
+    {
+      "id": "sin_una_mancha",
+      "name": "Sin una mancha",
+      "description": "Termina la misión sin morir."
+    },
+    {
+      "id": "menu_degustacion",
+      "name": "Menú degustación",
+      "description": "Termina la misión con tres cocineros distintos."
+    },
+    {
+      "id": "carta_completa",
+      "name": "Carta completa",
+      "description": "Termina la misión con los seis cocineros."
+    },
+    {
+      "id": "curioso",
+      "name": "Curioso",
+      "description": "Mira cómo funciona la máquina en el menú."
+    }
+  ]
+}

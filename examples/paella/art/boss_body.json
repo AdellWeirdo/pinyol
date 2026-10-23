@@ -1,0 +1,57 @@
+{
+ "w": 384,
+ "h": 320,
+ "anchor": [
+  192,
+  300
+ ],
+ "frames": [
+  "idle_0",
+  "idle_1",
+  "idle_2",
+  "idle_3",
+  "idle_4",
+  "idle_5",
+  "hurt_0",
+  "hurt_1",
+  "damaged_0",
+  "damaged_1",
+  "damaged_2",
+  "dead_0",
+  "dead_1",
+  "dead_2",
+  "dead_3"
+ ],
+ "faces": "left",
+ "joints": {
+  "head": [
+   100,
+   248
+  ],
+  "wing": [
+   228,
+   222
+  ],
+  "leg_l": [
+   165,
+   296
+  ],
+  "leg_r": [
+   228,
+   292
+  ],
+  "pot": [
+   212,
+   238
+  ]
+ },
+ "draw_order": [
+  "leg_r",
+  "body",
+  "leg_l",
+  "pot",
+  "wing",
+  "head"
+ ],
+ "notes": "place each part's anchor on its joint (boss_body pixels); leg_r is the far leg (draw it first)"
+}

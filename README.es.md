@@ -27,8 +27,8 @@ Un juego se parece a la consola para la que está hecho, y el motor los mueve to
 | **Game Boy**: [cerezo](examples/cerezo), una aventura al estilo Zelda | **ZX Spectrum**: [socavon](examples/socavon), una mina, desde la carga de cinta |
 | ![Un plataformas de tesoros de Game Boy Advance: una selva en cuatro capas, unas ruinas, una seta y un cartel](docs/looks/gba.png) | ![Un plataformas de velocidad de 16 bits: tierra a cuadros y un mar movido línea a línea](docs/looks/16bits.png) |
 | **Game Boy Advance**: [botin](examples/botin), un plataformas de tesoros | **SNES / Mega Drive**: [veloz](examples/veloz), todo su arte dibujado con código |
-| ![Un juego de lucha de Neo Geo: dos luchadores grandes en un muelle al atardecer](docs/looks/neogeo.png) | ![Un juego de lucha de CPS2: luchadores de 15 colores sobre un suelo en perspectiva](docs/looks/cps2.png) |
-| **Neo Geo**: [duelo](examples/duelo) | **CPS2**: [torneo](examples/torneo) |
+| ![Un run and gun de Neo Geo: un cocinero en un tractor por una calle de pueblo, disparando a gaviotas mecánicas](docs/looks/neogeo.png) | ![Un juego de lucha de CPS2: luchadores de 15 colores sobre un suelo en perspectiva](docs/looks/cps2.png) |
+| **Neo Geo**: [paella](examples/paella), un run and gun | **CPS2**: [torneo](examples/torneo) |
 | ![Un puzle de tumbas de PICO-8: 128x128 en dieciséis colores](docs/looks/pico8.png) | ![Una maquinita LCD: un malabarista en un circo, figuras encendidas o apagadas](docs/looks/lcd.png) |
 | **PICO-8**: [tumba](examples/tumba), un puzle de deslizamiento | **Maquinita LCD**: [malabar](examples/malabar), una Game & Watch |
 | ![Un juego vectorial: líneas brillantes sobre negro](docs/looks/vector.png) | ![Un matamarcianos vertical, girado: se juega con la consola de lado](docs/looks/vertical.png) |
@@ -131,7 +131,7 @@ Te queda un juego pequeño para cambiar: una sala más grande que la pantalla, u
 | [estilos](examples/estilos) | el aspecto propio de un juego: fuentes de la biblioteca, texto con contorno y ondulado, marcos cortados de una imagen, imágenes giradas |
 | [inventos](examples/inventos) | juguetes sin género, solo con código: pintar, tierra que se rompe, estelas generativas, triángulos 3D, una pantalla partida |
 | [juntos](examples/juntos) | consolas que juegan juntas por el aire (ESP-NOW, sin router): una pizarra compartida, una pelota que pasa de pantalla en pantalla |
-| [asalto](examples/asalto) | un run and gun: una heroína con una ametralladora, robots de chatarra que explotan, un tanque andante al final de una calle larga |
+| [paella](examples/paella) | un run and gun como los de Metal Slug, con sus propios chistes: seis cocineros (homenajes con nombres inventados) contra un ejército de gaviotas mecánicas por un puerto, una calle mayor y una playa, un tractor con cañón de sardinas, abuelas que liberar, comida como puntos y una gaviota gigante de jefe; todo a 480x320 nativos con imágenes empaquetadas, cada cocinero hecho de dos sprites clavados en la cintura (piernas y torso, así cualquier puntería va con cualquier paso), música en MIDI sobre un banco de muestras y un menú que explica los trucos de la Neo Geo |
 | [nubes](examples/nubes) | un matamarcianos horizontal sobre un mar de nubes: drones en formación, un acorazado que llena el cielo de esferas (enjambres) |
 | [calle](examples/calle) | un beat-em-up en una calle de neón de noche: profundidad, grupos de matones, la cámara que se para en cada pelea |
 | [futbol](examples/futbol) | fútbol cinco contra cinco en un campo el doble de ancho que la pantalla: cuatro equipaciones que son una imagen en cuatro paletas |

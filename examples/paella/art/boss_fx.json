@@ -1,0 +1,30 @@
+{
+ "w": 128,
+ "h": 128,
+ "anchor": [
+  64,
+  64
+ ],
+ "frames": [
+  "charge_0",
+  "charge_1",
+  "charge_2",
+  "charge_3",
+  "charge_4",
+  "charge_5",
+  "beam_0",
+  "beam_1",
+  "beam_2",
+  "beam_3",
+  "spark_0",
+  "spark_1",
+  "spark_2",
+  "spark_3",
+  "bolt_0",
+  "bolt_1",
+  "bolt_2",
+  "bolt_3"
+ ],
+ "faces": "left",
+ "notes": "beam tiles horizontally; charge/spark/bolt are centred"
+}

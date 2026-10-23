@@ -1,0 +1,35 @@
+{
+ "w": 96,
+ "h": 72,
+ "anchor": [
+  48,
+  14
+ ],
+ "pin": [
+  48,
+  14
+ ],
+ "feet_y": 70,
+ "frames": [
+  "idle",
+  "run_0",
+  "run_1",
+  "run_2",
+  "run_3",
+  "run_4",
+  "run_5",
+  "run_6",
+  "run_7",
+  "jump_0",
+  "jump_1",
+  "jump_2",
+  "jump_3",
+  "crouch",
+  "crawl_0",
+  "crawl_1",
+  "crawl_2",
+  "crawl_3",
+  "crawl_4",
+  "crawl_5"
+ ]
+}
