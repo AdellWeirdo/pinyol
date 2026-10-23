@@ -137,7 +137,7 @@ def level1() -> Level:
 # ---------------------------------------------------------------------------------------------------------------------------- 2. cristal
 
 def level2() -> Level:
-    lv = Level(2, "cristal", 100, 16, "Cueva de Cristal", music="cristal", time=55, dark=60)
+    lv = Level(2, "cristal", 100, 16, "Cueva de Cristal", music="cristal", time=55)
     ground(lv, 0, 99, 12, 15)
     lv.rect(0, 0, 99, 1, "#")                      # the roof
     lv.thing("start", 3, 11)

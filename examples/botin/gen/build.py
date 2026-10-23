@@ -14,27 +14,12 @@ from gbakit import ART, DATA, Layer, Tileset, crop, lua_table, write_tilemap  # 
 ART_MODULES = ["art_hero", "art_enemies", "art_items", "art_selva", "art_cristal", "art_galeon", "art_fragua"]
 
 
-def compose_backgrounds(banks: dict) -> None:
-    """For each biome the layer behind the ground is one tile map of two pictures stacked: the mid (256x128) over the near (256x96), so one background layer
-    scrolls them at two speeds with line_scroll (the way GBA games cut a layer into bands). Writes <BIOME>_BG."""
-    for b in C.BIOMES:
-        parts = [ART.sceneries.pop(f"{b}_mid"), ART.sceneries.pop(f"{b}_near")]
-        ts, layer = Tileset(), Layer(32, 28)
-        y0 = 0
-        for pic, set_, bank in parts:
-            for ty in range(len(pic) // 8):
-                for tx in range(len(pic[0]) // 8):
-                    layer.put(tx, y0 + ty, ts.tile(crop(pic, tx * 8, ty * 8, 8, 8), banks[set_][bank]))
-            y0 += len(pic) // 8
-        write_tilemap(f"{b.upper()}_BG", ts, layer, b.upper())
-
-
 def main() -> None:
     import artload
     artload.load()
-    # the combined backgrounds need the bank numbers before gbakit writes the rest
-    banks = {s: {n: i for i, n in enumerate(bs)} for s, bs in ART.palettes.items()}
-    compose_backgrounds(banks)
+    import bgcomp
+    for b in C.BIOMES:
+        bgcomp.compose(b, g.HERE / "art")
     banks = g.build_common()
     import levels_design as L  # noqa: E402
     import levelkit as K  # noqa: E402

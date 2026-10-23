@@ -51,7 +51,6 @@ function Play.enter(n)
   Play.after_t = 0
   W.follow(Hero.cx(Play.hero), Play.hero.y, 1, true)
   Music.play(lv.notes.music)
-  Play.setup_light()
 end
 
 function Play.start_escape()
@@ -68,39 +67,6 @@ end
 function Play.crown()
   local r = U.clamp(Run.coins / Play.max_coins, 0, 1)
   return r >= 0.85 and 3 or r >= 0.6 and 2 or r >= 0.35 and 1 or 0
-end
-
--- the cave's spotlight: two windows cut to circles a line at a time. Inside the small one everything shows as it is; in the ring round it everything shows
--- darkened (the fade works only where a window lets FX in); outside both only the far layer and the backdrop are left.
-function Play.setup_light()
-  Play.dark = Play.lv.notes.dark
-  if Play.dark then
-    window(0, 0, 0, C.W - 1, C.H - 1, ALL)
-    window(1, 0, 0, C.W - 1, C.H - 1, ALL | FX)
-    window_out(BG3 | BACK)
-    fade("dark", ALL, 9)
-  end
-end
-
-local function circle(k, cx, cy, r)
-  for y = 0, C.H - 1 do
-    local dy = y - cy
-    if dy > -r and dy < r then
-      local dx = math.floor(math.sqrt(r * r - dy * dy))
-      line_window(k, y, cx - dx, cx + dx)
-    else
-      line_window(k, y, 1, 0)
-    end
-  end
-end
-
-local function light(h, t)
-  if not Play.dark then return end
-  local r = Play.dark + math.floor(math.sin(t / 20) * 2)
-  local sx = math.floor(Hero.cx(h) - W.cam_x)
-  local sy = math.floor(Hero.cy(h) - W.cam_y)
-  circle(0, sx, sy, r)
-  circle(1, sx, sy, r + 22)
 end
 
 -- one tick; returns "win", "dead" or nil
@@ -148,7 +114,6 @@ function Play.draw(t)
   Foes.draw(cx, cy)
   Things.draw(cx, cy)
   W.scroll(t)
-  light(h, t)
 end
 
 return Play

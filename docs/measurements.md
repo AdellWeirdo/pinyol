@@ -926,3 +926,36 @@ is on. With the miner holding both hands and the balls going: 57.7 to 60.0 fps, 
 memory 62 KB. The cause of the canvas cost was not looked for; the data cache was made 32 KB and the code run from PSRAM on 22 October
 (95efeb7), after the 14 October measurements.
 
+
+## 2026-10-23 · Game Boy Advance platformer (Botín) on the console: what a layer costs
+
+The first build of Botín used the layers the way a GBA game would: a sky (BG3), the hills in two bands (BG2), the ground (BG1) and a front or water
+layer (BG0), with a spotlight in the cave and a blended sea. It ran at **29-30 fps** everywhere: `render` 27-28 ms, of which the world 8-15 ms and
+the strips 4-9 ms. A silent copy was sent with a driver that holds one scene still (one measurement per variant, firmware 3aff58e) and the layers
+and effects were taken away one at a time:
+
+| What was taken away (scene) | `render` | World + picture (ms) |
+|---|---|---|
+| nothing (the selva, standing still) | 27.8 ms, 30 fps | 9.3 + 6.3 |
+| the hills' layer (BG2) | 15.1 ms, 56 fps | 7.0 + 4.6 (2.3 + 1.7 less) |
+| the sky (BG3) in the forge | 14.4 ms, 59.9 fps | 5.8 + 2.7 (2.0 + 2.0 less) |
+| the front layer (BG0), which was empty | 27.9 ms | 8.6 + 5.6 (0.7 + 0.7 less) |
+| the 160 `line_scroll` calls of the two bands | 28.0 ms | 8.6 + 6.2 (0.65 less) |
+| all sprites (OBJ) | 27.9 ms | 9.1 + 6.1 (almost nothing: 128 sprites are cheap) |
+| a layer made of tiles that wrap, against one that does not (only if its picture is as tall as the screen) | | 1.4 + 1.4 less, but a layer that does not wrap shows nothing below line 160 |
+| the cave's spotlight (two windows + a fade) | 28 ms | 15.0 + 9.6, against 10.2 + 4.8 without (≈ 9.6 ms) |
+| the sea's blended overlay (BG0 blend) | 28.2 ms | 12.5 + 8.7 against 10.1 + 6.3 (≈ 4.8 ms); a window does not cost |
+| a `line_scroll` ripple over the whole screen's rows, while moving | 25-28 ms | ≈ 9 ms (1.5 world, 1.6 `_draw`, and it tips the frame over) |
+| the hills as a direct-colour bitmap layer (`bg(n, {image})`) instead of tiles | 14.2 ms, 59.8 fps | 5.7 + 2.8 against 7.1 + 4.2 (2.8 less) |
+
+A frame must finish its world, strips, picture and the `_update` (about 2 ms) in about 15 ms to hold 60 fps; one ms over and it waits for the next
+panel scan and shows at 30. The rule that came out: **a full-screen layer costs about a fifth of a frame, a blended layer, a window with a fade and a
+per-line sway over the whole screen each cost a third to two thirds**; sprites cost almost nothing.
+
+What the game does now: the sky and the hills are painted offline into one picture of two bands (`gen/bgcomp.py`), scrolled with `line_scroll` at two
+speeds, as a direct-colour bitmap layer; the ground is the only tile layer (and a front layer exists only in a level that has something in front);
+no blend, no window, no fade; the sea ripples only on the 28 lines under the surface; the escape's heat is `haze`. Result of a tour of the four
+worlds and the boss with a bot playing (11 stops, 6 s each): **50.1 to 57.4 fps**, `render` 14.1-16.9 ms, `_update` 1.7-3.0 ms, audio 10-26% of a core
+without underruns, 59 KB of internal RAM and about 3.2-3.8 MB of PSRAM free, script memory 0.35-0.58 MB. The lowest figures are the tiki hill (50.4, the
+most sprites and breaking blocks) and the escape's haze (50.1). What it does not cover: a fight with the boss's rockets and the hero throwing at the same
+time was only held for a second (55.8 fps).

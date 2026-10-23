@@ -1,0 +1,28 @@
+{
+  "asset": "FRAGUA_BGIMG",
+  "type": "background",
+  "w": 256,
+  "h": 192,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    128,
+    191
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "none"
+  },
+  "memory_bytes": {
+    "pixels": 98304,
+    "mask": 0,
+    "total": 98304
+  }
+}

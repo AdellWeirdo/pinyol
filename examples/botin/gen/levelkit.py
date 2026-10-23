@@ -174,5 +174,6 @@ def compile_level(lv: Level, banks: dict) -> dict:
                 m = metas[nm]
                 layer.put_meta(x, y, ts.meta(m.front, bk[m.front_bank]))
     write_tilemap(f"L{lv.n}_FRONT", ts, layer, lv.biome.upper())
+    has_front = any(nm is not None and metas[nm].front is not None for row in front for nm in row)
     return {"n": lv.n, "biome": lv.biome, "name": lv.name, "w": W, "h": H, "rows": lv.rows(), "things": lv.things, "notes": lv.notes,
-            "fg": f"L{lv.n}_FG", "front": f"L{lv.n}_FRONT", "anim": anim}
+            "fg": f"L{lv.n}_FG", "front": f"L{lv.n}_FRONT", "has_front": has_front, "anim": anim}

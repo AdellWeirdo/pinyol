@@ -103,12 +103,14 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
     `1-9a-f` the slots of a bank of fifteen colours. A tile map entry carries its bank, a sprite is drawn with `bank(b)`: the
     hero burning, hit or puffed up is the same 111 frames with another bank, and each level's enemies are the same frames in the
     level's bank, as the GBA reused its 16-colour graphics.
-  - **Four layers**: BG3 the sky (slowest), BG2 the hills, BG1 the ground, BG0 what is in front of the hero, or the water of a sea
-    level. The hills are one 256x224 layer of two pictures stacked, scrolled in two bands at two speeds with `line_scroll`, one
-    layer doing the work of two (the HBlank trick). Metatiles are 16x16 with flipped copies folded into one tile (`Tileset`).
-  - **Windows and per-line effects**: the cave's spotlight is two windows cut to circles a line at a time (inside the small one
-    everything, in the ring a faded picture, outside only the far sky); the sea blends BG0 over the rest only below the surface
-    and ripples BG1 line by line; the escape wobbles the whole picture with `haze`; scenes change with mosaic and a fade.
+  - **Layers, and what they cost on the console** (measured, docs/measurements.md): the art was drawn for four layers (a sky, hills, the
+    ground, a front/water overlay) and the first build ran at 30 fps. Each full-screen layer costs about a fifth of a frame, a blended
+    layer 5 ms, a window spotlight with a fade 9 ms, a ripple over the whole screen 9 ms. So the sky and the hills are painted offline
+    into ONE picture of two bands (`gen/bgcomp.py`), scrolled at two speeds with `line_scroll` (the HBlank trick: one layer doing the
+    work of two), kept as a direct-colour bitmap layer (2.8 ms cheaper than the same picture as tiles); the ground is the tile layer
+    (16x16 metatiles with flipped copies folded into one tile, `Tileset`); a front layer is only there when a level has something in front.
+    The game ends at 50-58 fps with no blend, no window and no fade; the menu says so.
+  - **Per-line effects kept**: ripples on the sea's first lines, `haze` over the whole picture in the escape; scenes change with mosaic and a fade.
   - **Turned sprites**: the Golem's head sways and its arms are two pieces of one picture rotated by matrices toward the fist.
   - **Sound**: sixteen songs as MIDI notes played by a bank of 8-bit samples at 11 kHz (the GBA's "Direct Sound" with a sequencer
     driver), `gen/songs.py`.

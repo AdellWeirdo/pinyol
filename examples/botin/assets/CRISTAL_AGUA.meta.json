@@ -1,8 +1,0 @@
-{
-  "asset": "CRISTAL_AGUA",
-  "type": "tilemap",
-  "tiles": 371,
-  "map_w": 32,
-  "map_h": 20,
-  "palette": "CRISTAL"
-}

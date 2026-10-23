@@ -1,8 +1,0 @@
-{
-  "asset": "GALEON_FAR",
-  "type": "tilemap",
-  "tiles": 283,
-  "map_w": 32,
-  "map_h": 20,
-  "palette": "GALEON"
-}

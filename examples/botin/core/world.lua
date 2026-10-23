@@ -7,7 +7,8 @@ local U = require("core.util")
 local Levels = require("data.levels")
 local W = {}
 
-W.lv, W.grid, W.cw, W.ch = nil, nil, 0, 0     -- the level, its cells (grid[y][x], from 0), its size in cells
+W.lv, W.grid, W.cw, W.ch = nil, nil, 0, 0
+W.has_front = false     -- the level, its cells (grid[y][x], from 0), its size in cells
 W.px_w, W.px_h = 0, 0
 W.cam_x, W.cam_y = 0, 0
 W.shake_x, W.shake_y, W.shake_t, W.shake_amp = 0, 0, 0, 0
@@ -55,14 +56,15 @@ function W.load(n)
     W.grid[y] = row
   end
   local B = lv.biome:upper()
-  bg(3, {map = B .. "_FAR", prio = 3, wrap = true})
-  bg(2, {map = B .. "_BG", prio = 2, wrap = true})
+  bg(3) -- (the sky is painted into the hills' layer: see gen/bgcomp.py)
+  bg(2, {image = B .. "_BGIMG", prio = 2}) -- the hills: a direct-colour picture (gen/bgcomp.py), cheaper than a tile map
   bg(1, {map = lv.fg, prio = 1, wrap = false})
   W.water_y = lv.notes.water_row and lv.notes.water_row * 16 or nil
-  if W.water_y then
-    bg(0, {map = B .. "_AGUA", prio = 0, wrap = true})
-  else
+  W.has_front = lv.has_front
+  if lv.has_front then
     bg(0, {map = lv.front, prio = 0, wrap = false})
+  else
+    bg(0) -- nothing in front of the hero in this level: a layer less to draw
   end
   W.anim = {}
   for _, a in ipairs(lv.anim) do
@@ -93,12 +95,8 @@ function W.sync_anim(t)
   end
 end
 
--- effects that stay on while the level lasts: the water's blend and window
-function W.fx_setup()
-  if W.water_y then
-    blend(BG0, BG1 | BG2 | BG3 | OBJ | BACK, 7, 9)
-  end
-end
+-- effects that stay on while the level lasts: none (a blended layer or a window costs the console a frame of its time, the explainer says so)
+function W.fx_setup() end
 
 function W.shake(amp, ticks)
   W.shake_amp, W.shake_t = amp, ticks
@@ -131,24 +129,22 @@ function W.update(t)
   end
 end
 
--- the console's scroll: far sky slowest, the hills in two bands, the ground at the camera's own pace
+-- the console's scroll: the hills' layer in two bands (the mid hills with the sky behind them, then the near foreground), each at its own pace, and the ground at the camera's
 function W.scroll(t)
   local cx, cy = math.floor(W.cam_x) + W.shake_x, math.floor(W.cam_y) + W.shake_y
   scroll(1, cx, cy)
-  scroll(0, W.water_y and math.floor(cx * 0.8 + t * 0.2) or cx, W.water_y and 0 or cy)
-  scroll(3, math.floor(cx * 0.12), 0)
+  if W.has_front then scroll(0, cx, cy) end
   local sh = U.clamp(math.floor(cy * 0.25), 0, 16)
   local mx, nx = math.floor(cx * 0.3), math.floor(cx * 0.55)
-  for l = 0, SPLIT - 1 do line_scroll(2, l, mx, 30 + l + sh) end
-  for l = SPLIT, C.H - 1 do line_scroll(2, l, nx, 128 + (l - SPLIT) + sh) end
+  for l = 0, SPLIT - 1 do line_scroll(2, l, mx, l + sh) end
+  for l = SPLIT, C.H - 1 do line_scroll(2, l, nx, 96 + (l - SPLIT) + sh) end
   if W.water_y then
+    -- the sea ripples just under the surface: a few lines of the ground sway (a sway over the whole screen costs the console about 9 ms of a frame, so deep water does not)
     local top = math.floor(W.water_y - W.cam_y)
-    for l = math.max(top, 0), C.H - 1 do
+    for l = math.max(top, 0), math.min(top + 28, C.H - 1) do
       local wave = math.floor(math.sin((l + t * 0.7) / 5) * 1.5 + 0.5)
       line_scroll(1, l, cx + wave, cy)
     end
-    window(0, 0, math.max(top, 0), C.W - 1, C.H - 1, ALL | FX)
-    window_out(ALL & ~BG0)
   end
   if W.haze_amp > 0 then haze(0, C.H - 1, W.haze_amp, t / 9, 14) end
 end

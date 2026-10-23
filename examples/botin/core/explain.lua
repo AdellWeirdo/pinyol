@@ -16,7 +16,7 @@ function Ex.enter(p)
   play = p
   Ex.active = true
   page, sub, t = 1, 1, 0
-  MASKS = {ALL, BG3 | BACK, BG2 | BACK, BG1 | BACK, BG0 | BACK, OBJ | BACK}
+  MASKS = {ALL, BG2 | BACK, BG1 | BACK, BG0 | BACK, OBJ | BACK}
   achieve("curioso")
 end
 

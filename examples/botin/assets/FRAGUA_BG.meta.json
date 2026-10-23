@@ -1,8 +1,0 @@
-{
-  "asset": "FRAGUA_BG",
-  "type": "tilemap",
-  "tiles": 352,
-  "map_w": 32,
-  "map_h": 28,
-  "palette": "FRAGUA"
-}
