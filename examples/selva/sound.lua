@@ -13,15 +13,18 @@ function M.init()
   sound("SFX_OVER", {wave = "saw", freq = 420, slide = -380, sustain = 0.3, decay = 0.9, volume = 0.36, vibrato = 0.4, vibrato_speed = 14})
   sound("SFX_START", {wave = "square", freq = 262, arp = 1.5, arp_time = 0.09, sustain = 0.2, decay = 0.3, volume = 0.22})
   sound("SFX_TOAST", {wave = "square", freq = 660, arp = 1.5, arp_time = 0.07, sustain = 0.06, decay = 0.2, volume = 0.14})
+  sound("SFX_STEP", {wave = "noise", freq = 500, slide = -300, sustain = 0.0, decay = 0.04, volume = 0.16, lowpass = 0.4})
+  sound("SFX_LAND", {wave = "noise", freq = 380, slide = -200, sustain = 0.01, decay = 0.1, volume = 0.22, lowpass = 0.35})
+  sound("SFX_MILE", {wave = "square", freq = 523, arp = 1.5, arp_time = 0.06, sustain = 0.12, decay = 0.3, volume = 0.2})
   sound("SFX_BLIP", {wave = "square", freq = 880, sustain = 0.0, decay = 0.05, volume = 0.1})
 end
 
 local last = {}
-function M.play(id, gain)
+function M.play(id, gain, opts)
   local now = ticks()
   if last[id] == now then return end
   last[id] = now
-  sfx(id, gain)
+  sfx(id, gain, opts)
 end
 
 return M

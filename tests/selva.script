@@ -4,13 +4,36 @@ new
 tick 60
 expect_lua state == "title"
 shot selva_titulo
-lua W = require("world") V = require("view") z0 = fox.z
+lua W = require("world") V = require("view") M = require("music") z0 = fox.z
+expect_lua M.mode == "soft"
 tick 120
 expect_lua fox.z > z0 + 200 and W.lives == 3
 press A
 tick 3
-expect_lua state == "play" and W.lives == 3 and W.fruit == 0 and fox.y == 0
+expect_lua state == "play" and W.lives == 3 and W.fruit == 0 and fox.y == 0 and M.mode == "full"
 shot selva_correr
+# the feel of the jump: a short press makes a lower jump than a held one; a press a little early waits for the ground; the edge of a pit still holds
+lua W.items = {} fox.x = 0
+tick 5
+press A
+tick 6
+lua short_vy = fox.vy fox.y = 0 fox.vy = 0 fox.coyote = 6 fox.cut = false
+tick 20
+hold A 7
+expect_lua short_vy < fox.vy
+tick 60
+lua fox.y = 8 fox.vy = -1.5 fox.coyote = 0 fox.cut = false
+press A
+tick 8
+expect_lua fox.y > 3
+tick 60
+lua W.items = {{k = "pit", x = 0, z = fox.z - 4, y = 0, alive = true}} fox.coyote = 6
+tick 2
+press A
+tick 4
+expect_lua fox.state == "run" and fox.y > 0
+tick 60
+lua W.items = {}
 # steer: right, then left, held; the fox keeps to the way
 hold RIGHT 25
 expect_lua fox.x > 10 and fox.x <= W.HALF
@@ -49,11 +72,11 @@ press A
 tick 50
 expect_lua W.lives == 3
 # a pit: over it the fox falls, loses a life, and is put back on the way
-lua W.items = {{k = "pit", x = 0, z = fox.z + 30, y = 0, alive = true}}
-tick 20
+lua fox.bump = 0 W.speed = 2.4 W.items = {{k = "pit", x = 0, z = fox.z + 20, y = 0, alive = true}}
+tick 28
 expect_lua fox.state == "fall"
 shot selva_foso
-tick 16
+tick 14
 expect_lua W.lives == 2 and fox.state == "run" and fox.y == 0 and fox.blink > 80
 lua W.items = {}
 # spikes cost a life and the fox hops; it is safe while it blinks
@@ -65,7 +88,7 @@ expect_lua W.lives == 1 and fox.blink > 0
 tick 110
 lua W.items = {{k = "spike", x = fox.x, z = fox.z + 6, y = 0, alive = true}} W.dist = 6500
 tick 8
-expect_lua state == "over" and W.lives == 0 and achievements()[5].done == true
+expect_lua state == "over" and W.lives == 0 and achievements()[5].done == true and M.mode == nil
 shot selva_fin
 tick 60
 press A
@@ -104,6 +127,15 @@ press DOWN
 press A
 tick 2
 expect_lua V.snap == true and V.dither == true and V.fog == true
+press DOWN
+press DOWN
+expect_lua M.on == true
+press A
+tick 2
+expect_lua M.on == false
+press A
+tick 2
+expect_lua M.on == true
 press B
 tick 3
 expect_lua state == "play"

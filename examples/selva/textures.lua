@@ -22,8 +22,11 @@ function M.init()
   -- the path: sandy slabs, each edged darker, grain
   fill("TEX_PATH", 32, 32, {176, 136, 82})
   speckle(32, 32, {176, 136, 82}, 14, 260)
-  rect(0, 0, 32, 2, rgb(112, 80, 44)); rect(0, 0, 2, 32, rgb(112, 80, 44))
-  rect(0, 30, 32, 2, rgb(206, 166, 106)); rect(30, 0, 2, 32, rgb(206, 166, 106))
+  rect(0, 0, 32, 2, rgb(112, 80, 44)) -- a slab's edge, across the way
+  rect(0, 30, 32, 2, rgb(206, 166, 106))
+  rect(0, 0, 4, 32, rgb(92, 58, 38)); rect(28, 0, 4, 32, rgb(92, 58, 38)) -- the kerbs, down both sides
+  rect(4, 0, 1, 32, rgb(214, 176, 118)); rect(27, 0, 1, 32, rgb(214, 176, 118))
+  for y = 0, 28, 8 do rect(0, y, 4, 1, rgb(60, 36, 24)); rect(28, y, 4, 1, rgb(60, 36, 24)) end
   -- a crate: planks, a brace across, nails
   fill("TEX_CRATE", 32, 32, {196, 140, 68})
   speckle(32, 32, {196, 140, 68}, 16, 200)

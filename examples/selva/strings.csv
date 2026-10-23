@@ -18,6 +18,8 @@ dither,Tramado,Tramat,Dither
 dither_d,Un patrón 4×4 en vez de bandas de color.,Un patró 4×4 en lloc de bandes de color.,A 4×4 pattern instead of colour bands.
 fog,Niebla,Boira,Fog
 fog_d,Lo lejano se oscurece en el horizonte.,El que és lluny s'enfosqueix a l'horitzó.,Far things darken into the horizon.
+music,Música,Música,Music
+music_d,Cuatro voces sintetizadas en vivo.,Quatre veus sintetitzades en viu.,Four voices synthesised live.
 affine,Texturas sin perspectiva,Textures sense perspectiva,Textures without perspective
 affine_d,Las losas lejanas se estiran.,Les lloses llunyanes s'estiren.,Far slabs stretch.
 on,SÍ,SÍ,ON
@@ -25,6 +27,12 @@ off,NO,NO,OFF
 faces,caras,cares,faces
 back,B: volver,B: tornar,B: back
 toggle,A: cambiar · Arriba y abajo: elegir,A: canviar · Amunt i avall: triar,A: switch · Up and down: choose
+hint_jump,A: SALTA SOBRE LA CAJA,A: SALTA SOBRE LA CAIXA,A: JUMP ON THE CRATE
+hint_pit,A: SALTA EL FOSO,A: SALTA EL FOSSAT,A: JUMP THE PIT
+hint_spin,B: UN REMOLINO ROMPE CAJAS,B: UN REMOLÍ TRENCA CAIXES,B: A SPIN BREAKS CRATES
+hint_spike,ESQUIVA LOS PINCHOS,ESQUIVA LES PÚES,DODGE THE SPIKES
+milestone,¡{n} m!,{n} m!,{n} m!
+crates,CAJAS,CAIXES,CRATES
 ach_fruta,Primer bocado,Primer mos,First bite
 ach_caja,Cajas fuera,Caixes fora,Crates out
 ach_racha,Racha,Ona,Streak

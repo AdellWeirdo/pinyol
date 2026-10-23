@@ -21,10 +21,11 @@ function M.init()
   models.path = s:build()
   -- a row of three trees, spaced 110 apart, one side (the left; the right is the same mirrored by x)
   s = Models.solid()
-  for i = 0, 2 do s:box(9, 44, 9, 0, 22, i * 110) end
+  local H, W, J = {44, 58, 38}, {40, 52, 34}, {0, 6, -5} -- each tree its own height, width and place across
+  for i = 0, 2 do s:box(9, H[i + 1], 9, J[i + 1], H[i + 1] / 2, i * 110 + J[i + 1]) end
   models.trunks = s:build()
   s = Models.solid()
-  for i = 0, 2 do s:pyramid(40, 40, 46, 0, 36, i * 110) end
+  for i = 0, 2 do s:pyramid(W[i + 1], W[i + 1], H[i + 1] + 4, J[i + 1], H[i + 1] - 8, i * 110 + J[i + 1]) end
   models.leaves = s:build()
   s = Models.solid(); s:box(18, 18, 18, 0, 9, 0); models.crate = s:build()
   s = Models.solid(); s:floor(-46, 46, 0, 40, 0.5); models.pit = s:build()
@@ -51,6 +52,10 @@ function M.sky(t)
   local hy = M.CY
   grad(0, 0, 480, hy - 96, 0x0E1C34, 0x4A3468, {dither = M.dither})
   grad(0, hy - 96, 480, 96, 0x4A3468, 0xF4934C, {dither = M.dither})
+  -- the sun, low, behind the far hills: a ring of a deeper orange and its disc
+  circ(330, hy - 34, 46, 0xF2763A, true)
+  circ(330, hy - 34, 36, 0xFFC468, true)
+  circ(330, hy - 34, 26, 0xFFE59A, true)
   -- distant hills: three dark teal ridges, nearer ones darker
   for layer = 1, 3 do
     local c = ({0x2E4A5A, 0x203A48, 0x142A36})[layer]
@@ -61,7 +66,14 @@ function M.sky(t)
     pts[#pts + 1] = 0; pts[#pts + 1] = base + 1
     poly(pts, c, true)
   end
-  rect(0, hy + 4, 480, 320 - hy - 4, 0x142A36) -- under the path: the dark ground
+  -- the ground beside the way: bands of a mossy dark, lighter toward the horizon
+  local bands = {0x1E3C3C, 0x183238, 0x142A36, 0x102230}
+  local y0 = hy + 4
+  for i, c in ipairs(bands) do
+    local y1 = i == #bands and 320 or y0 + math.floor((320 - hy - 4) * ({0.12, 0.3, 0.6})[i])
+    rect(0, y0, 480, y1 - y0, c)
+    y0 = y1
+  end
 end
 
 function M.haze() -- a warm band on the horizon, over the far ground and under what is near

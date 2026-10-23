@@ -6,15 +6,18 @@ local W = {}
 
 W.HALF = 38           -- how far to the side the fox's middle may go
 local CRATE, TOP = 13, 18 -- a crate: half a width of touch, its top
+local BUFFER, COYOTE = 7, 6   -- ticks a jump pressed too early waits for the ground; ticks the pit's edge still holds the fox
 local LANES = {-24, 0, 24}
 
 local function clamp(v, a, b) return v < a and a or v > b and b or v end
 
 function W.new(seed)
   W.rng = rng.new(seed or 7)
-  W.fox = {x = 0, y = 0, vy = 0, z = 112, spin = 0, spin_t = 0, phase = 0, lean = 0, blink = 0, bump = 0, state = "run", fall_t = 0}
+  W.fox = {x = 0, y = 0, vy = 0, vx = 0, z = 112, spin = 0, spin_t = 0, phase = 0, lean = 0, blink = 0, bump = 0, state = "run", fall_t = 0,
+           buffer = 0, coyote = COYOTE, cut = false, landed = 0}
   W.items, W.next_z = {}, 260
   W.dist, W.fruit, W.lives, W.combo, W.best_combo, W.crates, W.speed, W.t, W.over = 0, 0, 3, 0, 0, 0, 2.4, 0, false
+  W.streak_t, W.streak = 0, 0 -- fruit picked in quick succession (the pitch of the sound climbs)
   W.hook = W.hook or function() end
   W.spawn_to(700)
 end
@@ -78,7 +81,7 @@ local function lose_life(why)
     for _, it in ipairs(W.items) do if it.k == "pit" and it.z <= f.z and it.z + 40 >= f.z - 30 then back = math.min(back, it.z - 30) end end
     f.z, f.x, f.y, f.vy, f.state = back, 0, 0, 0, "run"
   else
-    f.vy = 3.6 -- a hop out of the spikes
+    f.vy, f.coyote = 3.6, 0 -- a hop out of the spikes
   end
 end
 
@@ -89,7 +92,7 @@ local function over_pit(f)
   return false
 end
 
--- inp = {dx = -1..1, jump = pressed, spin = pressed}
+-- inp = {dx = -1..1, jump = pressed, hold = held (a short press makes a short jump), spin = pressed}
 function W.update(inp)
   local f = W.fox
   W.t = W.t + 1
@@ -107,12 +110,23 @@ function W.update(inp)
   if f.bump > 0 then f.bump = f.bump - 1; W.speed = 0.5 else W.speed = W.speed + (target - W.speed) * 0.08 end
   f.z, W.dist = f.z + W.speed, W.dist + W.speed
   local dx = inp.dx or 0
-  f.x = clamp(f.x + dx * 1.9, -W.HALF, W.HALF)
-  f.lean = f.lean + (dx * -14 - f.lean) * 0.2
+  f.vx = f.vx + (dx * 2.1 - f.vx) * 0.28 -- the sideways speed eases in and out
+  f.x = clamp(f.x + f.vx, -W.HALF, W.HALF)
+  if math.abs(f.x) >= W.HALF then f.vx = 0 end
+  f.lean = f.lean + (f.vx * -7 - f.lean) * 0.2
   f.phase = f.phase + W.speed * 0.16
-  -- jump and gravity
-  local grounded = f.y <= 0 and f.vy <= 0
-  if inp.jump and grounded then f.vy = 5.2; W.hook("jump") end
+  if f.landed > 0 then f.landed = f.landed - 1 end
+  local was_air = f.y > 0.01
+  W.streak_t = W.streak_t > 0 and W.streak_t - 1 or 0
+  if W.streak_t == 0 then W.streak = 0 end
+  -- jump and gravity: a press a little early is kept, a little late still counts (the ground just ended), a short press cuts the jump
+  if inp.jump then f.buffer = BUFFER elseif f.buffer > 0 then f.buffer = f.buffer - 1 end
+  local grounded = (f.y <= 0 and f.vy <= 0) or f.coyote > 0 and f.vy <= 0
+  if f.buffer > 0 and grounded then
+    f.vy, f.buffer, f.coyote, f.cut = 5.2, 0, 0, false
+    W.hook("jump")
+  end
+  if f.vy > 2.2 and not inp.hold and not f.cut and f.y > 0 then f.vy, f.cut = f.vy * 0.55, true end
   f.vy = f.vy - 0.28
   f.y = f.y + f.vy
   -- spin
@@ -129,23 +143,24 @@ function W.update(inp)
         if ax < 11 and az < 10 and math.abs(f.y + 8 - it.y) < 16 then
           it.alive = false
           W.fruit = W.fruit + 1
-          W.hook("fruit")
+          W.streak, W.streak_t = W.streak + 1, 45
+          W.hook("fruit", it)
         end
       elseif it.k == "crate" and ax < CRATE and az < CRATE then
-        if f.vy < 0 and f.y >= TOP - 6 then -- landed on it
-          it.alive, f.vy = false, 4.4
+        if f.vy < 0 and f.y >= TOP - 6 then -- landed on it: a higher bounce while A is held
+          it.alive, f.vy, f.cut, f.coyote = false, inp.hold and 5.6 or 4.2, false, 0
           W.crates, W.combo = W.crates + 1, W.combo + 1
           W.best_combo = math.max(W.best_combo, W.combo)
           W.fruit = W.fruit + 1
-          W.hook("crate"); W.hook("stomp")
+          W.hook("crate", it); W.hook("stomp", it)
         elseif f.spin_t > 0 then
           it.alive = false
           W.crates = W.crates + 1
           W.fruit = W.fruit + 1
-          W.hook("crate")
+          W.hook("crate", it)
         elseif f.y < TOP - 4 then -- run into it
           f.z, f.bump = it.z - CRATE, 16
-          W.hook("bump")
+          W.hook("bump", it)
         end
       elseif it.k == "spike" and ax < 15 and math.abs(f.z - (it.z + 7)) < 10 and f.y < 6 and f.blink == 0 then
         lose_life("hurt")
@@ -153,15 +168,21 @@ function W.update(inp)
       end
     end
   end
-  -- the ground, or no ground over a pit
+  -- the ground, or no ground over a pit (the edge holds a moment: the coyote's time)
   if f.y <= 0 then
     if f.vy <= 0 and over_pit(f) then
-      f.state, f.fall_t = "fall", 0
-      W.hook("falling")
-      return
+      f.coyote = f.coyote - 1
+      if f.coyote < 0 then
+        f.state, f.fall_t = "fall", 0
+        W.hook("falling")
+        return
+      end
+      f.y = 0
+    else
+      if was_air then f.landed = 8; W.hook("land") end
+      f.y, f.vy, f.coyote = 0, 0, COYOTE
+      W.combo = 0
     end
-    f.y, f.vy = 0, 0
-    W.combo = 0
   end
   -- more way ahead, less behind
   W.spawn_to(f.z + 560)
@@ -171,7 +192,7 @@ end
 -- what an attract-mode player presses: after the fruit, over pits, onto crates, round spikes
 function W.ai_input()
   local f = W.fox
-  local want, jump, spin = nil, false, false
+  local want, jump = nil, false
   local avoid
   for _, it in ipairs(W.items) do
     local d = it.z - f.z
@@ -188,7 +209,8 @@ function W.ai_input()
   end
   local dx = 0
   if want then dx = clamp((want - f.x) / 8, -1, 1) end
-  return {dx = dx, jump = jump and f.y <= 0, spin = spin}
+  jump = jump and f.y <= 0
+  return {dx = dx, jump = jump, hold = jump or f.vy > 0.5, spin = false}
 end
 
 return W
