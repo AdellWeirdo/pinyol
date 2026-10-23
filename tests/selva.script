@@ -1,0 +1,116 @@
+# Selva: a runner drawn with mesh(): the title plays itself, the fox steers, jumps, lands on crates, spins through them, bumps into them,
+# picks up fruit, falls into a pit, is hurt by spikes, loses its three lives; "Cómo funciona" from the console's menu switches the tricks.
+new
+tick 60
+expect_lua state == "title"
+shot selva_titulo
+lua W = require("world") V = require("view") z0 = fox.z
+tick 120
+expect_lua fox.z > z0 + 200 and W.lives == 3
+press A
+tick 3
+expect_lua state == "play" and W.lives == 3 and W.fruit == 0 and fox.y == 0
+shot selva_correr
+# steer: right, then left, held; the fox keeps to the way
+hold RIGHT 25
+expect_lua fox.x > 10 and fox.x <= W.HALF
+hold LEFT 60
+expect_lua fox.x < -10 and fox.x >= -W.HALF
+# a fruit where the fox runs: picked up (the first achievement)
+lua W.items = {{k = "fruit", x = fox.x, z = fox.z + 8, y = 4, alive = true}}
+tick 8
+expect_lua W.fruit == 1 and achievements()[1].done == true
+# landing on a crate breaks it, bounces the fox, and counts (the second achievement)
+lua W.items = {{k = "crate", x = fox.x, z = fox.z + 4, y = 0, alive = true}} fox.y = 30 fox.vy = -2
+tick 3
+expect_lua W.crates == 1 and W.items[1].alive == false and fox.vy > 0 and achievements()[2].done == true and W.combo == 1
+# three stomps without touching the ground: a streak (the third achievement)
+lua W.combo = 2 W.items = {{k = "crate", x = fox.x, z = fox.z + 4, y = 0, alive = true}} fox.y = 30 fox.vy = -2
+tick 3
+expect_lua W.combo == 3 and achievements()[3].done == true
+shot selva_racha
+# a spin breaks a crate in its way
+tick 80
+lua W.items = {{k = "crate", x = fox.x, z = fox.z + 14, y = 0, alive = true}} fox.y = 0 fox.vy = 0
+press B
+tick 12
+expect_lua W.items[1].alive == false and W.crates == 3
+shot selva_remolino
+# run into a crate: bumped, no life lost
+tick 40
+lua W.items = {{k = "crate", x = fox.x, z = fox.z + 16, y = 0, alive = true}} bumps = 0
+tick 12
+expect_lua fox.bump > 0 and W.lives == 3 and W.items[1].alive == true
+# a jump clears a crate
+tick 30
+lua fox.bump = 0 W.items = {{k = "crate", x = fox.x, z = fox.z + 50, y = 0, alive = true}}
+tick 4
+press A
+tick 50
+expect_lua W.lives == 3
+# a pit: over it the fox falls, loses a life, and is put back on the way
+lua W.items = {{k = "pit", x = 0, z = fox.z + 30, y = 0, alive = true}}
+tick 20
+expect_lua fox.state == "fall"
+shot selva_foso
+tick 16
+expect_lua W.lives == 2 and fox.state == "run" and fox.y == 0 and fox.blink > 80
+lua W.items = {}
+# spikes cost a life and the fox hops; it is safe while it blinks
+tick 110
+lua W.items = {{k = "spike", x = fox.x, z = fox.z + 6, y = 0, alive = true}}
+tick 8
+expect_lua W.lives == 1 and fox.blink > 0
+# the last life: game over, the record kept, back to the title with A
+tick 110
+lua W.items = {{k = "spike", x = fox.x, z = fox.z + 6, y = 0, alive = true}} W.dist = 6500
+tick 8
+expect_lua state == "over" and W.lives == 0 and achievements()[5].done == true
+shot selva_fin
+tick 60
+press A
+tick 3
+expect_lua state == "title"
+# "Cómo funciona": the console's menu, its item, the switches (each changes what the scene does), back with B
+press A
+tick 60
+press MENU
+tick 3
+expect_menu open
+press DOWN
+press A
+tick 4
+expect_lua state == "explain" and achievements()[4].done == true and V.snap == true
+tick 30
+shot selva_como
+press A
+tick 2
+expect_lua V.snap == false and V.dither == true
+press DOWN
+press A
+tick 2
+expect_lua V.dither == false
+press DOWN
+press A
+tick 2
+expect_lua V.fog == false
+shot selva_sin_trucos
+press UP
+press A
+press UP
+press A
+press DOWN
+press DOWN
+press A
+tick 2
+expect_lua V.snap == true and V.dither == true and V.fog == true
+press B
+tick 3
+expect_lua state == "play"
+# the three languages
+lua lang = require("lang") lang.set("ca")
+expect_lua lang.tr("press") == "PREM A"
+lua lang.set("en")
+expect_lua lang.tr("press") == "PRESS A"
+lua lang.set("es")
+expect_lua lang.tr("press") == "PULSA A"

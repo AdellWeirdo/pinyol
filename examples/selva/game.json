@@ -1,0 +1,16 @@
+{
+  "id": "selva",
+  "title": "Selva",
+  "subtitle": "32 bits",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un corredor al estilo de los 32 bits: la cámara va detrás de un zorro que salta cajas, recoge fruta y esquiva fosos por un camino entre árboles. Todo son caras de pocos polígonos con textura, luz plana, niebla y vértices que tiemblan, dibujado con mesh(). Y un menú que enseña cada truco.",
+  "achievements": [
+    {"id": "fruta", "name": "Primer bocado", "description": "Recoge tu primera fruta."},
+    {"id": "caja", "name": "Cajas fuera", "description": "Rompe una caja saltando encima."},
+    {"id": "racha", "name": "Racha", "description": "Rompe tres cajas sin tocar el suelo."},
+    {"id": "curioso", "name": "Bajo el capó", "description": "Mira «Cómo funciona» desde el menú."},
+    {"id": "lejos", "name": "Camino largo", "description": "Corre 1000 metros."}
+  ]
+}

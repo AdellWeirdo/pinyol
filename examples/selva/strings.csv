@@ -1,0 +1,32 @@
+key,es,ca,en
+title,SELVA,SELVA,JUNGLE
+press,PULSA A,PREM A,PRESS A
+demo,DEMO,DEMO,DEMO
+fruit,FRUTA,FRUITA,FRUIT
+metres,{n} m,{n} m,{n} m
+high,RÉCORD,RÈCORD,HIGH SCORE
+game_over,FIN DE LA CARRERA,FI DE LA CURSA,RUN OVER
+new_record,¡NUEVO RÉCORD!,NOU RÈCORD!,NEW RECORD!
+combo,RACHA x{n},ONADA x{n},COMBO x{n}
+controls,Izquierda y derecha: girar · A: saltar · B: remolino,Esquerra i dreta: girar · A: saltar · B: remolí,Left and right: steer · A: jump · B: spin
+hint,MENÚ: Cómo funciona,MENÚ: Com funciona,MENU: How it works
+how,Cómo funciona,Com funciona,How it works
+how_title,LOS TRUCOS DE LOS 32 BITS,ELS TRUCS DELS 32 BITS,THE 32-BIT TRICKS
+snap,Vértices enteros,Vèrtexs sencers,Whole-pixel vertices
+snap_d,Píxeles enteros: los vértices tiemblan.,Píxels sencers: els vèrtexs tremolen.,Whole pixels: vertices wobble.
+dither,Tramado,Tramat,Dither
+dither_d,Un patrón 4×4 en vez de bandas de color.,Un patró 4×4 en lloc de bandes de color.,A 4×4 pattern instead of colour bands.
+fog,Niebla,Boira,Fog
+fog_d,Lo lejano se oscurece en el horizonte.,El que és lluny s'enfosqueix a l'horitzó.,Far things darken into the horizon.
+affine,Texturas sin perspectiva,Textures sense perspectiva,Textures without perspective
+affine_d,Las losas lejanas se estiran.,Les lloses llunyanes s'estiren.,Far slabs stretch.
+on,SÍ,SÍ,ON
+off,NO,NO,OFF
+faces,caras,cares,faces
+back,B: volver,B: tornar,B: back
+toggle,A: cambiar · Arriba y abajo: elegir,A: canviar · Amunt i avall: triar,A: switch · Up and down: choose
+ach_fruta,Primer bocado,Primer mos,First bite
+ach_caja,Cajas fuera,Caixes fora,Crates out
+ach_racha,Racha,Ona,Streak
+ach_curioso,Bajo el capó,Sota el capó,Under the hood
+ach_lejos,Camino largo,Camí llarg,Long road
