@@ -11,7 +11,7 @@ import i18n
 REPO = "https://github.com/ipaud/pinyol"
 RAW = "https://raw.githubusercontent.com/ipaud/pinyol/main"  # the Library's games, read when the page opens
 SITE = "https://pinyol.ipaud.dev/"
-STATS = "https://raw.githubusercontent.com/ipaud/pinyol/stats/stats.json"  # each game's numbers and the ranking: tools/stats.py, daily
+STATS = "https://raw.githubusercontent.com/ipaud/pinyol/stats/stats.json"  # each game's numbers and the ranking: tools/stats.py, hourly
 COUNTER = "https://pinyol.goatcounter.com"  # GoatCounter: visits and plays, no cookies, nothing personal (vendor/goatcounter)  # where it will be published (GitHub Pages); only og:image needs it
 
 # The twelve looks: their example, the console it follows, its frame rate on the console as (slowest, fastest
@@ -281,7 +281,7 @@ def ranking(catalog: str, top: int = 10) -> str:
         ("Lo más votado", f'<p class="more-link"><a class="btn btn-ghost" href="{HOME}biblioteca/#ranking">Ver el ranking completo</a></p>')
     return f"""<section id="ranking" aria-labelledby="ranking-t"><div class="wrap">
 <h2 id="ranking-t">{title}</h2>
-<p class="intro">Los juegos más votados. Se vota con una reacción en la ficha de cada juego; las cifras se actualizan una vez al día.</p>
+<p class="intro">Los juegos más votados. Se vota con una reacción en la ficha de cada juego; las cifras se actualizan cada hora.</p>
 <div class="rank" id="rank" data-src="{STATS}" data-top="{top}"><p class="lib-state">El ranking necesita JavaScript para cargarse.</p></div>
 {more}
 <script type="application/json" id="catalog">{catalog}</script>

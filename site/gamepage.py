@@ -1,6 +1,6 @@
 """A page for each game, juegos/<id>/ (and ca/juegos/<id>/, en/juegos/<id>/): its picture and what it is, its numbers
 (visits, plays, time played, likes, comments, its place in the ranking), its card, its comments and votes, and more
-games. The numbers come from stats.json, which tools/stats.py makes once a day; games.js reads it when the page opens.
+games. The numbers come from stats.json, which tools/stats.py makes every hour; games.js reads it when the page opens.
 The comments and votes are giscus (a GitHub Discussion per game), loaded only when someone asks for them.
 
 The pages are written in Spanish with the site's own links (img/, play/...) and moved down here by i18n.relocate.
@@ -186,7 +186,7 @@ def render(g: dict, games: list[dict], size_kb: int | None) -> str:
 <div><dt>Tiempo jugado</dt><dd data-k="minutes">—</dd></div><div><dt>Me gusta</dt><dd data-k="likes">—</dd></div>
 <div><dt>Comentarios</dt><dd data-k="comments">—</dd></div><div><dt>En el ranking</dt><dd data-k="rank">—</dd></div>
 </dl>
-<p class="tally-note" id="tally-note" role="status">Las cifras se actualizan una vez al día.</p>
+<p class="tally-note" id="tally-note" role="status">Las cifras se actualizan cada hora.</p>
 </div></section>
 <section class="game-sheet" aria-labelledby="sheet-t"><div class="wrap">
 <h2 id="sheet-t">La ficha</h2>

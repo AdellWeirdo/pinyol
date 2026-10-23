@@ -1,4 +1,4 @@
-// The games' numbers, read from stats.json (tools/stats.py makes it once a day): on the home page, the cover of the
+// The games' numbers, read from stats.json (tools/stats.py makes it every hour): on the home page, the cover of the
 // week and the ranking; on a game's page (site/gamepage.py), its numbers, and its comments and votes (giscus), loaded
 // only when asked. Everything from outside goes in as text, never as HTML.
 (() => { // its own scope: site.js, on the same page, has names of its own (LANG, W, el)
@@ -9,19 +9,19 @@ const WORDS = {
         loading: 'Cargando el ranking…', empty: 'Todavía no hay votos. Entra en la ficha de un juego y vota el primero.',
         failed: 'No se ha podido cargar el ranking. Comprueba la conexión.', retry: 'Reintentar', likes: 'me gusta',
         talks: 'comentarios', plays: 'partidas', played: 'jugado', numbersLoading: 'Cargando las cifras…',
-        numbersNone: 'Todavía no hay cifras: se actualizan una vez al día.', numbersFailed: 'No se han podido cargar las cifras.',
+        numbersNone: 'Todavía no hay cifras: se actualizan cada hora.', numbersFailed: 'No se han podido cargar las cifras.',
         numbersAt: d => 'Actualizadas el ' + d + '.', week: 'Semana', sheet: 'Ficha', sheetX: t => 'Ficha de ' + t, noReactions: 'Sin reacciones todavía', reactionsOf: 'Reacciones' },
   ca: { pick: 'El destaquem aquesta setmana', votes: 'El joc més votat de la setmana', comments: 'El joc més comentat de la setmana', random: "Triat a l'atzar aquesta setmana",
         loading: 'Carregant el rànquing…', empty: 'Encara no hi ha vots. Entra a la fitxa d’un joc i vota el primer.',
         failed: "No s'ha pogut carregar el rànquing. Comprova la connexió.", retry: 'Torna-ho a provar', likes: "m'agrada",
         talks: 'comentaris', plays: 'partides', played: 'jugat', numbersLoading: 'Carregant les xifres…',
-        numbersNone: 'Encara no hi ha xifres: s’actualitzen un cop al dia.', numbersFailed: "No s'han pogut carregar les xifres.",
+        numbersNone: 'Encara no hi ha xifres: s’actualitzen cada hora.', numbersFailed: "No s'han pogut carregar les xifres.",
         numbersAt: d => 'Actualitzades el ' + d + '.', week: 'Setmana', sheet: 'Fitxa', sheetX: t => 'Fitxa de ' + t, noReactions: 'Encara sense reaccions', reactionsOf: 'Reaccions' },
   en: { pick: 'Our pick this week', votes: 'The most voted game of the week', comments: 'The most talked-about game of the week', random: 'Picked at random this week',
         loading: 'Loading the ranking…', empty: 'No votes yet. Open a game’s page and be the first to vote.',
         failed: "Couldn't load the ranking. Check the connection.", retry: 'Try again', likes: 'likes',
         talks: 'comments', plays: 'plays', played: 'played', numbersLoading: 'Loading the numbers…',
-        numbersNone: 'No numbers yet: they are updated once a day.', numbersFailed: "Couldn't load the numbers.",
+        numbersNone: 'No numbers yet: they are updated every hour.', numbersFailed: "Couldn't load the numbers.",
         numbersAt: d => 'Updated on ' + d + '.', week: 'Week', sheet: 'Details', sheetX: t => 'Details: ' + t, noReactions: 'No reactions yet', reactionsOf: 'Reactions' },
 };
 const W = WORDS[LANG] || WORDS.es;
@@ -40,7 +40,7 @@ function el(tag, attrs, ...kids) {
   return e;
 }
 
-// stats.json, once per page; null while there is none yet (the daily job has not run: a 404)
+// stats.json, once per page; null while there is none yet (the hourly job has not run: a 404)
 let statsOnce;
 function stats(src) {
   statsOnce = statsOnce || fetch(src, { cache: 'no-cache' }).then(r => {

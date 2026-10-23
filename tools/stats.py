@@ -1,4 +1,4 @@
-"""stats.json: each game's numbers for the site, the ranking and the cover of the week. Run once a day by
+"""stats.json: each game's numbers for the site, the ranking and the cover of the week. Run every hour by
 .github/workflows/stats.yml, which publishes it on the branch "stats"; the site reads it from there (site/src/games.js).
 
     GITHUB_TOKEN=... [GOATCOUNTER_TOKEN=...] python3 tools/stats.py stats.json --previous old.json
