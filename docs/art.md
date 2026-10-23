@@ -37,6 +37,12 @@ It writes `assets/PROPS.pk`, `art/.built/PROPS.png` and `props_atlas.lua`. Each 
 A game looks like the console it is made for. Pick one with whoever the game is for (ask, if they have not said),
 then make every picture by that look's rules and start from its example. The engine moves all of them.
 
+**The engine knows the looks as data** (`tools/looks.json`: aliases in three languages, limits, rules, the example, the font pack):
+`uv run tools/looks.py "un juego de metal slug"` names the look a phrase means (`neogeo`; or several, or none: ask),
+`uv run tools/new_game.py games/mygame --lua --look "metal slug"` starts the game marked with it (`look.md`, the look's font pack,
+`"look"` in game.json) and `uv run tools/look_check.py games/mygame` checks what can be checked: colours in a palette bank,
+colours and bits of a packed sprite sheet, the biggest frame, pictures in the vector look, forbidden code (a full-screen canvas in the LCD look).
+
 **Letters too**: every look has a font pack, a `title`, a `body` and a `small` font in the spirit of that console's
 text, made with `uv run tools/font2fnt.py --pack <look> games/<id>`: the 37 packs are in [fonts.md](fonts.md).
 

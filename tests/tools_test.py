@@ -191,3 +191,29 @@ r = subprocess.run([str(Path(sys.argv[1]) / "pinyol_headless"), "--game", str(sh
                     "--script", str(script)], capture_output=True, text=True)
 assert "PASS" in r.stdout + r.stderr, (r.stdout + r.stderr)[-400:]
 print("pk_split: ok")
+
+# looks: the phrase table, the checker catching a breach, new_game --look
+sys.path.insert(0, str(ROOT / "tools"))
+import looks  # noqa: E402
+import look_check  # noqa: E402
+
+for phrase, want in (("un juego de Metal Slug", ["neogeo"]), ("Game Boy Advance", ["gba"]), ("a game boy game", ["gameboy"]), ("pico-8", ["pico8"]),
+                     ("juego de lucha estilo Street Fighter", ["cps2"]), ("algo retro", []), ("un juego de la NES", ["gameboy"])):
+    got = looks.resolve(phrase)[0]
+    assert got == want, (phrase, got)
+bad = out / "badlook"
+(bad / "assets").mkdir(parents=True)
+(bad / "main.lua").write_text("c = canvas(480, 320)\n")
+(bad / "assets/HERO.meta.json").write_text(json.dumps({"asset": "HERO", "type": "sprite", "format": "idx8", "w": 48, "h": 48}))
+(bad / "assets/WORLD.pal").write_bytes(struct.pack("<16H", 0, *range(1, 6), *([0] * 10)))  # one bank with five colours
+errs, _ = look_check.check(bad, looks.get("gameboy"))
+assert len(errs) == 2 and "5 colours" in errs[0] and "48x48" in errs[1], errs
+errs, _ = look_check.check(bad, looks.get("lcd"))
+assert len(errs) == 1 and "canvas" in errs[0], errs
+r = subprocess.run([sys.executable, str(ROOT / "tools/new_game.py"), str(out / "lookgame"), "--lua", "--look", "metal slug"], capture_output=True, text=True)
+assert r.returncode == 0 and "look neogeo" in r.stdout, r.stdout + r.stderr
+assert json.loads((out / "lookgame/game.json").read_text())["look"] == "neogeo" and (out / "lookgame/look.md").exists()
+assert look_check.check(out / "lookgame", looks.get("neogeo"))[0] == []
+r = subprocess.run([sys.executable, str(ROOT / "tools/new_game.py"), str(out / "nolook"), "--lua", "--look", "algo retro"], capture_output=True, text=True)
+assert r.returncode != 0 and not (out / "nolook").exists(), r.stderr
+print("looks: ok")

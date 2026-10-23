@@ -1,0 +1,144 @@
+{
+  "_doc": "The engine's looks: what a game made 'for a console' means, as data. Read by tools/looks.py (the phrase -> look table), tools/look_check.py (the checker) and tools/new_game.py --look. Prose rules stay in docs/art.md ('Choose a look'); the numbers here are the ones that can be checked. limits: pal_bank_colours = most colours in a 16-entry bank of a .pal (index 0 is see-through); image_bpp / image_colours = most for a packed picture; sprite = largest frame; pictures = false means no picture assets at all.",
+  "looks": [
+    {
+      "id": "gameboy", "name": "Game Boy", "example": "cerezo", "method": "code", "font_pack": "game_boy",
+      "era": "1998 · four greens, a world of screens", "fps": 60,
+      "world": "240x160 (status bar on top, level under it)",
+      "aliases": ["game boy", "gameboy", "game boy color", "gbc", "dmg", "juego de gameboy", "consola verde"],
+      "limits": {"pal_bank_colours": 4, "sprite": [32, 32]},
+      "style": "Game Boy pixel art, four shades of green, 8x8 tiles, no anti-aliasing",
+      "rules": ["four tones, lightest to darkest, written into WORLD.pal / OBJ.pal before converting so pal() recolours the whole game",
+                "8x8 tiles in one background layer, 16x16 sprites, a status bar and dialogue as a window layer",
+                "two square voices and a noise; music as 4-channel .mod or tone()"],
+      "avoid": ["drawing a 160x144 console case around the screen (wastes a third of it) unless asked", "more than four tones in a bank"]
+    },
+    {
+      "id": "spectrum", "name": "ZX Spectrum", "example": "socavon", "method": "code", "font_pack": "zx_spectrum",
+      "era": "1982 · two colours per block", "fps": 60,
+      "world": "224x144 inside a one-colour border",
+      "aliases": ["zx spectrum", "spectrum", "zx", "sinclair", "amstrad", "cpc", "commodore 64", "c64", "msx", "atari 2600"],
+      "limits": {"pal_bank_colours": 2, "sprite": [32, 32]},
+      "style": "ZX Spectrum pixel art, two colours per 8x8 block, bright and normal, colour clash",
+      "rules": ["an ink and a paper per 8x8 block from the fifteen colours; blocks drawn in two key colours, coloured by a palette bank per block",
+                "sprites are ink only and take the bank of the block they stand in (the colour clash)",
+                "one square voice (the beeper)"],
+      "avoid": ["a third colour inside a block", "smooth gradients"]
+    },
+    {
+      "id": "pico8", "name": "PICO-8", "example": "tumba", "method": "code", "font_pack": "pico8",
+      "era": "2015 · 128x128 · sixteen colours", "fps": 60,
+      "world": "128x128 in the middle of the 240x160 world",
+      "aliases": ["pico-8", "pico8", "pico 8", "tic-80", "tic80", "consola de fantasia", "fantasy console"],
+      "limits": {"pal_bank_colours": 16, "sprite": [32, 32]},
+      "style": "PICO-8 pixel art, the sixteen fixed colours, 8x8 sprites",
+      "rules": ["the sixteen PICO-8 colours and no others, at palette indices 1-16", "a 16x16 map of 8x8 tiles, pal() for fades", "four chiptune channels with tone()"],
+      "avoid": ["any colour outside the sixteen"]
+    },
+    {
+      "id": "lcd", "name": "Pocket LCD", "example": "malabar", "method": "code", "font_pack": "pocket_lcd",
+      "era": "1980 · figures that light up", "fps": 60,
+      "world": "the handheld's plate, glass drawn once",
+      "aliases": ["lcd", "game & watch", "game and watch", "game watch", "maquinita", "maquineta", "pocket lcd", "tiger electronics", "maquina lcd"],
+      "limits": {"forbid_lua": ["canvas\\(\\s*480"]},
+      "style": "pocket LCD game: fixed figures on or off over a printed picture",
+      "rules": ["every figure is a fixed shape, on (dark) or off (a faint ghost); all polygons", "the glass is drawn once and kept as one picture, only what is on is drawn each frame",
+                "steps with a beep, faster as the score grows; seven-segment score, games A and B"],
+      "avoid": ["a full-screen 480x320 canvas for the glass (about 100 ms a frame on the console)"]
+    },
+    {
+      "id": "vector", "name": "Vector arcade", "example": "pozo", "method": "code", "font_pack": "vector_arcade",
+      "era": "1979 · only glowing lines", "fps": 60,
+      "world": "full resolution, lines on black",
+      "aliases": ["vector", "vectorial", "asteroids", "vectrex", "arcade vectorial", "lineas brillantes"],
+      "limits": {"pictures": false},
+      "style": "vector arcade: bright lines on black with a soft glow",
+      "rules": ["no pictures at all: poly/line only", "an outline is ONE poly() call (cost is by call, not by pixel); keep strokes in a list and draw every glow, then every core",
+                "letters made of strokes"],
+      "avoid": ["a glow picture under the lines (4-5 ms a frame)", "filled sprites"]
+    },
+    {
+      "id": "gba", "name": "Game Boy Advance", "example": "botin", "method": "code", "font_pack": "gba",
+      "era": "2001 · layers, sprites, water that ripples", "fps": 60,
+      "world": "240x160",
+      "aliases": ["game boy advance", "gba", "gameboy advance", "ds", "nintendo ds", "psp", "wario land", "metroid fusion"],
+      "limits": {"pal_bank_colours": 15, "sprite": [64, 64]},
+      "style": "16-bit handheld pixel art, 4 to 8 colours per sprite, hard pixel edges, no anti-aliasing",
+      "rules": ["characters 16 to 32 px, 8x8 tiles in sixteen-colour banks, 128 sprites", "a full-screen layer costs about a fifth of a frame on the console: paint sky + hills into one picture and scroll it with line_scroll",
+                "blend, window+fade and whole-screen ripples cost a third to two thirds of a frame each: use them on part of the screen"],
+      "avoid": ["four full layers (the first Botín ran at 30 fps)", "more than 15 colours in a bank"]
+    },
+    {
+      "id": "16bits", "name": "Super Nintendo · Mega Drive", "example": "veloz", "method": "code", "font_pack": "snes",
+      "era": "1991 · speed and per-line scroll", "fps": 60,
+      "world": "240x160",
+      "aliases": ["snes", "super nintendo", "super famicom", "mega drive", "megadrive", "genesis", "sega genesis", "16 bits", "16-bit", "16 bit", "amiga", "atari st", "sonic"],
+      "limits": {"pal_bank_colours": 15, "sprite": [64, 64]},
+      "style": "16-bit console pixel art, 15 colours per sprite, bold outlines, saturated colours, no anti-aliasing",
+      "rules": ["sprites up to 32x32 (bigger in a few), 15 colours each or fewer", "Mega Drive: far layers at a different speed per line (line_scroll); SNES: line_backdrop sky, blend water, mosaic between scenes, Mode 7 floors"],
+      "avoid": ["anti-aliased edges"]
+    },
+    {
+      "id": "32bits", "name": "PlayStation · Saturn 2D", "example": "gotico", "method": "generated", "font_pack": "playstation",
+      "era": "1997 · 256 colours, translucent light", "fps": 60,
+      "world": "480x320 pictures",
+      "aliases": ["playstation", "ps1", "psx", "ps one", "saturn", "sega saturn", "32 bits", "32-bit", "32 bit", "nintendo 64", "n64", "dreamcast", "castlevania symphony"],
+      "limits": {"image_bpp": 8, "image_colours": 256},
+      "style": "late-1990s 32-bit console 2D sprite art, up to 256 colours, smooth careful shading, crisp pixel edges",
+      "rules": ["characters about 90 px in up to 256 colours", "light and transparency: img add / alpha for glows and ghosts, only on what moves (a mixed pixel costs about three plain ones)",
+                "a picture drawn by quad() should be 128x128 or less; dither = true gives the PlayStation's pattern", "sounds as ADPCM and a reverb room for the whole soundtrack"],
+      "avoid": ["a quad texture bigger than 128x128 (six times the cost)", "dozens of mixed full-screen effects"]
+    },
+    {
+      "id": "neogeo", "name": "Neo Geo", "example": "paella", "method": "generated", "font_pack": "neo_geo",
+      "era": "1990 · huge sprites at full resolution", "fps": 60,
+      "world": "480x320 pictures",
+      "aliases": ["neo geo", "neogeo", "neo-geo", "mvs", "snk", "metal slug", "run and gun", "run & gun", "king of fighters", "samurai shodown", "arcade snk"],
+      "limits": {"image_bpp": 8, "image_colours": 256},
+      "style": "mid-1990s Neo Geo sprite art, painterly, 3 to 4 tones per material, hard pixel edges, no anti-aliasing",
+      "rules": ["every pixel at 480x320 with img() of packed pictures; characters 90 to 180 px", "sheets in pieces of ten frames (tools/pk_split.py) so the console never needs one big block",
+                "hand-animated frames in quantity, comic deaths; sprites can only be shrunk, never grown",
+                "one reference image per character, then one sheet per move (docs/art.md section 2); fit scale and baseline in code"],
+      "avoid": ["code-drawn characters next to painted backgrounds (Paella's first version looked flat)", "one big picture per sheet (PSRAM fragments)"]
+    },
+    {
+      "id": "cps2", "name": "CPS2", "example": "torneo", "method": "generated", "font_pack": "cps2",
+      "era": "1993 · fifteen colours per fighter", "fps": 60,
+      "world": "480x320 pictures",
+      "aliases": ["cps2", "cps-2", "cps 2", "cps ii", "capcom", "street fighter", "capcom arcade", "marvel vs capcom", "juego de lucha", "fighting game"],
+      "limits": {"image_bpp": 4, "image_colours": 16},
+      "style": "mid-1990s 2D arcade fighting game sprite, hand-pixelled, bold dark outline, cel shading with 3 or 4 tones per material, about 15 colours in total",
+      "rules": ["characters 125 to 140 px in 15 colours and see-through (--colours 16, four bits a pixel)", "no zoom: everyone keeps the size they were drawn at, the camera only pans",
+                "a floor in perspective drawn in bands of rows, pillars in front, the same character in other colours with pal()"],
+      "avoid": ["more than 15 colours in a character", "zooming sprites"]
+    },
+    {
+      "id": "vertical", "name": "Vertical arcade", "example": "tormenta", "method": "code", "font_pack": "arcade_80s",
+      "era": "1985 · the screen stood up", "fps": 60,
+      "world": "320x480 canvas shown turned 90 degrees",
+      "aliases": ["vertical", "arcade vertical", "recreativa vertical", "shmup", "shoot em up", "matamarcianos", "1942", "raiden", "tate", "scroll vertical"],
+      "limits": {},
+      "style": "vertical arcade shooter, bright sprites on a dark scrolling field",
+      "rules": ["draw on a 320x480 canvas standing up, shown with img(..., {angle = 90}); the console is held on its side", "read the arrows turned the same way", "hundreds of bullets as swarms"],
+      "avoid": ["forgetting that the player holds the console on its side"]
+    },
+    {
+      "id": "firstperson", "name": "First person", "example": "laberinto", "method": "code", "font_pack": "dos_vga",
+      "era": "1992 · Wolfenstein 3D", "fps": 60,
+      "world": "240x160 raycast canvas shown twice as big under a status bar",
+      "aliases": ["primera persona", "first person", "first-person", "wolfenstein", "doom", "raycast", "raycaster", "laberinto 3d", "dungeon crawler"],
+      "limits": {"sprite": [64, 64]},
+      "style": "early 1990s raycaster, 32x32 or 64x64 wall textures, 32x32 sprites in the maze",
+      "rules": ["raycast() onto a 240x160 canvas shown twice as big", "walls are 32x32 (or 64x64) textures, sprites 32x32 pictures standing in the maze"],
+      "avoid": ["textures bigger than 64x64"]
+    }
+  ],
+  "nearest": {
+    "nes": ["gameboy", "NES: use the Game Boy rules (8x8 tiles, banks of 4 colours = 3 + see-through) but the NES colours, a palette per bank"],
+    "famicom": ["gameboy", "same as NES"],
+    "master system": ["gameboy", "8-bit tiles and banks; 16 colours of a 64 palette"],
+    "game gear": ["gameboy", "same as master system, a small screen"],
+    "pc engine": ["16bits", "tiles and sprites like the 16-bit looks, 512 colours; fewer colours per bank"],
+    "turbografx": ["16bits", "same as PC Engine"]
+  }
+}
