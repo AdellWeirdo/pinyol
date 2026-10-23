@@ -62,8 +62,16 @@ local function chunk(z)
   end
 end
 
+-- more way ahead: a stretch at a time, its things put in order of z (the rules and the drawing then look only at what is near)
 function W.spawn_to(z)
-  while W.next_z < z do W.next_z = W.next_z + chunk(W.next_z) + 40 end
+  while W.next_z < z do
+    local first = #W.items + 1
+    W.next_z = W.next_z + chunk(W.next_z) + 40
+    local new = {}
+    for i = first, #W.items do new[#new + 1] = W.items[i] end
+    table.sort(new, function(a, b) return a.z < b.z end)
+    for i, it in ipairs(new) do W.items[first + i - 1] = it end
+  end
 end
 
 local function lose_life(why)
@@ -137,7 +145,8 @@ function W.update(inp)
   end
   -- things on the way
   for _, it in ipairs(W.items) do
-    if it.alive then
+    if it.z > f.z + 40 then break end -- (in order of z: nothing further on is within reach)
+    if it.alive and it.z > f.z - 40 then
       local ax, az = math.abs(f.x - it.x), math.abs(f.z - it.z)
       if it.k == "fruit" then
         if ax < 11 and az < 10 and math.abs(f.y + 8 - it.y) < 16 then
@@ -196,7 +205,8 @@ function W.ai_input()
   local avoid
   for _, it in ipairs(W.items) do
     local d = it.z - f.z
-    if it.alive and d > -6 and d < 120 then
+    if d > 120 then break end
+    if it.alive and d > -6 then
       if it.k == "fruit" and not want and d < 100 and it.y < 12 then want = it.x end
       if it.k == "pit" and d < 52 and d > -36 then jump = true end
       if (it.k == "spike" or it.k == "crate") and d > 0 and d < 56 and math.abs(it.x - f.x) < 22 then avoid = it end

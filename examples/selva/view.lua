@@ -15,11 +15,13 @@ local function ground_y() return M.CAM_H end -- the ground is this far below the
 function M.init()
   local s
   -- the path: slabs of 40, getting longer toward the horizon (one picture each: far ones stretch, as a PlayStation's did)
-  s = Models.solid(); s:floor(-46, 46, 0, 40, 0); s:floor(-46, 46, 40, 80, 0); models.path_near = s:build() -- (no light: it is the most of the pixels)
+  -- the path in three runs, each with its own darkness baked into its picture and no light at all (the fog of this look is the picture's)
+  s = Models.solid(); s:floor(-46, 46, 0, 40, 0); s:floor(-46, 46, 40, 80, 0); models.path_near = s:build()
+  s = Models.solid(); s:floor(-46, 46, 80, 120, 0); s:floor(-46, 46, 120, 160, 0); s:floor(-46, 46, 160, 200, 0); models.path_mid = s:build()
   s = Models.solid()
-  local z = 80
-  for _, len in ipairs({40, 40, 40, 80, 160, 320, 640}) do s:floor(-46, 46, z, z + len, 0) z = z + len end
-  models.path = s:build()
+  local z = 200
+  for _, len in ipairs({80, 160, 320, 640}) do s:floor(-46, 46, z, z + len, 0) z = z + len end
+  models.path_far = s:build()
   -- a row of three trees, spaced 140 apart, one side (the left; the right is the same mirrored by x). Smaller than they were: the near ones are
   -- the most of the pixels, and each is cut away when it comes too close (the mesh's `near`)
   s = Models.solid()
@@ -55,55 +57,56 @@ function M.project(x, y, z, cam)
   return M.CX + (x - cam.x) * k, M.CY + (M.CAM_H - y) * k, k
 end
 
--- The sky, the sun, the hills and the ground beside the way never change: they are painted once on a picture the size of the screen and that is drawn
--- each frame (the polygons of the hills alone were most of the strips' time on the console). Painted again when the dither is switched.
+-- The sky, the sun, the hills and the ground beside the way never change: they are painted once, at half the screen's size, on a picture that is the
+-- PPU's background layer (drawn for next to nothing, and doubled). Drawing them each frame took most of the strips' time on the console (the polygons
+-- of the hills alone 29 ms), and copying a full-size picture with img took more. Painted again when the dither is switched.
 local backdrop_dither = nil
 
 local function paint_backdrop()
-  canvas("BACKDROP", 480, 320); target("BACKDROP")
-  local hy = M.CY
-  grad(0, 0, 480, hy - 96, 0x0E1C34, 0x4A3468, {dither = M.dither})
-  grad(0, hy - 96, 480, 96, 0x4A3468, 0xF4934C, {dither = M.dither})
+  canvas("BACKDROP", 240, 160); target("BACKDROP")
+  local hy = M.CY // 2
+  grad(0, 0, 240, hy - 48, 0x0E1C34, 0x4A3468, {dither = M.dither})
+  grad(0, hy - 48, 240, 48, 0x4A3468, 0xF4934C, {dither = M.dither})
   -- the sun, low, behind the far hills: a ring of a deeper orange and its disc
-  circ(330, hy - 34, 46, 0xF2763A, true)
-  circ(330, hy - 34, 36, 0xFFC468, true)
-  circ(330, hy - 34, 26, 0xFFE59A, true)
+  circ(165, hy - 17, 23, 0xF2763A, true)
+  circ(165, hy - 17, 18, 0xFFC468, true)
+  circ(165, hy - 17, 13, 0xFFE59A, true)
   -- distant hills: three dark teal ridges, nearer ones darker
   for layer = 1, 3 do
     local c = ({0x2E4A5A, 0x203A48, 0x142A36})[layer]
-    local base = hy + 2 * layer + 4
+    local base = hy + layer + 2
     local pts = {0, base}
-    for x = 0, 480, 40 do pts[#pts + 1] = x; pts[#pts + 1] = base - 14 - layer * 6 - ((x * (7 + layer * 3) + layer * 53) % 17) end
-    pts[#pts + 1] = 480; pts[#pts + 1] = base + 1
+    for x = 0, 240, 20 do pts[#pts + 1] = x; pts[#pts + 1] = base - 7 - layer * 3 - (((x * 2) * (7 + layer * 3) + layer * 53) % 17) // 2 end
+    pts[#pts + 1] = 240; pts[#pts + 1] = base + 1
     pts[#pts + 1] = 0; pts[#pts + 1] = base + 1
     poly(pts, c, true)
   end
   -- the ground beside the way: bands of a mossy dark, lighter toward the horizon
   local bands = {0x1E3C3C, 0x183238, 0x142A36, 0x102230}
-  local y0 = hy + 4
+  local y0 = hy + 2
   for i, c in ipairs(bands) do
-    local y1 = i == #bands and 320 or y0 + math.floor((320 - hy - 4) * ({0.12, 0.3, 0.6})[i])
-    rect(0, y0, 480, y1 - y0, c)
+    local y1 = i == #bands and 160 or y0 + math.floor((160 - hy - 2) * ({0.12, 0.3, 0.6})[i])
+    rect(0, y0, 240, y1 - y0, c)
     y0 = y1
   end
   target()
+  bg(3, {image = "BACKDROP"})
   backdrop_dither = M.dither
 end
 
 function M.sky(t)
   if backdrop_dither ~= M.dither then paint_backdrop() end
-  img("BACKDROP", 0, 0)
 end
 
-function M.haze() -- a warm band on the horizon, over the far ground and under what is near
-  if M.fog then grad(0, M.CY - 18, 480, 46, 0x000000, 0x5A2A12, {add = true, alpha = 0.5, dither = M.dither}) end
-end
+function M.haze() end -- (a warm band over the horizon was here: two milliseconds a frame on the console, and the backdrop has the glow)
 
 -- the world seen from `cam` ({x, z}): the rolling path and the two rows of trees
 function M.path(cam)
   local oz = -(cam.z % 40) + 40
-  return call(models.path_near, "TEX_PATH", -cam.x, ground_y(), oz, {0, 0, 0}, {light = false, fade = false})
-       + call(models.path, "TEX_PATH", -cam.x, ground_y(), oz, {0, 0, 0}, {fade = M.fog and FADE_FAR or nil})
+  local bare = {light = false, fade = false}
+  return call(models.path_near, "TEX_PATH", -cam.x, ground_y(), oz, {0, 0, 0}, bare)
+       + call(models.path_mid, M.fog and "TEX_PATH_1" or "TEX_PATH", -cam.x, ground_y(), oz, {0, 0, 0}, bare)
+       + call(models.path_far, M.fog and "TEX_PATH_2" or "TEX_PATH", -cam.x, ground_y(), oz, {0, 0, 0}, bare)
 end
 
 function M.trees(cam)

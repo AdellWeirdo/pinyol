@@ -40,24 +40,24 @@ end
 
 local function on_event(ev, it)
   if state ~= "play" then return end -- (the attract mode makes no sound, and throws no chips)
-  if ev == "jump" then Snd.play("SFX_JUMP", 0.6) dust(fox.x, 0, fox.z, 5)
-  elseif ev == "land" then Snd.play("SFX_LAND", 0.8) dust(fox.x, 0, fox.z, 7, 1.6) juice.shake(1.2)
+  if ev == "jump" then Snd.play("SFX_JUMP", 0.6) dust(fox.x, 0, fox.z, 3)
+  elseif ev == "land" then Snd.play("SFX_LAND", 0.8) dust(fox.x, 0, fox.z, 4, 1.6) juice.shake(1.2)
   elseif ev == "fruit" then
     Snd.play("SFX_FRUIT", 0.8, {pitch = 1 + math.min(W.streak - 1, 7) * 0.07})
     local sx, sy = at(it.x, it.y + 6, it.z)
-    fx:burst(sx, sy, 8, {speed = 2.2, angle = -90, spread = 360, gravity = 0.04, life = 22, size = 2.5, colours = SPARK, shape = "square"})
+    fx:burst(sx, sy, 5, {speed = 2.2, angle = -90, spread = 360, gravity = 0.04, life = 22, size = 2.5, colours = SPARK, shape = "square"})
     pulse = 10
     if W.fruit == 1 then earn("fruta") end
   elseif ev == "crate" then
     Snd.play("SFX_CRATE") earn("caja")
     local sx, sy = at(it.x, 10, it.z)
-    fx:burst(sx, sy, 16, {speed = 3.4, angle = -90, spread = 200, gravity = 0.2, life = 30, size = 3, colours = WOOD, shape = "square"})
+    fx:burst(sx, sy, 10, {speed = 3.4, angle = -90, spread = 200, gravity = 0.2, life = 30, size = 3, colours = WOOD, shape = "square"})
     juice.shake(3) juice.freeze(3)
     pulse = 10
   elseif ev == "stomp" then
     Snd.play("SFX_STOMP")
     if W.combo >= 3 then earn("racha") combo_show = 90 end
-  elseif ev == "bump" then Snd.play("SFX_BUMP") juice.shake(2.5) dust(fox.x, 0, fox.z + 8, 5)
+  elseif ev == "bump" then Snd.play("SFX_BUMP") juice.shake(2.5) dust(fox.x, 0, fox.z + 8, 3)
   elseif ev == "hurt" then Snd.play("SFX_HURT") juice.shake(6) juice.flash(0xE04020, 4)
   elseif ev == "falling" then Snd.play("SFX_FALL")
   elseif ev == "fall" then Snd.play("SFX_HURT") juice.shake(5)
@@ -76,7 +76,7 @@ local function new_run(seed) -- a run: the demo's, or the player's
 end
 
 function _init()
-  show(0)
+  show(BG3) -- the backdrop is the PPU's layer 3; everything else is drawn over it
   lang.load()
   Tex.init(); View.init(); Fox.init(); Snd.init()
   best = stored("best", 0)
@@ -134,7 +134,7 @@ function _update()
       step_n = n
       if fox.y <= 0.5 and fox.state == "run" then
         Snd.play("SFX_STEP", 0.5)
-        if n % 3 == 0 then dust(fox.x, 0, fox.z - 6, 1, 0.7) end
+        if n % 4 == 0 then dust(fox.x, 0, fox.z - 6, 1, 0.7) end
       end
     end
     local m = metres()

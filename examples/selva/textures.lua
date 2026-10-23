@@ -27,6 +27,12 @@ function M.init()
   rect(0, 0, 4, 32, rgb(92, 58, 38)); rect(28, 0, 4, 32, rgb(92, 58, 38)) -- the kerbs, down both sides
   rect(4, 0, 1, 32, rgb(214, 176, 118)); rect(27, 0, 1, 32, rgb(214, 176, 118))
   for y = 0, 28, 8 do rect(0, y, 4, 1, rgb(60, 36, 24)); rect(28, y, 4, 1, rgb(60, 36, 24)) end
+  -- the path further away, darker: it is drawn with no light (a lit quad costs more than twice as much), so the fog is baked into the picture
+  for step, k in ipairs({0.74, 0.5}) do
+    canvas("TEX_PATH_" .. step, 32, 32); target("TEX_PATH_" .. step)
+    local c = math.floor(k * 255)
+    img("TEX_PATH", 0, 0, {mul = c << 16 | c << 8 | c})
+  end
   -- a crate: planks, a brace across, nails
   fill("TEX_CRATE", 32, 32, {196, 140, 68})
   speckle(32, 32, {196, 140, 68}, 16, 200)
