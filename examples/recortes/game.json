@@ -1,0 +1,16 @@
+{
+  "id": "recortes",
+  "title": "Recortes",
+  "subtitle": "Ritmo de papel",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un juego de ritmo de llamada y respuesta con personajes de papel recortado, como los de los 32 bits: el maestro sapo canta una frase con los botones y tú la repites a tiempo. Los muñecos son quads que se doblan como papel, los decorados corren por las capas de la PPU y la música suena en vivo en las voces del sintetizador. Y un menú que enseña los trucos.",
+  "achievements": [
+    {"id": "nota", "name": "Primera nota", "description": "Acierta una nota a tiempo."},
+    {"id": "racha", "name": "En racha", "description": "Encadena 12 notas seguidas."},
+    {"id": "genial", "name": "¡Genial!", "description": "Termina una canción con el ánimo al máximo."},
+    {"id": "limpio", "name": "Sin un fallo", "description": "Termina una canción sin fallar ninguna nota."},
+    {"id": "curioso", "name": "Detrás del telón", "description": "Mira «Cómo funciona» desde el menú."}
+  ]
+}

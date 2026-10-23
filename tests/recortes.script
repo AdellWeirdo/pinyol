@@ -1,0 +1,130 @@
+# Recortes: call and response with paper dolls. The title and its song pick, a song played with real buttons, the rules judged without drawing (perfect,
+# late, wrong, never pressed), the mood and its rank, the results and the record, "Cómo funciona" with its switches, the three languages.
+new
+tick 60
+expect_lua state == "title"
+shot recortes_titulo
+lua G = require("game") S = require("song") E = require("explain") M = require("music") P = require("puppet")
+expect_lua song_pick == 1
+press RIGHT
+tick 2
+expect_lua song_pick == 2
+press LEFT
+tick 2
+expect_lua song_pick == 1
+# begin: the intro runs (music alone), then the teacher sings, then it is the player's turn
+press A
+tick 3
+expect_lua state == "play" and G.t < 0 and G.id == 1 and G.total == 25 and G.rank == "good"
+lua first = G.notes[1]
+expect_lua first.button == "a" and first.bar == 2
+# a real press near the first note's time (the clock is set so the press lands a tick before it): judged cool, counted, the first achievement
+lua G.t = 148
+press A
+tick 1
+expect_lua G.count.cool == 1 and first.state == "cool" and G.last.kind == "cool" and achievements()[1].done == true and G.combo == 1
+shot recortes_jugando
+# the wrong button near a note: awful, the combo breaks; a note let pass: a miss; the mood falls
+lua G.t = 185 G.combo = 11 G.best_combo = 11
+press B
+tick 1
+expect_lua G.count.awful == 1 and G.combo == 0 and G.meter < 0.5
+lua G.t = 244
+tick 3
+expect_lua G.count.miss >= 1
+# a streak of twelve: the second achievement (a cool press with the streak at eleven)
+lua G.start(1) G.t = 148 G.combo = 11 G.best_combo = 11
+press A
+tick 1
+expect_lua G.best_combo == 12 and achievements()[2].done == true
+# the end of a song with every note perfect: the mood at the top, no fault, the last two achievements, the record, back to the title
+lua G.count = {cool = 25, good = 0, bad = 0, awful = 0, miss = 0} G.rank = "cool" G.meter = 1 for _, nt in ipairs(G.notes) do nt.state = "cool" end G.t = G.length - 2
+tick 4
+expect_lua state == "results" and G.result.clean == true and G.result.rank == "cool" and achievements()[3].done == true and achievements()[4].done == true
+expect_lua stored("best1", 0) == 100
+shot recortes_resultados
+tick 70
+press A
+tick 3
+expect_lua state == "title"
+# the rules without drawing: every note perfect, then pressed late, then with the wrong button, then never pressed
+lua G.hook = function() end
+lua function pressing(mode) local p = {} for _, nt in ipairs(G.notes) do if nt.state == "pending" then p[nt.button == "a" and "b" or "a"] = nil end end return p end
+lua OFF = {perfect = 0, late = 8, wrong = 0}
+lua function want(nt, mode) local d = G.t + 1 - nt.t return d >= OFF[mode] and d < OFF[mode] + 1 end
+lua function press_for(mode) local p = {} if mode == "none" then return p end for _, nt in ipairs(G.notes) do if nt.state == "pending" and want(nt, mode) then p[mode == "wrong" and (nt.button == "a" and "b" or "a") or nt.button] = true end end return p end
+lua function drive(n, mode) for i = 1, n do G.update(press_for(mode)) end end
+lua G.start(1) G.hook = function() end
+lua drive(500, "perfect")
+lua drive(500, "perfect")
+lua drive(500, "perfect")
+lua drive(500, "perfect")
+expect_lua G.done == true and G.count.cool == 25 and G.result.rank == "cool" and G.result.accuracy == 1 and G.result.best_combo == 25
+lua G.start(1) G.hook = function() end
+lua drive(500, "late")
+lua drive(500, "late")
+lua drive(500, "late")
+lua drive(500, "late")
+expect_lua G.done == true and G.count.bad == 25 and G.result.accuracy < 0.4 and G.result.rank ~= "cool"
+lua G.start(2) G.hook = function() end
+lua drive(500, "wrong")
+lua drive(500, "wrong")
+lua drive(500, "wrong")
+lua drive(500, "wrong")
+expect_lua G.done == true and G.count.awful == G.total and G.result.rank == "awful" and G.meter == 0
+lua G.start(2) G.hook = function() end
+lua drive(500, "none")
+lua drive(500, "none")
+lua drive(500, "none")
+lua drive(500, "none")
+expect_lua G.done == true and G.count.miss == G.total and G.result.rank == "awful" and G.result.clean == false
+lua G.t = -2000
+# "Cómo funciona": the console's menu, its item, the switches, back with B
+press MENU
+tick 3
+expect_menu open
+press DOWN
+press A
+tick 4
+expect_lua state == "explain" and achievements()[5].done == true and E.flags.bend == true and P.flex == true
+tick 20
+shot recortes_como
+press A
+tick 2
+expect_lua E.flags.bend == false and P.flex == false
+shot recortes_sin_doblez
+press DOWN
+press A
+tick 2
+expect_lua E.flags.shadow == false
+press DOWN
+press A
+tick 2
+expect_lua E.flags.layers == false
+press DOWN
+press A
+tick 2
+expect_lua M.on == false
+press A
+tick 2
+expect_lua M.on == true
+press UP
+press UP
+press UP
+press A
+press DOWN
+press A
+press DOWN
+press A
+tick 2
+expect_lua E.flags.bend == true and E.flags.shadow == true and E.flags.layers == true
+press B
+tick 3
+expect_lua state == "title"
+# the three languages
+lua lang = require("lang") lang.set("ca")
+expect_lua lang.tr("press") == "PREM A"
+lua lang.set("en")
+expect_lua lang.tr("press") == "PRESS A"
+lua lang.set("es")
+expect_lua lang.tr("press") == "PULSA A"

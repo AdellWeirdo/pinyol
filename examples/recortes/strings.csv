@@ -1,0 +1,47 @@
+key,es,ca,en
+title,RECORTES,RETALLS,CUT-OUTS
+press,PULSA A,PREM A,PRESS A
+pick,Elige canción: izquierda y derecha,Tria cançó: esquerra i dreta,Pick a song: left and right
+song1,El rap del maestro,El rap del mestre,The teacher's rap
+song2,El ritmo del mar,El ritme del mar,The rhythm of the sea
+best,MEJOR,MILLOR,BEST
+controls,Repite la frase con los botones: A · B · izquierda · derecha,Repeteix la frase amb els botons: A · B · esquerra · dreta,Sing it back with the buttons: A · B · left · right
+hint,MENÚ: Cómo funciona,MENÚ: Com funciona,MENU: How it works
+teacher,EL MAESTRO,EL MESTRE,THE TEACHER
+you,¡TU TURNO!,EL TEU TORN!,YOUR TURN!
+get_ready,¡PREPÁRATE!,PREPARA'T!,GET READY!
+go,¡YA!,JA!,GO!
+cool,¡GENIAL!,GENIAL!,COOL!
+good,BIEN,BÉ,GOOD
+bad,MAL,MALAMENT,BAD
+awful,¡FATAL!,FATAL!,AWFUL!
+miss,FALLO,FALLADA,MISS
+mood,ÁNIMO,ÀNIM,MOOD
+combo,x{n},x{n},x{n}
+done_cool,¡ERES UN GENIO!,ETS UN GENI!,YOU ARE A STAR!
+done_good,MUY BIEN,MOLT BÉ,WELL DONE
+done_bad,SIGUE PRACTICANDO,CONTINUA PRACTICANT,KEEP PRACTISING
+done_awful,¡OTRA VEZ!,UNA ALTRA VEGADA!,TRY AGAIN!
+accuracy,Precisión {n} %,Precisió {n} %,Accuracy {n} %
+longest,Mejor racha {n},Millor ratxa {n},Longest streak {n}
+again,PULSA A,PREM A,PRESS A
+how,Cómo funciona,Com funciona,How it works
+how_title,TRUCOS DEL PAPEL,TRUCS DEL PAPER,PAPER TRICKS
+bend,Papel doblado,Paper doblegat,Bent paper
+bend_d,Cada pieza es un quad que se tuerce y se dobla.,Cada peça és un quad que es torç i es doblega.,Each piece is a quad that turns and bends.
+shadow,Sombras,Ombres,Shadows
+shadow_d,Un quad de suelo más oscuro bajo los pies.,Un quad de terra més fosc sota els peus.,A darker floor quad under the feet.
+layers,Capas de la PPU,Capes de la PPU,PPU layers
+layers_d,Las colinas se deslizan: capas que casi no cuestan.,Els turons llisquen: capes que quasi no costen.,The hills slide: layers that cost next to nothing.
+music,Música,Música,Music
+music_d,Cuatro voces del sintetizador en vivo.,Quatre veus del sintetitzador en directe.,Four live synth voices.
+on,SÍ,SÍ,ON
+off,NO,NO,OFF
+quads,quads,quads,quads
+back,B: volver,B: tornar,B: back
+toggle,A: cambiar · Arriba y abajo: elegir,A: canviar · Amunt i avall: triar,A: switch · Up and down: choose
+ach_nota,Primera nota,Primera nota,First note
+ach_racha,En racha,En ratxa,On a streak
+ach_genial,¡Genial!,Genial!,Cool!
+ach_limpio,Sin un fallo,Sense cap errada,Not one miss
+ach_curioso,Detrás del telón,Darrere el teló,Behind the curtain
