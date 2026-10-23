@@ -217,3 +217,24 @@ assert look_check.check(out / "lookgame", looks.get("neogeo"))[0] == []
 r = subprocess.run([sys.executable, str(ROOT / "tools/new_game.py"), str(out / "nolook"), "--lua", "--look", "algo retro"], capture_output=True, text=True)
 assert r.returncode != 0 and not (out / "nolook").exists(), r.stderr
 print("looks: ok")
+
+# slice_pic + lib/slices: a 400x40 picture cut in 160-px columns, only the ones on screen drawn
+import slice_pic  # noqa: E402
+
+sl = out / "slices"
+shutil.copytree(ROOT / "tests/games/device/fonts", sl / "fonts")
+(sl / "assets").mkdir(parents=True, exist_ok=True)
+Image.new("RGBA", (400, 40), (200, 60, 60, 255)).save(out / "wide.png")
+d = slice_pic.slice_picture(out / "wide.png", sl, "WIDE", 160, [])
+assert [(s["x"], s["w"]) for s in d["slices"]] == [(0, 160), (160, 160), (320, 80)] and (d["w"], d["h"]) == (400, 40), d
+assert all((sl / f"assets/WIDE_{i}.pk").exists() for i in range(3))
+(sl / "wide_slices.lua").write_text(slice_pic.lua_table(d))
+(sl / "game.json").write_text(json.dumps({"id": "slices", "title": "slices", "engine": "pinyol@2", "main": "main.lua"}))
+(sl / "main.lua").write_text('local slices = require("slices")\nlocal def = require("wide_slices")\nn1, n2, n3 = 0, 0, 0\nfunction _init() show(0) end function _update() end\n'
+                             'function _draw() cls(0) n1 = slices.draw(def, 0, 0) n2 = slices.draw(def, -200, 0) n3 = slices.draw(def, 300, 0, {flip_x = true}, 480) end\n')
+script = out / "slices.script"
+script.write_text("tick 2\nshot slices\nexpect_lua n1 == 3\nexpect_lua n2 == 2\nexpect_lua n3 == 2\nexpect_ok\n")
+r = subprocess.run([str(Path(sys.argv[1]) / "pinyol_headless"), "--game", str(sl), "--saves", str(out / "slices_saves"), "--fresh", "--script", str(script)],
+                   capture_output=True, text=True)
+assert "PASS" in r.stdout + r.stderr, (r.stdout + r.stderr)[-400:]
+print("slices: ok")

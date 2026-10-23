@@ -154,7 +154,7 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
     160 but packed pictures are 8 bits either way (only 16 colours is 4 bits), and a cook 20% smaller looked too small: both kept.
   - **Big and many**: the tractor is 224 px wide, the boss is six parts (body, head, wings, legs, a pot, still drawn by code) placed on the body's
     joints, backgrounds are painted chunks of 960 px that repeat behind a pillar, the far layer is mirrored. Every picture is
-    packed (`--packed`), sheets are cut in pieces of ten frames (`tools/pk_split.py`) so the console never needs one big block.
+    packed (`--packed`), sheets are cut in pieces of ten frames (`tools/pk_split.py`) and wide pictures in columns (`tools/slice_pic.py`, drawn by `lib/slices.lua`) so the console never needs one big block.
   - **Neo Geo facts the menu shows**: up to 380 sprites a frame and 96 a line, sprites can only be shrunk (never grown) by
     dropping rows and columns, 15 colours a palette and 256 palettes.
   - **Sound**: songs as MIDI on a bank of samples (rumba, flamenco-rock, pasodoble brass), `gen/songs.py`.
