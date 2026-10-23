@@ -59,7 +59,7 @@ static struct { /* quad's corners and how it is drawn (grad's two colours in lig
     const struct quad_mip *mip; /* quad: the smaller copy of its picture it is sampled from, or NULL */
 } ov_quad[OV_EXT];
 static int nquad;
-#define MESH_SLOTS 16 /* models a game keeps (mesh_new) */
+#define MESH_SLOTS 48 /* models a game keeps (mesh_new): a character in a few baked poses takes a handful */
 #define MESH_POOL 384 /* faces of every mesh() of a frame together */
 static mesh_model *models[MESH_SLOTS];
 static int nmodels;
