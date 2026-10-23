@@ -214,6 +214,7 @@ r = subprocess.run([sys.executable, str(ROOT / "tools/new_game.py"), str(out / "
 assert r.returncode == 0 and "look neogeo" in r.stdout, r.stdout + r.stderr
 assert json.loads((out / "lookgame/game.json").read_text())["look"] == "neogeo" and (out / "lookgame/look.md").exists()
 assert look_check.check(out / "lookgame", looks.get("neogeo"))[0] == []
+assert (out / "lookgame/tests/lookgame.script").exists() and "placeholders" in (out / "lookgame/look.md").read_text()
 r = subprocess.run([sys.executable, str(ROOT / "tools/new_game.py"), str(out / "nolook"), "--lua", "--look", "algo retro"], capture_output=True, text=True)
 assert r.returncode != 0 and not (out / "nolook").exists(), r.stderr
 print("looks: ok")

@@ -246,8 +246,9 @@ def lua_game(game: Path, title: str) -> None:
     shutil.copytree(ROOT / "templates" / "lua", game, dirs_exist_ok=True)
     meta = {"id": game.name, "title": title, "engine": "pinyol@2", "main": "main.lua", "author": "", "description": ""}
     (game / "game.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    for sub in ("fonts", "saves"):
+    for sub in ("fonts", "saves", "tests"):
         (game / sub).mkdir(exist_ok=True)
+    (game / "tests" / f"{game.name}.script").write_text("# plays the game: more lines as it grows (docs/lua.md, Testing)\nnew\ntick 60\nshot start\nexpect_ok\n", encoding="utf-8")
     fonts(game)
     subprocess.run([sys.executable, str(game / "art.py"), "--draw"], check=True, env={**os.environ, "PINYOL": str(ROOT)})
 
@@ -261,6 +262,7 @@ def apply_look(game: Path, look: dict, note: str) -> str:
     subprocess.run([sys.executable, str(ROOT / "tools" / "font2fnt.py"), "--pack", look["font_pack"], str(game)], check=True, capture_output=True)
     lines = [f"# Look: {look['name']} ({look['era']})", "", f"Start from `examples/{look['example']}`. World: {look['world']}. Art: {look['method']}."
              f" Style line: *{look['style']}*.", "", "## Do", *[f"- {r}" for r in look["rules"]], "", "## Avoid", *[f"- {r}" for r in look["avoid"]], "",
+             "The template's room, hero and gems (`art.py`, `room.lua`, `art/`, `assets/`) are placeholders in no look: replace them with art made by these rules.", "",
              f"Limits (checked by `uv run tools/look_check.py {game}`): {json.dumps(look['limits'])}.", "Rules in full: docs/art.md, section 'Choose a look'.",
              *(["", f"Note: {note}"] if note else [])]
     (game / "look.md").write_text("\n".join(lines) + "\n", encoding="utf-8")

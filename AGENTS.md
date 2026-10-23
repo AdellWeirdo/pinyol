@@ -53,7 +53,7 @@ over the box's border or past the screen's edge, readable on what is under it.
 - The look: a game is made to look like a console (Game Boy, ZX Spectrum, PICO-8, a pocket LCD game, a vector
   arcade, Game Boy Advance, SNES / Mega Drive, PlayStation / Saturn 2D, Neo Geo, CPS2, a vertical arcade screen, or
   first person). When the user says "a game like <console or game>", turn their words into a look with
-  `uv run tools/looks.py "<their words>"` (one id: go on; several or none: ask which, before making any art), then
+  `uv run tools/looks.py "<their words>"` (one id: go on; several or none, or no output after uv's first run: ask, or run it again once, before making any art), then
   `uv run tools/new_game.py games/<id> --lua --look <id>` (it writes the look's rules to `look.md`, the font pack and `"look"`
   in game.json), follow that look's rules in [docs/art.md](docs/art.md) ("Choose a look"), start from its example, and
   check the art with `uv run tools/look_check.py games/<id>` (palette banks, colours, sprite sizes, forbidden code).
