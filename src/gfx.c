@@ -909,13 +909,24 @@ void gfx_shade(surface *s, int x, int y, int w, int h) {
     }
 }
 
-/* Every second row of the frame (by its own row number, so windows of it agree) keeps k/256 of its brightness: a tube's scanlines. */
+/* Every second row of the frame (by its own row number, so windows of it agree) keeps k/256 of its brightness: a tube's scanlines. The walk is
+ * along the longer run of the window's memory (a turned strip's columns are contiguous), one pointer and a step, no address worked out a pixel. */
+#define SCAN_PX(d, k, swap)                                                                                                       \
+    do {                                                                                                                          \
+        uint16_t c_ = swap ? (uint16_t)(*(d) >> 8 | *(d) << 8) : *(d);                                                            \
+        c_ = (uint16_t)(((((c_ >> 11) * (k)) >> 8) << 11) | (((((c_ >> 5) & 63) * (k)) >> 8) << 5) | (((c_ & 31) * (k)) >> 8)); \
+        *(d) = swap ? (uint16_t)(c_ >> 8 | c_ << 8) : c_;                                                                         \
+    } while (0)
+
 void gfx_scanlines(surface *s, int k) {
-    for (int y = s->y0 + ((s->y0 & 1) ? 0 : 1); y < s->y0 + s->h; y += 2)
-        for (int x = s->x0; x < s->x0 + s->w; x++) {
-            uint16_t *d = at(s, x, y), c = stored(s, *d);
-            *d = stored(s, (uint16_t)(((((c >> 11) * k) >> 8) << 11) | (((((c >> 5) & 63) * k) >> 8) << 5) | (((c & 31) * k) >> 8)));
-        }
+    const int xs = step_x(s), ys = step_y(s), y_first = s->y0 + ((s->y0 & 1) ? 0 : 1);
+    const bool sw = s->swap;
+    for (int y = y_first; y < s->y0 + s->h; y += 2) {
+        uint16_t *d = at(s, s->x0, y);
+        if (sw) for (int x = 0; x < s->w; x++, d += xs) SCAN_PX(d, k, true);
+        else for (int x = 0; x < s->w; x++, d += xs) SCAN_PX(d, k, false);
+    }
+    (void)ys;
 }
 
 void gfx_upscale2x(const surface *src, surface *dst) {
