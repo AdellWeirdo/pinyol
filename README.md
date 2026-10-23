@@ -24,7 +24,7 @@ takes them again).
 | | |
 |---|---|
 | ![A Game Boy platformer in four tones of green, on the whole screen](docs/looks/gameboy.png) | ![A ZX Spectrum room: blocks of two colours, a miner and a guardian](docs/looks/spectrum.png) |
-| **Game Boy**: [bolsillo](examples/bolsillo), all its art drawn by code | **ZX Spectrum**: [cinta](examples/cinta), from the tape loading |
+| **Game Boy**: [cerezo](examples/cerezo), a Zelda-style adventure | **ZX Spectrum**: [cinta](examples/cinta), from the tape loading |
 | ![A Game Boy Advance platformer with parallax mountains and water](docs/looks/gba.png) | ![A 16-bit speed platformer: checkered earth, a sea moved line by line](docs/looks/16bits.png) |
 | **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), all its art drawn by code |
 | ![A Neo Geo fighting game: two big fighters on a pier at sunset](docs/looks/neogeo.png) | ![A CPS2 fighting game: fighters in 15 colours on a floor in perspective](docs/looks/cps2.png) |
@@ -141,7 +141,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [duelo](examples/duelo) | a fighting game as a Neo Geo's: every pixel at 480x320, a stage in two layers, fighters in 192x184 frames as packed pictures, hit flashes and sparks, a rival played by the console |
 | [torneo](examples/torneo) | a fighting game as a CPS2's: fighters in 15 colours and thirty frames, never zoomed, a floor in perspective drawn in bands of rows, pillars in front, the same fighter twice in other colours |
 | [mazmorra](examples/mazmorra) | a beat-em-up in a dungeon as a CPS2's: goblins and skeletons in groups, torches that flicker, pillars that pass in front of everyone |
-| [bolsillo](examples/bolsillo) | a platformer as a Game Boy's, on the whole screen: four tones, C changes them; all its art drawn by code |
+| [cerezo](examples/cerezo) | a top-down adventure as the last Game Boy ones: a world of screens that slide, a dungeon, a boss, dialogue, four tones that C changes into the Color's palettes; art and music made by code |
 | [cinta](examples/cinta) | a game as a ZX Spectrum's, from the tape loading (striped border, the screen in its own order): blocks of two colours, sprites that clash, a flashing key, air running out |
 | [veloz](examples/veloz) | a speed platformer as the 16-bit consoles': a sea moved line by line, a sky in a gradient, pools seen through, a Mode 7 title; a pangolin that rolls into a ball |
 | [ladrillos](examples/ladrillos) | a brick breaker as a PICO-8 cartridge: a 128x128 screen in its sixteen colours, drawn again every frame; no pictures |

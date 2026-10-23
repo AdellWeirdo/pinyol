@@ -189,7 +189,7 @@ examined.
 
 | # | Genre | Example(s) | Status | Note |
 |---|---|---|---|---|
-| 1 | Mascot platformer | plataformas (GBA look), bolsillo, raton_de_biblioteca (Game Boy look), cinta, oxigeno (ZX look, single screen) | COVERED | plataformas is the GBA reference |
+| 1 | Mascot platformer | plataformas (GBA look), raton_de_biblioteca (Game Boy look; bolsillo in tests/games), cinta, oxigeno (ZX look, single screen) | COVERED | plataformas is the GBA reference |
 | 2 | Speed platformer | veloz (16-bit), costa_relampago (Mega Drive look: ramps, loop, springs) | COVERED | |
 | 3 | Metroidvania | cripta (eight rooms from Tiled, two abilities, map, statues, a boss); gotico (one hall + skull boss) | PARTIAL | eight rooms, not thirty: the picture cache and memory across many areas are not tried |
 | 4 | Run and gun | asalto | COVERED | Mega Man Zero-style dash/wall-cling/rank not shown |

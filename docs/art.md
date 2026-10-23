@@ -46,7 +46,7 @@ do: no quota, and pixels exactly where they should be. A game can even draw ever
 pictures at all (`examples/inventos`, `pozo`, `ladrillos`, `huevos`, `tormenta`).
 Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and CPS2.
 
-### Game Boy: `examples/bolsillo`
+### Game Boy: `examples/cerezo`
 
 - The whole world, 240×160, as a modern Game Boy would show it: a status bar across the top and the level under it.
   No console case drawn around a 160×144 screen (it wastes a third of the screen) unless the user asks for one: then
@@ -55,6 +55,18 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
   tone keeps its index (1-4) and `pal()` changes the whole game's colours at once (as a Game Boy Color did).
 - 8×8 tiles in one background layer, 16×16 sprites, a status bar, two square voices and a noise.
 - Art by code. Style line, if generating: *Game Boy pixel art, four shades of green, 8x8 tiles, no anti-aliasing*.
+- Cerezo is the example of how the last Game Boys did an adventure, and it uses what the engine gives for it:
+  - **Layers as the Game Boy had them**: the ground, a front layer the hero walks behind (a tree's crown), and the
+    status bar and dialogue boxes as a *window* layer of tiles (`mset`), over everything.
+  - **Metatiles of 16×16** (four 8×8 tiles) built by `gen/` from pictures written as text, with automatic edges between
+    terrains (grass, dirt, sand, water); the whole island is 3×3 screens that slide when the hero reaches an edge, and
+    the cave under the mountain is 12 rooms.
+  - **Four tones, and the Color's palettes**: the engine has 8 banks, so a game that tags each tile and sprite with a
+    bank is coloured by C (the menu's palette choice) the way a Game Boy Color coloured a DMG game.
+  - **Per-line effects** for the dark rooms (the window cut to a circle round the hero or the torch) and the sea's
+    waves; palette fades by remapping the tones.
+  - **Music as modules** (`gen/songs.py` writes the 4-channel `.mod` files) and sounds from numbers.
+  - **The menu's "Cómo funciona"** shows the real tiles of the screen magnified, the layers, the sprites and the tones.
 
 ### ZX Spectrum (and Amstrad CPC): `examples/cinta`
 

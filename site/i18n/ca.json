@@ -24,7 +24,7 @@
  "Descargar .zip": "Descarrega el .zip",
  "Un juego de lucha de CPS2: luchadores de quince colores sobre un suelo en perspectiva": "Un joc de lluita de CPS2: lluitadors de quinze colors sobre un terra en perspectiva",
  "1993 · quince colores por luchador": "1993 · quinze colors per lluitador",
- "Un plataformas con la paleta de la Game Boy, a pantalla completa.": "Un joc de plataformes amb la paleta de la Game Boy, a pantalla completa.",
+ "Una aventura al estilo Zelda: una isla, una cueva, un jefe y diálogos.": "Una aventura a l'estil Zelda: una illa, una cova, un cap i diàlegs.",
  "dibujado con código": "dibuixat amb codi",
  "Una sala de ZX Spectrum: bloques de dos colores, un minero y un guardián": "Una sala de ZX Spectrum: blocs de dos colors, un miner i un guardià",
  "1982 · dos colores por bloque": "1982 · dos colors per bloc",
@@ -162,7 +162,7 @@
  "Hola pinyol": "Hola pinyol",
  "duelo": "duelo",
  "torneo": "torneo",
- "bolsillo": "bolsillo",
+ "cerezo": "cerezo",
  "cinta": "cinta",
  "ladrillos": "ladrillos",
  "huevos": "huevos",
@@ -244,8 +244,8 @@
  "La consola (una placa Freenove FNK0104N) arrancando: la intro de pinyol, el menú de Cirera con sus juegos y algunos de ellos en marcha": "La consola, una placa Freenove FNK0104N, en arrencar: la intro de pinyol, el menú de Cirera amb els seus jocs i alguns en marxa",
  "Cada cartucho es un ejemplo jugable con las reglas de su consola: su resolución, sus colores, sus capas. Se juega con el teclado (flechas, Z y X) o, en el móvil, con los botones en pantalla. Las cifras de fps se midieron jugando en la consola real.": "Cada cartutx és un exemple jugable amb les regles de la seva consola: la resolució, els colors, les capes. Es juga amb el teclat (fletxes i Z, X) o, al mòbil, amb els botons de la pantalla. Els fps es van mesurar a la consola real, en plena partida.",
  "Lucha sobre un suelo en perspectiva dibujado en bandas.": "Combat sobre un terra en perspectiva dibuixat en bandes.",
- "Un plataformas en cuatro tonos de verde, a pantalla completa": "Un joc de plataformes en quatre tons de verd a pantalla completa",
- "1989 · cuatro verdes, pantalla completa": "1989 · quatre verds, pantalla completa",
+ "Una plaza empedrada con un cerezo sin hojas y vecinos alrededor, en cuatro tonos de verde": "Una plaça empedrada amb un cirerer sense fulles i veïns al voltant, en quatre tons de verd",
+ "1998 · cuatro verdes, un mundo de pantallas": "1998 · quatre verds, un món de pantalles",
  "Incluye la carga de cinta, con sus franjas de colores.": "Amb la càrrega de cinta, franges de colors i tot.",
  "Un rompeladrillos con la paleta de esta consola de fantasía.": "Un trencamaons amb la paleta d'aquesta consola de fantasia.",
  "Una maquinita LCD: un cocinero que recoge huevos, con figuras que se encienden y se apagan": "Una maquineta LCD: un cuiner que recull ous, amb figures que s'encenen i s'apaguen",
@@ -545,5 +545,6 @@
  "Un corredor al estilo de los 32 bits: la cámara va detrás de un zorro que salta cajas, recoge fruta y esquiva fosos por un camino entre árboles. Todo son caras de pocos polígonos con textura, luz plana, niebla y vértices que tiemblan, dibujado con mesh(). Y un menú que enseña cada truco.": "Un corredor a l'estil dels 32 bits: la càmera va darrere d'una guineu que salta caixes, recull fruita i esquiva forats per un camí entre arbres. Tot són cares de pocs polígons amb textura, llum plana, boira i vèrtexs que tremolen, dibuixat amb mesh(). I un menú que ensenya cada truc.",
  "Una calle de noche, una linterna y algo que te sigue. Cámaras fijas que cambian al cruzar la calle, controles de tanque, niebla que esconde lo lejano y una radio que crepita cuando se acerca. Todo con mesh(), como los juegos de terror de los 32 bits. Y un menú que enseña los trucos.": "Un carrer de nit, una llanterna i alguna cosa que et segueix. Càmeres fixes que canvien en creuar el carrer, controls de tanc, boira que amaga el lluny i una ràdio que cruix quan s'apropa. Tot amb mesh(), com els jocs de por dels 32 bits. I un menú que ensenya els trucs.",
  "Un juego de ritmo de llamada y respuesta con personajes de papel recortado, como los de los 32 bits: el maestro sapo canta una frase con los botones y tú la repites a tiempo. Los muñecos son quads que se doblan como papel, los decorados corren por las capas de la PPU y la música suena en vivo en las voces del sintetizador. Y un menú que enseña los trucos.": "Un joc de ritme de crida i resposta amb personatges de paper retallat, com els dels 32 bits: el mestre gripau canta una frase amb els botons i tu la repeteixes a temps. Els ninots són quads que es doblen com el paper, els decorats corren per les capes de la PPU i la música sona en directe a les veus del sintetitzador. I un menú que ensenya els trucs.",
- "Un juego de lucha uno contra uno con luchadores de bloques, como los primeros de los 32 bits: cámara lateral, puñetazo, patada, barrido, bloqueo y salto, al mejor de tres asaltos contra la máquina. Cada luchador son once cajas con textura movidas con cinemática en Lua y dibujadas con mesh(). Y un menú que enseña los trucos.": "Un joc de lluita un contra un amb lluitadors de blocs, com els primers dels 32 bits: càmera lateral, cop de puny, cop de peu, escombrada, bloqueig i salt, al millor de tres assalts contra la màquina. Cada lluitador són onze caixes amb textura mogudes amb cinemàtica en Lua i dibuixades amb mesh(). I un menú que ensenya els trucs."
+ "Un juego de lucha uno contra uno con luchadores de bloques, como los primeros de los 32 bits: cámara lateral, puñetazo, patada, barrido, bloqueo y salto, al mejor de tres asaltos contra la máquina. Cada luchador son once cajas con textura movidas con cinemática en Lua y dibujadas con mesh(). Y un menú que enseña los trucos.": "Un joc de lluita un contra un amb lluitadors de blocs, com els primers dels 32 bits: càmera lateral, cop de puny, cop de peu, escombrada, bloqueig i salt, al millor de tres assalts contra la màquina. Cada lluitador són onze caixes amb textura mogudes amb cinemàtica en Lua i dibuixades amb mesh(). I un menú que ensenya els trucs.",
+ "Una aventura de acción como las de la última época de la Game Boy: una isla, un pueblo, una cueva bajo el monte y un cerezo que no ha florecido. Cuatro tonos, mosaicos de 8x8, sprites de 16x16 y un menú que enseña cómo lo hacía la consola.": "Una aventura d'acció com les de l'última època de la Game Boy: una illa, un poble, una cova sota la muntanya i un cirerer que no ha florit. Quatre tons, mosaics de 8x8, sprites de 16x16 i un menú que ensenya com ho feia la consola."
 }

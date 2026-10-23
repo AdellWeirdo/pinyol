@@ -1,0 +1,356 @@
+// Cerezo: the conversations, in English. Each == is a knot; the name before the colon is who speaks.
+// Things that happen (give, pay, mark) are functions of core/quest.lua; the flags are the same as in Spanish.
+
+// ------------------------------------------------------------------ the beginning
+== intro_1
+Long ago, on Cherry Island, an enormous cherry tree was born.
+Every spring, everyone came out to see it bloom.
+-> END
+
+== intro_2
+But this year spring arrived...
+and the cherry tree did not wake.
+-> END
+
+== intro_3
+Sprout, the gardener grandchild, is still asleep.
+Soon Granny will be calling.
+-> END
+
+== intro_yaya_llama
+Granny: Sprout! Sprout, get up, the sun is already over the garden!
+-> END
+
+== intro_cama
+Sprout: Five more minutes...
+Granny: Not one! Come down, I have something for you.
+-> END
+
+== intro_pala
+Granny: This spade was your grandfather's. Cut the weeds and dig where the soil is loose.
+Granny: And do not forget the square: Mayor Fig wants a word with you.
+-> END
+
+// ------------------------------------------------------------------ Granny
+== yaya
+[if flag("tree_bloomed")] Granny: Your grandfather would have cried with joy. I cry for both of us.
+[if flag("tree_bloomed")] -> END
+[if flag("topo_dead")] Granny: Is it true, what they say? A mole with a crown? Oh, my dear boy!
+[if flag("topo_dead")] Granny: Run to the square, the cherry tree is waiting for you.
+[if flag("topo_dead")] -> END
+[if flag("seal_open")] Granny: The Root... Your grandfather never went down. Take care, and take the lantern.
+[if flag("seal_open")] -> END
+[if not flag("higuera_met")] Granny: Go to the square, Sprout. Mayor Fig has no patience at all.
+[if not flag("higuera_met")] -> END
+Granny: How is it going? You have {pits()} of three golden pits.
+Granny: Everything in its time, and the cherry tree in spring.
+-> END
+
+== yaya_casa
+Granny: There is soup in the pot. Eat something before you go out.
+[do heal_all()]
+-> END
+
+// ------------------------------------------------------------------ Mayor Fig
+== higuera
+[if flag("tree_bloomed")] Mayor Fig: The Blooming! I never saw anything lovelier, and I have seen plenty.
+[if flag("tree_bloomed")] -> END
+[if flag("topo_dead")] Mayor Fig: You did it! Plant the golden cherry at the foot of the tree.
+[if flag("topo_dead")] -> END
+[if flag("seal_open")] Mayor Fig: The door is open. Down there is something that should not be there.
+[if flag("seal_open")] -> END
+[if flag("higuera_met")] Mayor Fig: Three golden pits, dear Sprout. Three, not one fewer.
+[if flag("higuera_met")] Mayor Fig: Ask the Scarecrow, Acorn and Sardine: the island keeps its secrets.
+[if flag("higuera_met")] -> END
+[do setflag("higuera_met")]
+Mayor Fig: Dear Sprout, the cherry tree has not bloomed and the Blooming Festival is near.
+Mayor Fig: The roots are healthy, says the legend: what is missing is the golden cherry.
+Mayor Fig: Under the mountain there is a cave, the Root. Its door opens only with three golden pits.
+Mayor Fig: Ask the Scarecrow, Acorn and Sardine. I will look after the square.
+-> END
+
+== higuera_casa
+Mayor Fig: Look at this map: the whole island. There are places even I have never set foot in.
+-> END
+
+// ------------------------------------------------------------------ Acorn
+== bellota
+[if flag("bellota_done")] Acorn: No more aphids in my leaf garden! You are the best!
+[if flag("bellota_done")] -> END
+[if flag("bellota_quest") and flag("bellota_kills") >= 3] -> bellota_premio
+[if flag("bellota_quest")] Acorn: Three aphids! Whack them with the spade! Zap!
+[if flag("bellota_quest")] -> END
+Acorn: Hey, hey! You are Sprout, the one with the spade!
+Acorn: Some aphids are eating my leaves! Will you help?
+* Of course! -> bellota_si
+* Not now
+    Acorn: Aw! If you change your mind, I am here.
+    -> END
+
+== bellota_si
+Acorn: Yay! There are aphids all over the forest. Beat three and I give you my slingshot.
+[do setflag("bellota_quest")]
+[do setflag("bellota_kills", 0)]
+-> END
+
+== bellota_premio
+Acorn: Three! You wiped them out! Here, my slingshot. It is the best thing I own.
+[do setflag("bellota_done")]
+[do give("tirachinas")]
+-> END
+
+== bellota_arbol
+Acorn: From my treehouse you can see the Lookout. A crow nests there with something shiny...
+-> END
+
+// ------------------------------------------------------------------ Uncle Walnut and his shop
+== nogal
+[if flag("tree_bloomed")] Uncle Walnut: Everything half price today! Well, two thirds. Well, nothing.
+[if flag("tree_bloomed")] -> END
+Uncle Walnut: Welcome to Walnut's shop, my treasure! The best of the garden.
+-> tienda
+
+== tienda
++ [if not flag("pieza_comprada")] Heart piece: 60 -> comprar_pieza
++ 10 pits: 8 -> comprar_pinyoles
++ Cherry juice: 15 -> comprar_zumo
++ No, thanks -> nogal_adios
+
+== comprar_pieza
+[do ok = pay(60)]
+[if ok] Uncle Walnut: A heart piece! Take care of it, they do not make them any more.
+[if ok] [do setflag("pieza_comprada")]
+[if ok] [do give("pieza_corazon")]
+[if not ok] Uncle Walnut: You are short of cherries, my treasure. Cut plenty of grass.
+-> nogal_fin
+
+== comprar_pinyoles
+[do ok = pay(8)]
+[if ok] Uncle Walnut: Ten pits! With these you never miss.
+[if ok] [do give_pinyoles(10)]
+[if not ok] Uncle Walnut: What you carry will not do, my treasure.
+-> tienda
+
+== comprar_zumo
+[do ok = pay(15)]
+[if ok] Uncle Walnut: Glug, glug, glug! Good as new!
+[if ok] [do heal_all()]
+[if not ok] Uncle Walnut: Fifteen cherries, and this is medicine.
+-> tienda
+
+== nogal_adios
+Uncle Walnut: Come back whenever you like, and bring cherries!
+-> END
+
+== nogal_fin
+Uncle Walnut: Come back any time!
+-> END
+
+// ------------------------------------------------------------------ Sardine
+== sardina
+[if flag("tree_bloomed")] Sardine: They are all biting today. Even the fish came to see the tree.
+[if flag("tree_bloomed")] -> END
+[if flag("sardina_deal")] Sardine: You have my pit. Let us see if the sea gives me another.
+[if flag("sardina_deal")] -> END
+Sardine: ...Psst. Do not scare the fish.
+Sardine: I caught something odd the other day. Round, golden, inside a bream.
+Sardine: I am fond of it. For thirty cherries, it is yours.
+* Pay 30 cherries -> sardina_pago
+* That is a lot
+    Sardine: The sea is patient. So am I.
+    -> END
+
+== sardina_pago
+[do ok = pay(30)]
+[if ok] Sardine: Deal. May the wind be kind to you.
+[if ok] [do setflag("sardina_deal")]
+[if ok] [do give("pinyol_dorado")]
+[if not ok] Sardine: Thirty. Not one fewer. Cut grass, lad.
+-> END
+
+// ------------------------------------------------------------------ the Scarecrow
+== espantajo
+[if flag("espantajo_pista")] Scarecrow: The biggest cabbage hides the secret. Cut, and then dig.
+[if flag("espantajo_pista")] -> END
+[do setflag("espantajo_pista")]
+Scarecrow: Hello, gardener. I have watched this garden for years. I know everything.
+Scarecrow: A golden pit? Under the biggest cabbage there is something that is not a cabbage.
+Scarecrow: Cut with the spade. Then dig. Loose soil does not lie.
+-> END
+
+// ------------------------------------------------------------------ Mustard, the cat
+== mostaza
+{&Meow.|Mrrr...|Meow?|Purr.}
+-> END
+
+// ------------------------------------------------------------------ villagers
+== aldeano_a
+[if flag("tree_bloomed")] Villager: What a spring! What a tree! What everything!
+[if flag("tree_bloomed")] -> END
+{!Villager: They say the cave in the mountain has been shut for centuries.|Villager: My cousin heard noises under the ground. Must have been the soup.|Villager: Without the cherry tree in bloom, the party is no party.}
+-> END
+
+== aldeano_b
+[if flag("tree_bloomed")] Neighbour: Look at all the petals! It is snowing pink!
+[if flag("tree_bloomed")] -> END
+{!Neighbour: I have seen new moles in the gardens. How odd.|Neighbour: I always wondered why the tree has three holes on the mountain.}
+-> END
+
+// ------------------------------------------------------------------ signs
+== cartel_plaza
+Cherry Square. Please do not tread on the flowers... or the cat.
+-> END
+
+== cartel_huerto
+Granny's garden. No taking cabbages. The cabbages know.
+-> END
+
+== cartel_muelle
+Island pier. Whoever fishes, do not bother whoever is fishing.
+-> END
+
+== cartel_monte
+Mountain. Beyond, the Root. Whoever goes in, bring a light.
+-> END
+
+== cartel_mirador
+Lookout. From here you see the whole island... and a little sea.
+-> END
+
+== cartel_bosque
+North Forest. The paths are longer than they look.
+-> END
+
+== cartel_playa
+West Beach. The sand keeps what the sea entrusts to it.
+-> END
+
+// ------------------------------------------------------------------ the cave and the seal
+== sello_vacio
+Three round hollows in the stone, the size of a pit. All three are missing.
+-> END
+
+== sello_parcial
+The hollows are filling. The stone glows a little.
+-> END
+
+== sello_abierto
+The stone splits with a crack. The door of the Root is open.
+-> END
+
+== puerta_cerrada
+The door is locked.
+-> END
+
+== puerta_jefe
+An enormous lock. It needs a big key, a very big one.
+-> END
+
+== estatua_a
+A mole statue holds a stone spade. It says: "What is above is above and what is below, below".
+-> END
+
+== estatua_b
+The statue has its eyes closed. Under it: "Light shows the way to whoever carries it".
+-> END
+
+== cueva_secreta
+A hidden cave. Someone left something here for whoever had patience with the weeds.
+-> END
+
+== libro
+A gardening book. Chapter 1: "How to make a cherry tree bloom". The pages are missing.
+-> END
+
+== cama
+Your bed. It smells of sun and grass.
+-> END
+
+// ------------------------------------------------------------------ items
+== item_pala
+You got the SPADE!
+Press A to cut, dig and fight.
+-> END
+
+== item_tirachinas
+You got the SLINGSHOT!
+Press B to shoot pits. C changes item.
+-> END
+
+== item_linterna
+You got the LANTERN!
+Press B to light it: it brightens dark rooms and burns cobwebs.
+-> END
+
+== item_llave_pequena
+A SMALL KEY!
+It opens a locked door in the cave.
+-> END
+
+== item_llave_jefe
+The BOSS KEY!
+It opens the great door at the back of the cave.
+-> END
+
+== item_mapa
+The cave MAP!
+Pause to see it.
+-> END
+
+== item_brujula
+The COMPASS!
+It marks where the important things are.
+-> END
+
+== item_pinyol_dorado
+A GOLDEN PIT!
+It shines brighter than the midday sun. {3 - pits()} left for the seal.
+-> END
+
+== item_pieza_corazon
+A HEART PIECE!
+With four, your heart grows.
+-> END
+
+== item_contenedor_corazon
+A NEW HEART!
+Your life has grown and you feel freshly rested.
+-> END
+
+== item_cereza_dorada
+The GOLDEN CHERRY!
+Take it to the cherry tree in the square and plant it at its foot.
+-> END
+
+// ------------------------------------------------------------------ the boss and the end
+== topo_intro
+Mole King: Who dares tread in my cellar? My roots! My treasures!
+Mole King: Hey, you! Are you the one who smells of grass? Out of my kingdom!
+-> END
+
+== topo_fin
+Mole King: Ow, ow, ow! My glasses! My crown!
+Mole King: I only wanted something shiny... It looked just like a cherry to me!
+Mole King: Keep the golden cherry. I no longer know what to do with it.
+-> END
+
+== plantar
+Sprout drops the golden cherry at the foot of the cherry tree.
+The ground trembles. Something wakes under the roots.
+-> END
+
+== fin_1
+The cherry tree opened its flowers and the whole island smiled.
+-> END
+
+== fin_2
+Granny, Fig, Acorn, Walnut, Sardine, even the Scarecrow... everyone came to see it.
+-> END
+
+== fin_3
+And in the Root, an old mole learned to look after what was above.
+-> END
+
+== fin_4
+Thank you for playing CEREZO.
+-> END

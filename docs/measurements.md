@@ -849,3 +849,22 @@ an outline of any number of corners is ONE call, so a whole well (a ring, a few 
 or six calls, not a hundred; and the two passes keep one stroke's glow from covering another stroke's bright core.
 `explain.lua` (the menu's "Cómo funciona") keeps working because the frame's strokes are in a list (`vec.snapshot()`),
 not only on the screen.
+
+## 2026-10-23 · Game Boy adventure (Cerezo) on the console
+
+Cerezo's frame is a tile world: the ground, a front layer and the window layer are tile maps the console scrolls, so the
+cost is in the strips (`picture` 4.1-4.4 ms) and not in the game's Lua (`_update` 0.30-0.35 ms, `_draw` about 0.5 ms).
+A silent copy (`volume(0)`, as the other perf builds) was sent with a driver that teleports the hero to 18 places and
+leaves him 5 s in each: the nine screens of the island, Yaya's house and the shop, and seven rooms of the cave (the
+dark room with its circles of light, the beetle's room, the boss arena).
+
+| What was measured | Result |
+|---|---|
+| fps in the 18 places | 58.1 to 59.6 (the one frame of loading showed 49.5) |
+| `render` (the whole frame) | 15.1-16.2 ms |
+| audio, the songs off | 7-12% of a core, 0 underruns |
+| free internal RAM / free PSRAM | 55 KB / about 2.95 MB |
+| script memory | 0.8-1.0 MB |
+
+What it does not cover: the hero stood still and the pests were in their first state, so a fight with several of them
+and the sword's effects on the screen at once were not measured. The numbers are of the draw and the world.

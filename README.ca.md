@@ -24,7 +24,7 @@ Un joc s'assembla a la consola per a la qual està fet, i el motor els mou tots:
 | | |
 |---|---|
 | ![Un joc de plataformes de Game Boy en quatre tons de verd, a pantalla completa](docs/looks/gameboy.png) | ![Una sala de ZX Spectrum: blocs de dos colors, un miner i un guardià](docs/looks/spectrum.png) |
-| **Game Boy**: [bolsillo](examples/bolsillo), tot el seu art dibuixat amb codi | **ZX Spectrum**: [cinta](examples/cinta), des de la càrrega de cinta |
+| **Game Boy**: [cerezo](examples/cerezo), una aventura a l'estil Zelda | **ZX Spectrum**: [cinta](examples/cinta), des de la càrrega de cinta |
 | ![Un joc de plataformes de Game Boy Advance amb muntanyes en paral·laxi i aigua](docs/looks/gba.png) | ![Un joc de plataformes de velocitat de 16 bits: terra a quadres i un mar mogut línia a línia](docs/looks/16bits.png) |
 | **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), tot el seu art dibuixat amb codi |
 | ![Un joc de lluita de Neo Geo: dos lluitadors grans en un moll a la posta de sol](docs/looks/neogeo.png) | ![Un joc de lluita de CPS2: lluitadors de 15 colors sobre un terra en perspectiva](docs/looks/cps2.png) |
@@ -140,7 +140,7 @@ Et queda un joc petit per canviar: una sala més gran que la pantalla, un person
 | [duelo](examples/duelo) | un joc de lluita com els de Neo Geo: cada píxel a 480x320, un escenari en dues capes, lluitadors en fotogrames de 192x184 com a imatges empaquetades, flaixos i espurnes de cop, un rival que juga la consola |
 | [torneo](examples/torneo) | un joc de lluita com els de CPS2: lluitadors en 15 colors i trenta fotogrames, mai ampliats, un terra en perspectiva dibuixat en bandes de files, columnes davant, el mateix lluitador dues vegades en altres colors |
 | [mazmorra](examples/mazmorra) | un beat-em-up en una masmorra com els de CPS2: follets i esquelets en grups, torxes que fan pampallugues, columnes que passen per davant de tothom |
-| [bolsillo](examples/bolsillo) | un joc de plataformes com els de Game Boy, a pantalla completa: quatre tons, C els canvia; tot el seu art dibuixat amb codi |
+| [cerezo](examples/cerezo) | una aventura vista des de dalt com les últimes de Game Boy: un món de pantalles que llisquen, una masmorra, un cap, diàlegs, quatre tons que C canvia per les paletes de la Color; art i música fets amb codi |
 | [cinta](examples/cinta) | un joc com els de ZX Spectrum, des de la càrrega de cinta (vora a ratlles, la pantalla en el seu propi ordre): blocs de dos colors, sprites que es trepitgen el color, una clau que parpelleja, l'aire que s'acaba |
 | [veloz](examples/veloz) | un joc de plataformes de velocitat com els de les consoles de 16 bits: un mar mogut línia a línia, un cel en degradat, tolls transparents, un títol en Mode 7; un pangolí que es fa una bola |
 | [ladrillos](examples/ladrillos) | un trencamaons com un cartutx de PICO-8: una pantalla de 128x128 en els seus setze colors, dibuixada de nou cada frame; sense imatges |

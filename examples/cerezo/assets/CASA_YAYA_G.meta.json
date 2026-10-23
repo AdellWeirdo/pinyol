@@ -1,0 +1,8 @@
+{
+  "asset": "CASA_YAYA_G",
+  "type": "tilemap",
+  "tiles": 369,
+  "map_w": 30,
+  "map_h": 18,
+  "palette": "WORLD"
+}

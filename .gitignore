@@ -9,3 +9,4 @@ site/dist/
 site/.cache/
 /dist/
 art/.built/
+examples/cerezo/art/

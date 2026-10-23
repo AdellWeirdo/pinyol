@@ -1,0 +1,45 @@
+key,es,ca,en
+title,CEREZO,CIRERER,CHERRY
+how,Cómo funciona,Com funciona,How it works
+menu_items,OBJETOS,OBJECTES,ITEMS
+menu_pits,PINYOLES DE ORO,PINYOLS D'OR,GOLDEN PITS
+menu_pieces,Piezas de corazón: {n}/4,Peces de cor: {n}/4,Heart pieces: {n}/4
+menu_palette,Paleta: {name},Paleta: {name},Palette: {name}
+menu_save,Guardar partida,Desar la partida,Save game
+menu_resume,Seguir,Continuar,Resume
+menu_saved,¡Guardado!,Desat!,Saved!
+title_sub,Aventura en la Isla Cerezo,Aventura a l'Illa Cirerer,An adventure on Cherry Isle
+title_new,Nueva partida,Partida nova,New game
+title_continue,Continuar,Continuar,Continue
+gameover,FIN DEL JUEGO,FI DEL JOC,GAME OVER
+gameover_continue,Seguir desde la última partida,Seguir des de l'última partida,Continue from the last save
+gameover_title,Volver al título,Tornar al títol,Back to the title
+how_item,Cómo funciona,Com funciona,How it works
+ex_t1,CAPAS,CAPES,LAYERS
+ex_t2,PIEZAS,PECES,TILES
+ex_t3,SPRITES,SPRITES,SPRITES
+ex_t4,TONOS,TONS,TONES
+ex_t5,SONIDO,SO,SOUND
+ex_1_1,"La pantalla es un montaje de capas. A pasa de una a otra: suelo, frente, sprites y ventana.","La pantalla és un muntatge de capes. A passa d'una a l'altra: terra, davant, sprites i finestra.","The screen is a stack of layers. A steps through them: ground, front, sprites and window."
+ex_1_2,"El SUELO: un mapa de piezas de 8x8 que la consola desplaza para seguirte.","El TERRA: un mapa de peces de 8x8 que la consola desplaça per seguir-te.","The GROUND: a map of 8x8 tiles that the console scrolls to follow you."
+ex_1_3,"El FRENTE: lo que pasa por delante del héroe, como la copa de un árbol.","El DAVANT: el que passa per davant de l'heroi, com la copa d'un arbre.","The FRONT: what passes in front of the hero, like a tree top."
+ex_1_4,"Los SPRITES: personajes sueltos sobre el mapa. La consola dibuja 40 como mucho.","Els SPRITES: personatges solts sobre el mapa. La consola en dibuixa 40 com a màxim.","The SPRITES: loose characters over the map. The console draws 40 at most."
+ex_1_5,"La VENTANA: la barra de arriba y las cajas de texto, fijas sobre el mapa.","La FINESTRA: la barra de dalt i les caixes de text, fixes sobre el mapa.","The WINDOW: the bar on top and the text boxes, fixed over the map."
+ex_2_a,"Todo son piezas de 8x8. Esta pantalla usa {n} distintas: la consola cabe 384. La cruz mueve el cursor.","Tot són peces de 8x8. Aquesta pantalla en fa servir {n} de diferents: la consola en cap 384. La creu mou el cursor.","It is all 8x8 tiles. This screen uses {n} different ones: the console holds 384. The pad moves the cursor."
+ex_2_n,Pieza {n},Peça {n},Tile {n}
+ex_3_a,"Sprites en pantalla: {n} piezas de 8x16 de 40. Como mucho {m} en una línea; con más de 10 la consola se salta el resto.","Sprites en pantalla: {n} peces de 8x16 de 40. Com a molt {m} en una línia; amb més de 10 la consola es salta la resta.","Sprites on screen: {n} 8x16 pieces of 40. At most {m} on one line; past 10 the console skips the rest."
+ex_4_a,"Cuatro tonos y el registro BGP que dice cuál es cuál. A: fundido. ARRIBA y ABAJO: paleta.","Quatre tons i el registre BGP que diu quin és quin. A: fosa. AMUNT i AVALL: paleta.","Four tones and the BGP register that says which is which. A: fade. UP and DOWN: palette."
+ex_5_a,"Cuatro voces: dos pulsos, una onda y ruido. A, ARRIBA, ABAJO e IZQUIERDA las tocan.","Quatre veus: dos polsos, una ona i soroll. A, AMUNT, AVALL i ESQUERRA les toquen.","Four voices: two pulses, a wave and noise. A, UP, DOWN and LEFT play them."
+ex_song,Suena: {name}.,Sona: {name}.,Playing: {name}.
+ex_v1,PULSO 1,POLS 1,PULSE 1
+ex_v2,PULSO 2,POLS 2,PULSE 2
+ex_v3,ONDA,ONA,WAVE
+ex_v4,RUIDO,SOROLL,NOISE
+cr_made,Una aventura de acción para la Game Boy,Una aventura d'acció per a la Game Boy,An action adventure for the Game Boy
+cr_engine,Hecha con el motor pinyol,Feta amb el motor pinyol,Made with the pinyol engine
+cr_time,Tiempo de juego: {h}:{m},Temps de joc: {h}:{m},Play time: {h}:{m}
+cr_cut,Hierba cortada: {n},Herba tallada: {n},Grass cut: {n}
+cr_kills,Bichos vencidos: {n},Bitxos vençuts: {n},Pests beaten: {n}
+cr_deaths,Veces caído: {n},Vegades caigut: {n},Times fallen: {n}
+cr_thanks,Gracias por jugar,Gràcies per jugar,Thanks for playing
+cr_end,FIN,FI,THE END

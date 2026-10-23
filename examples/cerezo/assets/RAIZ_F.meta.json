@@ -1,0 +1,8 @@
+{
+  "asset": "RAIZ_F",
+  "type": "tilemap",
+  "tiles": 17,
+  "map_w": 120,
+  "map_h": 54,
+  "palette": "WORLD"
+}

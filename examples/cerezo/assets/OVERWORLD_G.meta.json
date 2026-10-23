@@ -1,0 +1,8 @@
+{
+  "asset": "OVERWORLD_G",
+  "type": "tilemap",
+  "tiles": 749,
+  "map_w": 90,
+  "map_h": 54,
+  "palette": "WORLD"
+}

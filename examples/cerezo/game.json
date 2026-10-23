@@ -1,0 +1,24 @@
+{
+  "id": "cerezo",
+  "title": "Cerezo",
+  "subtitle": "Game Boy",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Una aventura de acción como las de la última época de la Game Boy: una isla, un pueblo, una cueva bajo el monte y un cerezo que no ha florecido. Cuatro tonos, mosaicos de 8x8, sprites de 16x16 y un menú que enseña cómo lo hacía la consola.",
+  "achievements": [
+    {"id": "primera_hierba", "name": "Primera hierba", "description": "Corta tu primera mata con la pala."},
+    {"id": "cavador", "name": "Cavador", "description": "Desentierra algo con la pala."},
+    {"id": "buen_tiro", "name": "Buen tiro", "description": "Derrota a un bicho con el tirachinas."},
+    {"id": "ahorrador", "name": "Ahorrador", "description": "Llega a cien cerezas a la vez."},
+    {"id": "tres_pinyoles", "name": "Tres pinyoles", "description": "Reúne los tres pinyoles de oro."},
+    {"id": "corazon_de_oro", "name": "Corazón de oro", "description": "Completa un corazón con cuatro piezas."},
+    {"id": "luz_en_la_raiz", "name": "Luz en la Raíz", "description": "Encuentra la linterna en la cueva."},
+    {"id": "rey_destronado", "name": "Rey destronado", "description": "Derrota a Topo Rey."},
+    {"id": "sin_rasgunos", "name": "Sin un rasguño", "description": "Derrota a Topo Rey sin que te toque."},
+    {"id": "cartografo", "name": "Cartógrafo", "description": "Pisa todas las pantallas de la isla."},
+    {"id": "colorista", "name": "Colorista", "description": "Prueba todas las paletas de colores."},
+    {"id": "curioso", "name": "Curioso", "description": "Mira cómo funciona la Game Boy en el menú."},
+    {"id": "primavera", "name": "Primavera", "description": "Haz florecer el cerezo."}
+  ]
+}

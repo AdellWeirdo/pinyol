@@ -17,11 +17,11 @@ import pack_game  # noqa: E402
 headless = Path(sys.argv[1])
 with tempfile.TemporaryDirectory() as t:
     t = Path(t)
-    taken = pack_game.pack(ROOT / "examples" / "bolsillo", t / "zips", False)  # an example's own id: refused
+    taken = pack_game.pack(ROOT / "examples" / "pozo", t / "zips", False)  # an example's own id: refused
     r = library.check(taken, t / "taken", headless)
     assert not r["ok"] and "ya es el de un ejemplo" in r["errors"][0], r
     mine = t / "mine"
-    shutil.copytree(ROOT / "examples" / "bolsillo", mine, ignore=shutil.ignore_patterns("saves"))
+    shutil.copytree(ROOT / "examples" / "pozo", mine, ignore=shutil.ignore_patterns("saves"))
     meta = json.loads((mine / "game.json").read_text(encoding="utf-8"))
     (mine / "game.json").write_text(json.dumps({**meta, "id": "mi_bolsillo"}), encoding="utf-8")
     good = pack_game.pack(mine, t / "zips", False)

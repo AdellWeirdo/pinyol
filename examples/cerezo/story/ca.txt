@@ -1,0 +1,356 @@
+// Cerezo: les converses, en català. Cada == és un nus; el nom abans dels dos punts és qui parla.
+// Les coses que passen (donar, pagar, marcar) són funcions de core/quest.lua; els indicadors són els mateixos que en castellà.
+
+// ------------------------------------------------------------------ el principi
+== intro_1
+Fa molt de temps, a l'Illa Cirerer, va néixer un cirerer enorme.
+Cada primavera, tothom sortia a veure'l florir.
+-> END
+
+== intro_2
+Però aquest any la primavera va arribar...
+i el cirerer no es va despertar.
+-> END
+
+== intro_3
+Brot, el net jardiner, encara dorm.
+Aviat sentirà la seva àvia.
+-> END
+
+== intro_yaya_llama
+Iaia: Brot! Brot, aixeca't, que el sol ja és sobre l'hort!
+-> END
+
+== intro_cama
+Brot: Cinc minuts més...
+Iaia: Ni un! Baixa, que tinc una cosa per a tu.
+-> END
+
+== intro_pala
+Iaia: Aquesta pala era del teu avi. Talla la mala herba i cava on la terra sigui fluixa.
+Iaia: I no t'oblidis de passar per la plaça: la Dona Figuera et vol parlar.
+-> END
+
+// ------------------------------------------------------------------ la Iaia
+== yaya
+[if flag("tree_bloomed")] Iaia: El teu avi hauria plorat d'alegria. Jo ploro per tots dos.
+[if flag("tree_bloomed")] -> END
+[if flag("topo_dead")] Iaia: És veritat el que diuen? Un talp amb una corona? Ai, el meu nen!
+[if flag("topo_dead")] Iaia: Corre a la plaça, que el cirerer t'espera.
+[if flag("topo_dead")] -> END
+[if flag("seal_open")] Iaia: La Arrel... El teu avi mai no hi va baixar. Vés amb compte i porta el fanal.
+[if flag("seal_open")] -> END
+[if not flag("higuera_met")] Iaia: Ves a la plaça, Brot. La Dona Figuera no té gens de paciència.
+[if not flag("higuera_met")] -> END
+Iaia: Com va la cosa? Portes {pits()} de tres pinyols d'or.
+Iaia: Cada cosa a son temps, i el cirerer a la primavera.
+-> END
+
+== yaya_casa
+Iaia: Hi ha sopa a l'olla. Menja alguna cosa abans de sortir.
+[do heal_all()]
+-> END
+
+// ------------------------------------------------------------------ la Dona Figuera
+== higuera
+[if flag("tree_bloomed")] Dona Figuera: La Floració! Mai no he vist res més bonic, i mira que n'he vist moltes.
+[if flag("tree_bloomed")] -> END
+[if flag("topo_dead")] Dona Figuera: Ho has aconseguit! Planta la cirera daurada al peu del cirerer.
+[if flag("topo_dead")] -> END
+[if flag("seal_open")] Dona Figuera: La porta és oberta. Més avall hi ha una cosa que no hi hauria de ser.
+[if flag("seal_open")] -> END
+[if flag("higuera_met")] Dona Figuera: Tres pinyols d'or, estimat Brot. Tres, ni un menys.
+[if flag("higuera_met")] Dona Figuera: Pregunta a l'Espantaocells, a la Gla i a la Sardina: l'illa guarda els seus secrets.
+[if flag("higuera_met")] -> END
+[do setflag("higuera_met")]
+Dona Figuera: Estimat Brot, el cirerer no ha florit i la Festa de la Floració s'acosta.
+Dona Figuera: Les arrels estan sanes, diu la llegenda: el que falta és la cirera daurada.
+Dona Figuera: Sota el mont hi ha una cova, l'Arrel. La porta només s'obre amb tres pinyols d'or.
+Dona Figuera: Pregunta a l'Espantaocells, a la Gla i a la Sardina. Jo tindré cura de la plaça.
+-> END
+
+== higuera_casa
+Dona Figuera: Mira aquest mapa: l'illa sencera. Hi ha llocs que ni jo no he trepitjat.
+-> END
+
+// ------------------------------------------------------------------ la Gla
+== bellota
+[if flag("bellota_done")] Gla: Ja no hi ha pugons al meu hort de fulles! Ets el millor!
+[if flag("bellota_done")] -> END
+[if flag("bellota_quest") and flag("bellota_kills") >= 3] -> bellota_premio
+[if flag("bellota_quest")] Gla: Pugons, tres! Dona'ls amb la pala! Zas!
+[if flag("bellota_quest")] -> END
+Gla: Ei, ei! Tu ets en Brot, el de la pala!
+Gla: Uns pugons es mengen les meves fulles! M'ajudes?
+* És clar! -> bellota_si
+* Ara no
+    Gla: Ui! Si canvies d'idea, aquí em tens.
+    -> END
+
+== bellota_si
+Gla: Bé! Hi ha pugons pel bosc. Derrota'n tres i et done la meva fona.
+[do setflag("bellota_quest")]
+[do setflag("bellota_kills", 0)]
+-> END
+
+== bellota_premio
+Gla: Tres! Els has liquidat! Té, la meva fona. És el millor que tinc.
+[do setflag("bellota_done")]
+[do give("tirachinas")]
+-> END
+
+== bellota_arbol
+Gla: Des de la meva casa de l'arbre es veu el Mirador. Allà fa niu un corb amb una cosa que brilla...
+-> END
+
+// ------------------------------------------------------------------ l'Oncle Noguer i la botiga
+== nogal
+[if flag("tree_bloomed")] Oncle Noguer: Avui tot a meitat de preu! Bé, a dos terços. Bé, de res.
+[if flag("tree_bloomed")] -> END
+Oncle Noguer: Benvingut a la botiga del Noguer, tresor! El millor de l'hort.
+-> tienda
+
+== tienda
++ [if not flag("pieza_comprada")] Tros de cor: 60 -> comprar_pieza
++ 10 pinyols: 8 -> comprar_pinyoles
++ Suc de cirera: 15 -> comprar_zumo
++ Res, gràcies -> nogal_adios
+
+== comprar_pieza
+[do ok = pay(60)]
+[if ok] Oncle Noguer: Un tros de cor! Cuida'l, que ja no se'n fan.
+[if ok] [do setflag("pieza_comprada")]
+[if ok] [do give("pieza_corazon")]
+[if not ok] Oncle Noguer: Et falten cireres, tresor. Talla molta herba.
+-> nogal_fin
+
+== comprar_pinyoles
+[do ok = pay(8)]
+[if ok] Oncle Noguer: Deu pinyols! Amb aquests no falles.
+[if ok] [do give_pinyoles(10)]
+[if not ok] Oncle Noguer: Amb el que portes no n'hi ha prou, tresor.
+-> tienda
+
+== comprar_zumo
+[do ok = pay(15)]
+[if ok] Oncle Noguer: Glu, glu, glu! Com nou!
+[if ok] [do heal_all()]
+[if not ok] Oncle Noguer: Quinze cireres, i això és medicina.
+-> tienda
+
+== nogal_adios
+Oncle Noguer: Torna quan vulguis, i porta cireres!
+-> END
+
+== nogal_fin
+Oncle Noguer: Torna quan vulguis!
+-> END
+
+// ------------------------------------------------------------------ la Sardina
+== sardina
+[if flag("tree_bloomed")] Sardina: Avui piquen tots. Fins i tot els peixos vénen a veure l'arbre.
+[if flag("tree_bloomed")] -> END
+[if flag("sardina_deal")] Sardina: Ja tens el meu pinyol. A veure si el mar me'n dona un altre.
+[if flag("sardina_deal")] -> END
+Sardina: ...Psst. No espantis els peixos.
+Sardina: Vaig pescar una cosa estranya l'altre dia. Rodona, daurada, dins d'un besuc.
+Sardina: M'agrada molt. Per trenta cireres, és teu.
+* Pagar 30 cireres -> sardina_pago
+* És molt
+    Sardina: El mar és pacient. Jo també.
+    -> END
+
+== sardina_pago
+[do ok = pay(30)]
+[if ok] Sardina: Tracte fet. Que el vent et sigui favorable.
+[if ok] [do setflag("sardina_deal")]
+[if ok] [do give("pinyol_dorado")]
+[if not ok] Sardina: Trenta. Ni una menys. Talla herba, noi.
+-> END
+
+// ------------------------------------------------------------------ l'Espantaocells
+== espantajo
+[if flag("espantajo_pista")] Espantaocells: La col més gran amaga el secret. Talla, i després cava.
+[if flag("espantajo_pista")] -> END
+[do setflag("espantajo_pista")]
+Espantaocells: Hola, jardiner. Fa anys que miro aquest hort. Ho sé tot.
+Espantaocells: Un pinyol d'or? Sota la col més gran hi ha una cosa que no és una col.
+Espantaocells: Talla amb la pala. Després, cava. La terra fluixa no menteix.
+-> END
+
+// ------------------------------------------------------------------ la Mostassa, la gata
+== mostaza
+{&Miau.|Mrrr...|Miau?|Prrr.}
+-> END
+
+// ------------------------------------------------------------------ vilatans
+== aldeano_a
+[if flag("tree_bloomed")] Vilatà: Quina primavera! Quin cirerer! Quin tot!
+[if flag("tree_bloomed")] -> END
+{!Vilatà: Diuen que la cova del mont fa segles que és tancada.|Vilatà: El meu cosí va sentir sorolls sota terra. Segur que era la sopa.|Vilatà: Sense cirerer en flor, la festa no és festa.}
+-> END
+
+== aldeano_b
+[if flag("tree_bloomed")] Veïna: Mira quants pètals! Sembla que neva rosa!
+[if flag("tree_bloomed")] -> END
+{!Veïna: He vist talps nous als horts. Que estrany.|Veïna: Sempre m'he preguntat per què l'arbre té tres forats al mont.}
+-> END
+
+// ------------------------------------------------------------------ cartells
+== cartel_plaza
+Plaça del Cirerer. Es prega no trepitjar les flors... ni la gata.
+-> END
+
+== cartel_huerto
+Hort de la Iaia. Prohibit endur-se cols. Les cols ho saben.
+-> END
+
+== cartel_muelle
+Moll de l'Illa. Qui pesqui, que no destorbi qui pesca.
+-> END
+
+== cartel_monte
+Mont. Més enllà, l'Arrel. Qui hi entri, que porti llum.
+-> END
+
+== cartel_mirador
+Mirador. Des d'aquí es veu tota l'illa... i una mica de mar.
+-> END
+
+== cartel_bosque
+Bosc del Nord. Els camins són més llargs del que semblen.
+-> END
+
+== cartel_playa
+Platja de l'Oest. La sorra guarda el que el mar li confia.
+-> END
+
+// ------------------------------------------------------------------ coses de la cova i del segell
+== sello_vacio
+Tres forats rodons a la pedra, de la mida d'un pinyol. Els falten tots tres.
+-> END
+
+== sello_parcial
+Els forats s'omplen. La pedra brilla una mica.
+-> END
+
+== sello_abierto
+La pedra es parteix amb un cruixit. La porta de l'Arrel és oberta.
+-> END
+
+== puerta_cerrada
+La porta està tancada amb clau.
+-> END
+
+== puerta_jefe
+Un pany enorme. Cal una clau gran, molt gran.
+-> END
+
+== estatua_a
+L'estàtua d'un talp sosté una pala de pedra. Diu: «El que és a dalt és a dalt i el que és a baix, a baix».
+-> END
+
+== estatua_b
+L'estàtua té els ulls tancats. A sota: «La llum mostra el camí a qui la porta».
+-> END
+
+== cueva_secreta
+Una cova amagada. Algú hi va deixar una cosa per a qui tingués paciència amb la mala herba.
+-> END
+
+== libro
+Un llibre de jardineria. Capítol 1: «Com fer que un cirerer floreixi». Falten les pàgines.
+-> END
+
+== cama
+El teu llit. Fa olor de sol i d'herba.
+-> END
+
+// ------------------------------------------------------------------ objectes
+== item_pala
+Has aconseguit la PALA!
+Prem A per tallar, cavar i lluitar.
+-> END
+
+== item_tirachinas
+Has aconseguit la FONA!
+Prem B per disparar pinyols. Amb C canvies d'objecte.
+-> END
+
+== item_linterna
+Has aconseguit el FANAL!
+Prem B per encendre'l: il·lumina les sales fosques i crema teranyines.
+-> END
+
+== item_llave_pequena
+Una CLAU PETITA!
+Obre una porta tancada de la cova.
+-> END
+
+== item_llave_jefe
+La CLAU DEL CAP!
+Obre la gran porta del fons de la cova.
+-> END
+
+== item_mapa
+El MAPA de la cova!
+Pausa per veure'l.
+-> END
+
+== item_brujula
+La BRÚIXOLA!
+Marca on hi ha el que importa.
+-> END
+
+== item_pinyol_dorado
+Un PINYOL D'OR!
+Brilla més que el sol del migdia. En queden {3 - pits()} per al segell.
+-> END
+
+== item_pieza_corazon
+Un TROS DE COR!
+Amb quatre, el teu cor creix.
+-> END
+
+== item_contenedor_corazon
+UN COR NOU!
+La teva vida ha crescut i et sents com si t'haguessis llevat ara.
+-> END
+
+== item_cereza_dorada
+La CIRERA DAURADA!
+Porta-la al cirerer de la plaça i planta-la al peu.
+-> END
+
+// ------------------------------------------------------------------ el cap i el final
+== topo_intro
+Rei Talp: Qui gosa trepitjar el meu soterrani? Les meves arrels! Els meus tresors!
+Rei Talp: Eh, tu! Ets el que fa olor d'herba? Fora del meu regne!
+-> END
+
+== topo_fin
+Rei Talp: Ai, ai, ai! Les meves ulleres! La meva corona!
+Rei Talp: Jo només volia una cosa brillant... Se'm va confondre amb una cirera!
+Rei Talp: Queda't la cirera daurada. Ja no sé què fer-ne.
+-> END
+
+== plantar
+Brot deixa caure la cirera daurada al peu del cirerer.
+La terra s'estremeix. Alguna cosa es desperta sota les arrels.
+-> END
+
+== fin_1
+El cirerer va obrir les flors i l'illa sencera va somriure.
+-> END
+
+== fin_2
+Iaia, Figuera, Gla, Noguer, Sardina, fins i tot l'Espantaocells... tots van venir a veure'l.
+-> END
+
+== fin_3
+I a l'Arrel, un talp vell va aprendre a cuidar el que hi havia a dalt.
+-> END
+
+== fin_4
+Gràcies per jugar a CEREZO.
+-> END

@@ -1,0 +1,150 @@
+# Cerezo, played end to end: the opening, the house, the island, the cave, the boss and the ending
+tick 5
+expect_lua G.state == "title"
+press A
+tick 5
+expect_lua G.state == "play"
+tick 700
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+expect_lua require("core.world").aid == "casa_yaya" and require("core.ents").hero.state == "walk"
+expect_lua require("core.game").flags.yaya_met and require("core.game").has("pala")
+# out of the house, through the door
+lua local h = require("core.ents").hero h.x, h.y, h.face = 7 * 16, 7 * 16 - 4, "down"
+hold DOWN 40
+tick 90
+expect_lua require("core.world").aid == "overworld"
+# the pala cuts a bush
+lua require("core.play").enter("overworld", 10, 4, "up")
+tick 3
+press A
+tick 20
+expect_lua require("core.world").cell_flags(10, 3).solid ~= true
+# a talk with the shopkeeper
+lua require("core.dialog").start("nogal")
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 40
+press A
+tick 30
+# the cave: the first room, with the tools of the dungeon
+lua local G_ = require("core.game") G_.give("tirachinas") G_.give("linterna") G_.pinyoles = 20 G_.hp = 6 G_.maxhp = 6
+lua require("core.play").enter("raiz", 7, 15, "down")
+tick 60
+expect_lua require("core.world").aid == "raiz"
+# the dark room, the miniboss room and the arena
+lua require("core.play").enter("raiz", 37, 15, "down")
+tick 80
+lua require("core.play").enter("raiz", 37, 6, "down")
+tick 120
+lua require("core.play").enter("raiz", 52, 24, "down")
+tick 240
+expect_lua (function() local E = require("core.ents") for e in E.each("boss") do return true end return false end)()
+# the ending: the golden cherry is planted
+lua local G_ = require("core.game") G_.setflag("cereza_dorada") require("core.play").enter("overworld", 21, 14, "up")
+tick 30
+lua require("core.events").ending({cx = 21, cy = 12, w = 2, h = 1})
+tick 120
+press A
+tick 120
+press A
+tick 120
+press A
+tick 120
+press A
+tick 120
+press A
+tick 120
+press A
+tick 120
+press A
+tick 120
+press A
+tick 120
+press A
+tick 120
+press A
+tick 120
+press A
+tick 120
+press A
+tick 120
+press A
+tick 120
+press A
+expect_lua require("core.game").flags.tree_bloomed == true and achievements()[#achievements()] ~= nil
+# the credits: they scroll, and A at the end goes back to the title
+lua require("core.cine").run(function() end) require("core.events").start_credits() G.state = "credits"
+tick 200
+expect_lua G.state == "credits" and require("core.events").credits_t > 150
+tick 70
+press A+B
+tick 10
+expect_lua G.state == "title"
+expect_ok

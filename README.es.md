@@ -24,7 +24,7 @@ Un juego se parece a la consola para la que está hecho, y el motor los mueve to
 | | |
 |---|---|
 | ![Un plataformas de Game Boy en cuatro tonos de verde, a pantalla completa](docs/looks/gameboy.png) | ![Una sala de ZX Spectrum: bloques de dos colores, un minero y un guardián](docs/looks/spectrum.png) |
-| **Game Boy**: [bolsillo](examples/bolsillo), todo su arte dibujado con código | **ZX Spectrum**: [cinta](examples/cinta), desde la carga de cinta |
+| **Game Boy**: [cerezo](examples/cerezo), una aventura al estilo Zelda | **ZX Spectrum**: [cinta](examples/cinta), desde la carga de cinta |
 | ![Un plataformas de Game Boy Advance con montañas en paralaje y agua](docs/looks/gba.png) | ![Un plataformas de velocidad de 16 bits: tierra a cuadros y un mar movido línea a línea](docs/looks/16bits.png) |
 | **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), todo su arte dibujado con código |
 | ![Un juego de lucha de Neo Geo: dos luchadores grandes en un muelle al atardecer](docs/looks/neogeo.png) | ![Un juego de lucha de CPS2: luchadores de 15 colores sobre un suelo en perspectiva](docs/looks/cps2.png) |
@@ -139,7 +139,7 @@ Te queda un juego pequeño para cambiar: una sala más grande que la pantalla, u
 | [duelo](examples/duelo) | un juego de lucha como los de Neo Geo: cada píxel a 480x320, un escenario en dos capas, luchadores en fotogramas de 192x184 como imágenes empaquetadas, destellos y chispas de golpe, un rival que juega la consola |
 | [torneo](examples/torneo) | un juego de lucha como los de CPS2: luchadores en 15 colores y treinta fotogramas, nunca ampliados, un suelo en perspectiva dibujado en bandas de filas, columnas delante, el mismo luchador dos veces en otros colores |
 | [mazmorra](examples/mazmorra) | un beat-em-up en una mazmorra como los de CPS2: goblins y esqueletos en grupos, antorchas que parpadean, columnas que pasan por delante de todos |
-| [bolsillo](examples/bolsillo) | un plataformas como los de Game Boy, a pantalla completa: cuatro tonos, C los cambia; todo su arte dibujado con código |
+| [cerezo](examples/cerezo) | una aventura vista desde arriba como las últimas de Game Boy: un mundo de pantallas que se deslizan, una mazmorra, un jefe, diálogos, cuatro tonos que C cambia por las paletas de la Color; arte y música hechos con código |
 | [cinta](examples/cinta) | un juego como los de ZX Spectrum, desde la carga de cinta (borde a rayas, la pantalla en su propio orden): bloques de dos colores, sprites que se pisan el color, una llave que parpadea, el aire que se acaba |
 | [veloz](examples/veloz) | un plataformas de velocidad como los de las consolas de 16 bits: un mar movido línea a línea, un cielo en degradado, charcos transparentes, un título en Mode 7; un pangolín que se hace bola |
 | [ladrillos](examples/ladrillos) | un rompeladrillos como un cartucho de PICO-8: una pantalla de 128x128 en sus dieciséis colores, dibujada de nuevo cada frame; sin imágenes |

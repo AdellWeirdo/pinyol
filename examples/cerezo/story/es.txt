@@ -1,0 +1,356 @@
+// Cerezo: las conversaciones, en español. Cada == es un nudo; el nombre antes de los dos puntos es quien habla.
+// Una línea cabe en tres renglones de unas 26 letras. Las cosas que pasan (dar, pagar, marcar) son funciones de core/quest.lua.
+
+// ------------------------------------------------------------------ el principio
+== intro_1
+Hace mucho, en la Isla Cerezo, nació un cerezo enorme.
+Cada primavera, todos salían a verlo florecer.
+-> END
+
+== intro_2
+Pero este año la primavera llegó...
+y el cerezo no despertó.
+-> END
+
+== intro_3
+Brote, el nieto jardinero, aún duerme.
+Pronto va a oír a su abuela.
+-> END
+
+== intro_yaya_llama
+Yaya: ¡Brote! ¡Brote, arriba, que el sol ya está sobre el huerto!
+-> END
+
+== intro_cama
+Brote: Cinco minutos más...
+Yaya: ¡Ni uno! Baja, que tengo algo para ti.
+-> END
+
+== intro_pala
+Yaya: Esta pala era de tu abuelo. Corta la maleza y cava donde la tierra esté suelta.
+Yaya: Y no olvides pasar por la plaza: Doña Higuera quiere hablar contigo.
+-> END
+
+// ------------------------------------------------------------------ Yaya
+== yaya
+[if flag("tree_bloomed")] Yaya: Tu abuelo habría llorado de alegría. Yo lloro por los dos.
+[if flag("tree_bloomed")] -> END
+[if flag("topo_dead")] Yaya: ¿Es verdad lo que cuentan? ¿Un topo con una corona? ¡Ay, mi niño!
+[if flag("topo_dead")] Yaya: Corre a la plaza, que el cerezo te espera.
+[if flag("topo_dead")] -> END
+[if flag("seal_open")] Yaya: La Raíz... Tu abuelo nunca bajó. Ten cuidado, y lleva la linterna.
+[if flag("seal_open")] -> END
+[if not flag("higuera_met")] Yaya: Ve a la plaza, Brote. Doña Higuera no tiene paciencia.
+[if not flag("higuera_met")] -> END
+Yaya: ¿Cómo va la cosa? Llevas {pits()} de tres pinyoles de oro.
+Yaya: Cada cosa a su tiempo, y el cerezo en primavera.
+-> END
+
+== yaya_casa
+Yaya: Hay sopa en la olla. Come algo antes de salir.
+[do heal_all()]
+-> END
+
+// ------------------------------------------------------------------ Doña Higuera
+== higuera
+[if flag("tree_bloomed")] Doña Higuera: ¡La Floración! Nunca vi cosa más hermosa, y mira que he visto muchas.
+[if flag("tree_bloomed")] -> END
+[if flag("topo_dead")] Doña Higuera: ¡Lo has conseguido! Planta la cereza dorada en el pie del cerezo.
+[if flag("topo_dead")] -> END
+[if flag("seal_open")] Doña Higuera: La puerta está abierta. Más abajo hay algo que no debería estar ahí.
+[if flag("seal_open")] -> END
+[if flag("higuera_met")] Doña Higuera: Tres pinyoles de oro, querido Brote. Tres, ni uno menos.
+[if flag("higuera_met")] Doña Higuera: Pregunta al Espantajo, a Bellota y a Sardina: la isla guarda sus secretos.
+[if flag("higuera_met")] -> END
+[do setflag("higuera_met")]
+Doña Higuera: Querido Brote, el cerezo no ha florecido y la Fiesta de la Floración se acerca.
+Doña Higuera: Las raíces están sanas, dice la leyenda: lo que falta es la cereza dorada.
+Doña Higuera: Bajo el monte hay una cueva, la Raíz. Su puerta solo se abre con tres pinyoles de oro.
+Doña Higuera: Pregunta al Espantajo, a Bellota y a Sardina. Yo cuidaré de la plaza.
+-> END
+
+== higuera_casa
+Doña Higuera: Mira este mapa: la isla entera. Hay sitios que ni yo he pisado.
+-> END
+
+// ------------------------------------------------------------------ Bellota
+== bellota
+[if flag("bellota_done")] Bellota: ¡Ya no hay pulgones en mi huerto de hojas! ¡Eres el mejor!
+[if flag("bellota_done")] -> END
+[if flag("bellota_quest") and flag("bellota_kills") >= 3] -> bellota_premio
+[if flag("bellota_quest")] Bellota: ¡Pulgones, tres! ¡Dales con la pala! ¡Zas!
+[if flag("bellota_quest")] -> END
+Bellota: ¡Oye, oye! ¡Tú eres Brote, el de la pala!
+Bellota: ¡Unos pulgones se están comiendo mis hojas! ¿Me ayudas?
+* ¡Claro! -> bellota_si
+* Ahora no
+    Bellota: ¡Jo! Si cambias de idea, aquí estoy.
+    -> END
+
+== bellota_si
+Bellota: ¡Bien! Hay pulgones por el bosque. Derrota a tres y te doy mi tirachinas.
+[do setflag("bellota_quest")]
+[do setflag("bellota_kills", 0)]
+-> END
+
+== bellota_premio
+Bellota: ¡Tres! ¡Los has liquidado! Toma, mi tirachinas. Es lo mejor que tengo.
+[do setflag("bellota_done")]
+[do give("tirachinas")]
+-> END
+
+== bellota_arbol
+Bellota: Desde mi casa del árbol se ve el Mirador. Allí anida un cuervo con algo que brilla...
+-> END
+
+// ------------------------------------------------------------------ Tío Nogal y su tienda
+== nogal
+[if flag("tree_bloomed")] Tío Nogal: ¡Hoy todo a mitad de precio! Bueno, a dos tercios. Bueno, nada.
+[if flag("tree_bloomed")] -> END
+Tío Nogal: ¡Bienvenido a la tienda de Nogal, mi tesoro! Lo mejor del huerto.
+-> tienda
+
+== tienda
++ [if not flag("pieza_comprada")] Pieza corazón: 60 -> comprar_pieza
++ 10 pinyoles: 8 -> comprar_pinyoles
++ Zumo de cereza: 15 -> comprar_zumo
++ Nada, gracias -> nogal_adios
+
+== comprar_pieza
+[do ok = pay(60)]
+[if ok] Tío Nogal: ¡Una pieza de corazón! Cuídala, que ya no se fabrican.
+[if ok] [do setflag("pieza_comprada")]
+[if ok] [do give("pieza_corazon")]
+[if not ok] Tío Nogal: Te faltan cerezas, mi tesoro. Corta mucha hierba.
+-> nogal_fin
+
+== comprar_pinyoles
+[do ok = pay(8)]
+[if ok] Tío Nogal: ¡Diez pinyoles! Con ellos no fallas.
+[if ok] [do give_pinyoles(10)]
+[if not ok] Tío Nogal: Con lo que llevas no da, mi tesoro.
+-> tienda
+
+== comprar_zumo
+[do ok = pay(15)]
+[if ok] Tío Nogal: ¡Glu, glu, glu! ¡Como nuevo!
+[if ok] [do heal_all()]
+[if not ok] Tío Nogal: Quince cerezas, y esto es medicina.
+-> tienda
+
+== nogal_adios
+Tío Nogal: ¡Vuelva usted cuando quiera, y traiga cerezas!
+-> END
+
+== nogal_fin
+Tío Nogal: ¡Vuelve cuando quieras!
+-> END
+
+// ------------------------------------------------------------------ Sardina
+== sardina
+[if flag("tree_bloomed")] Sardina: Hoy pican todos. Hasta los peces vienen a ver el árbol.
+[if flag("tree_bloomed")] -> END
+[if flag("sardina_deal")] Sardina: Ya tienes mi pinyol. A ver si el mar me da otro.
+[if flag("sardina_deal")] -> END
+Sardina: ...Pssst. No espantes a los peces.
+Sardina: Pesqué algo raro el otro día. Redondo, dorado, dentro de un besugo.
+Sardina: Me gusta mucho. Por treinta cerezas, es tuyo.
+* Pagar 30 cerezas -> sardina_pago
+* Es mucho
+    Sardina: El mar es paciente. Yo también.
+    -> END
+
+== sardina_pago
+[do ok = pay(30)]
+[if ok] Sardina: Trato hecho. Que el viento te sea favorable.
+[if ok] [do setflag("sardina_deal")]
+[if ok] [do give("pinyol_dorado")]
+[if not ok] Sardina: Treinta. Ni una menos. Corta hierba, mozo.
+-> END
+
+// ------------------------------------------------------------------ el Espantajo
+== espantajo
+[if flag("espantajo_pista")] Espantajo: La col más grande esconde el secreto. Corta, y luego cava.
+[if flag("espantajo_pista")] -> END
+[do setflag("espantajo_pista")]
+Espantajo: Hola, jardinero. Llevo años mirando este huerto. Lo sé todo.
+Espantajo: ¿Un pinyol de oro? Bajo la col más grande hay algo que no es una col.
+Espantajo: Corta con la pala. Después, cava. La tierra suelta no miente.
+-> END
+
+// ------------------------------------------------------------------ Mostaza, el gato
+== mostaza
+{&Miau.|Mrrr...|¿Miau?|Prrr.}
+-> END
+
+// ------------------------------------------------------------------ aldeanos
+== aldeano_a
+[if flag("tree_bloomed")] Aldeano: ¡Qué primavera! ¡Qué cerezo! ¡Qué todo!
+[if flag("tree_bloomed")] -> END
+{!Aldeano: Dicen que la cueva del monte lleva siglos cerrada.|Aldeano: Mi primo oyó ruidos bajo el suelo. Seguro que fue la sopa.|Aldeano: Sin cerezo en flor, la fiesta no es fiesta.}
+-> END
+
+== aldeano_b
+[if flag("tree_bloomed")] Vecina: ¡Mira cuántos pétalos! ¡Parece que nieva rosa!
+[if flag("tree_bloomed")] -> END
+{!Vecina: He visto topos nuevos en las huertas. Qué raro.|Vecina: Siempre me pregunté por qué el árbol tiene tres huecos en el monte.}
+-> END
+
+// ------------------------------------------------------------------ carteles
+== cartel_plaza
+Plaza del Cerezo. Se ruega no pisar las flores... ni al gato.
+-> END
+
+== cartel_huerto
+Huerto de Yaya. Prohibido llevarse coles. Las coles lo saben.
+-> END
+
+== cartel_muelle
+Muelle de la Isla. Quien pesque, que no moleste a quien pesca.
+-> END
+
+== cartel_monte
+Monte. Más allá, la Raíz. Quien entre, que lleve luz.
+-> END
+
+== cartel_mirador
+Mirador. Desde aquí se ve toda la isla... y un poquito de mar.
+-> END
+
+== cartel_bosque
+Bosque Norte. Los caminos son más largos de lo que parecen.
+-> END
+
+== cartel_playa
+Playa Oeste. La arena guarda lo que el mar le confía.
+-> END
+
+// ------------------------------------------------------------------ cosas de la cueva y del sello
+== sello_vacio
+Tres huecos redondos en la piedra, del tamaño de un pinyol. Faltan los tres.
+-> END
+
+== sello_parcial
+Los huecos se van llenando. La piedra brilla un poco.
+-> END
+
+== sello_abierto
+La piedra se parte con un crujido. La puerta de la Raíz está abierta.
+-> END
+
+== puerta_cerrada
+La puerta está cerrada con llave.
+-> END
+
+== puerta_jefe
+Una cerradura enorme. Hace falta una llave grande, muy grande.
+-> END
+
+== estatua_a
+La estatua de un topo sostiene una pala de piedra. Dice: «Lo de arriba está arriba y lo de abajo, abajo».
+-> END
+
+== estatua_b
+La estatua tiene los ojos cerrados. Debajo: «La luz muestra el camino a quien la lleva».
+-> END
+
+== cueva_secreta
+Una cueva escondida. Alguien dejó aquí algo para quien tuviera paciencia con la maleza.
+-> END
+
+== libro
+Un libro de jardinería. Capítulo 1: «Cómo hacer que un cerezo florezca». Faltan las páginas.
+-> END
+
+== cama
+Tu cama. Huele a sol y a hierba.
+-> END
+
+// ------------------------------------------------------------------ objetos
+== item_pala
+¡Has conseguido la PALA!
+Pulsa A para cortar, cavar y luchar.
+-> END
+
+== item_tirachinas
+¡Has conseguido el TIRACHINAS!
+Pulsa B para disparar pinyoles. Con C cambias de objeto.
+-> END
+
+== item_linterna
+¡Has conseguido la LINTERNA!
+Pulsa B para encenderla: ilumina las salas oscuras y quema telarañas.
+-> END
+
+== item_llave_pequena
+¡Una LLAVE PEQUEÑA!
+Abre una puerta cerrada de la cueva.
+-> END
+
+== item_llave_jefe
+¡La LLAVE DEL JEFE!
+Abre la gran puerta del fondo de la cueva.
+-> END
+
+== item_mapa
+¡El MAPA de la cueva!
+Pausa para verlo.
+-> END
+
+== item_brujula
+¡La BRÚJULA!
+Marca dónde está lo importante.
+-> END
+
+== item_pinyol_dorado
+¡Un PINYOL DE ORO!
+Brilla más que el sol del mediodía. Quedan {3 - pits()} para el sello.
+-> END
+
+== item_pieza_corazon
+¡Una PIEZA DE CORAZÓN!
+Con cuatro, tu corazón crece.
+-> END
+
+== item_contenedor_corazon
+¡UN CORAZÓN NUEVO!
+Tu vida ha crecido y te sientes como recién levantado.
+-> END
+
+== item_cereza_dorada
+¡La CEREZA DORADA!
+Llévala al cerezo de la plaza y plántala al pie.
+-> END
+
+// ------------------------------------------------------------------ el jefe y el final
+== topo_intro
+Topo Rey: ¿Quién osa pisar mi sótano? ¡Mis raíces! ¡Mis tesoros!
+Topo Rey: ¡Eh, tú! ¿Eres el que huele a hierba? ¡Fuera de mi reino!
+-> END
+
+== topo_fin
+Topo Rey: ¡Ay, ay, ay! ¡Mis gafas! ¡Mi corona!
+Topo Rey: Yo solo quería algo brillante... ¡Se me confundió con una cereza!
+Topo Rey: Quédate la cereza dorada. Ya no sé qué hacer con ella.
+-> END
+
+== plantar
+Brote deja caer la cereza dorada al pie del cerezo.
+La tierra se estremece. Algo despierta bajo las raíces.
+-> END
+
+== fin_1
+El cerezo abrió sus flores y la isla entera sonrió.
+-> END
+
+== fin_2
+Yaya, Higuera, Bellota, Nogal, Sardina, hasta el Espantajo... todos vinieron a verlo.
+-> END
+
+== fin_3
+Y en la Raíz, un topo viejo aprendió a cuidar de lo que estaba arriba.
+-> END
+
+== fin_4
+Gracias por jugar a CEREZO.
+-> END
