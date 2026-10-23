@@ -991,3 +991,19 @@ So: scanlines are free, an outline costs the extra draws and little else, zones 
 
 The bot played 12 s in the main street with each cook (estrella and the rest, god mode, sound off), then the boss for 40 s: **cooks 36 to 59 fps** (the first one, arrocero, 36-41 while the sheets load for the first time; afterwards 44-59, `render` 14.8-19 ms), **boss 43 to 60 fps** (43 on entering, 52-57 in the fight, 59-60 once its parts are loaded). No `no memory` message in 125 s. PSRAM free goes down to 16-50 KB with a largest block of 3-18 KB while the cooks change: the picture cache fills the PSRAM and gives back the pieces not drawn in the frame when a new one needs a block, which is how it is meant to work. The dips are the first draw of each sheet's pieces; preloading a cook's sheets behind the select screen (`preload`) would remove them and is not done.
 
+
+## 2026-10-23 · The CRT on the whole screen (Paella, a picture-drawn game), firmware df753f3+
+
+`crt({scan})` first dimmed every second row of the 160-row world; it was moved to the screen's own 320 rows (`gfx_scanlines`, in the strips, over the pictures and the text, under the
+console's menu), so it also works for games that draw everything with `img()`. A still scene of Paella (the street, the cook, no bot), 8 s each, sound off:
+
+| | strips | world | fps |
+|---|---|---|---|
+| `crt(false)` | 7.4-8.6 ms | 1.3-1.5 ms | 59-60 |
+| `crt({scan = 0.3})` | 10.1-11.6 ms (about 3 ms more, both cores) | 1.4 ms | 50-54 |
+| `crt({scan = 0.3, persist = 0.5})` | 13.4-14 ms | 9.6-10.2 ms (8.5 more: 77 KB through PSRAM) | 30 |
+
+So on a game that draws at 480x320 the scanlines cost about a sixth of the frame: a game that holds 60 fps with 3 ms to spare can have them, a busy one drops to 50. Persistence does not belong in
+a picture-drawn game (it works on the 240x160 world, and costs 8.5 ms there): use it in games that draw small. The first version of the scanlines walked each pixel's address; stepping one pointer
+along the window took them from about 4 ms to 3.
+
