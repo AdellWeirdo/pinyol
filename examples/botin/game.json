@@ -5,7 +5,7 @@
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",
-  "description": "Un plataformas de botín y tesoros como los de la Game Boy Advance: cuatro mundos, cuatro piezas de joya por nivel, un interruptor-rana que arranca la huida y un jefe. Cuatro capas de fondo, paletas de 16 colores, sprites que giran y los efectos de línea que hacían sus juegos.",
+  "description": "Un plataformas de botín y tesoros como los de la Game Boy Advance: cuatro mundos, cuatro piezas de joya por nivel, un interruptor-rana que arranca la huida y un jefe. Paralaje por líneas, paletas de 16 colores, sprites que giran y los efectos de línea que hacían sus juegos, con lo que cuestan en la consola explicado en el menú.",
   "achievements": [
     {
       "id": "rompetodo",

@@ -5,7 +5,7 @@
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",
-  "description": "Un correr y disparar a la manera de la Neo Geo: seis cocineros contra una invasión de gaviotas mecánicas en un pueblo de costa, con tractor y jefe gigante. Todo a 480x320, cada cocinero hecho de dos sprites, y un menú que enseña los trucos de la máquina.",
+  "description": "Un correr y disparar a la manera de la Neo Geo: seis cocineros contra una invasión de gaviotas mecánicas en un pueblo de costa, con tractor y jefe gigante. Todo a 480x320, con personajes pintados fotograma a fotograma, y un menú que enseña los trucos de la máquina.",
   "achievements": [
     {
       "id": "primer_plato",

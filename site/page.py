@@ -28,14 +28,14 @@ LOOKS = [
     dict(id="vector", name="Vectorial", example="pozo", era="1979 · solo líneas que brillan", art=False, fps=(59, 60), hue="#7cf7ff",
          what="Un tirador en un pozo hecho de líneas, con un menú que enseña cómo dibuja el haz.",
          alt="Un pozo en forma de estrella hecho de líneas brillantes sobre negro, con un cañón amarillo y enemigos rojos"),
-    dict(id="gba", name="Game Boy Advance", example="plataformas", era="2001 · capas, sprites, agua que ondula", art=False, fps=(61, 61), hue="#6c5ce7",
-         what="Montañas en paralaje, agua transparente y monedas.", alt="Un plataformas de Game Boy Advance con montañas en paralaje y agua"),
+    dict(id="gba", name="Game Boy Advance", example="botin", era="2001 · capas, sprites, agua que ondula", art=False, fps=(50, 57), hue="#6c5ce7",
+         what="Un plataformas de botín en cuatro mundos, con paralaje, agua que ondula y un jefe.", alt="Un plataformas de Game Boy Advance con un pirata, una selva en paralaje y joyas"),
     dict(id="16bits", name="Super Nintendo · Mega Drive", example="veloz", era="1991 · velocidad y scroll por línea", art=False, fps=(40, 59), hue="#2f7bff",
          what="Un pangolín muy rápido y un mar que se mueve línea a línea.", alt="Un plataformas de 16 bits: tierra a cuadros y un mar que se mueve línea a línea"),
     dict(id="32bits", name="PlayStation · Saturn 2D", example="gotico", era="1997 · 256 colores, luces translúcidas", art=True, fps=(59, 61), was=(31, 31), hue="#b388ff",
          what="Un castillo de noche: velas que brillan y un fantasma semitransparente.", alt="La sala de un castillo gótico: velas que brillan, un fantasma y una cazadora con látigo"),
-    dict(id="neogeo", name="Neo Geo", example="duelo", era="1990 · luchadores enormes", art=True, fps=(60, 61), hue="#ffc94a",
-         what="Lucha uno contra uno en un muelle al atardecer.", alt="Un juego de lucha de Neo Geo: dos luchadores grandes en un muelle al atardecer"),
+    dict(id="neogeo", name="Neo Geo", example="paella", era="1990 · sprites enormes pintados a mano", art=True, fps=(41, 60), hue="#ffc94a",
+         what="Un correr y disparar: cocineros contra gaviotas mecánicas, con tractor y jefe.", alt="Un run and gun de Neo Geo: un cocinero en un tractor por una calle de pueblo, disparando a gaviotas mecánicas"),
     dict(id="cps2", name="CPS2", example="torneo", era="1993 · quince colores por luchador", art=True, fps=(60, 61), hue="#e8344e",
          what="Lucha sobre un suelo en perspectiva dibujado en bandas.", alt="Un juego de lucha de CPS2: luchadores de quince colores sobre un suelo en perspectiva"),
     dict(id="vertical", name="Recreativa vertical", example="tormenta", era="1985 · la pantalla girada", art=False, fps=(30, 30), was=(20, 20), hue="#4dd2a1",
@@ -52,7 +52,7 @@ HERO_EXTRA = [("loading", "La pantalla de carga de un juego de ZX Spectrum"), ("
 
 # The other examples, playable too (id, title)
 OTHERS = [
-    ("asalto", "Asalto al cañón"), ("calle", "Calle de neón"), ("nubes", "Sobre las nubes"), ("futbol", "Gol de oro"),
+    ("calle", "Calle de neón"), ("nubes", "Sobre las nubes"), ("futbol", "Gol de oro"),
     ("moto", "Moto costa"), ("mazmorra", "La mazmorra"), ("carreras", "Carreras"), ("naves", "Naves"), ("aldea", "La aldea"),
     ("puzle", "Puzle"), ("inventos", "Inventos"), ("estilos", "Estilos"), ("sonidos", "Sonidos"), ("control", "Control"),
     ("juntos", "Juntos"), ("hola", "Hola pinyol"),
