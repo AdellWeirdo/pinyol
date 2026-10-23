@@ -985,3 +985,9 @@ A silent copy drew a 240x160 bitmap layer and switched one effect on for 6 s at 
 
 So: scanlines are free, an outline costs the extra draws and little else, zones cost what their area costs, and persistence is the one to measure in your own game
 (it moves 77 KB through PSRAM twice a frame). Memory was untouched except persistence's 77 KB of PSRAM.
+
+
+## 2026-10-23 · Paella de combate: the six cooks and the boss, on firmware cfab1d1
+
+The bot played 12 s in the main street with each cook (estrella and the rest, god mode, sound off), then the boss for 40 s: **cooks 36 to 59 fps** (the first one, arrocero, 36-41 while the sheets load for the first time; afterwards 44-59, `render` 14.8-19 ms), **boss 43 to 60 fps** (43 on entering, 52-57 in the fight, 59-60 once its parts are loaded). No `no memory` message in 125 s. PSRAM free goes down to 16-50 KB with a largest block of 3-18 KB while the cooks change: the picture cache fills the PSRAM and gives back the pieces not drawn in the frame when a new one needs a block, which is how it is meant to work. The dips are the first draw of each sheet's pieces; preloading a cook's sheets behind the select screen (`preload`) would remove them and is not done.
+
