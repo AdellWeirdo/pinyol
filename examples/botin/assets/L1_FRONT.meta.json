@@ -1,0 +1,8 @@
+{
+  "asset": "L1_FRONT",
+  "type": "tilemap",
+  "tiles": 1,
+  "map_w": 192,
+  "map_h": 28,
+  "palette": "SELVA"
+}

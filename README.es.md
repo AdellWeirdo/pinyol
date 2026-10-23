@@ -25,8 +25,8 @@ Un juego se parece a la consola para la que está hecho, y el motor los mueve to
 |---|---|
 | ![Un plataformas de Game Boy en cuatro tonos de verde, a pantalla completa](docs/looks/gameboy.png) | ![Una sala de ZX Spectrum: bloques de dos colores, un minero y un guardián](docs/looks/spectrum.png) |
 | **Game Boy**: [cerezo](examples/cerezo), una aventura al estilo Zelda | **ZX Spectrum**: [socavon](examples/socavon), una mina, desde la carga de cinta |
-| ![Un plataformas de Game Boy Advance con montañas en paralaje y agua](docs/looks/gba.png) | ![Un plataformas de velocidad de 16 bits: tierra a cuadros y un mar movido línea a línea](docs/looks/16bits.png) |
-| **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), todo su arte dibujado con código |
+| ![Un plataformas de tesoros de Game Boy Advance: una selva en cuatro capas, unas ruinas, una seta y un cartel](docs/looks/gba.png) | ![Un plataformas de velocidad de 16 bits: tierra a cuadros y un mar movido línea a línea](docs/looks/16bits.png) |
+| **Game Boy Advance**: [botin](examples/botin), un plataformas de tesoros | **SNES / Mega Drive**: [veloz](examples/veloz), todo su arte dibujado con código |
 | ![Un juego de lucha de Neo Geo: dos luchadores grandes en un muelle al atardecer](docs/looks/neogeo.png) | ![Un juego de lucha de CPS2: luchadores de 15 colores sobre un suelo en perspectiva](docs/looks/cps2.png) |
 | **Neo Geo**: [duelo](examples/duelo) | **CPS2**: [torneo](examples/torneo) |
 | ![Un puzle de tumbas de PICO-8: 128x128 en dieciséis colores](docs/looks/pico8.png) | ![Una maquinita LCD: un malabarista en un circo, figuras encendidas o apagadas](docs/looks/lcd.png) |
@@ -44,7 +44,7 @@ macOS: `brew install cmake sdl2 uv`. En Linux, instala esos tres con tu gestor d
 
 ```sh
 cmake -B build && cmake --build build
-./build/pinyol_sim --game examples/plataformas   # o naves, carreras, hola
+./build/pinyol_sim --game examples/botin   # o naves, carreras, hola
 ctest --test-dir build                       # valida cada ejemplo y juega su guion de prueba
 ```
 
@@ -123,7 +123,7 @@ Te queda un juego pequeño para cambiar: una sala más grande que la pantalla, u
 
 | Ejemplo | Lo que enseña |
 |---|---|
-| [plataformas](examples/plataformas) | un plataformas: capas en paralaje, agua transparente con un scroll ondulado por línea, transiciones en mosaico |
+| [botin](examples/botin) | un plataformas de tesoros como los de la Game Boy Advance: cuatro mundos (selva, una cueva con foco de luz, un galeón hundido, una fragua), cuatro piezas de joya en cada uno, una embestida que rompe bloques y un golpe desde arriba, enemigos que se aturden, se cogen y se lanzan, un interruptor-rana que arranca una huida contra el reloj y un Gólem de oro de jefe; cuatro capas con las colinas cortadas en bandas, bancos de paleta de 16 colores que recolorean un dibujo, ventanas para el foco de la cueva, agua con transparencia y ondas, cambios de escena en mosaico, sprites girados para el jefe, música desde un banco de muestras y un menú que desmonta la pantalla |
 | [naves](examples/naves) | un matamarcianos: un campo de estrellas con una velocidad por línea, un planeta que gira, explosiones mezcladas, un destello |
 | [carreras](examples/carreras) | una carrera de karts en Mode 7: un suelo en perspectiva, rivales como sprites escalados, vueltas y posiciones |
 | [puzle](examples/puzle) | un puzle deslizante para la pantalla táctil: una pista fantasma por mezcla, una revelación en mosaico, música hecha de notas |

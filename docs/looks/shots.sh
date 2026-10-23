@@ -11,7 +11,7 @@ shot() { # shot NAME GAME, the script's lines on stdin; it ends with "shot NAME"
 }
 printf 'tick 5\nlua require("core.title").leave() require("core.game").reset() G.state = "play" require("core.hud").init() require("core.pal").fade("dark", 0)\nlua require("core.play").enter("overworld", 24, 16, "up")\ntick 40\nshot gameboy\n' | shot gameboy cerezo
 printf 'tick 440\npress A\ntick 10\npress A\ntick 40\nhold RIGHT 20\ntick 10\nshot spectrum\n' | shot spectrum socavon
-printf 'tick 10\npress A\ntick 20\nhold RIGHT 100\npress A\ntick 8\nshot gba\n' | shot gba plataformas
+printf 'tick 5\nlua dbg_level(1)\ntick 30\nlua dbg_tp(43, 10)\ntick 40\nshot gba\n' | shot gba botin
 printf 'tick 10\npress A\nhold RIGHT 75\nshot 16bits\n' | shot 16bits veloz
 printf 'tick 30\npress A\ntick 100\nhold RIGHT 70\nhold A 1\ntick 7\nshot neogeo\n' | shot neogeo duelo
 printf 'tick 30\npress A\ntick 100\nhold RIGHT 50\npress B\ntick 8\nshot cps2\n' | shot cps2 torneo

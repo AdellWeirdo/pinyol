@@ -1,0 +1,8 @@
+{
+  "asset": "CRISTAL_FAR",
+  "type": "tilemap",
+  "tiles": 407,
+  "map_w": 32,
+  "map_h": 20,
+  "palette": "CRISTAL"
+}

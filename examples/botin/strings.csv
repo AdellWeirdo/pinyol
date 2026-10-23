@@ -1,0 +1,37 @@
+key,es,ca,en
+how_item,Cómo funciona,Com funciona,How it works
+title_sub,"Un botín, cuatro mundos y un gólem","Un botí, quatre móns i un gòlem","Loot, four worlds and a golem"
+title_new,Partida nueva,Partida nova,New game
+title_continue,Continuar,Continuar,Continue
+title_how,Cómo funciona,Com funciona,How it works
+demo,DEMO - pulsa un botón,DEMO - prem un botó,DEMO - press a button
+level1_name,1. Selva Jade,1. Selva Jade,1. Jade Jungle
+level2_name,2. Cueva de Cristal,2. Cova de Cristall,2. Crystal Cave
+level3_name,3. Galeón Hundido,3. Galiona Enfonsada,3. Sunken Galleon
+level4_name,4. Fragua del Volcán,4. Farga del Volcà,4. Volcano Forge
+boss_name,El Gran Gólem de Oro,El Gran Gòlem d'Or,The Great Golden Golem
+map_locked,Termina el nivel anterior,Acaba el nivell anterior,Finish the level before
+map_boss_locked,Hacen falta {n} piezas de joya (tienes {have}),Calen {n} peces de joia (en tens {have}),You need {n} jewel pieces (you have {have})
+map_boss_open,¡La puerta del gólem está abierta!,La porta del gòlem és oberta!,The golem's door is open!
+map_info,Piezas: {jewels}/4   Monedas: {coins},Peces: {jewels}/4   Monedes: {coins},Pieces: {jewels}/4   Coins: {coins}
+map_total,Piezas {n}/{m}   Monedas {coins},Peces {n}/{m}   Monedes {coins},Pieces {n}/{m}   Coins {coins}
+res_title,¡Nivel superado!,Nivell superat!,Level clear!
+res_coins,Monedas: {n},Monedes: {n},Coins: {n}
+res_record,¡Nuevo récord!,Nou rècord!,New record!
+res_press,Pulsa A,Prem A,Press A
+over_title,FIN DEL INTENTO,FI DE L'INTENT,TRY OVER
+over_dead,Zurrón se ha quedado sin corazones,Zurrón s'ha quedat sense cors,Zurrón ran out of hearts
+over_time,¡Se acabó el tiempo de la huida!,S'ha acabat el temps de la fugida!,The escape ran out of time!
+over_retry,A: otra vez,A: una altra vegada,A: try again
+over_map,B: al mapa,B: al mapa,B: to the map
+end_title,¡El Gólem ha caído!,El Gòlem ha caigut!,The Golem has fallen!
+end_text,Zurrón vuelve con {n} piezas de joya y {coins} monedas.,Zurrón torna amb {n} peces de joia i {coins} monedes.,Zurrón returns with {n} jewel pieces and {coins} coins.
+ex_help,B: salir   A: página   izq/der: cambiar,B: sortir   A: pàgina   esq/dre: canviar,B: leave   A: page   left/right: change
+ex_layers_title,Cuatro capas,Quatre capes,Four layers
+ex_layers_text,"La consola dibuja cuatro fondos de teselas y los sprites. Izq/der muestra una capa sola (sol, colinas, suelo, delante, sprites). Las colinas son una sola capa cortada en dos bandas que se desplazan a distinta velocidad.",La consola dibuixa quatre fons de tessel·les i els sprites. Esq/dre mostra una capa sola. Els turons són una sola capa tallada en dues bandes a velocitat diferent.,"The console draws four tile backgrounds and the sprites. Left/right shows one layer alone (sky, hills, ground, front, sprites). The hills are one layer cut into two bands that scroll at different speeds."
+ex_banks_title,Bancos de paleta,Bancs de paleta,Palette banks
+ex_banks_text,"Un dibujo de 16 colores puede usar otro banco de la paleta: el mismo Zurrón, en llamas, golpeado o hinchado. Así se ahorraba memoria.","Un dibuix de 16 colors pot fer servir un altre banc de la paleta: el mateix Zurrón, en flames, colpejat o inflat.","A 16-colour picture can take another bank of the palette: the same Zurrón, burning, hit or puffed up. That saved memory."
+ex_sprites_title,Sprites,Sprites,Sprites
+ex_sprites_text,Hay {n} de {max} sprites. En cada línea de la pantalla caben unos {budget} ciclos: los sprites grandes de esta línea ocupan {line} píxeles.,Hi ha {n} de {max} sprites. A cada línia caben uns {budget} cicles: els sprites d'aquesta línia ocupen {line} píxels.,{n} of {max} sprites are in use. A line has about {budget} cycles: the sprites on the busiest line cover {line} pixels.
+ex_lines_title,Efectos por línea,Efectes per línia,Effects line by line
+ex_lines_text,"Las colinas, el agua que ondula, el foco de las cuevas y el calor de la huida cambian cada línea por separado: la consola lo hacía en cada HBlank.","Els turons, l'aigua que ondula, el focus de les coves i la calor de la fugida canvien cada línia per separat: la consola ho feia a cada HBlank.","The hills, the rippling water, the cave's spotlight and the escape's heat change each line on its own: the console did it in every HBlank."

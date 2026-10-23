@@ -25,8 +25,8 @@ takes them again).
 |---|---|
 | ![A Game Boy platformer in four tones of green, on the whole screen](docs/looks/gameboy.png) | ![A ZX Spectrum room: blocks of two colours, a miner and a guardian](docs/looks/spectrum.png) |
 | **Game Boy**: [cerezo](examples/cerezo), a Zelda-style adventure | **ZX Spectrum**: [socavon](examples/socavon), a mine, from the tape loading |
-| ![A Game Boy Advance platformer with parallax mountains and water](docs/looks/gba.png) | ![A 16-bit speed platformer: checkered earth, a sea moved line by line](docs/looks/16bits.png) |
-| **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), all its art drawn by code |
+| ![A Game Boy Advance treasure-hunting platformer: a jungle in four layers, a ruin, a mushroom and a signpost](docs/looks/gba.png) | ![A 16-bit speed platformer: checkered earth, a sea moved line by line](docs/looks/16bits.png) |
+| **Game Boy Advance**: [botin](examples/botin), a treasure-hunting platformer | **SNES / Mega Drive**: [veloz](examples/veloz), all its art drawn by code |
 | ![A Neo Geo fighting game: two big fighters on a pier at sunset](docs/looks/neogeo.png) | ![A CPS2 fighting game: fighters in 15 colours on a floor in perspective](docs/looks/cps2.png) |
 | **Neo Geo**: [duelo](examples/duelo) | **CPS2**: [torneo](examples/torneo) |
 | ![A PICO-8 tomb puzzle: 128x128 in sixteen colours](docs/looks/pico8.png) | ![A pocket LCD game: a juggling clown in a circus, figures on or off](docs/looks/lcd.png) |
@@ -44,7 +44,7 @@ macOS: `brew install cmake sdl2 uv`. On Linux, install the same three with your 
 
 ```sh
 cmake -B build && cmake --build build
-./build/pinyol_sim --game examples/plataformas   # or naves, carreras, hola
+./build/pinyol_sim --game examples/botin   # or naves, carreras, hola
 ctest --test-dir build                       # validates every example and plays its test script
 ```
 
@@ -122,7 +122,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 
 | Example | What it shows |
 |---|---|
-| [plataformas](examples/plataformas) | a platformer: parallax layers, see-through water with a wavy per-line scroll, mosaic transitions |
+| [botin](examples/botin) | a treasure-hunting platformer as the Game Boy Advance's: four worlds (jungle, a lit cave, a sunken galleon, a forge), four jewel pieces in each, a ram that breaks blocks and a smash from above, enemies to stun, pick up and throw, a frog switch that starts a timed escape, a golden Golem for a boss; four scrolling layers with the hills cut into bands, 16-colour palette banks that recolour one picture, windows for the cave's spotlight, blended and waving water, mosaic changes of scene, turned sprites for the boss, music from a bank of samples, and a menu that takes the screen apart |
 | [naves](examples/naves) | a shoot-'em-up: a star field with a speed per line, a turning planet, blended explosions, a flash |
 | [carreras](examples/carreras) | a kart race in Mode 7: a perspective floor, rivals as scaled sprites, laps and positions |
 | [puzle](examples/puzle) | a sliding puzzle for the touch screen: a ghost hint by blending, a mosaic reveal, music made of notes |

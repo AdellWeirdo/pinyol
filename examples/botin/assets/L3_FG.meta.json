@@ -1,0 +1,8 @@
+{
+  "asset": "L3_FG",
+  "type": "tilemap",
+  "tiles": 98,
+  "map_w": 200,
+  "map_h": 36,
+  "palette": "GALEON"
+}

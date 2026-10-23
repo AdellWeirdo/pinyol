@@ -92,11 +92,30 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
   - **The menu's "Cómo funciona"** explains the attributes with the room's real blocks, the clash with a sprite you move
     across four bands, bright and flash, and the tape and the beeper.
 
-### Game Boy Advance: `plataformas`, `naves`, `carreras`, `puzle`, `aldea`
+### Game Boy Advance: `examples/botin`, `naves`, `carreras`, `puzle`, `aldea`
 
 - The world, 240×160. Characters 16 to 32 pixels tall, 8 to 16 colours; 8×8 tiles (`--tiles`), shared palettes
   (`--palette`); sprites that turn and scale (`spr_mat`), Mode 7, per-line effects, blending, mosaic, windows.
 - Style line: *16-bit handheld pixel art, 4 to 8 colours per sprite, hard pixel edges, no anti-aliasing*.
+- **`examples/botin`** is made the way those games were, and its notes are the research it was built from (Copetti's architecture
+  notes, the pret/pokeemerald scanline-effects pages, GBATEK's tables, the Wario Land 4 write-ups):
+  - **Pictures are text with sixteen-colour banks** (`gen/gbakit.py`): a row of characters is a row of pixels, `.` see-through and
+    `1-9a-f` the slots of a bank of fifteen colours. A tile map entry carries its bank, a sprite is drawn with `bank(b)`: the
+    hero burning, hit or puffed up is the same 111 frames with another bank, and each level's enemies are the same frames in the
+    level's bank, as the GBA reused its 16-colour graphics.
+  - **Four layers**: BG3 the sky (slowest), BG2 the hills, BG1 the ground, BG0 what is in front of the hero, or the water of a sea
+    level. The hills are one 256x224 layer of two pictures stacked, scrolled in two bands at two speeds with `line_scroll`, one
+    layer doing the work of two (the HBlank trick). Metatiles are 16x16 with flipped copies folded into one tile (`Tileset`).
+  - **Windows and per-line effects**: the cave's spotlight is two windows cut to circles a line at a time (inside the small one
+    everything, in the ring a faded picture, outside only the far sky); the sea blends BG0 over the rest only below the surface
+    and ripples BG1 line by line; the escape wobbles the whole picture with `haze`; scenes change with mosaic and a fade.
+  - **Turned sprites**: the Golem's head sways and its arms are two pieces of one picture rotated by matrices toward the fist.
+  - **Sound**: sixteen songs as MIDI notes played by a bank of 8-bit samples at 11 kHz (the GBA's "Direct Sound" with a sequencer
+    driver), `gen/songs.py`.
+  - **Limits met on purpose**: 128 sprites (the explainer counts them and the cost of the busiest line, 1210 cycles), 1024 tiles
+    a map, 64 frames a sheet (the hero's 111 are written in two pieces and found by `core/spr.lua`), 16 banks a palette.
+  - A level is a grid of characters drawn with strokes (`gen/levels_design.py`), checked by `gen/reach.py` (every jewel, the
+    frog and the way back must be reachable with the hero's jump and a dash), and compiled by `gen/levelkit.py` into maps.
 
 ### SNES and Mega Drive: `examples/veloz`
 

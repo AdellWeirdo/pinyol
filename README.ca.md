@@ -25,8 +25,8 @@ Un joc s'assembla a la consola per a la qual està fet, i el motor els mou tots:
 |---|---|
 | ![Un joc de plataformes de Game Boy en quatre tons de verd, a pantalla completa](docs/looks/gameboy.png) | ![Una sala de ZX Spectrum: blocs de dos colors, un miner i un guardià](docs/looks/spectrum.png) |
 | **Game Boy**: [cerezo](examples/cerezo), una aventura a l'estil Zelda | **ZX Spectrum**: [socavon](examples/socavon), una mina, des de la càrrega de cinta |
-| ![Un joc de plataformes de Game Boy Advance amb muntanyes en paral·laxi i aigua](docs/looks/gba.png) | ![Un joc de plataformes de velocitat de 16 bits: terra a quadres i un mar mogut línia a línia](docs/looks/16bits.png) |
-| **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), tot el seu art dibuixat amb codi |
+| ![Un joc de plataformes de tresors de Game Boy Advance: una selva en quatre capes, unes ruïnes, un bolet i un cartell](docs/looks/gba.png) | ![Un joc de plataformes de velocitat de 16 bits: terra a quadres i un mar mogut línia a línia](docs/looks/16bits.png) |
+| **Game Boy Advance**: [botin](examples/botin), un joc de plataformes de tresors | **SNES / Mega Drive**: [veloz](examples/veloz), tot el seu art dibuixat amb codi |
 | ![Un joc de lluita de Neo Geo: dos lluitadors grans en un moll a la posta de sol](docs/looks/neogeo.png) | ![Un joc de lluita de CPS2: lluitadors de 15 colors sobre un terra en perspectiva](docs/looks/cps2.png) |
 | **Neo Geo**: [duelo](examples/duelo) | **CPS2**: [torneo](examples/torneo) |
 | ![Un trencaclosques de tombes de PICO-8: 128x128 en setze colors](docs/looks/pico8.png) | ![Una maquineta LCD: un malabarista en un circ, figures enceses o apagades](docs/looks/lcd.png) |
@@ -44,7 +44,7 @@ macOS: `brew install cmake sdl2 uv`. A Linux, instal·la aquests tres amb el teu
 
 ```sh
 cmake -B build && cmake --build build
-./build/pinyol_sim --game examples/plataformas   # o naves, carreras, hola
+./build/pinyol_sim --game examples/botin   # o naves, carreras, hola
 ctest --test-dir build                       # valida cada exemple i en juga el guió de prova
 ```
 
@@ -124,7 +124,7 @@ Et queda un joc petit per canviar: una sala més gran que la pantalla, un person
 
 | Exemple | El que ensenya |
 |---|---|
-| [plataformas](examples/plataformas) | un joc de plataformes: capes en paral·laxi, aigua transparent amb un scroll ondulat per línia, transicions en mosaic |
+| [botin](examples/botin) | un joc de plataformes de tresors com els de la Game Boy Advance: quatre móns (selva, una cova amb focus de llum, una galiona enfonsada, una farga), quatre peces de joia a cadascun, una envestida que trenca blocs i un cop des de dalt, enemics que s'atordeixen, s'agafen i es llancen, un interruptor-granota que arrenca una fugida contra el rellotge i un Gòlem d'or de cap; quatre capes amb els turons tallats en bandes, bancs de paleta de 16 colors que recoloreixen un dibuix, finestres per al focus de la cova, aigua amb transparència i ones, canvis d'escena en mosaic, sprites girats per al cap, música des d'un banc de mostres i un menú que desmunta la pantalla |
 | [naves](examples/naves) | un matamarcians: un camp d'estrelles amb una velocitat per línia, un planeta que gira, explosions barrejades, un flaix |
 | [carreras](examples/carreras) | una cursa de karts en Mode 7: un terra en perspectiva, rivals com a sprites escalats, voltes i posicions |
 | [puzle](examples/puzle) | un trencaclosques lliscant per a la pantalla tàctil: una pista fantasma per barreja, una revelació en mosaic, música feta de notes |

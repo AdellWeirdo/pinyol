@@ -1,0 +1,71 @@
+{
+  "id": "botin",
+  "title": "Botín",
+  "subtitle": "Game Boy Advance",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un plataformas de botín y tesoros como los de la Game Boy Advance: cuatro mundos, cuatro piezas de joya por nivel, un interruptor-rana que arranca la huida y un jefe. Cuatro capas de fondo, paletas de 16 colores, sprites que giran y los efectos de línea que hacían sus juegos.",
+  "achievements": [
+    {
+      "id": "rompetodo",
+      "name": "Rompetodo",
+      "description": "Rompe diez bloques en un nivel."
+    },
+    {
+      "id": "primera_pieza",
+      "name": "Primera pieza",
+      "description": "Encuentra una pieza de la joya."
+    },
+    {
+      "id": "joya_completa",
+      "name": "Joya completa",
+      "description": "Reúne las cuatro piezas en un nivel."
+    },
+    {
+      "id": "huida",
+      "name": "Huida",
+      "description": "Escapa de un nivel después de pulsar el interruptor."
+    },
+    {
+      "id": "por_los_pelos",
+      "name": "Por los pelos",
+      "description": "Sal por el vórtice con menos de 5 segundos."
+    },
+    {
+      "id": "sin_rasgunos",
+      "name": "Sin un rasguño",
+      "description": "Termina un nivel sin que te hieran."
+    },
+    {
+      "id": "corona_de_oro",
+      "name": "Corona de oro",
+      "description": "Consigue la corona de oro en un nivel."
+    },
+    {
+      "id": "cofre",
+      "name": "Cerradura",
+      "description": "Abre un cofre con la llave del espíritu."
+    },
+    {
+      "id": "lanzador",
+      "name": "Lanzador",
+      "description": "Derrota a cinco enemigos en un nivel."
+    },
+    {
+      "id": "coleccionista",
+      "name": "Coleccionista",
+      "description": "Reúne las dieciséis piezas de joya."
+    },
+    {
+      "id": "gran_golem",
+      "name": "Gran Gólem",
+      "description": "Derrota al Gran Gólem de Oro."
+    },
+    {
+      "id": "curioso",
+      "name": "Curioso",
+      "description": "Mira cómo funciona la consola en el menú."
+    }
+  ]
+}

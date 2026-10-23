@@ -1,0 +1,8 @@
+{
+  "asset": "TITULO_FONDO",
+  "type": "tilemap",
+  "tiles": 486,
+  "map_w": 32,
+  "map_h": 20,
+  "palette": "TITULO"
+}

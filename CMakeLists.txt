@@ -201,9 +201,9 @@ add_test(NAME flashes_caught COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --gam
 add_test(NAME flashes_quiet COMMAND pinyol_headless --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/sysmenu
   --saves ${CMAKE_BINARY_DIR}/saves_flash_quiet --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/sysmenu.script --check-flashes)
 # a play recorded as a script plays back frame for frame: plataformas' test through the recorder, then the recording, the same CRCs
-add_test(NAME record_replay COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/plataformas \
+add_test(NAME record_replay COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/plataformas \
   --saves ${CMAKE_BINARY_DIR}/saves_rec1 --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/record/plataformas_input.script --crc ${CMAKE_BINARY_DIR}/rec1.crc \
-  --record ${CMAKE_BINARY_DIR}/rec.script >/dev/null && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/plataformas \
+  --record ${CMAKE_BINARY_DIR}/rec.script >/dev/null && $<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/plataformas \
   --saves ${CMAKE_BINARY_DIR}/saves_rec2 --fresh --script ${CMAKE_BINARY_DIR}/rec.script --crc ${CMAKE_BINARY_DIR}/rec2.crc >/dev/null && \
   cmp ${CMAKE_BINARY_DIR}/rec1.crc ${CMAKE_BINARY_DIR}/rec2.crc")
 add_executable(synth_test tests/synth_test.c platform/null/hal_null.c platform/link_udp.c)

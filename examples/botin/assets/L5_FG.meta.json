@@ -1,0 +1,8 @@
+{
+  "asset": "L5_FG",
+  "type": "tilemap",
+  "tiles": 33,
+  "map_w": 30,
+  "map_h": 20,
+  "palette": "FRAGUA"
+}

@@ -1,0 +1,8 @@
+{
+  "asset": "L2_FG",
+  "type": "tilemap",
+  "tiles": 84,
+  "map_w": 200,
+  "map_h": 32,
+  "palette": "CRISTAL"
+}

@@ -1,0 +1,109 @@
+# Botín: title, map, level 1 played with its tools (ram, box, frog, vortex), the other worlds, the golem, the explainer
+tick 120
+expect_lua G.state == "title"
+shot titulo
+press A
+tick 80
+expect_lua G.state == "map"
+shot mapa
+press A
+tick 90
+expect_lua G.state == "play" and G.level == 1 and dbg_hero().state == "move"
+shot nivel1
+# a ram goes through the wall of brown blocks
+expect_lua dbg_tp(24, 9)
+tick 3
+hold RIGHT+B 60
+expect_lua dbg_run().broken >= 1
+# a jump from the ledge breaks the box and the jewel comes out and is taken
+expect_lua dbg_tp(41, 8)
+tick 4
+hold A 20
+tick 40
+expect_lua dbg_cell(41, 6) == "."
+shot caja
+expect_lua dbg_tp(41, 8)
+tick 90
+expect_lua dbg_run().jewels >= 1
+shot joya
+# the frog starts the escape, the vortex ends it
+expect_lua dbg_tp(90, 10)
+tick 4
+hold RIGHT+B 30
+tick 60
+expect_lua dbg_run().escape == true
+shot huida
+expect_lua dbg_tp(3, 10)
+tick 20
+tick 200
+expect_lua G.state == "results"
+shot resultados
+tick 200
+press A
+tick 80
+expect_lua G.state == "map"
+# the other worlds start and play
+expect_lua dbg_level(2)
+tick 120
+shot cristal
+hold RIGHT 120
+expect_lua dbg_level(3)
+tick 120
+shot galeon
+hold RIGHT 120
+expect_lua dbg_level(4)
+tick 120
+shot fragua
+hold RIGHT+B 120
+# hearts run out
+expect_lua dbg_hurt(3) <= 0
+tick 260
+expect_lua G.state == "over"
+shot fin
+press A
+tick 80
+expect_lua G.state == "play"
+# the escape's clock runs out
+expect_lua dbg_level(1)
+tick 30
+expect_lua dbg_tp(90, 10)
+tick 4
+hold RIGHT+B 30
+tick 40
+expect_lua dbg_run().escape == true
+expect_lua dbg_time_out()
+tick 300
+expect_lua G.state == "over"
+# the golem
+expect_lua dbg_level(5)
+tick 150
+expect_lua dbg_boss().active == true
+shot gigante
+tick 400
+shot golpes
+expect_lua dbg_boss_hit(4) == 0
+tick 500
+expect_lua G.state == "ending" or G.state == "results"
+shot final
+# the explainer: four pages, each shown, then back to the game
+expect_lua dbg_level(2)
+tick 40
+expect_lua dbg_explain()
+tick 3
+expect_lua G.state == "explain"
+shot ex1
+press RIGHT
+tick 3
+shot ex1b
+press C
+tick 3
+shot ex2
+press C
+tick 3
+shot ex3
+press C
+tick 3
+shot ex4
+press B
+tick 5
+expect_lua G.state == "play"

@@ -1,0 +1,8 @@
+{
+  "asset": "SELVA_BG",
+  "type": "tilemap",
+  "tiles": 561,
+  "map_w": 32,
+  "map_h": 28,
+  "palette": "SELVA"
+}
