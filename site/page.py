@@ -56,6 +56,7 @@ OTHERS = [
     ("moto", "Moto costa"), ("mazmorra", "La mazmorra"), ("carreras", "Carreras"), ("naves", "Naves"), ("aldea", "La aldea"),
     ("puzle", "Puzle"), ("inventos", "Inventos"), ("estilos", "Estilos"), ("sonidos", "Sonidos"), ("control", "Control"),
     ("juntos", "Juntos"), ("hola", "Hola pinyol"),
+    ("selva", "Selva"), ("niebla", "Niebla"), ("recortes", "Recortes"), ("cajas", "Cajas"),
 ]
 
 # The ladder: games Codex made, one request each, on a fresh clone with nothing but AGENTS.md (2026-10-14), from the
@@ -495,9 +496,10 @@ def days() -> str:
         ("2026-10-20", "20 oct.", "Lápiz y varios dedos en la pantalla táctil, dos pantallas en el simulador, la careta POWERED BY PINYOL en todos los juegos, Lua al doble de velocidad, once ejemplos nuevos y el firmware 0.3.0."),
         ("2026-10-21", "21 oct.", "El menú de la consola sobre cualquier juego, con ajustes, favoritos y logros; partidas entre consolas por radio; movimiento al estilo de Celeste; y el código desde la PSRAM, que acelera el mundo hasta un 30 %."),
         ("2026-10-22", "22 oct.", "Módulos XM y S3M, canciones de FamiStudio, vuelta atrás (rollback) entre consolas, campo de visión en cuadrículas, la memoria de la consola reordenada y el firmware 0.4.0."),
+        ("2026-10-23", "23 oct.", "mesh(): modelos 3D dibujados en C, y cuatro juegos con el aspecto de los 32 bits: Selva, Niebla, Recortes y Cajas. Firmware 0.5.0."),
     ]
     li = "".join(f'<li><time datetime="{d}">{label}</time><p>{escape(t)}</p></li>' for d, label, t in items)
-    return f"""<div class="days reveal"><h3>Doce días en el repositorio</h3><ol>{li}</ol></div>"""
+    return f"""<div class="days reveal"><h3>Trece días en el repositorio</h3><ol>{li}</ol></div>"""
 
 
 def thousands(v: int) -> str:
