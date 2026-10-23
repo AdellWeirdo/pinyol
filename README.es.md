@@ -29,8 +29,8 @@ Un juego se parece a la consola para la que está hecho, y el motor los mueve to
 | **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), todo su arte dibujado con código |
 | ![Un juego de lucha de Neo Geo: dos luchadores grandes en un muelle al atardecer](docs/looks/neogeo.png) | ![Un juego de lucha de CPS2: luchadores de 15 colores sobre un suelo en perspectiva](docs/looks/cps2.png) |
 | **Neo Geo**: [duelo](examples/duelo) | **CPS2**: [torneo](examples/torneo) |
-| ![Un rompeladrillos de PICO-8: 128x128 en dieciséis colores](docs/looks/pico8.png) | ![Una maquinita LCD: un cocinero que recoge huevos, figuras encendidas o apagadas](docs/looks/lcd.png) |
-| **PICO-8**: [ladrillos](examples/ladrillos), sin imágenes | **Maquinita LCD**: [huevos](examples/huevos), todo polígonos |
+| ![Un puzle de tumbas de PICO-8: 128x128 en dieciséis colores](docs/looks/pico8.png) | ![Una maquinita LCD: un cocinero que recoge huevos, figuras encendidas o apagadas](docs/looks/lcd.png) |
+| **PICO-8**: [tumba](examples/tumba), un puzle de deslizamiento | **Maquinita LCD**: [huevos](examples/huevos), todo polígonos |
 | ![Un juego vectorial: líneas brillantes sobre negro](docs/looks/vector.png) | ![Un matamarcianos vertical, girado: se juega con la consola de lado](docs/looks/vertical.png) |
 | **Recreativa vectorial**: [pozo](examples/pozo), sin imágenes | **Pantalla vertical**: [tormenta](examples/tormenta), con la consola de lado |
 | ![Un laberinto en primera persona: pasillos de piedra y un fantasma, a lo Wolfenstein](docs/looks/firstperson.png) | ![Una pantalla de carga de ZX Spectrum: un minero en una cueva de cristal, dos colores por bloque](docs/looks/loading.png) |
@@ -142,7 +142,7 @@ Te queda un juego pequeño para cambiar: una sala más grande que la pantalla, u
 | [cerezo](examples/cerezo) | una aventura vista desde arriba como las últimas de Game Boy: un mundo de pantallas que se deslizan, una mazmorra, un jefe, diálogos, cuatro tonos que C cambia por las paletas de la Color; arte y música hechos con código |
 | [socavon](examples/socavon) | una mina de plataformas de una pantalla como las del ZX Spectrum, desde la carga de cinta (borde a rayas, la pantalla en su propio orden): ocho salas, bloques de dos colores, sprites que se pisan el color, llaves que parpadean, cintas, suelos que se derrumban, una voz de pitido y un menú que enseña los atributos |
 | [veloz](examples/veloz) | un plataformas de velocidad como los de las consolas de 16 bits: un mar movido línea a línea, un cielo en degradado, charcos transparentes, un título en Mode 7; un pangolín que se hace bola |
-| [ladrillos](examples/ladrillos) | un rompeladrillos como un cartucho de PICO-8: una pantalla de 128x128 en sus dieciséis colores, dibujada de nuevo cada frame; sin imágenes |
+| [tumba](examples/tumba) | un puzle de deslizamiento como un cartucho de PICO-8: dieciséis niveles de tumba en una pantalla de 128x128 en sus dieciséis colores, cada uno con su par (el mínimo de movimientos, hallado por un solucionador); arenas movedizas, muros que se rompen, portales, llaves, sentidos únicos; cuatro canales de chiptune; y un menú que enseña de qué está hecho un cartucho |
 | [huevos](examples/huevos) | una maquinita LCD: figuras encendidas o apagadas (sus fantasmas se siguen viendo) sobre una imagen impresa, un paso y un pitido cada vez |
 | [pozo](examples/pozo) | un tirador vectorial de recreativa en un pozo geométrico: líneas brillantes con resplandor, hasta las letras, sin imágenes; su menú repite un fotograma línea a línea, como lo dibujaba el haz |
 | [tormenta](examples/tormenta) | un matamarcianos vertical para jugar con la consola de lado: un lienzo de pie que se ve girado, cientos de balas |

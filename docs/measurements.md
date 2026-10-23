@@ -888,3 +888,20 @@ Not measured: the miner walking and jumping (the floor-crumbling and belt rooms 
 a time), and the tape loading (which draws full-screen images and clips; its striped border strobes only when "less flashing"
 is off).
 
+## 2026-10-23 · PICO-8 sliding puzzle (Tumba) on the console
+
+Tumba's screen is the 16x16 map of the level on the background layer plus one sprite, so the strips cost 2.4-2.5 ms and the
+game's Lua 0.8-1.0 ms of `_update` and 1.6-1.7 ms of `_draw` (the margins' text, the particles as 2x2 rectangles). A silent
+copy (`volume(0)`) was sent with the title's demo running, which plays each level's solved moves with the real rules: slides,
+particles, screen shake and the gems and cracks changing tiles.
+
+| What was measured | Result |
+|---|---|
+| fps playing the demo | 58.9 to 59.9 (the first sample, 55.6, is the load) |
+| `render` (the whole frame) | 15.8 ms |
+| audio, the four voices of the tunes off | 9-10% of a core, 0 underruns |
+| free internal RAM / free PSRAM | 64-75 KB / 4.75-4.78 MB |
+| script memory | 322 KB |
+
+Not measured: the explainer's pages (the map page draws 256 letters, once, into a canvas) and the level select.
+

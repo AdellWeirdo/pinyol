@@ -204,7 +204,7 @@ examined.
 | 13 | Tactics | tablero | PARTIAL | one 15 x 10 field, no side-view battle scene, fog, army palettes or link arena |
 | 14 | Real-time grid battler | none | MISSING | |
 | 15 | Roguelike | sima (five generated floors, fog, a chasing crowd on one distance field, the day's seed) | PARTIAL | no inventory beyond potions, no hunger, traps or allies, no saved run |
-| 16 | Puzzle | puzle (sliding), ladrillos (breakout) | PARTIAL | falling blocks, match-3, rotating-stick maze missing |
+| 16 | Puzzle | puzle (sliding), tumba (sliding puzzle with a solver), ladrillos (breakout, in tests/games) | PARTIAL | falling blocks, match-3, rotating-stick maze missing |
 | 17 | Pinball | pinball | PARTIAL | one table: no scrolling, bonus fields or multi-ball; flippers use `w:drive` |
 | 18 | Rhythm | control (cuts on the beat of a theme), sonidos | PARTIAL | no rhythm game proper; `studio.*` unused by examples |
 | 19 | Microgame / party | microjuegos | PARTIAL | eight games, speed ramp, boss; no touch, microphone or tilt games, no assets loaded per game from the card |

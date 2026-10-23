@@ -28,7 +28,7 @@
  "dibujado con código": "dibuixat amb codi",
  "Una sala de mina de ZX Spectrum: un minero, llaves, un robot guardián y bloques de dos colores": "Una sala de mina de ZX Spectrum: un miner, claus, un robot guardià i blocs de dos colors",
  "1982 · dos colores por bloque": "1982 · dos colors per bloc",
- "Un rompeladrillos de PICO-8 en dieciséis colores": "Un trencamaons de PICO-8 en setze colors",
+ "Un nivel de tumba de PICO-8: un explorador, gemas y muros, en dieciséis colores": "Un nivell de tomba de PICO-8: un explorador, gemes i murs, en setze colors",
  "2015 · 128×128 · dieciséis colores": "2015 · 128×128 · setze colors",
  "1980 · figuras que se encienden": "1980 · figures que s'encenen",
  "Maquinita LCD": "Maquineta LCD",
@@ -167,6 +167,7 @@
  "cinta": "cinta",
  "socavon": "socavon",
  "ladrillos": "ladrillos",
+ "tumba": "tumba",
  "huevos": "huevos",
  "gotico": "gotico",
  "veloz": "veloz",
@@ -249,7 +250,7 @@
  "Una plaza empedrada con un cerezo sin hojas y vecinos alrededor, en cuatro tonos de verde": "Una plaça empedrada amb un cirerer sense fulles i veïns al voltant, en quatre tons de verd",
  "1998 · cuatro verdes, un mundo de pantallas": "1998 · quatre verds, un món de pantalles",
  "Ocho salas de una mina, con carga de cinta y choque de color.": "Vuit sales d'una mina, amb càrrega de cinta i xoc de color.",
- "Un rompeladrillos con la paleta de esta consola de fantasía.": "Un trencamaons amb la paleta d'aquesta consola de fantasia.",
+ "Un puzle de deslizamiento por tumbas, con la paleta de esta consola de fantasía.": "Un trencaclosques de lliscament per tombes, amb la paleta d'aquesta consola de fantasia.",
  "Una maquinita LCD: un cocinero que recoge huevos, con figuras que se encienden y se apagan": "Una maquineta LCD: un cuiner que recull ous, amb figures que s'encenen i s'apaguen",
  "Un cocinero que recoge huevos y se mueve figura a figura.": "Un cuiner que recull ous i es mou figura a figura.",
  "La sala de un castillo gótico: velas que brillan, un fantasma y una cazadora con látigo": "La sala d'un castell gòtic: llums d'espelma, un fantasma i una caçadora amb fuet",
@@ -549,5 +550,6 @@
  "Un juego de ritmo de llamada y respuesta con personajes de papel recortado, como los de los 32 bits: el maestro sapo canta una frase con los botones y tú la repites a tiempo. Los muñecos son quads que se doblan como papel, los decorados corren por las capas de la PPU y la música suena en vivo en las voces del sintetizador. Y un menú que enseña los trucos.": "Un joc de ritme de crida i resposta amb personatges de paper retallat, com els dels 32 bits: el mestre gripau canta una frase amb els botons i tu la repeteixes a temps. Els ninots són quads que es doblen com el paper, els decorats corren per les capes de la PPU i la música sona en directe a les veus del sintetitzador. I un menú que ensenya els trucs.",
  "Un juego de lucha uno contra uno con luchadores de bloques, como los primeros de los 32 bits: cámara lateral, puñetazo, patada, barrido, bloqueo y salto, al mejor de tres asaltos contra la máquina. Cada luchador son once cajas con textura movidas con cinemática en Lua y dibujadas con mesh(). Y un menú que enseña los trucos.": "Un joc de lluita un contra un amb lluitadors de blocs, com els primers dels 32 bits: càmera lateral, cop de puny, cop de peu, escombrada, bloqueig i salt, al millor de tres assalts contra la màquina. Cada lluitador són onze caixes amb textura mogudes amb cinemàtica en Lua i dibuixades amb mesh(). I un menú que ensenya els trucs.",
  "Una aventura de acción como las de la última época de la Game Boy: una isla, un pueblo, una cueva bajo el monte y un cerezo que no ha florecido. Cuatro tonos, mosaicos de 8x8, sprites de 16x16 y un menú que enseña cómo lo hacía la consola.": "Una aventura d'acció com les de l'última època de la Game Boy: una illa, un poble, una cova sota la muntanya i un cirerer que no ha florit. Quatre tons, mosaics de 8x8, sprites de 16x16 i un menú que ensenya com ho feia la consola.",
- "Una mina a la manera de un juego de ZX Spectrum, desde la carga de la cinta: ocho salas de un solo pantallazo, bloques de dos colores con su choque de color, llaves que parpadean, cintas transportadoras, suelos que se derrumban y un pitido como única voz. Y un menú que enseña cómo lo hacía la máquina.": "Una mina a la manera d'un joc de ZX Spectrum, des de la càrrega de la cinta: vuit sales d'una sola pantalla, blocs de dos colors amb el seu xoc de color, claus que parpellegen, cintes transportadores, sòls que s'ensorren i un pitit com a única veu. I un menú que ensenya com ho feia la màquina."
+ "Una mina a la manera de un juego de ZX Spectrum, desde la carga de la cinta: ocho salas de un solo pantallazo, bloques de dos colores con su choque de color, llaves que parpadean, cintas transportadoras, suelos que se derrumban y un pitido como única voz. Y un menú que enseña cómo lo hacía la máquina.": "Una mina a la manera d'un joc de ZX Spectrum, des de la càrrega de la cinta: vuit sales d'una sola pantalla, blocs de dos colors amb el seu xoc de color, claus que parpellegen, cintes transportadores, sòls que s'ensorren i un pitit com a única veu. I un menú que ensenya com ho feia la màquina.",
+ "Un puzle de deslizamiento por tumbas como los de PICO-8: el explorador se desliza hasta chocar, recoge gemas, esquiva pinchos y busca la salida. Dieciséis niveles de 128x128 con arenas movedizas, muros que se rompen, portales, llaves y sentidos únicos; cada uno con su par de movimientos. Y un menú que enseña cómo funciona un cartucho: la paleta de 16 colores, el mapa, los cuatro canales y los fundidos.": "Un trencaclosques de lliscament per tombes a l'estil de PICO-8: l'explorador llisca fins a topar, recull gemes, esquiva punxes i busca la sortida. Setze nivells de 128x128 amb sorres movedisses, murs que es trenquen, portals, claus i sentits únics, cadascun amb el seu par de moviments. I un menú que ensenya de què està fet un cartutx: la paleta de setze colors, el mapa, els quatre canals i els fonedissos."
 }

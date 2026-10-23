@@ -43,7 +43,7 @@ text, made with `uv run tools/font2fnt.py --pack <look> games/<id>`: the 37 pack
 Not every look needs an image model. The small ones (Game Boy, Spectrum, 16-bit, PICO-8, LCD, vector, first person)
 are best **drawn by code** in the game's `art.py`, from pictures written as text and simple shapes, as their examples
 do: no quota, and pixels exactly where they should be. A game can even draw everything while it runs, with no
-pictures at all (`examples/inventos`, `pozo`, `ladrillos`, `huevos`, `tormenta`).
+pictures at all (`examples/inventos`, `pozo`, `huevos`, `tormenta`).
 Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and CPS2.
 
 ### Game Boy: `examples/cerezo`
@@ -147,12 +147,20 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
 - Generated art. Style line: *mid-1990s 2D arcade fighting game sprite, hand-pixelled, bold dark outline, cel
   shading with 3 or 4 tones per material, about 15 colours in total, anime-influenced proportions*.
 
-### PICO-8: `examples/ladrillos`
+### PICO-8: `examples/tumba`
 
-- A 128×128 canvas, cleared and drawn again every frame with `cls`, `rect`, `circ`, `line` and `pset` (as PICO-8
-  code is written), shown twice as big in the middle: `img("P8", 112, 32, {scale = 2})`.
-- PICO-8's **sixteen colours** and no others; letters four of its pixels wide (Press Start 2P at 8 pixels).
-- No pictures at all; little square-wave blips.
+- A 128×128 screen in the middle of the 240×160 world (cart pixel = world pixel), the level as a 16×16 **map of 8×8 tiles** on the
+  background layer (PICO-8's `map()`), carved margins at the sides that also hold the numbers; sprites for the hero; particles as
+  single pixels and screen shake. Pictures are written as hex digits like a cart's sprite sheet (`gen/p8kit.py`).
+- PICO-8's **sixteen colours** and no others (WORLD.pal / OBJ.pal hold them at indices 1-16), letters four of its pixels wide
+  (`font2fnt.py --pack pico8`). **`pal()`** makes the fades (every colour stepped to a darker one, as the carts' fade tables
+  did) and the swaps the explainer shows live.
+- Four chiptune channels with `tone()` voices (pulse, narrow pulse, a bass wave, noise); sound effects from numbers.
+- The levels are **generated and checked**: `gen/levels_design.py` builds a maze with the level's mechanics, a random walk of the real
+  rules places the gems and the exit, and a breadth-first solver finds the true shortest solution, the *par*; a level is kept only
+  if the solution uses each mechanic. `tests/tumba.script` plays every level's solution through `core/rules.lua`, which proves the
+  Lua rules and the Python ones agree.
+- The menu's "Cómo funciona": the palette (pick a colour, swap it with `pal()`), the map as numbers, the four channels live, and the fades.
 
 ### Pocket LCD games: `examples/huevos`
 

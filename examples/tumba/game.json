@@ -1,0 +1,16 @@
+{
+  "id": "tumba",
+  "title": "Tumba",
+  "subtitle": "PICO-8",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un puzle de deslizamiento por tumbas como los de PICO-8: el explorador se desliza hasta chocar, recoge gemas, esquiva pinchos y busca la salida. Dieciséis niveles de 128x128 con arenas movedizas, muros que se rompen, portales, llaves y sentidos únicos; cada uno con su par de movimientos. Y un menú que enseña cómo funciona un cartucho: la paleta de 16 colores, el mapa, los cuatro canales y los fundidos.",
+  "achievements": [
+    {"id": "primer_nivel", "name": "Primer nivel", "description": "Sal del vestíbulo de la tumba."},
+    {"id": "en_par", "name": "En par", "description": "Resuelve un nivel en el mínimo de movimientos."},
+    {"id": "diez_pares", "name": "Diez en par", "description": "Resuelve diez niveles en el mínimo de movimientos."},
+    {"id": "curioso", "name": "Curioso", "description": "Mira cómo funciona un cartucho en el menú."},
+    {"id": "tumba", "name": "Tumba completa", "description": "Cruza los dieciséis niveles."}
+  ]
+}

@@ -29,8 +29,8 @@ Un joc s'assembla a la consola per a la qual està fet, i el motor els mou tots:
 | **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), tot el seu art dibuixat amb codi |
 | ![Un joc de lluita de Neo Geo: dos lluitadors grans en un moll a la posta de sol](docs/looks/neogeo.png) | ![Un joc de lluita de CPS2: lluitadors de 15 colors sobre un terra en perspectiva](docs/looks/cps2.png) |
 | **Neo Geo**: [duelo](examples/duelo) | **CPS2**: [torneo](examples/torneo) |
-| ![Un trencamaons de PICO-8: 128x128 en setze colors](docs/looks/pico8.png) | ![Una maquineta LCD: un cuiner que recull ous, figures enceses o apagades](docs/looks/lcd.png) |
-| **PICO-8**: [ladrillos](examples/ladrillos), sense imatges | **Maquineta LCD**: [huevos](examples/huevos), tot polígons |
+| ![Un trencaclosques de tombes de PICO-8: 128x128 en setze colors](docs/looks/pico8.png) | ![Una maquineta LCD: un cuiner que recull ous, figures enceses o apagades](docs/looks/lcd.png) |
+| **PICO-8**: [tumba](examples/tumba), un trencaclosques de lliscament | **Maquineta LCD**: [huevos](examples/huevos), tot polígons |
 | ![Un joc vectorial: línies brillants sobre negre](docs/looks/vector.png) | ![Un matamarcians vertical, girat: es juga amb la consola de costat](docs/looks/vertical.png) |
 | **Recreativa vectorial**: [pozo](examples/pozo), sense imatges | **Pantalla vertical**: [tormenta](examples/tormenta), amb la consola de costat |
 | ![Un laberint en primera persona: passadissos de pedra i un fantasma, a l'estil de Wolfenstein](docs/looks/firstperson.png) | ![Una pantalla de càrrega de ZX Spectrum: un miner en una cova de cristall, dos colors per bloc](docs/looks/loading.png) |
@@ -143,7 +143,7 @@ Et queda un joc petit per canviar: una sala més gran que la pantalla, un person
 | [cerezo](examples/cerezo) | una aventura vista des de dalt com les últimes de Game Boy: un món de pantalles que llisquen, una masmorra, un cap, diàlegs, quatre tons que C canvia per les paletes de la Color; art i música fets amb codi |
 | [socavon](examples/socavon) | una mina de plataformes d'una pantalla com les del ZX Spectrum, des de la càrrega de cinta (vora a ratlles, la pantalla en el seu propi ordre): vuit sales, blocs de dos colors, sprites que es trepitgen el color, claus que parpellegen, cintes, sòls que s'ensorren, una veu de pitit i un menú que ensenya els atributs |
 | [veloz](examples/veloz) | un joc de plataformes de velocitat com els de les consoles de 16 bits: un mar mogut línia a línia, un cel en degradat, tolls transparents, un títol en Mode 7; un pangolí que es fa una bola |
-| [ladrillos](examples/ladrillos) | un trencamaons com un cartutx de PICO-8: una pantalla de 128x128 en els seus setze colors, dibuixada de nou cada frame; sense imatges |
+| [tumba](examples/tumba) | un trencaclosques de lliscament com un cartutx de PICO-8: setze nivells de tomba en una pantalla de 128x128 en els seus setze colors, cadascun amb el seu par (el mínim de moviments, trobat per un solucionador); arenes movedisses, murs que es trenquen, portals, claus, sentits únics; quatre canals de chiptune; i un menú que ensenya de què està fet un cartutx |
 | [huevos](examples/huevos) | una maquineta LCD: figures enceses o apagades (els seus fantasmes encara es veuen) sobre una imatge impresa, un pas i un xiulet cada vegada |
 | [pozo](examples/pozo) | un tirador vectorial de recreativa en un pou geomètric: línies brillants amb resplendor, fins i tot les lletres, sense imatges; el seu menú repeteix un fotograma línia a línia, com el dibuixava el feix |
 | [tormenta](examples/tormenta) | un matamarcians vertical per jugar amb la consola de costat: un llenç dret que es veu girat, centenars de bales |

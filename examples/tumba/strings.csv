@@ -1,0 +1,62 @@
+key,es,ca,en
+title,TUMBA,TUMBA,TOMB
+press,PULSA A,PREM A,PRESS A
+play,JUGAR,JUGAR,PLAY
+levels,NIVELES,NIVELLS,LEVELS
+level,NIVEL,NIVELL,LEVEL
+gems,GEMAS,GEMES,GEMS
+moves,MOVS,MOVS,MOVES
+par,PAR,PAR,PAR
+best,MEJOR,MILLOR,BEST
+undo,B: DESHACER,B: DESFER,B: UNDO
+restart,A: REINICIAR,A: REINICIAR,A: RESTART
+move,FLECHAS: DESLIZAR,FLETXES: LLISCAR,ARROWS: SLIDE
+par_made,¡EN PAR!,EN PAR!,AT PAR!
+done,¡NIVEL!,NIVELL!,LEVEL!
+how,Cómo funciona,Com funciona,How it works
+win_1,¡SALISTE DE LA TUMBA!,HAS SORTIT DE LA TUMBA!,YOU ESCAPED THE TOMB!
+win_2,"Dieciséis salas, un tesoro.","Setze sales, un tresor.","Sixteen chambers, one treasure."
+demo,DEMO,DEMO,DEMO
+high,PARES,PARS,PARS
+locked,BLOQUEADO,BLOQUEJAT,LOCKED
+ach_primer_nivel,Primer nivel,Primer nivell,First level
+ach_en_par,En par,En par,At par
+ach_diez_pares,Diez en par,Deu en par,Ten at par
+ach_curioso,Curioso,Curiós,Curious
+ach_tumba,Tumba completa,Tomba completa,Tomb complete
+name_1,EL VESTÍBULO,EL VESTÍBUL,THE VESTIBULE
+name_2,LA SALA DE LAS URNAS,LA SALA DE LES URNES,THE HALL OF URNS
+name_3,EL PASILLO QUEBRADO,EL PASSADÍS TRENCAT,THE BROKEN CORRIDOR
+name_4,LA CÁMARA DEL ESCRIBA,LA CAMBRA DE L'ESCRIBA,THE SCRIBE'S CHAMBER
+name_5,PINCHOS,CLAUS,SPIKES
+name_6,EL JARDÍN DE ESPINAS,EL JARDÍ D'ESPINES,THE THORN GARDEN
+name_7,MUROS DÉBILES,MURS DÈBILS,WEAK WALLS
+name_8,LA CRIPTA QUEBRADIZA,LA CRIPTA QUEBRADISSA,THE CRUMBLING CRYPT
+name_9,ARENAS MOVEDIZAS,ARENES MOVEDISSES,QUICKSAND
+name_10,EL PANTANO SECO,EL PANTÀ SEC,THE DRY MARSH
+name_11,EL PORTAL,EL PORTAL,THE PORTAL
+name_12,LOS DOS PORTALES,ELS DOS PORTALS,THE TWO PORTALS
+name_13,LA LLAVE DE ORO,LA CLAU D'OR,THE GOLDEN KEY
+name_14,LA PUERTA DE ARENA,LA PORTA D'ARENA,THE SAND DOOR
+name_15,SENTIDOS ÚNICOS,SENTITS ÚNICS,ONE WAY ONLY
+name_16,EL CORAZÓN DE LA TUMBA,EL COR DE LA TOMBA,THE HEART OF THE TOMB
+ex_title_1,LA PALETA,LA PAL·LETA,THE PALETTE
+ex_title_2,EL MAPA,EL MAPA,THE MAP
+ex_title_3,CUATRO CANALES,QUATRE CANALS,FOUR CHANNELS
+ex_title_4,FUNDIDOS CON pal(),FONEDISSOS AMB pal(),FADES WITH pal()
+ex_nav,IZQ/DER: página {n} de {m} · START: volver,ESQ/DRE: pàgina {n} de {m} · START: tornar,LEFT/RIGHT: page {n} of {m} · START: back
+ex_p1a,16 colores y ninguno más.,16 colors i cap més.,16 colours and no more.
+ex_p1b,Flechas: elige un color.,Fletxes: tria un color.,Arrows: pick a colour.
+ex_p1c,A: cámbialo por otro (pal).,A: canvia'l per un altre (pal).,A: swap it for another (pal).
+ex_p1d,B: deshacer los cambios.,B: desfer els canvis.,B: undo the swaps.
+ex_p2a,El nivel es un mapa de 16x16,El nivell és un mapa de 16x16,The level is a 16x16 map
+ex_p2b,"números: cada uno, un sprite de 8x8.","números: cada un, un sprite de 8x8.",numbers: each one an 8x8 sprite.
+ex_p3a,"Cuatro canales, cada uno una voz:","Quatre canals, cadascun una veu:","Four channels, each one a voice:"
+ex_p3b,"pulso, pulso estrecho, bajo y ruido.","pols, pols estret, baix i soroll.","pulse, narrow pulse, bass and noise."
+ex_p4a,Un fundido es un cambio de paleta:,Un fonedís és un canvi de paleta:,A fade is a palette change:
+ex_p4b,cada color pasa a otro más oscuro.,cada color passa a un altre més fosc.,each colour turns to a darker one.
+ex_p4c,IZQ/DER arriba: nivel del fundido.,ESQ/DRE amunt: nivell del fonedís.,UP/DOWN: the fade level.
+ch_1,PULSO,POLS,PULSE
+ch_2,ESTRECHO,ESTRET,NARROW
+ch_3,BAJO,BAIX,BASS
+ch_4,RUIDO,SOROLL,NOISE
