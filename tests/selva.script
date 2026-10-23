@@ -146,3 +146,24 @@ lua lang.set("en")
 expect_lua lang.tr("press") == "PRESS A"
 lua lang.set("es")
 expect_lua lang.tr("press") == "PULSA A"
+
+# the rules, without drawing: the attract mode's player runs twelve seeds for a long while (every pattern, pits, spikes, crates): no error, the fox
+# keeps to the way, the lives and the lists stay sane, and it does get somewhere
+lua function count(t) local n = 0 for _ in ipairs(t) do n = n + 1 end return n end
+lua function sane() return math.abs(W.fox.x) <= W.HALF + 0.01 and W.lives >= 0 and count(W.items) < 120 end
+lua function run_seed(seed) W.new(seed) for i = 1, 1500 do if W.over then return end W.update(W.ai_input()) assert(sane(), "seed " .. seed .. " tick " .. i) end end
+lua W.hook = function() end far = 0
+lua run_seed(1) far = math.max(far, W.dist)
+lua run_seed(2) far = math.max(far, W.dist)
+lua run_seed(3) far = math.max(far, W.dist)
+lua run_seed(4) far = math.max(far, W.dist)
+lua run_seed(5) far = math.max(far, W.dist)
+lua run_seed(6) far = math.max(far, W.dist)
+lua run_seed(7) far = math.max(far, W.dist)
+lua run_seed(8) far = math.max(far, W.dist)
+lua run_seed(9) far = math.max(far, W.dist)
+lua run_seed(10) far = math.max(far, W.dist)
+lua run_seed(11) far = math.max(far, W.dist)
+lua run_seed(12) far = math.max(far, W.dist)
+lua W.new(7) fox = W.fox
+expect_lua far > 3000 and W.lives == 3 and W.dist == 0

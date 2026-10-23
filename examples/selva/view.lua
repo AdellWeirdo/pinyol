@@ -32,9 +32,14 @@ function M.init()
   s = Models.solid(); s:floor(-14, 14, 0, 14, 0.5); models.spike = s:build()
 end
 
-local function call(model, tex, x, y, z, rot, opts)
-  local o = {pos = {x, y, z}, rot = rot, focal = M.FOCAL, cx = M.CX, cy = M.CY, near = 20, light = LIGHT, snap = M.snap, dither = M.dither}
-  if M.fog then o.fade = {260, 980} end
+local FADE, FADE_FAR = {260, 980}, {300, 1400}
+local OPTS, POS = {pos = {0, 0, 0}, focal = M.FOCAL, cx = M.CX, cy = M.CY, near = 20, light = LIGHT}, {0, 0, 0}
+local function call(model, tex, x, y, z, rot, opts) -- (one table of options reused: mesh() reads it at once, and a call a part makes 15 times a frame)
+  local o = OPTS
+  o.pos = POS
+  POS[1], POS[2], POS[3] = x, y, z
+  o.rot, o.scale, o.light, o.fade = rot, nil, LIGHT, M.fog and FADE or nil
+  o.snap, o.dither = M.snap, M.dither
   if opts then for k, v in pairs(opts) do o[k] = v end end
   return mesh(model, tex, o)
 end
@@ -82,7 +87,7 @@ end
 
 -- the world seen from `cam` ({x, z}): the rolling path and the two rows of trees
 function M.path(cam)
-  return call(models.path, "TEX_PATH", -cam.x, ground_y(), -(cam.z % 40) + 40, {0, 0, 0}, {fade = M.fog and {300, 1400} or nil})
+  return call(models.path, "TEX_PATH", -cam.x, ground_y(), -(cam.z % 40) + 40, {0, 0, 0}, {fade = M.fog and FADE_FAR or nil})
 end
 
 function M.trees(cam)
@@ -101,7 +106,7 @@ end
 function M.thing(it, cam, t)
   if it.z - cam.z < 24 or it.z - cam.z > 520 then return 0 end
   if it.k == "crate" then return call(models.crate, "TEX_CRATE", it.x - cam.x, ground_y(), it.z - cam.z, {0, 0, 0}) end
-  if it.k == "pit" then return call(models.pit, "TEX_PIT", -cam.x, ground_y(), it.z - cam.z - 0, {0, 0, 0}, {light = false, fade = M.fog and {300, 1400} or nil}) end
+  if it.k == "pit" then return call(models.pit, "TEX_PIT", -cam.x, ground_y(), it.z - cam.z - 0, {0, 0, 0}, {light = false, fade = M.fog and FADE_FAR or nil}) end
   if it.k == "spike" then return call(models.spike, "TEX_SPIKE", it.x - cam.x - 0, ground_y(), it.z - cam.z, {0, 0, 0}) end
   if it.k == "fruit" then
     local sx, sy, k = M.project(it.x, it.y + 6, it.z, cam)
