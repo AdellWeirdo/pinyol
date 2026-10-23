@@ -1,0 +1,149 @@
+# Cajas: a one-on-one fight of boxy fighters. The title and its difficulty, the intro and the fight, a punch that lands, a blocked one, one that a crouch ducks, a
+# sweep that a jump clears, the combo and the first-hit achievements, a knock-out and the round, the match, the clock running out, "Cómo funciona" with its
+# switches, the three languages, and two machines fighting over several seeds with the rules held.
+new
+tick 100
+expect_lua state == "title" and diff == 2
+shot cajas_titulo
+lua W = require("world") F = require("fighter") E = require("explain") M = require("music") V = require("view") J = require("juice") Mv = require("moves")
+press RIGHT
+tick 2
+expect_lua diff == 3
+press LEFT
+press LEFT
+tick 3
+expect_lua diff == 1
+press RIGHT
+tick 2
+expect_lua diff == 2
+press A
+tick 4
+expect_lua state == "play" and W.phase == "intro" and W.p.hp == 100 and W.c.hp == 100 and W.p.face == 1 and W.c.face == -1
+tick 100
+expect_lua W.phase == "fight"
+shot cajas_lucha
+# a punch that lands: the other is hurt, loses health, the combo counts, the first achievement. The CPU is made to stand still.
+lua W.ai_input = function() return {} end W.p.x = -4 W.c.x = 4 W.c.state = "idle" W.c.hp = 100 W.p.state = "idle"
+press A
+tick 10
+expect_lua W.c.hp == 100 - Mv.punch.dmg and W.c.state == "hurt" and W.combo_p == 1 and achievements()[1].done == true
+shot cajas_golpe
+tick 40
+expect_lua W.c.state == "idle" and W.p.state == "idle"
+# blocked: the other holds back (right, for the fighter that faces left): no damage
+lua W.ai_input = function() return {right = true} end W.p.x = -4 W.c.x = 4 W.c.hp = 100
+tick 2
+press A
+tick 10
+expect_lua W.c.hp == 100 and W.c.state == "blocked"
+tick 30
+# a crouch ducks a high punch
+lua W.ai_input = function() return {down = true} end W.p.x = -4 W.c.x = 4 W.c.hp = 100
+tick 2
+press A
+tick 12
+expect_lua W.c.hp == 100 and W.c.crouch == true
+tick 30
+# a sweep catches a crouching one that does not hold back, and knocks it down (two keys at once: driven by the rules directly)
+lua W.ai_input = function() return {down = true} end W.p.x = -4 W.c.x = 4 W.c.hp = 100 W.p.state = "idle" W.p.t = 0 W.c.state = "idle"
+lua W.update({down = true, b_p = true})
+lua for i = 1, 18 do W.update({down = true}) end
+expect_lua W.c.hp == 100 - Mv.sweep.dmg and (W.c.state == "down" or W.c.state == "getup")
+lua for i = 1, 90 do W.update({}) end
+# a jump clears a sweep
+lua W.ai_input = function() return {up = true} end W.p.x = -4 W.c.x = 4 W.c.hp = 100 W.p.state = "idle" W.p.t = 0 W.c.state = "idle" W.c.y = 0 W.c.vy = 0
+lua W.update({}) W.update({down = true, b_p = true})
+lua for i = 1, 16 do W.update({down = true}) end
+expect_lua W.c.hp == 100
+lua for i = 1, 80 do W.update({}) end
+# the third hit without being touched: the combo achievement; a kick hits harder than a punch
+lua W.ai_input = function() return {} end W.p.x = -4 W.c.x = 4 W.c.hp = 100 W.p.state = "idle" W.p.t = 0 W.c.state = "idle" W.combo_p = 2 W.combo_t = 90 W.p.hits_taken = 0
+lua W.update({b_p = true})
+lua for i = 1, 14 do W.update({}) end
+expect_lua W.c.hp == 100 - Mv.kick.dmg and W.combo_p == 3 and Mv.kick.dmg > Mv.punch.dmg
+lua for i = 1, 60 do W.update({}) end
+# a knock-out: the round is won, with no hit taken it is perfect, the next round begins after the pause
+lua W.ai_input = function() return {} end W.p.x = -4 W.c.x = 4 W.c.hp = 3 W.p.state = "idle" W.p.t = 0 W.c.state = "idle" W.p.hits_taken = 0
+lua W.update({a_p = true})
+lua for i = 1, 10 do W.update({}) end
+expect_lua W.phase == "ko" and W.c.hp == 0 and W.c.state == "ko" and W.p.wins == 1 and W.p.state == "win"
+tick 160
+expect_lua W.round == 2 and W.phase == "intro" and W.p.hp == 100 and W.c.hp == 100 and W.p.wins == 1
+# the match: a second round won ends it, and the screen says so
+tick 100
+lua W.ai_input = function() return {} end W.p.x = -4 W.c.x = 4 W.c.hp = 3 W.p.state = "idle" W.p.t = 0 W.c.state = "idle"
+lua W.update({a_p = true})
+lua for i = 1, 10 do W.update({}) end
+tick 160
+expect_lua W.phase == "match_over" and W.winner == "p" and state == "over"
+shot cajas_ganaste
+tick 70
+press A
+tick 4
+expect_lua state == "title"
+# the clock running out: the fighter with more health wins
+press A
+tick 4
+tick 100
+lua W.ai_input = function() return {} end W.c.hp = 40 W.timer = 2
+tick 6
+expect_lua W.phase == "ko" and W.p.wins == 1
+tick 170
+# "Cómo funciona": the console's menu, its item, the switches, back with B
+press MENU
+tick 3
+expect_menu open
+press DOWN
+press A
+tick 4
+expect_lua state == "explain" and achievements()[5].done == true and F.snap == true
+tick 20
+shot cajas_como
+press A
+tick 2
+expect_lua F.snap == false
+press DOWN
+press A
+tick 2
+expect_lua F.dither == false and V.dither == false
+press DOWN
+press DOWN
+press DOWN
+press A
+tick 2
+expect_lua M.on == false
+press A
+tick 2
+expect_lua M.on == true
+press UP
+press UP
+press UP
+press UP
+press A
+press DOWN
+press A
+tick 2
+expect_lua F.snap == true and F.dither == true
+press B
+tick 3
+lua W.hook = W.hook
+# the three languages
+lua lang = require("lang") lang.set("ca")
+expect_lua lang.tr("press") == "PREM A"
+lua lang.set("en")
+expect_lua lang.tr("press") == "PRESS A"
+lua lang.set("es")
+expect_lua lang.tr("press") == "PULSA A"
+# two machines fight over several seeds: the fighters stay in the ring, health in its range, a round always ends
+lua W.hook = function() end
+lua function sane() return math.abs(W.p.x) <= 36.01 and math.abs(W.c.x) <= 36.01 and W.p.hp >= 0 and W.p.hp <= 100 and W.c.hp >= 0 and W.c.hp <= 100 and W.p.y >= 0 and W.c.y >= 0 end
+lua function fight(seed, n) W.new(2) W.rng = require("rng").new(seed) for i = 1, n do W.update(W.ai_input_p()) assert(sane(), "seed " .. seed .. " tick " .. i) end end
+lua fight(1, 1500)
+lua fight(2, 1500)
+lua fight(3, 1500)
+lua fight(4, 1500)
+lua fight(5, 1500)
+lua fight(6, 1500)
+lua W.new(2) fights = 0
+lua for seed = 7, 9 do W.new(3) W.rng = require("rng").new(seed) for i = 1, 3000 do W.update(W.ai_input_p()) if W.phase == "ko" then fights = fights + 1 break end end end
+expect_lua fights >= 2

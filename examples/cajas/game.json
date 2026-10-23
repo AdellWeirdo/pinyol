@@ -1,0 +1,16 @@
+{
+  "id": "cajas",
+  "title": "Cajas",
+  "subtitle": "Lucha 3D",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un juego de lucha uno contra uno con luchadores de bloques, como los primeros de los 32 bits: cámara lateral, puñetazo, patada, barrido, bloqueo y salto, al mejor de tres asaltos contra la máquina. Cada luchador son once cajas con textura movidas con cinemática en Lua y dibujadas con mesh(). Y un menú que enseña los trucos.",
+  "achievements": [
+    {"id": "golpe", "name": "Primer golpe", "description": "Conecta tu primer golpe."},
+    {"id": "combo", "name": "Combo", "description": "Encadena tres golpes sin que te toquen."},
+    {"id": "asalto", "name": "Un asalto", "description": "Gana un asalto."},
+    {"id": "perfecto", "name": "Perfecto", "description": "Gana un asalto sin recibir un golpe."},
+    {"id": "curioso", "name": "Bajo la lona", "description": "Mira «Cómo funciona» desde el menú."}
+  ]
+}

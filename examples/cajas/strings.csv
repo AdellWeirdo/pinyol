@@ -1,0 +1,45 @@
+key,es,ca,en
+title,CAJAS,CAIXES,BOXES
+press,PULSA A,PREM A,PRESS A
+pick,Dificultad,Dificultat,Difficulty
+diff1,FÁCIL,FÀCIL,EASY
+diff2,NORMAL,NORMAL,NORMAL
+diff3,DIFÍCIL,DIFÍCIL,HARD
+controls,Izquierda y derecha: andar · Arriba: saltar,Esquerra i dreta: caminar · Amunt: saltar,Left and right: walk · Up: jump
+controls2,Abajo: agacharse · Atrás: bloquear,Avall: ajupir-se · Enrere: bloquejar,Down: crouch · Back: block
+controls3,A: puñetazo · B: patada,A: cop de puny · B: puntada,A: punch · B: kick
+controls4,Abajo y B: barrido,Avall i B: escombrada,Down and B: sweep
+hint,MENÚ: Cómo funciona,MENÚ: Com funciona,MENU: How it works
+p1,BRUNO,BRUNO,BRUNO
+p2,MEI,MEI,MEI
+round,RONDA {n},RONDA {n},ROUND {n}
+fight,¡LUCHA!,LLUITA!,FIGHT!
+ko,¡K.O.!,K.O.!,K.O.!
+time,¡TIEMPO!,TEMPS!,TIME!
+perfect,¡PERFECTO!,PERFECTE!,PERFECT!
+hits,{n} GOLPES,{n} COPS,{n} HITS
+you_win,¡GANASTE!,HAS GUANYAT!,YOU WIN!
+you_lose,PERDISTE,HAS PERDUT,YOU LOSE
+again,PULSA A,PREM A,PRESS A
+how,Cómo funciona,Com funciona,How it works
+how_title,TRUCOS DE LA LUCHA,TRUCS DE LA LLUITA,FIGHT TRICKS
+snap,Vértices enteros,Vèrtexs sencers,Whole-pixel vertices
+snap_d,Píxeles enteros: los vértices tiemblan.,Píxels sencers: els vèrtexs tremolen.,Whole pixels: vertices wobble.
+dither,Tramado,Tramat,Dither
+dither_d,Un patrón 4×4 en vez de bandas de color.,Un patró 4×4 en lloc de bandes de color.,A 4×4 pattern instead of colour bands.
+kinematics,Cinemática en Lua,Cinemàtica en Lua,Kinematics in Lua
+kinematics_d,Las poses se mezclan: una llamada por pieza.,Les poses es barregen: una crida per peça.,Poses blend: one call a piece.
+flat,Miembros planos,Membres plans,Flat limbs
+flat_d,Un panel por miembro: tres caras menos.,Un panell per membre: tres cares menys.,One panel a limb: three faces fewer.
+music,Música,Música,Music
+music_d,Cuatro voces del sintetizador en vivo.,Quatre veus del sintetitzador en directe.,Four live synth voices.
+on,SÍ,SÍ,ON
+off,NO,NO,OFF
+faces,caras,cares,faces
+back,B: volver,B: tornar,B: back
+toggle,A: cambiar · Arriba y abajo: elegir,A: canviar · Amunt i avall: triar,A: switch · Up and down: choose
+ach_golpe,Primer golpe,Primer cop,First hit
+ach_combo,Combo,Combo,Combo
+ach_asalto,Un asalto,Un assalt,A round
+ach_perfecto,Perfecto,Perfecte,Perfect
+ach_curioso,Bajo la lona,Sota la lona,Under the canvas
