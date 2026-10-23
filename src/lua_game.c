@@ -875,6 +875,45 @@ static int l_haze(lua_State *L) {
     return 0;
 }
 
+/* distort(x, y, w, h [, {kind = "heat" | "water", amp, phase, period, speed}]): a rectangle of the world's picture that sways (heat: each row sideways
+ * by amp * sin(y / period + phase)) or wobbles (water: also each column up and down), for this frame. `speed` makes it move by itself, in cycles a
+ * second; or move `phase` yourself. Up to four a frame; do not overlap them. In the picture's own pixels (240 x 160). */
+static int l_distort(lua_State *L) {
+    const int x = num(L, 1), y = num(L, 2), w = num(L, 3), h = num(L, 4);
+    float amp = 2, phase = 0, period = 12, speed = 0;
+    bool water = false;
+    if (lua_istable(L, 5)) {
+        lua_getfield(L, 5, "kind");
+        if (lua_isstring(L, -1)) {
+            const char *k = lua_tostring(L, -1);
+            if (!strcmp(k, "water")) water = true;
+            else if (strcmp(k, "heat")) return luaL_error(L, "distort: kind is \"heat\" or \"water\"");
+        }
+        lua_pop(L, 1);
+        lua_getfield(L, 5, "amp"), amp = (float)luaL_optnumber(L, -1, 2), lua_pop(L, 1);
+        lua_getfield(L, 5, "phase"), phase = (float)luaL_optnumber(L, -1, 0), lua_pop(L, 1);
+        lua_getfield(L, 5, "period"), period = (float)luaL_optnumber(L, -1, 12), lua_pop(L, 1);
+        lua_getfield(L, 5, "speed"), speed = (float)luaL_optnumber(L, -1, 0), lua_pop(L, 1);
+    }
+    amp = amp < -64 ? -64 : amp > 64 ? 64 : amp;
+    post_zone(x, y, x + w - 1, y + h - 1, water, amp, phase + 6.2831853f * speed * post_time(), period);
+    return 0;
+}
+
+/* crt(false), or crt([{scan, persist}]): the glass of a cathode-ray tube over the world's picture, from now on: `scan` (0..1, 0.25) dims every
+ * second row of it, `persist` (0..0.95, 0) keeps that much of the last frame's glow where the new frame is darker (a streak behind what moves).
+ * The text and shapes drawn over the world stay clean. */
+static int l_crt(lua_State *L) {
+    if (lua_isboolean(L, 1) && !lua_toboolean(L, 1)) return post_crt(false, 0, 0), 0;
+    float scan = 0.25f, persist = 0;
+    if (lua_istable(L, 1)) {
+        lua_getfield(L, 1, "scan"), scan = (float)luaL_optnumber(L, -1, 0.25), lua_pop(L, 1);
+        lua_getfield(L, 1, "persist"), persist = (float)luaL_optnumber(L, -1, 0), lua_pop(L, 1);
+    }
+    post_crt(true, scan, persist);
+    return 0;
+}
+
 static int l_line_backdrop(lua_State *L) {
     int y = line_index(L, 1);
     if (PPU.line.backdrop != line_back_tab) {
@@ -1743,7 +1782,7 @@ static void api(lua_State *L) {
         {"clock", l_clock}, {"btn", l_btn}, {"btnp", l_btnp}, {"btnr", l_btnr}, {"btnt", l_btnt}, {"btnb", l_btnb}, {"touch", l_touch}, {"pen", l_pen}, {"touches", l_touches}, {"screen", l_screen}, {"t", l_t}, {"ticks", l_ticks}, {"rgb", l_rgb},
         {"pal", l_pal}, {"palette", l_palette}, {"backdrop", l_backdrop}, {"bg", l_bg}, {"scroll", l_scroll},
         {"affine", l_affine}, {"rot", l_rot}, {"mode7", l_mode7}, {"project", l_project}, {"mget", l_mget},
-        {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_affine", l_line_affine}, {"line_scroll_ramp", l_line_scroll_ramp}, {"palcycle", l_palcycle}, {"shock", l_shock}, {"haze", l_haze}, {"line_backdrop", l_line_backdrop}, {"line_pal", l_line_pal}, {"line_pal_obj", l_line_pal_obj}, {"line_ramp", l_line_ramp},
+        {"mset", l_mset}, {"mapsize", l_mapsize}, {"line_scroll", l_line_scroll}, {"line_affine", l_line_affine}, {"line_scroll_ramp", l_line_scroll_ramp}, {"palcycle", l_palcycle}, {"shock", l_shock}, {"haze", l_haze}, {"distort", l_distort}, {"crt", l_crt}, {"line_backdrop", l_line_backdrop}, {"line_pal", l_line_pal}, {"line_pal_obj", l_line_pal_obj}, {"line_ramp", l_line_ramp},
         {"line_window", l_line_window}, {"line_fx", l_line_fx}, {"line_off", l_line_off}, {"sheet", l_sheet}, {"spr", l_spr},
         {"spr_off", l_spr_off}, {"spr_clear", l_spr_clear}, {"prio", l_prio}, {"bank", l_bank}, {"spr_mat", l_spr_mat}, {"silhouette", l_silhouette},
         {"mat", l_mat}, {"show", l_show}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off},

@@ -703,6 +703,9 @@ typedef struct {
     uint8_t mode; /* BLEND_*: add, sub or quarter, the last one asked for */
     float alpha;
     const char *pal; /* (a string the table keeps alive) */
+    bool outlined;
+    lua_Integer outline; /* outline: a ring of this 0xRRGGBB round the picture's shape, outline_width pixels thick (1 to 4) */
+    int outline_width;
 } img_opts;
 
 static float clampf(float v, float lo, float hi) { return v < lo ? lo : v > hi ? hi : v; }
@@ -729,58 +732,79 @@ static void img_options(lua_State *L, int t, img_opts *o) {
         else if (!strcmp(k, "add")) o->mode = lua_toboolean(L, -1) ? BLEND_ADD : o->mode;
         else if (!strcmp(k, "sub")) o->mode = lua_toboolean(L, -1) ? BLEND_SUB : o->mode;
         else if (!strcmp(k, "quarter")) o->mode = lua_toboolean(L, -1) ? BLEND_QUARTER : o->mode;
+        else if (!strcmp(k, "outline")) o->outline = luaL_checkinteger(L, -1), o->outlined = true;
+        else if (!strcmp(k, "outline_width")) o->outline_width = (int)clampf(fin(luaL_checknumber(L, -1)), 1, 4);
         lua_pop(L, 1);
     }
 }
 
 /* img(id, x, y [, frame [, scale 1|2]]) or img(id, x, y, {frame, scale, scale_x, scale_y, flip_x, flip_y, angle}):
  * a runtime asset at screen resolution; angle in degrees, about the picture's centre */
-static int l_img(lua_State *L) {
-    const char *id = luaL_checkstring(L, 1);
-    asset *a = safe_name(id) ? gfx_asset(id) : NULL;
-    ov_cmd *c = !a || a->missing ? NULL : ov_add(OV_IMG);
-    if (!c) return 0;
-    c->a = a, c->x = i16(num(L, 2)), c->y = i16(num(L, 3)), c->scale = 1, c->flip = 0, c->font = 0;
-    if (!lua_istable(L, 4)) {
-        lua_Integer f = luaL_optinteger(L, 4, 0);
-        c->frame = (int16_t)(f < 0 || f >= a->frames ? 0 : f);
-        c->scale = (uint8_t)(luaL_optinteger(L, 5, 1) == 2 ? 2 : 1);
-        if (c->scale == 2 && !a->pk && !gfx_pixels(a)) forget(c, 0, 0);
-        else commit(c, 0, 0);
-        return 0;
-    }
-    img_opts o;
-    img_options(L, 4, &o);
-    lua_Integer f = o.frame;
+/* one picture's command, by its options: the body of img() for a table of them */
+static void img_emit(asset *a, int x, int y, const img_opts *o) {
+    ov_cmd *c = ov_add(OV_IMG);
+    if (!c) return;
+    c->a = a, c->x = i16(x), c->y = i16(y), c->scale = 1, c->flip = 0, c->font = 0;
+    lua_Integer f = o->frame;
     c->frame = (int16_t)(f < 0 || f >= a->frames ? 0 : f);
-    float k = clampf(o.scale, -16, 16);
-    float sx = clampf(o.has_sx ? o.sx : k, -16, 16), sy = clampf(o.has_sy ? o.sy : k, -16, 16);
-    float deg = clampf(o.deg, -1e6f, 1e6f);
-    if (o.flip_x) sx = -sx;
-    if (o.flip_y) sy = -sy;
+    float k = clampf(o->scale, -16, 16);
+    float sx = clampf(o->has_sx ? o->sx : k, -16, 16), sy = clampf(o->has_sy ? o->sy : k, -16, 16);
+    float deg = clampf(o->deg, -1e6f, 1e6f);
+    if (o->flip_x) sx = -sx;
+    if (o->flip_y) sy = -sy;
     if (deg == 0 && sx == sy && (sx == 1 || sx == 2)) c->scale = (uint8_t)sx; /* the plain ways, faster */
     else if (deg == 0 && sx == -1 && sy == 1) c->flip = 1;      /* mirrored at 1x: as fast as plain */
     else if (nxf < OV_EXT) ov_xf[nxf].sx = sx, ov_xf[nxf].sy = sy, ov_xf[nxf].deg = deg, c->ext = (uint8_t)(++nxf);
-    const char *pal = o.pal;
-    bool tinted = o.tinted;
-    lua_Integer tint = o.tint;
-    bool colours = (pal || tinted || o.dimmed) && (c->ext ? straight(c) : c->scale == 1 || a->pk); /* a variant's, one, or dimmed */
-    if ((colours || o.alpha < 1 || o.mode) && nlook < OV_EXT) {
+    const char *pal = o->pal;
+    bool tinted = o->tinted;
+    lua_Integer tint = o->tint;
+    bool colours = (pal || tinted || o->dimmed) && (c->ext ? straight(c) : c->scale == 1 || a->pk); /* a variant's, one, or dimmed */
+    if ((colours || o->alpha < 1 || o->mode) && nlook < OV_EXT) {
         asset *pa = colours && pal && safe_name(pal) ? gfx_asset_opt(pal) : NULL;
         ov_look[nlook].pal = pa && !pa->missing ? pa : NULL;
         ov_look[nlook].tint = colours && tinted ? to565(tint) : -1;
-        if (colours && !tinted && o.dimmed) { /* a multiplier, as the palette is to be multiplied (gfx.c, mul565) */
-            const int r = (int)((o.mul >> 16 & 255) * o.dim), g = (int)((o.mul >> 8 & 255) * o.dim), b = (int)((o.mul & 255) * o.dim);
+        if (colours && !tinted && o->dimmed) { /* a multiplier, as the palette is to be multiplied (gfx.c, mul565) */
+            const int r = (int)((o->mul >> 16 & 255) * o->dim), g = (int)((o->mul >> 8 & 255) * o->dim), b = (int)((o->mul & 255) * o->dim);
             ov_look[nlook].tint = -2 - (r << 16 | g << 8 | b);
         }
-        ov_look[nlook].alpha = (uint8_t)(o.alpha * 255 + 0.5f), ov_look[nlook].mode = o.mode;
+        ov_look[nlook].alpha = (uint8_t)(o->alpha * 255 + 0.5f), ov_look[nlook].mode = o->mode;
         c->font = (uint8_t)(++nlook);
     }
     if ((c->ext ? !straight(c) : c->scale == 2 && !a->pk) && !gfx_pixels(a)) { /* turned: unpacked here, once */
         forget(c, 0, 0);
-        return 0;
+        return;
     }
     commit(c, 0, 0);
+}
+
+/* img(id, x, y [, frame [, scale 1|2]]) or img(id, x, y, {frame, scale, scale_x, scale_y, flip_x, flip_y, angle, pal, tint, dim, mul, alpha,
+ * add, sub, quarter, outline, outline_width}): a runtime asset at screen resolution; angle in degrees, about the picture's centre */
+static int l_img(lua_State *L) {
+    const char *id = luaL_checkstring(L, 1);
+    asset *a = safe_name(id) ? gfx_asset(id) : NULL;
+    if (!a || a->missing) return 0;
+    if (lua_istable(L, 4)) {
+        img_opts o;
+        img_options(L, 4, &o);
+        const int x = num(L, 2), y = num(L, 3);
+        if (o.outlined) { /* a ring: the picture's shape in the outline's colour, one step out each way, under the picture itself */
+            const int w = o.outline_width ? o.outline_width : 1;
+            img_opts ring = o;
+            ring.outlined = false, ring.tinted = true, ring.tint = o.outline, ring.dimmed = false, ring.pal = NULL, ring.mode = 0;
+            static const int8_t step[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+            for (int k = 0; k < 4; k++) img_emit(a, x + step[k][0] * w, y + step[k][1] * w, &ring);
+        }
+        img_emit(a, x, y, &o);
+        return 0;
+    }
+    ov_cmd *c = ov_add(OV_IMG);
+    if (!c) return 0;
+    c->a = a, c->x = i16(num(L, 2)), c->y = i16(num(L, 3)), c->scale = 1, c->flip = 0, c->font = 0;
+    lua_Integer f = luaL_optinteger(L, 4, 0);
+    c->frame = (int16_t)(f < 0 || f >= a->frames ? 0 : f);
+    c->scale = (uint8_t)(luaL_optinteger(L, 5, 1) == 2 ? 2 : 1);
+    if (c->scale == 2 && !a->pk && !gfx_pixels(a)) forget(c, 0, 0);
+    else commit(c, 0, 0);
     return 0;
 }
 
