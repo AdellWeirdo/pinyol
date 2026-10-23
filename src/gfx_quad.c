@@ -186,10 +186,13 @@ static void triangle(surface *s, const quad_ctx *q, vertex p[3]) {
         e[i].a = -(B->y - A->y), e[i].b = B->x - A->x, e[i].c = (B->y - A->y) * A->x - (B->x - A->x) * A->y;
         e[i].bias = (B->y < A->y || (B->y == A->y && B->x > A->x)) ? 0 : 1; /* left edge: going up; top: going right */
     }
-    /* how the picture's coordinates and the light change with a step of one eighth right or down, then per pixel */
-    float gx[6], gy[6];
+    /* how the picture's coordinates and the light change with a step of one eighth right or down, then per pixel. Only what is
+     * used: the picture's column and row; the light's three if lit; all six in perspective. (A quad of a few pixels is mostly this
+     * set-up, and on the console a double is many float operations.) */
+    const int nat = q->persp ? 6 : q->lit ? 5 : 2;
+    float gx[6] = {0}, gy[6] = {0};
     const float d = (float)area;
-    for (int k = 0; k < 6; k++) {
+    for (int k = 0; k < nat; k++) {
         float a1 = p[1].at[k] - p[0].at[k], a2 = p[2].at[k] - p[0].at[k];
         gx[k] = (a1 * (float)(p[2].y - p[0].y) - a2 * (float)(p[1].y - p[0].y)) / d;
         gy[k] = (a2 * (float)(p[1].x - p[0].x) - a1 * (float)(p[2].x - p[0].x)) / d;
@@ -218,12 +221,18 @@ static void triangle(surface *s, const quad_ctx *q, vertex p[3]) {
             ed[i].dF = floor_div32(ed[i].dM, ed[i].B), ed[i].dR = ed[i].dM - ed[i].dF * ed[i].B;
         }
     }
-    uint32_t col0[6], dcol[6], drow[6];
-    for (int k = 0; k < 6; k++) { /* worked out at column 0 and row 0 whatever the strip starts at, so every strip gets
-                                   * the very same numbers for a pixel: the value at column x is that plus x steps */
-        const double at0 = (double)p[0].at[k] + (double)gx[k] * (double)(4 - p[0].x) + (double)gy[k] * (double)(4 - p[0].y);
+    uint32_t col0[6] = {0}, dcol[6] = {0}, drow[6] = {0};
+    for (int k = 0; k < nat; k++) { /* worked out at column 0 and row 0 whatever the strip starts at, so every strip gets
+                                     * the very same numbers for a pixel: the value at column x is that plus x steps */
         dcol[k] = (uint32_t)(int32_t)(gx[k] * 8.0f * 65536.0f);
         drow[k] = (uint32_t)(int32_t)(gy[k] * 8.0f * 65536.0f);
+        if (gx[k] == 0 && gy[k] == 0 && fabsf(p[0].at[k]) < 32768.0f) { /* a flat light, or a picture that does not change along
+                                                                          * an axis: the double's sum is the value itself, and
+                                                                          * float * 65536 is exact, so the same integer, cheaper */
+            col0[k] = (uint32_t)(int32_t)(p[0].at[k] * 65536.0f) + (uint32_t)bx0 * dcol[k];
+            continue;
+        }
+        const double at0 = (double)p[0].at[k] + (double)gx[k] * (double)(4 - p[0].x) + (double)gy[k] * (double)(4 - p[0].y);
         col0[k] = (uint32_t)(int64_t)(at0 * 65536.0) + (uint32_t)bx0 * dcol[k];
     }
     for (int x = bx0; x < bx1; x++) {
@@ -249,7 +258,7 @@ static void triangle(surface *s, const quad_ctx *q, vertex p[3]) {
                 if (ed[i].R >= ed[i].B) ed[i].R -= ed[i].B, ed[i].F++;
             }
         }
-        for (int k = 0; k < 6; k++) col0[k] += dcol[k];
+        for (int k = 0; k < nat; k++) col0[k] += dcol[k];
         if (none || lo > hi) continue;
         const int32_t at5[5] = {(int32_t)(c0[0] + (uint32_t)lo * drow[0]), (int32_t)(c0[1] + (uint32_t)lo * drow[1]),
                                 (int32_t)(c0[2] + (uint32_t)lo * drow[2]), (int32_t)(c0[3] + (uint32_t)lo * drow[3]),
