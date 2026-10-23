@@ -68,7 +68,7 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
   - **Music as modules** (`gen/songs.py` writes the 4-channel `.mod` files) and sounds from numbers.
   - **The menu's "Cómo funciona"** shows the real tiles of the screen magnified, the layers, the sprites and the tones.
 
-### ZX Spectrum (and Amstrad CPC): `examples/cinta`
+### ZX Spectrum (and Amstrad CPC): `examples/socavon`
 
 - The world, a 224×144 screen inside a border of one colour.
 - **Two colours per 8×8 block**, an ink and a paper, from fifteen (eight, and seven bright). Blocks are drawn in two
@@ -78,7 +78,19 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
 - The loading screen: any picture through `art/make_art.py` (the best two colours per block, a dither between them),
   shown as the tape loaded it: striped border, the bitmap in the Spectrum's order, then the colours.
 - One square voice (the beeper). Amstrad CPC: the same, with pixels twice as wide (mode 0) and 16 colours of 27.
-- Art by code; the loading screen from any illustration.
+- Art by code; the loading screen from any illustration (Socavón's is an image-model drawing cut to two colours a block
+  by `gen/make_loading.py`).
+- Socavón (eight one-screen mine rooms) is the example of it all:
+  - **Every block kind has its own palette bank** (air, wall, ledge, crumbling floor, belt, hazard, key, portal,
+    decoration); a room's *scheme* says each bank's ink and paper, so the same drawings make eight different rooms.
+  - **The colour clash is real**: the miner and the guardians are ink-only sprites that take the ink of the block under
+    them (`bank(...)` in `spr`); the keys and the open portal flash by swapping ink and paper in their bank.
+  - **The rooms are designed in code and checked**: `gen/rooms_design.py` holds a copy of the miner's physics and
+    searches every jump from every standing place, so each key and each portal is known to be reachable.
+  - **The beeper**: one square voice plays the tunes (`tunes.lua`: Grieg, Strauss, Offenbach, Mozart arranged for it);
+    effects share it.
+  - **The menu's "Cómo funciona"** explains the attributes with the room's real blocks, the clash with a sprite you move
+    across four bands, bright and flash, and the tape and the beeper.
 
 ### Game Boy Advance: `plataformas`, `naves`, `carreras`, `puzle`, `aldea`
 

@@ -24,7 +24,7 @@ takes them again).
 | | |
 |---|---|
 | ![A Game Boy platformer in four tones of green, on the whole screen](docs/looks/gameboy.png) | ![A ZX Spectrum room: blocks of two colours, a miner and a guardian](docs/looks/spectrum.png) |
-| **Game Boy**: [cerezo](examples/cerezo), a Zelda-style adventure | **ZX Spectrum**: [cinta](examples/cinta), from the tape loading |
+| **Game Boy**: [cerezo](examples/cerezo), a Zelda-style adventure | **ZX Spectrum**: [socavon](examples/socavon), a mine, from the tape loading |
 | ![A Game Boy Advance platformer with parallax mountains and water](docs/looks/gba.png) | ![A 16-bit speed platformer: checkered earth, a sea moved line by line](docs/looks/16bits.png) |
 | **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), all its art drawn by code |
 | ![A Neo Geo fighting game: two big fighters on a pier at sunset](docs/looks/neogeo.png) | ![A CPS2 fighting game: fighters in 15 colours on a floor in perspective](docs/looks/cps2.png) |
@@ -34,7 +34,7 @@ takes them again).
 | ![A vector arcade game: glowing lines on black](docs/looks/vector.png) | ![A vertical shoot-'em-up, shown turned: hold the console on its side](docs/looks/vertical.png) |
 | **Vector arcade**: [pozo](examples/pozo), no pictures | **Vertical screen**: [tormenta](examples/tormenta), the console on its side |
 | ![A first-person maze: stone corridors and a ghost, Wolfenstein-style](docs/looks/firstperson.png) | ![A ZX Spectrum loading screen: a miner in a crystal cave, two colours a block](docs/looks/loading.png) |
-| **First person**: [laberinto](examples/laberinto), `raycast()` | **ZX Spectrum**: [cinta](examples/cinta)'s tape loading |
+| **First person**: [laberinto](examples/laberinto), `raycast()` | **ZX Spectrum**: [socavon](examples/socavon)'s tape loading |
 | ![A gothic castle hall: candle glows, a half-seen ghost and a huntress with a whip](docs/looks/32bits.png) | ![The skull boss turning and swelling, its fireballs glowing](docs/looks/32bits_boss.png) |
 | **PlayStation / Saturn 2D**: [gotico](examples/gotico) | **PlayStation / Saturn 2D**: its boss |
 
@@ -142,7 +142,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [torneo](examples/torneo) | a fighting game as a CPS2's: fighters in 15 colours and thirty frames, never zoomed, a floor in perspective drawn in bands of rows, pillars in front, the same fighter twice in other colours |
 | [mazmorra](examples/mazmorra) | a beat-em-up in a dungeon as a CPS2's: goblins and skeletons in groups, torches that flicker, pillars that pass in front of everyone |
 | [cerezo](examples/cerezo) | a top-down adventure as the last Game Boy ones: a world of screens that slide, a dungeon, a boss, dialogue, four tones that C changes into the Color's palettes; art and music made by code |
-| [cinta](examples/cinta) | a game as a ZX Spectrum's, from the tape loading (striped border, the screen in its own order): blocks of two colours, sprites that clash, a flashing key, air running out |
+| [socavon](examples/socavon) | a one-screen mine platformer as a ZX Spectrum's, from the tape loading (striped border, the screen in its own order): eight rooms, blocks of two colours, sprites that clash, flashing keys, belts, crumbling floors, a beeper voice, and a menu that shows the attributes |
 | [veloz](examples/veloz) | a speed platformer as the 16-bit consoles': a sea moved line by line, a sky in a gradient, pools seen through, a Mode 7 title; a pangolin that rolls into a ball |
 | [ladrillos](examples/ladrillos) | a brick breaker as a PICO-8 cartridge: a 128x128 screen in its sixteen colours, drawn again every frame; no pictures |
 | [huevos](examples/huevos) | a pocket LCD game: figures on or off (their ghosts still show) over a printed picture, a step and a beep at a time |

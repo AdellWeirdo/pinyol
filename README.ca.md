@@ -24,7 +24,7 @@ Un joc s'assembla a la consola per a la qual està fet, i el motor els mou tots:
 | | |
 |---|---|
 | ![Un joc de plataformes de Game Boy en quatre tons de verd, a pantalla completa](docs/looks/gameboy.png) | ![Una sala de ZX Spectrum: blocs de dos colors, un miner i un guardià](docs/looks/spectrum.png) |
-| **Game Boy**: [cerezo](examples/cerezo), una aventura a l'estil Zelda | **ZX Spectrum**: [cinta](examples/cinta), des de la càrrega de cinta |
+| **Game Boy**: [cerezo](examples/cerezo), una aventura a l'estil Zelda | **ZX Spectrum**: [socavon](examples/socavon), una mina, des de la càrrega de cinta |
 | ![Un joc de plataformes de Game Boy Advance amb muntanyes en paral·laxi i aigua](docs/looks/gba.png) | ![Un joc de plataformes de velocitat de 16 bits: terra a quadres i un mar mogut línia a línia](docs/looks/16bits.png) |
 | **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), tot el seu art dibuixat amb codi |
 | ![Un joc de lluita de Neo Geo: dos lluitadors grans en un moll a la posta de sol](docs/looks/neogeo.png) | ![Un joc de lluita de CPS2: lluitadors de 15 colors sobre un terra en perspectiva](docs/looks/cps2.png) |
@@ -34,7 +34,7 @@ Un joc s'assembla a la consola per a la qual està fet, i el motor els mou tots:
 | ![Un joc vectorial: línies brillants sobre negre](docs/looks/vector.png) | ![Un matamarcians vertical, girat: es juga amb la consola de costat](docs/looks/vertical.png) |
 | **Recreativa vectorial**: [pozo](examples/pozo), sense imatges | **Pantalla vertical**: [tormenta](examples/tormenta), amb la consola de costat |
 | ![Un laberint en primera persona: passadissos de pedra i un fantasma, a l'estil de Wolfenstein](docs/looks/firstperson.png) | ![Una pantalla de càrrega de ZX Spectrum: un miner en una cova de cristall, dos colors per bloc](docs/looks/loading.png) |
-| **Primera persona**: [laberinto](examples/laberinto), `raycast()` | **ZX Spectrum**: la càrrega de cinta de [cinta](examples/cinta) |
+| **Primera persona**: [laberinto](examples/laberinto), `raycast()` | **ZX Spectrum**: la càrrega de cinta de [socavon](examples/socavon) |
 | ![La sala d'un castell gòtic: llums d'espelma, un fantasma mig vist i una caçadora amb fuet](docs/looks/32bits.png) | ![El cap calavera girant i creixent, les seves boles de foc brillant](docs/looks/32bits_boss.png) |
 | **PlayStation / Saturn 2D**: [gotico](examples/gotico) | **PlayStation / Saturn 2D**: el seu cap final |
 
@@ -141,7 +141,7 @@ Et queda un joc petit per canviar: una sala més gran que la pantalla, un person
 | [torneo](examples/torneo) | un joc de lluita com els de CPS2: lluitadors en 15 colors i trenta fotogrames, mai ampliats, un terra en perspectiva dibuixat en bandes de files, columnes davant, el mateix lluitador dues vegades en altres colors |
 | [mazmorra](examples/mazmorra) | un beat-em-up en una masmorra com els de CPS2: follets i esquelets en grups, torxes que fan pampallugues, columnes que passen per davant de tothom |
 | [cerezo](examples/cerezo) | una aventura vista des de dalt com les últimes de Game Boy: un món de pantalles que llisquen, una masmorra, un cap, diàlegs, quatre tons que C canvia per les paletes de la Color; art i música fets amb codi |
-| [cinta](examples/cinta) | un joc com els de ZX Spectrum, des de la càrrega de cinta (vora a ratlles, la pantalla en el seu propi ordre): blocs de dos colors, sprites que es trepitgen el color, una clau que parpelleja, l'aire que s'acaba |
+| [socavon](examples/socavon) | una mina de plataformes d'una pantalla com les del ZX Spectrum, des de la càrrega de cinta (vora a ratlles, la pantalla en el seu propi ordre): vuit sales, blocs de dos colors, sprites que es trepitgen el color, claus que parpellegen, cintes, sòls que s'ensorren, una veu de pitit i un menú que ensenya els atributs |
 | [veloz](examples/veloz) | un joc de plataformes de velocitat com els de les consoles de 16 bits: un mar mogut línia a línia, un cel en degradat, tolls transparents, un títol en Mode 7; un pangolí que es fa una bola |
 | [ladrillos](examples/ladrillos) | un trencamaons com un cartutx de PICO-8: una pantalla de 128x128 en els seus setze colors, dibuixada de nou cada frame; sense imatges |
 | [huevos](examples/huevos) | una maquineta LCD: figures enceses o apagades (els seus fantasmes encara es veuen) sobre una imatge impresa, un pas i un xiulet cada vegada |

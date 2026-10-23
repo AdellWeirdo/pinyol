@@ -19,8 +19,8 @@ COUNTER = "https://pinyol.goatcounter.com"  # GoatCounter: visits and plays, no 
 LOOKS = [
     dict(id="gameboy", name="Game Boy", example="cerezo", era="1998 · cuatro verdes, un mundo de pantallas", art=False, fps=(58, 60), hue="#8bac0f",
          what="Una aventura al estilo Zelda: una isla, una cueva, un jefe y diálogos.", alt="Una plaza empedrada con un cerezo sin hojas y vecinos alrededor, en cuatro tonos de verde"),
-    dict(id="spectrum", name="ZX Spectrum", example="cinta", era="1982 · dos colores por bloque", art=False, fps=(49, 61), hue="#ff3b3b",
-         what="Incluye la carga de cinta, con sus franjas de colores.", alt="Una sala de ZX Spectrum: bloques de dos colores, un minero y un guardián"),
+    dict(id="spectrum", name="ZX Spectrum", example="socavon", era="1982 · dos colores por bloque", art=False, fps=(58, 60), hue="#ff3b3b",
+         what="Ocho salas de una mina, con carga de cinta y choque de color.", alt="Una sala de mina de ZX Spectrum: un minero, llaves, un robot guardián y bloques de dos colores"),
     dict(id="pico8", name="PICO-8", example="ladrillos", era="2015 · 128×128 · dieciséis colores", art=False, fps=(56, 60), was=(46, 55), hue="#ff77a8",
          what="Un rompeladrillos con la paleta de esta consola de fantasía.", alt="Un rompeladrillos de PICO-8 en dieciséis colores"),
     dict(id="lcd", name="Maquinita LCD", example="huevos", era="1980 · figuras que se encienden", art=False, fps=(61, 61), hue="#9aa58c",

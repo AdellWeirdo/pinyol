@@ -1,0 +1,115 @@
+# Socavón: the tape loading, the title, a room (walk, jump, a key, a plant that kills, the crumbling floor), the explainer,
+# all eight rooms, the win; with --check-strips
+tick 60
+expect_lua state == "load"
+tick 200
+shot carga
+press A
+tick 3
+expect_lua state == "load"
+press A
+tick 5
+expect_lua state == "title"
+shot titulo
+# left alone, the title plays its demo (a miner in each room in turn); A starts the game
+tick 650
+expect_lua state == "demo"
+shot demo
+press A
+tick 30
+expect_lua state == "play" and GAME.room == 1 and GAME.lives == 3
+lua M0 = require("core.miner") R0 = require("core.room") K0 = R0.keys X0 = M0.x
+hold RIGHT 30
+expect_lua M0.x > X0 + 20
+press A
+tick 6
+expect_lua not M0.ground
+tick 50
+expect_lua M0.ground
+shot sala1
+# a key: the miner is put on one, and takes it
+lua for ty = 0, 15 do for tx = 0, 27 do if R0.char(tx, ty) == "k" and not KX then KX, KY = tx, ty end end end M0.x, M0.y, M0.ground, M0.vy = KX * 8 - 4, KY * 8 - 8, true, 0
+tick 3
+expect_lua R0.keys == K0 - 1 and GAME.score >= 100
+# a plant kills: one life less, and the room starts again with its keys
+lua for ty = 0, 15 do for tx = 0, 27 do if R0.char(tx, ty) == "*" and not PX then PX, PY = tx, ty end end end M0.x, M0.y, M0.ground, M0.vy = PX * 8 - 4, PY * 8 - 8, true, 0
+tick 3
+expect_lua M0.dead > 0
+shot muerte
+tick 80
+expect_lua GAME.lives == 2 and R0.keys == K0 and M0.dead == 0
+# the explainer: four pages and back
+lua require("core.explain").enter() state = "explain"
+tick 3
+press RIGHT
+press RIGHT
+press RIGHT
+tick 3
+shot explica
+press START
+tick 5
+expect_lua state == "play" and R0.keys == K0
+# every room: the keys taken, the portal opened, the miner put in it
+expect_lua GAME.room == 1
+lua R0 = require("core.room") R0.keys = 0 R0.open_portal() for ty = 0, 15 do for tx = 0, 27 do if R0.char(tx, ty) == "X" and not QX then QX, QY = tx, ty end end end M0.x, M0.y, M0.ground, M0.vy = QX * 8 - 4, QY * 8 - 2, true, 0 QX = nil
+tick 3
+expect_lua state == "clear"
+expect_lua achievements()[1].done == true
+tick 230
+lua GAME.lives = 3
+expect_lua state == "play"
+expect_lua GAME.room == 2
+lua R0 = require("core.room") R0.keys = 0 R0.open_portal() for ty = 0, 15 do for tx = 0, 27 do if R0.char(tx, ty) == "X" and not QX then QX, QY = tx, ty end end end M0.x, M0.y, M0.ground, M0.vy = QX * 8 - 4, QY * 8 - 2, true, 0 QX = nil
+tick 3
+expect_lua state == "clear"
+tick 230
+lua GAME.lives = 3
+expect_lua state == "play"
+expect_lua GAME.room == 3
+lua R0 = require("core.room") R0.keys = 0 R0.open_portal() for ty = 0, 15 do for tx = 0, 27 do if R0.char(tx, ty) == "X" and not QX then QX, QY = tx, ty end end end M0.x, M0.y, M0.ground, M0.vy = QX * 8 - 4, QY * 8 - 2, true, 0 QX = nil
+tick 3
+expect_lua state == "clear"
+tick 230
+lua GAME.lives = 3
+expect_lua state == "play"
+expect_lua GAME.room == 4
+lua R0 = require("core.room") R0.keys = 0 R0.open_portal() for ty = 0, 15 do for tx = 0, 27 do if R0.char(tx, ty) == "X" and not QX then QX, QY = tx, ty end end end M0.x, M0.y, M0.ground, M0.vy = QX * 8 - 4, QY * 8 - 2, true, 0 QX = nil
+tick 3
+expect_lua state == "clear"
+tick 230
+lua GAME.lives = 3
+expect_lua state == "play"
+expect_lua GAME.room == 5
+lua R0 = require("core.room") R0.keys = 0 R0.open_portal() for ty = 0, 15 do for tx = 0, 27 do if R0.char(tx, ty) == "X" and not QX then QX, QY = tx, ty end end end M0.x, M0.y, M0.ground, M0.vy = QX * 8 - 4, QY * 8 - 2, true, 0 QX = nil
+tick 3
+expect_lua state == "clear"
+tick 230
+lua GAME.lives = 3
+expect_lua state == "play"
+expect_lua GAME.room == 6
+lua R0 = require("core.room") R0.keys = 0 R0.open_portal() for ty = 0, 15 do for tx = 0, 27 do if R0.char(tx, ty) == "X" and not QX then QX, QY = tx, ty end end end M0.x, M0.y, M0.ground, M0.vy = QX * 8 - 4, QY * 8 - 2, true, 0 QX = nil
+tick 3
+expect_lua state == "clear"
+tick 230
+lua GAME.lives = 3
+expect_lua state == "play"
+expect_lua GAME.room == 7
+lua R0 = require("core.room") R0.keys = 0 R0.open_portal() for ty = 0, 15 do for tx = 0, 27 do if R0.char(tx, ty) == "X" and not QX then QX, QY = tx, ty end end end M0.x, M0.y, M0.ground, M0.vy = QX * 8 - 4, QY * 8 - 2, true, 0 QX = nil
+tick 3
+expect_lua state == "clear"
+tick 230
+lua GAME.lives = 3
+expect_lua state == "play"
+expect_lua GAME.room == 8
+lua R0 = require("core.room") R0.keys = 0 R0.open_portal() for ty = 0, 15 do for tx = 0, 27 do if R0.char(tx, ty) == "X" and not QX then QX, QY = tx, ty end end end M0.x, M0.y, M0.ground, M0.vy = QX * 8 - 4, QY * 8 - 2, true, 0 QX = nil
+tick 3
+expect_lua state == "clear"
+tick 230
+lua GAME.lives = 3
+expect_lua state == "win" and GAME.score > 0
+shot fin
+tick 70
+press A
+tick 5
+expect_lua state == "title"
+expect_ok

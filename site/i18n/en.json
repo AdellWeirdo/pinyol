@@ -26,7 +26,7 @@
  "1993 · quince colores por luchador": "1993 · fifteen colours per fighter",
  "Una aventura al estilo Zelda: una isla, una cueva, un jefe y diálogos.": "A Zelda-style adventure: an island, a cave, a boss and dialogue.",
  "dibujado con código": "drawn with code",
- "Una sala de ZX Spectrum: bloques de dos colores, un minero y un guardián": "A ZX Spectrum room: two-colour blocks, a miner and a guardian",
+ "Una sala de mina de ZX Spectrum: un minero, llaves, un robot guardián y bloques de dos colores": "A ZX Spectrum mine room: a miner, keys, a guardian robot and two-colour blocks",
  "1982 · dos colores por bloque": "1982 · two colours per block",
  "Un rompeladrillos de PICO-8 en dieciséis colores": "A PICO-8 brick breaker in sixteen colours",
  "2015 · 128×128 · dieciséis colores": "2015 · 128×128 · sixteen colours",
@@ -165,6 +165,7 @@
  "cerezo": "cerezo",
  "bolsillo": "bolsillo",
  "cinta": "cinta",
+ "socavon": "socavon",
  "ladrillos": "ladrillos",
  "huevos": "huevos",
  "gotico": "gotico",
@@ -247,7 +248,7 @@
  "Lucha sobre un suelo en perspectiva dibujado en bandas.": "Fighting on a perspective floor drawn in bands.",
  "Una plaza empedrada con un cerezo sin hojas y vecinos alrededor, en cuatro tonos de verde": "A cobbled plaza with a bare cherry tree and villagers around it, in four shades of green",
  "1998 · cuatro verdes, un mundo de pantallas": "1998 · four greens, a world of screens",
- "Incluye la carga de cinta, con sus franjas de colores.": "Complete with tape loading, coloured stripes and all.",
+ "Ocho salas de una mina, con carga de cinta y choque de color.": "Eight rooms of a mine, with tape loading and colour clash.",
  "Un rompeladrillos con la paleta de esta consola de fantasía.": "A brick breaker in this fantasy console's palette.",
  "Una maquinita LCD: un cocinero que recoge huevos, con figuras que se encienden y se apagan": "An LCD handheld: a cook catching eggs, each figure either on or off",
  "Un cocinero que recoge huevos y se mueve figura a figura.": "A cook catching eggs, moving figure by figure.",
@@ -548,5 +549,6 @@
  "Una calle de noche, una linterna y algo que te sigue. Cámaras fijas que cambian al cruzar la calle, controles de tanque, niebla que esconde lo lejano y una radio que crepita cuando se acerca. Todo con mesh(), como los juegos de terror de los 32 bits. Y un menú que enseña los trucos.": "A street at night, a flashlight and something following you. Fixed cameras that change as you cross the street, tank controls, fog that hides the distance and a radio that crackles when it gets close. All with mesh(), like the 32-bit horror games. And a menu that shows the tricks.",
  "Un juego de ritmo de llamada y respuesta con personajes de papel recortado, como los de los 32 bits: el maestro sapo canta una frase con los botones y tú la repites a tiempo. Los muñecos son quads que se doblan como papel, los decorados corren por las capas de la PPU y la música suena en vivo en las voces del sintetizador. Y un menú que enseña los trucos.": "A call-and-response rhythm game with cut-out paper characters, like the 32-bit ones: the toad master sings a phrase with the buttons and you repeat it in time. The dolls are quads that fold like paper, the sets run on the PPU's layers and the music plays live on the synthesizer's voices. And a menu that shows the tricks.",
  "Un juego de lucha uno contra uno con luchadores de bloques, como los primeros de los 32 bits: cámara lateral, puñetazo, patada, barrido, bloqueo y salto, al mejor de tres asaltos contra la máquina. Cada luchador son once cajas con textura movidas con cinemática en Lua y dibujadas con mesh(). Y un menú que enseña los trucos.": "A one-on-one fighting game with blocky fighters, like the first 32-bit ones: side camera, punch, kick, sweep, block and jump, best of three rounds against the machine. Each fighter is eleven textured boxes moved with kinematics in Lua and drawn with mesh(). And a menu that shows the tricks.",
- "Una aventura de acción como las de la última época de la Game Boy: una isla, un pueblo, una cueva bajo el monte y un cerezo que no ha florecido. Cuatro tonos, mosaicos de 8x8, sprites de 16x16 y un menú que enseña cómo lo hacía la consola.": "An action adventure like the Game Boy's last era: an island, a village, a cave under the mountain and a cherry tree that has not bloomed. Four tones, 8x8 tiles, 16x16 sprites and a menu that shows how the console did it."
+ "Una aventura de acción como las de la última época de la Game Boy: una isla, un pueblo, una cueva bajo el monte y un cerezo que no ha florecido. Cuatro tonos, mosaicos de 8x8, sprites de 16x16 y un menú que enseña cómo lo hacía la consola.": "An action adventure like the Game Boy's last era: an island, a village, a cave under the mountain and a cherry tree that has not bloomed. Four tones, 8x8 tiles, 16x16 sprites and a menu that shows how the console did it.",
+ "Una mina a la manera de un juego de ZX Spectrum, desde la carga de la cinta: ocho salas de un solo pantallazo, bloques de dos colores con su choque de color, llaves que parpadean, cintas transportadoras, suelos que se derrumban y un pitido como única voz. Y un menú que enseña cómo lo hacía la máquina.": "A mine the way a ZX Spectrum game drew one, from the tape loading: eight one-screen rooms, two-colour blocks with their colour clash, flashing keys, belts, crumbling floors and a beeper as the only voice. And a menu that shows how the machine did it."
 }

@@ -1,0 +1,43 @@
+key,es,ca,en
+title,SOCAVÓN,SOCAVÓ,SOCAVÓN
+press,PULSA A,PREM A,PRESS A
+high,RÉCORD,RÈCORD,HIGH SCORE
+score,PUNTOS,PUNTS,SCORE
+air,AIRE,AIRE,AIR
+how,Cómo funciona,Com funciona,How it works
+game_over,FIN DE LA PARTIDA,FI DE LA PARTIDA,GAME OVER
+win_1,¡HAS SALIDO DEL SOCAVÓN!,HAS SORTIT DEL SOCAVÓ!,YOU ESCAPED THE SHAFT!
+win_2,"Las ocho salas, cruzadas.","Les vuit sales, creuades.","All eight rooms, crossed."
+room_1,LA BOCAMINA,LA BOCAMINA,THE MINE MOUTH
+room_2,LA CUEVA DE LOS MURCIÉLAGOS,LA COVA DELS RATPENATS,THE BAT CAVE
+room_3,LA CINTA TRANSPORTADORA,LA CINTA TRANSPORTADORA,THE CONVEYOR
+room_4,EL DERRUMBE,L'ENDERROC,THE CAVE-IN
+room_5,LA GALERÍA DE LOS HONGOS,LA GALERIA DELS FONGS,THE MUSHROOM GALLERY
+room_6,EL POZO MALDITO,EL POU MALEÏT,THE CURSED WELL
+room_7,LA FUNDICIÓN,LA FONDERIA,THE FOUNDRY
+room_8,EL CORAZÓN DE LA MINA,EL COR DE LA MINA,THE HEART OF THE MINE
+ach_primera_sala,Primera sala,Primera sala,First room
+ach_justo,Justo de aire,Just d'aire,Just in time
+ach_curioso,Curioso,Curiós,Curious
+ach_minero,Minero,Miner,Miner
+ach_impecable,Impecable,Impecable,Flawless
+ex_title_1,LOS ATRIBUTOS,ELS ATRIBUTS,THE ATTRIBUTES
+ex_title_2,EL CHOQUE DE COLOR,EL XOC DE COLOR,THE COLOUR CLASH
+ex_title_3,BRIGHT Y FLASH,BRIGHT I FLASH,BRIGHT AND FLASH
+ex_title_4,LA CINTA Y EL PITIDO,LA CINTA I EL PITIT,THE TAPE AND THE BEEPER
+ex_nav,IZQ/DER: página {n} de {m} · START: volver,ESQ/DRE: pàgina {n} de {m} · START: tornar,LEFT/RIGHT: page {n} of {m} · START: back
+ex_ink,TINTA,TINTA,INK
+ex_paper,PAPEL,PAPER,PAPER
+ex_p1,Cada bloque de 8x8 tiene solo dos colores:,Cada bloc de 8x8 només té dos colors:,Each 8x8 block has only two colours:
+ex_p1b,"la tinta y el papel. Mueve el cursor (arriba y abajo, A).","la tinta i el paper. Mou el cursor (amunt i avall, A).","ink and paper. Move the cursor (up and down, A)."
+ex_p2,El sprite no tiene color propio: toma la tinta del bloque.,El sprite no té color propi: pren la tinta del bloc.,A sprite has no colour of its own: it takes the block's ink.
+ex_p2b,Mantén A o B para moverlo y míralo cambiar de color.,Mantén A o B per moure'l i mira'l canviar de color.,Hold A or B to move it and watch it change colour.
+ex_normal,NORMAL,NORMAL,NORMAL
+ex_bright,BRIGHT (brillante),BRIGHT (brillant),BRIGHT
+ex_flash,FLASH: tinta y papel se intercambian.,FLASH: tinta i paper s'intercanvien.,FLASH: ink and paper swap.
+ex_p4_1,"La carga: el tono piloto, y luego los datos.","La càrrega: el to pilot, i després les dades.","Loading: the pilot tone, then the data."
+ex_p4_2,"La imagen llegaba en su orden: un tercio cada vez,","La imatge arribava en el seu ordre: un terç cada cop,","The picture came in its own order: a third at a time,"
+ex_p4_3,"una línea de cada fila de bloques, en negro y blanco...","una línia de cada fila de blocs, en negre i blanc...","one line of each row of blocks, in black and white..."
+ex_p4_4,"...y al final sus colores, bloque a bloque.","...i al final els seus colors, bloc a bloc.","...and at the end its colours, block by block."
+ex_p4_5,"El pitido: una sola voz, una onda cuadrada.","El pitit: una sola veu, una ona quadrada.","The beeper: a single voice, a square wave."
+demo,DEMO,DEMO,DEMO

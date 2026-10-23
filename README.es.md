@@ -24,7 +24,7 @@ Un juego se parece a la consola para la que está hecho, y el motor los mueve to
 | | |
 |---|---|
 | ![Un plataformas de Game Boy en cuatro tonos de verde, a pantalla completa](docs/looks/gameboy.png) | ![Una sala de ZX Spectrum: bloques de dos colores, un minero y un guardián](docs/looks/spectrum.png) |
-| **Game Boy**: [cerezo](examples/cerezo), una aventura al estilo Zelda | **ZX Spectrum**: [cinta](examples/cinta), desde la carga de cinta |
+| **Game Boy**: [cerezo](examples/cerezo), una aventura al estilo Zelda | **ZX Spectrum**: [socavon](examples/socavon), una mina, desde la carga de cinta |
 | ![Un plataformas de Game Boy Advance con montañas en paralaje y agua](docs/looks/gba.png) | ![Un plataformas de velocidad de 16 bits: tierra a cuadros y un mar movido línea a línea](docs/looks/16bits.png) |
 | **Game Boy Advance**: [plataformas](examples/plataformas) | **SNES / Mega Drive**: [veloz](examples/veloz), todo su arte dibujado con código |
 | ![Un juego de lucha de Neo Geo: dos luchadores grandes en un muelle al atardecer](docs/looks/neogeo.png) | ![Un juego de lucha de CPS2: luchadores de 15 colores sobre un suelo en perspectiva](docs/looks/cps2.png) |
@@ -34,7 +34,7 @@ Un juego se parece a la consola para la que está hecho, y el motor los mueve to
 | ![Un juego vectorial: líneas brillantes sobre negro](docs/looks/vector.png) | ![Un matamarcianos vertical, girado: se juega con la consola de lado](docs/looks/vertical.png) |
 | **Recreativa vectorial**: [pozo](examples/pozo), sin imágenes | **Pantalla vertical**: [tormenta](examples/tormenta), con la consola de lado |
 | ![Un laberinto en primera persona: pasillos de piedra y un fantasma, a lo Wolfenstein](docs/looks/firstperson.png) | ![Una pantalla de carga de ZX Spectrum: un minero en una cueva de cristal, dos colores por bloque](docs/looks/loading.png) |
-| **Primera persona**: [laberinto](examples/laberinto), `raycast()` | **ZX Spectrum**: la carga de cinta de [cinta](examples/cinta) |
+| **Primera persona**: [laberinto](examples/laberinto), `raycast()` | **ZX Spectrum**: la carga de cinta de [socavon](examples/socavon) |
 | ![La sala de un castillo gótico: brillos de vela, un fantasma a medias y una cazadora con látigo](docs/looks/32bits.png) | ![El jefe calavera girando y creciendo, sus bolas de fuego brillando](docs/looks/32bits_boss.png) |
 | **PlayStation / Saturn 2D**: [gotico](examples/gotico) | **PlayStation / Saturn 2D**: su jefe |
 
@@ -140,7 +140,7 @@ Te queda un juego pequeño para cambiar: una sala más grande que la pantalla, u
 | [torneo](examples/torneo) | un juego de lucha como los de CPS2: luchadores en 15 colores y treinta fotogramas, nunca ampliados, un suelo en perspectiva dibujado en bandas de filas, columnas delante, el mismo luchador dos veces en otros colores |
 | [mazmorra](examples/mazmorra) | un beat-em-up en una mazmorra como los de CPS2: goblins y esqueletos en grupos, antorchas que parpadean, columnas que pasan por delante de todos |
 | [cerezo](examples/cerezo) | una aventura vista desde arriba como las últimas de Game Boy: un mundo de pantallas que se deslizan, una mazmorra, un jefe, diálogos, cuatro tonos que C cambia por las paletas de la Color; arte y música hechos con código |
-| [cinta](examples/cinta) | un juego como los de ZX Spectrum, desde la carga de cinta (borde a rayas, la pantalla en su propio orden): bloques de dos colores, sprites que se pisan el color, una llave que parpadea, el aire que se acaba |
+| [socavon](examples/socavon) | una mina de plataformas de una pantalla como las del ZX Spectrum, desde la carga de cinta (borde a rayas, la pantalla en su propio orden): ocho salas, bloques de dos colores, sprites que se pisan el color, llaves que parpadean, cintas, suelos que se derrumban, una voz de pitido y un menú que enseña los atributos |
 | [veloz](examples/veloz) | un plataformas de velocidad como los de las consolas de 16 bits: un mar movido línea a línea, un cielo en degradado, charcos transparentes, un título en Mode 7; un pangolín que se hace bola |
 | [ladrillos](examples/ladrillos) | un rompeladrillos como un cartucho de PICO-8: una pantalla de 128x128 en sus dieciséis colores, dibujada de nuevo cada frame; sin imágenes |
 | [huevos](examples/huevos) | una maquinita LCD: figuras encendidas o apagadas (sus fantasmas se siguen viendo) sobre una imagen impresa, un paso y un pitido cada vez |

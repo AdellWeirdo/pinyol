@@ -1,0 +1,16 @@
+{
+  "id": "socavon",
+  "title": "Socavón",
+  "subtitle": "ZX Spectrum",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Una mina a la manera de un juego de ZX Spectrum, desde la carga de la cinta: ocho salas de un solo pantallazo, bloques de dos colores con su choque de color, llaves que parpadean, cintas transportadoras, suelos que se derrumban y un pitido como única voz. Y un menú que enseña cómo lo hacía la máquina.",
+  "achievements": [
+    {"id": "primera_sala", "name": "Primera sala", "description": "Sal de la primera sala por el portal."},
+    {"id": "justo", "name": "Justo de aire", "description": "Sal de una sala con menos del diez por ciento de aire."},
+    {"id": "curioso", "name": "Curioso", "description": "Mira cómo funciona el Spectrum en el menú."},
+    {"id": "minero", "name": "Minero", "description": "Cruza las ocho salas del socavón."},
+    {"id": "impecable", "name": "Impecable", "description": "Termina el juego sin perder ninguna vida."}
+  ]
+}

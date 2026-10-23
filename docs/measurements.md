@@ -868,3 +868,23 @@ dark room with its circles of light, the beetle's room, the boss arena).
 
 What it does not cover: the hero stood still and the pests were in their first state, so a fight with several of them
 and the sword's effects on the screen at once were not measured. The numbers are of the draw and the world.
+
+## 2026-10-23 · ZX Spectrum mine (Socavón) on the console
+
+Socavón's room is one tile layer of 28×16 blocks plus a handful of sprites, so the strips cost 2.3-2.5 ms and the game's Lua
+about 1.2-1.4 ms a frame (`_update` and `_draw`: the miner's physics, the guardians, the colour banks). A silent copy
+(`volume(0)`) was sent with a driver that loads each of the eight rooms in turn and leaves it 6 s, the miner standing at his
+start and the guardians moving.
+
+| What was measured | Result |
+|---|---|
+| fps in the eight rooms | 58.0 to 59.6 (the 58.0 is the frame that loads a room) |
+| `render` (the whole frame) | 15.1-16.0 ms |
+| audio, music off | 4-11% of a core, 0 underruns |
+| free internal RAM / free PSRAM | 64-75 KB / 4.7-4.9 MB |
+| script memory | 235-280 KB |
+
+Not measured: the miner walking and jumping (the floor-crumbling and belt rooms change blocks with `mset` as he goes, a few at
+a time), and the tape loading (which draws full-screen images and clips; its striped border strobes only when "less flashing"
+is off).
+
