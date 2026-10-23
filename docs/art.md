@@ -41,7 +41,7 @@ then make every picture by that look's rules and start from its example. The eng
 `uv run tools/looks.py "un juego de metal slug"` names the look a phrase means (`neogeo`; or several, or none: ask),
 `uv run tools/new_game.py games/mygame --lua --look "metal slug"` starts the game marked with it (`look.md`, the look's font pack,
 `"look"` in game.json) and `uv run tools/look_check.py games/mygame` checks what can be checked: colours in a palette bank,
-colours and bits of a packed sprite sheet, the biggest frame, pictures in the vector look, forbidden code (a full-screen canvas in the LCD look).
+colours and bits of a packed sprite sheet, the biggest frame, pictures in the vector look, forbidden code (a full-screen canvas in the LCD look). With `--play` it also plays the game's `tests/<id>.script` and, with `ppu_usage()`, checks the background layers, the sprites on the screen, the most on one line and the blend and window use against the console's own figures. `uv run tools/board_perf.py games/mygame` sends a silent copy of the game to the console and sums up its fps, frame time, memory and errors (`--drive tour.lua` adds a bot or a tour).
 
 **Letters too**: every look has a font pack, a `title`, a `body` and a `small` font in the spirit of that console's
 text, made with `uv run tools/font2fnt.py --pack <look> games/<id>`: the 37 packs are in [fonts.md](fonts.md).

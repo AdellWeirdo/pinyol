@@ -262,3 +262,16 @@ r = subprocess.run([str(Path(sys.argv[1]) / "pinyol_headless"), "--game", str(bi
                    capture_output=True, text=True)
 assert "PASS" in r.stdout + r.stderr, (r.stdout + r.stderr)[-400:]
 print("sheets: ok")
+
+# look_check --play: the picture processor sampled while the game's script plays
+pl = out / "playgame"
+r = subprocess.run([sys.executable, str(ROOT / "tools/new_game.py"), str(pl), "--lua", "--look", "game boy"], capture_output=True, text=True)
+assert r.returncode == 0, r.stderr
+headless = Path(sys.argv[1]) / "pinyol_headless"
+errs, seen = look_check.play(pl, looks.get("gameboy"), headless, None)
+assert errs == [] and "sprites" in seen, (errs, seen)
+(pl / "main.lua").write_text((pl / "main.lua").read_text() + '\nlocal base_draw = _draw\nfunction _draw()\n  base_draw()\n  local h = sheet("HERO")\n'
+                             '  for i = 60, 105 do spr(i, h, 0, 10 + (i % 3), 20) end\nend\n')
+errs, seen = look_check.play(pl, looks.get("gameboy"), headless, None)
+assert any("sprites on the screen" in e for e in errs) and any("on one line" in e for e in errs), (errs, seen)
+print("look_check --play: ok")

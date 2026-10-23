@@ -1118,6 +1118,28 @@ static int l_show(lua_State *L) { /* show(layers): which of BG0..BG3 and OBJ are
     return 0;
 }
 
+/* ppu_usage() -> {layers, sprites, line_sprites, blend, window}: what the picture processor is doing now, for checks against a console's limits
+ * (tools/look_check.py --play): background layers drawn, sprites on the screen, the most sprites on one line, and whether a blend or a window is on. */
+static int l_ppu_usage(lua_State *L) {
+    int layers = 0, sprites = 0, busiest = 0, per_line[PPU_H] = {0};
+    for (int i = 0; i < PPU_BGS; i++) layers += PPU.bg[i].mode != BG_OFF && (PPU.layers >> i & 1);
+    if (PPU.layers & PPU_OBJ)
+        for (int i = 0; i < PPU_OBJS; i++) {
+            const ppu_obj *o = &PPU.obj[i];
+            const int w = o->affine >= 0 && o->dbl ? o->w * 2 : o->w, h = o->affine >= 0 && o->dbl ? o->h * 2 : o->h;
+            if (!o->on || o->x >= PPU_W || o->x + w <= 0 || o->y >= PPU_H || o->y + h <= 0) continue;
+            sprites++;
+            for (int y = o->y < 0 ? 0 : o->y; y < o->y + h && y < PPU_H; y++) busiest = ++per_line[y] > busiest ? per_line[y] : busiest;
+        }
+    lua_createtable(L, 0, 5);
+    lua_pushinteger(L, layers), lua_setfield(L, -2, "layers");
+    lua_pushinteger(L, sprites), lua_setfield(L, -2, "sprites");
+    lua_pushinteger(L, busiest), lua_setfield(L, -2, "line_sprites");
+    lua_pushboolean(L, PPU.fx.mode != FX_NONE), lua_setfield(L, -2, "blend");
+    lua_pushboolean(L, PPU.win.on[0] || PPU.win.on[1] || PPU.win.obj_on), lua_setfield(L, -2, "window");
+    return 1;
+}
+
 static int l_fx_off(lua_State *L) {
     (void)L;
     PPU.fx.mode = FX_NONE;
@@ -1788,7 +1810,7 @@ static void api(lua_State *L) {
         {"mat", l_mat}, {"show", l_show}, {"blend", l_blend}, {"fade", l_fade}, {"fx_off", l_fx_off},
         {"window", l_window}, {"window_off", l_window_off}, {"window_out", l_window_out}, {"objwindow", l_objwindow},
         {"mosaic", l_mosaic}, {"noise", l_noise},
-        {"quit", l_quit}, {"menuitem", l_menuitem}, {"settings", l_settings}, {"achieve", l_achieve}, {"achievements", l_achievements}, {"perf", l_perf}, {"store", l_store}, {"stored", l_stored}, {"load", l_load}, {"log", l_log},
+        {"quit", l_quit}, {"menuitem", l_menuitem}, {"settings", l_settings}, {"achieve", l_achieve}, {"achievements", l_achievements}, {"perf", l_perf}, {"ppu_usage", l_ppu_usage}, {"store", l_store}, {"stored", l_stored}, {"load", l_load}, {"log", l_log},
         {"print", l_log}, {"require", l_require}, {"file", l_file}, {"powered_by", l_powered_by}, {NULL, NULL}};
     lua_pushglobaltable(L);
     luaL_setfuncs(L, F, 0);

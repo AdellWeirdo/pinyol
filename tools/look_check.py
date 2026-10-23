@@ -2,10 +2,12 @@
 # requires-python = ">=3.10"
 # ///
 """Checks a game against the look it is made for (tools/looks.json "limits"): colours in each palette bank, colours and bits of packed
-sprite sheets, the biggest sprite frame, pictures in a look that has none, forbidden code, and the font pack.
+sprite sheets, the biggest sprite frame, pictures in a look that has none, forbidden code, and the font pack. With --play, the game's test script is played (sampled every 15 ticks) and
+the layers, the sprites on the screen, the most sprites on one line and the blend and window use are checked against the look's "play" limits.
 
     uv run tools/look_check.py examples/cerezo                 # the look is read from game.json ("look")
     uv run tools/look_check.py games/mygame --look gameboy     # or named
+    uv run tools/look_check.py examples/cerezo --play          # also plays tests/<id>.script and checks what the picture processor does
 Exit 1 if there is an error. Warnings (WARN) are things to look at, not to fail on.
 """
 from __future__ import annotations
@@ -14,7 +16,9 @@ import argparse
 import json
 import re
 import struct
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -64,10 +68,69 @@ def check(game: Path, look: dict) -> tuple[list[str], list[str]]:
     return errs, warns
 
 
+PRELUDE = ("lua __M = {l = 0, s = 0, n = 0, b = false, w = false} function __u() local u = ppu_usage() "
+           "if u.layers > __M.l then __M.l = u.layers end if u.sprites > __M.s then __M.s = u.sprites end "
+           "if u.line_sprites > __M.n then __M.n = u.line_sprites end __M.b = __M.b or u.blend __M.w = __M.w or u.window end")
+PRELUDE_AGAIN = PRELUDE.replace("lua __M = {l = 0, s = 0, n = 0, b = false, w = false} function", "lua __M = __M or {l = 0, s = 0, n = 0, b = false, w = false} function")
+SAMPLE = 15  # ticks between samples
+
+
+def instrument(script: str) -> str:
+    """The game's script with the picture processor sampled between its commands (a long `tick N` is cut in pieces of 15)."""
+    out = [PRELUDE]
+    for line in script.splitlines():
+        words = line.split()
+        if words and words[0] == "new":  # a new game forgets the sampler: put it back (keeping what it saw)
+            out += [line, PRELUDE_AGAIN]
+            continue
+        if words and words[0] == "tick" and len(words) > 1 and words[1].isdigit():
+            n = int(words[1])
+            while n > 0:
+                out += [f"tick {min(SAMPLE, n)}", "lua __u()"]
+                n -= SAMPLE
+        else:
+            out.append(line)
+            if words and words[0] in ("hold", "press", "release", "wait"):
+                out.append("lua __u()")
+    out.append('lua print("LOOKUSE", __M.l, __M.s, __M.n, tostring(__M.b), tostring(__M.w))')
+    return "\n".join(out) + "\n"
+
+
+def play(game: Path, look: dict, headless: Path, script: Path | None) -> tuple[list[str], str]:
+    """Plays the test script and checks look["play"]; returns (errors, a line with the maxima seen)."""
+    if not script:
+        mine, engines = game / "tests" / f"{game.name}.script", Path(__file__).resolve().parents[1] / "tests" / f"{game.name}.script"
+        script = mine if mine.exists() else engines  # (the engine's examples keep theirs in its tests/)
+    if not script.exists():
+        return [f"--play: no script {script}"], ""
+    lim = look.get("play", {})
+    with tempfile.TemporaryDirectory() as tmp:
+        sc = Path(tmp) / "play.script"
+        sc.write_text(instrument(script.read_text(encoding="utf-8")), encoding="utf-8")
+        r = subprocess.run([str(headless), "--game", str(game), "--saves", str(Path(tmp) / "saves"), "--fresh", "--script", str(sc), "--check-strips"],
+                           capture_output=True, text=True)
+    text = r.stdout + r.stderr
+    m = re.search(r"LOOKUSE (\d+) (\d+) (\d+) (\w+) (\w+)", text)
+    if not m:
+        return [f"--play: the script did not finish ({text.strip().splitlines()[-1:] or ['no output']})"], ""
+    layers, sprites, line, blend, window = int(m[1]), int(m[2]), int(m[3]), m[4] == "true", m[5] == "true"
+    errs = []
+    for key, got, what in (("layers", layers, "background layers"), ("sprites", sprites, "sprites on the screen"), ("line_sprites", line, "sprites on one line")):
+        if key in lim and got > lim[key]:
+            errs.append(f"play: {got} {what}, {look['name']} allows {lim[key]}")
+    if lim.get("blend") is False and blend:
+        errs.append(f"play: a blend is used, {look['name']} has none")
+    if lim.get("window") is False and window:
+        errs.append(f"play: a window is used, {look['name']} has none")
+    return errs, f"play: up to {layers} layers, {sprites} sprites ({line} on one line), blend {'yes' if blend else 'no'}, window {'yes' if window else 'no'}"
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("game", type=Path)
     p.add_argument("--look", help="a look id or a phrase (default: game.json's \"look\")")
+    p.add_argument("--play", nargs="?", const="", metavar="SCRIPT", help="also play tests/<id>.script (or SCRIPT) and check layers and sprites")
+    p.add_argument("--headless", type=Path, default=Path(__file__).resolve().parents[1] / "build" / "pinyol_headless")
     a = p.parse_args()
     look_id = a.look
     if not look_id:
@@ -77,7 +140,12 @@ def main() -> None:
     ids, _ = looks.resolve(look_id)
     if len(ids) != 1:
         sys.exit(f"{look_id!r} is not one look: {ids or 'none'}")
-    errs, warns = check(a.game, looks.get(ids[0]))
+    look = looks.get(ids[0])
+    errs, warns = check(a.game, look)
+    if a.play is not None:
+        e, seen = play(a.game, look, a.headless, Path(a.play) if a.play else None)
+        errs += e
+        print(seen) if seen else None
     for w in warns:
         print("WARN", w)
     for e in errs:

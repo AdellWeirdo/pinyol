@@ -1,5 +1,5 @@
 {
-  "_doc": "The engine's looks: what a game made 'for a console' means, as data. Read by tools/looks.py (the phrase -> look table), tools/look_check.py (the checker) and tools/new_game.py --look. Prose rules stay in docs/art.md ('Choose a look'); the numbers here are the ones that can be checked. limits: pal_bank_colours = most colours in a 16-entry bank of a .pal (index 0 is see-through); image_bpp / image_colours = most for a packed picture; sprite = largest frame; pictures = false means no picture assets at all.",
+  "_doc": "The engine's looks: what a game made 'for a console' means, as data. Read by tools/looks.py (the phrase -> look table), tools/look_check.py (the checker) and tools/new_game.py --look. Prose rules stay in docs/art.md ('Choose a look'); the numbers here are the ones that can be checked. limits: pal_bank_colours = most colours in a 16-entry bank of a .pal (index 0 is see-through); image_bpp / image_colours = most for a packed picture; sprite = largest frame; pictures = false means no picture assets at all. play: what tools/look_check.py --play checks while it plays the game's test script (background layers, sprites on the screen, most sprites on one line, blend and window use; hardware figures of that console).",
   "looks": [
     {
       "id": "gameboy", "name": "Game Boy", "example": "cerezo", "method": "code", "font_pack": "game_boy",
@@ -7,6 +7,7 @@
       "world": "240x160 (status bar on top, level under it)",
       "aliases": ["game boy", "gameboy", "game boy color", "gbc", "dmg", "juego de gameboy", "consola verde"],
       "limits": {"pal_bank_colours": 4, "sprite": [32, 32]},
+      "play": {"layers": 3, "sprites": 40, "line_sprites": 10, "blend": false},
       "style": "Game Boy pixel art, four shades of green, 8x8 tiles, no anti-aliasing",
       "rules": ["four tones, lightest to darkest, written into WORLD.pal / OBJ.pal before converting so pal() recolours the whole game",
                 "8x8 tiles in one background layer, 16x16 sprites, a status bar and dialogue as a window layer",
@@ -19,6 +20,7 @@
       "world": "224x144 inside a one-colour border",
       "aliases": ["zx spectrum", "spectrum", "zx", "sinclair", "amstrad", "cpc", "commodore 64", "c64", "msx", "atari 2600"],
       "limits": {"pal_bank_colours": 2, "sprite": [32, 32]},
+      "play": {"layers": 1, "sprites": 32, "line_sprites": 8, "blend": false, "window": false},
       "style": "ZX Spectrum pixel art, two colours per 8x8 block, bright and normal, colour clash",
       "rules": ["an ink and a paper per 8x8 block from the fifteen colours; blocks drawn in two key colours, coloured by a palette bank per block",
                 "sprites are ink only and take the bank of the block they stand in (the colour clash)",
@@ -31,6 +33,7 @@
       "world": "128x128 in the middle of the 240x160 world",
       "aliases": ["pico-8", "pico8", "pico 8", "tic-80", "tic80", "consola de fantasia", "fantasy console"],
       "limits": {"pal_bank_colours": 16, "sprite": [32, 32]},
+      "play": {"layers": 1, "blend": false, "window": false},
       "style": "PICO-8 pixel art, the sixteen fixed colours, 8x8 sprites",
       "rules": ["the sixteen PICO-8 colours and no others, at palette indices 1-16", "a 16x16 map of 8x8 tiles, pal() for fades", "four chiptune channels with tone()"],
       "avoid": ["any colour outside the sixteen"]
@@ -41,6 +44,7 @@
       "world": "the handheld's plate, glass drawn once",
       "aliases": ["lcd", "game & watch", "game and watch", "game watch", "maquinita", "maquineta", "pocket lcd", "tiger electronics", "maquina lcd"],
       "limits": {"forbid_lua": ["canvas\\(\\s*480"]},
+      "play": {"layers": 0, "sprites": 0, "blend": false, "window": false},
       "style": "pocket LCD game: fixed figures on or off over a printed picture",
       "rules": ["every figure is a fixed shape, on (dark) or off (a faint ghost); all polygons", "the glass is drawn once and kept as one picture, only what is on is drawn each frame",
                 "steps with a beep, faster as the score grows; seven-segment score, games A and B"],
@@ -52,6 +56,7 @@
       "world": "full resolution, lines on black",
       "aliases": ["vector", "vectorial", "asteroids", "vectrex", "arcade vectorial", "lineas brillantes"],
       "limits": {"pictures": false},
+      "play": {"layers": 0, "sprites": 0, "blend": false, "window": false},
       "style": "vector arcade: bright lines on black with a soft glow",
       "rules": ["no pictures at all: poly/line only", "an outline is ONE poly() call (cost is by call, not by pixel); keep strokes in a list and draw every glow, then every core",
                 "letters made of strokes"],
@@ -63,6 +68,7 @@
       "world": "240x160",
       "aliases": ["game boy advance", "gba", "gameboy advance", "ds", "nintendo ds", "psp", "wario land", "metroid fusion"],
       "limits": {"pal_bank_colours": 15, "sprite": [64, 64]},
+      "play": {"layers": 4, "sprites": 128, "line_sprites": 32},
       "style": "16-bit handheld pixel art, 4 to 8 colours per sprite, hard pixel edges, no anti-aliasing",
       "rules": ["characters 16 to 32 px, 8x8 tiles in sixteen-colour banks, 128 sprites", "a full-screen layer costs about a fifth of a frame on the console: paint sky + hills into one picture and scroll it with line_scroll",
                 "blend, window+fade and whole-screen ripples cost a third to two thirds of a frame each: use them on part of the screen"],
@@ -74,6 +80,7 @@
       "world": "240x160",
       "aliases": ["snes", "super nintendo", "super famicom", "mega drive", "megadrive", "genesis", "sega genesis", "16 bits", "16-bit", "16 bit", "amiga", "atari st", "sonic"],
       "limits": {"pal_bank_colours": 15, "sprite": [64, 64]},
+      "play": {"layers": 4, "sprites": 128, "line_sprites": 32},
       "style": "16-bit console pixel art, 15 colours per sprite, bold outlines, saturated colours, no anti-aliasing",
       "rules": ["sprites up to 32x32 (bigger in a few), 15 colours each or fewer", "Mega Drive: far layers at a different speed per line (line_scroll); SNES: line_backdrop sky, blend water, mosaic between scenes, Mode 7 floors"],
       "avoid": ["anti-aliased edges"]
@@ -95,6 +102,7 @@
       "world": "480x320 pictures",
       "aliases": ["neo geo", "neogeo", "neo-geo", "mvs", "snk", "metal slug", "run and gun", "run & gun", "king of fighters", "samurai shodown", "arcade snk"],
       "limits": {"image_bpp": 8, "image_colours": 256},
+      "play": {"sprites": 380, "line_sprites": 96},
       "style": "mid-1990s Neo Geo sprite art, painterly, 3 to 4 tones per material, hard pixel edges, no anti-aliasing",
       "rules": ["every pixel at 480x320 with img() of packed pictures; characters 90 to 180 px", "sheets in pieces of ten frames (tools/pk_split.py) so the console never needs one big block",
                 "hand-animated frames in quantity, comic deaths; sprites can only be shrunk, never grown",
