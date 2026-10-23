@@ -14,6 +14,7 @@
 static struct { float x, y, r, width, amp; } shocks[MAX_SHOCKS];
 static int nshocks;
 #define MAX_ZONES 4
+#define POST_MAX_W 512 /* the widest picture a water zone works on */
 typedef struct { int x0, y0, x1, y1; float amp, phase, period; bool water; } zone_t;
 static zone_t zones[MAX_ZONES];
 static int nzones;
@@ -90,6 +91,10 @@ static bool keep_copy(const uint16_t *world, int w, int h) {
  * wobbles both ways as light does through water. Only the pixels inside the rectangle change. */
 static void apply_zone(uint16_t *world, int w, int h, const zone_t *z) {
     const int y0 = z->y0 < 0 ? 0 : z->y0, y1 = z->y1 >= h ? h - 1 : z->y1, x0 = z->x0 < 0 ? 0 : z->x0, x1 = z->x1 >= w ? w - 1 : z->x1;
+    int8_t coldy[POST_MAX_W]; /* water: how far each column is lifted, worked out once (a sine a pixel was 27 ms on the console) */
+    if (z->water && w <= POST_MAX_W)
+        for (int x = x0; x <= x1; x++) coldy[x] = (int8_t)lroundf(z->amp * 0.5f * sinf((float)x / (z->period * 1.7f) * 6.2831853f + z->phase * 1.3f));
+    else if (z->water) return;
     for (int y = y0; y <= y1; y++) {
         const int dx = (int)lroundf(z->amp * sinf((float)y / z->period * 6.2831853f + z->phase));
         uint16_t *dst = world + (size_t)y * w;
@@ -103,12 +108,12 @@ static void apply_zone(uint16_t *world, int w, int h, const zone_t *z) {
             }
             continue;
         }
+        const uint16_t *csrc = copy;
         for (int x = x0; x <= x1; x++) {
-            const int dy = (int)lroundf(z->amp * 0.5f * sinf((float)x / (z->period * 1.7f) * 6.2831853f + z->phase * 1.3f));
-            int sx = x - dx, sy = y - dy;
+            int sx = x - dx, sy = y - coldy[x];
             sx = sx < 0 ? 0 : sx >= w ? w - 1 : sx;
             sy = sy < 0 ? 0 : sy >= h ? h - 1 : sy;
-            dst[x] = copy[(size_t)sy * w + sx];
+            dst[x] = csrc[(size_t)sy * w + sx];
         }
     }
 }
