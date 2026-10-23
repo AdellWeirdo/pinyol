@@ -52,11 +52,14 @@ HERO_EXTRA = [("loading", "La pantalla de carga de un juego de ZX Spectrum"), ("
 
 # The other examples, playable too (id, title)
 OTHERS = [
+    ("selva", "Selva"), ("niebla", "Niebla"), ("recortes", "Recortes"), ("cajas", "Cajas"),
+]
+# The older demos, no longer shown on the site (no page, no zip, not in the lists): to bring one back, move it to OTHERS
+HIDDEN_DEMOS = [
     ("calle", "Calle de neón"), ("nubes", "Sobre las nubes"), ("futbol", "Gol de oro"),
     ("moto", "Moto costa"), ("mazmorra", "La mazmorra"), ("carreras", "Carreras"), ("naves", "Naves"), ("aldea", "La aldea"),
     ("puzle", "Puzle"), ("inventos", "Inventos"), ("estilos", "Estilos"), ("sonidos", "Sonidos"), ("control", "Control"),
     ("juntos", "Juntos"), ("hola", "Hola pinyol"),
-    ("selva", "Selva"), ("niebla", "Niebla"), ("recortes", "Recortes"), ("cajas", "Cajas"),
 ]
 
 # The ladder: games Codex made, one request each, on a fresh clone with nothing but AGENTS.md (2026-10-14), from the
