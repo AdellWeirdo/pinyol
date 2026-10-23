@@ -1,5 +1,5 @@
--- chef: the player. A chef is two sprites pinned at the hips, as Metal Slug did it: legs (idle, run, crawl, jump) and a torso (idle, aim in four directions, fire, throw, stab) so every
--- aim works with every leg animation. A hit kills (one life), a grenade is a pressure cooker, the knife stabs what is close, and the Maestro's paellera blocks what comes at his front.
+-- chef: the player. A chef is one sheet of 50 hand-drawn frames (made with the image model, gen/gpt_jobs.py): idle, run, run-and-shoot, jump, aim up, aim down, crouch, crawl,
+-- grenade, knife, death, victory. A hit kills (one life), a grenade is a pressure cooker, the knife stabs what is close, and the Maestro's paellera blocks what comes at his front.
 local C = require("core.const")
 local S = require("core.spr")
 local W = require("core.weapons")
@@ -75,10 +75,16 @@ function Chef.pickup_weapon(c, kind)
   Music.jingle("arma", 1)
 end
 
+-- where a shot leaves, in pixels from the feet, facing right: by the kind of frame (the sheet's json may give its own per frame)
+local MUZZLE = {fire = {58, -64}, runfire = {58, -64}, jumpfire = {56, -62}, crouch_fire = {56, -34}, fire_up = {16, -108}, aim_up = {16, -108}, fire_down = {32, -22}}
 local function muzzle(c)
-  local fr = c.torso_frame or "aim_fwd"
-  local ox, oy = S.point("chef_" .. c.id .. "_torso", "muzzle", fr, c.x, c.y - 56, c.dir < 0)
-  return ox, oy
+  local fr = c.frame or "fire_0"
+  local sh = S.sheets["chef_" .. c.id]
+  local p = sh.muzzle and sh.muzzle[fr]
+  if p then return S.point("chef_" .. c.id, "muzzle", fr, c.x, c.y, c.dir < 0) end
+  local kind = fr:match("^(.-)_%d+$") or fr
+  local m = MUZZLE[kind] or MUZZLE.fire
+  return c.x + m[1] * c.dir, c.y + m[2]
 end
 
 local function fire(c)
@@ -161,8 +167,7 @@ function Chef.update(c, cam, vehicle_now)
     if not c.throw_done and c.throw_t <= 9 then
       c.throw_done = true
       c.grenades = c.grenades - 1
-      local hx, hy = S.point("chef_" .. c.id .. "_torso", "grenade_hand", "throw_1", c.x, c.y - 56, c.dir < 0)
-      Shots.pot(hx, hy, c.dir * 4.4 + c.vx * 0.5, -6.5)
+      Shots.pot(c.x + c.dir * 30, c.y - 74, c.dir * 4.4 + c.vx * 0.5, -6.5)
       Sound.play("throw", 0.5)
     end
   end
@@ -170,57 +175,51 @@ end
 
 -- ------------------------------------------------------------------ the picture
 
-local function legs_frame(c)
-  if not c.ground then
-    if c.vy < -3 then return "jump_0" elseif c.vy < 0 then return "jump_1" elseif c.vy < 4 then return "jump_2" end
-    return "jump_2"
-  end
-  if c.land_t > 0 then return "jump_3" end
-  if c.crouch then
-    if c.moving then return "crawl_" .. (c.t // 5) % 6 end
-    return "crouch"
-  end
-  if c.moving then return "run_" .. (c.t // 3) % 8 end
-  return "idle"
-end
-
-local function torso_frame(c)
-  local k = (c.fire_t // 2) % 3
-  if c.throw_t > 0 then return "throw_" .. math.min(3, (16 - c.throw_t) // 4) end
-  if c.stab_t > 0 then return "stab_" .. math.min(3, (14 - c.stab_t) // 4) end
+local function frame_of(c)
+  local k = (c.fire_t // 3) % 2
+  if c.throw_t > 0 then return "throw_" .. math.min(2, (16 - c.throw_t) // 6) end
+  if c.stab_t > 0 then return "stab_" .. math.min(2, (14 - c.stab_t) // 5) end
   local firing = c.fire_t < 10
-  if c.crouch then return firing and ("crouch_fire_" .. k) or ("crouch_" .. (c.t // 14) % 2) end
-  if c.aim == "up" or c.aim == "diag" then return firing and ("fire_up_" .. k) or "aim_up" end
-  if c.aim == "down" then return firing and ("fire_down_" .. k) or "aim_down" end
-  if firing then return "fire_fwd_" .. k end
-  if not c.ground then return "jump_" .. ((c.vy < 0) and 0 or 1) end
-  if c.moving then return "run_" .. (c.t // 3) % 8 end
+  if c.crouch then
+    if firing then return "crouch_fire_" .. k end
+    if c.moving then return "crawl_" .. (c.t // 8) % 2 end
+    return "crouch_0"
+  end
+  if c.aim == "up" or c.aim == "diag" then return firing and ("fire_up_" .. k) or "aim_up_0" end
+  if c.aim == "down" then return firing and ("fire_down_" .. k) or "jump_1" end
+  if not c.ground then
+    if firing then return "jumpfire_" .. k end
+    return "jump_" .. (c.vy < -2.5 and 0 or (c.vy < 1.5 and 1 or 2))
+  end
+  if c.moving then return firing and ("runfire_" .. (c.t // 4) % 4) or ("run_" .. (c.t // 4) % 6) end
+  if firing then return "fire_" .. k end
   return "idle_" .. (c.t // 10) % 4
 end
 
 function Chef.draw(c, cam)
   local sx = c.x - cam
+  local id = "chef_" .. c.id
   if c.state == "dead" then
-    S.draw("chef_" .. c.id .. "_full", "die_" .. math.min(7, c.dead_t // 5), sx, c.y, {flip = c.dir < 0})
+    S.draw(id, "die_" .. math.min(5, c.dead_t // 10), sx, c.y, {flip = c.dir < 0})
     return
   end
   if c.state == "win" then
-    S.draw("chef_" .. c.id .. "_full", "win_" .. (c.win_t // 6) % 6, sx, c.y, {})
+    S.draw(id, "win_" .. (c.win_t // 8) % 4, sx, c.y, {})
     return
   end
   if c.inv > 0 and (c.inv // 4) % 2 == 0 then return end
   local flip = c.dir < 0
-  local id = "chef_" .. c.id
   if c.vehicle then
+    -- at the wheel: the cook from the seat up (the tractor hides the rest)
     local sh = c.vehicle.seat_pos(cam)
-    c.torso_frame = c.aim == "up" and "aim_up" or "aim_fwd"
-    S.draw(id .. "_torso", c.torso_frame, sh[1], sh[2], {flip = false})
+    clip(0, 0, 480, math.floor(sh[2]) + 2)
+    c.frame = c.aim == "up" and "aim_up_0" or "idle_" .. (c.t // 10) % 4
+    S.draw(id, c.frame, sh[1], sh[2] + 46, {flip = false})
+    clip()
     return
   end
-  c.torso_frame = torso_frame(c)
-  -- drawn in the order of painting: the legs, then the torso over them
-  S.draw(id .. "_legs", legs_frame(c), sx, c.y - 56, {flip = flip})
-  S.draw(id .. "_torso", c.torso_frame, sx, c.y - 56, {flip = flip})
+  c.frame = frame_of(c)
+  S.draw(id, c.frame, sx, c.y, {flip = flip})
   if c.shield > 0 then S.draw("items", "shield_" .. (c.t // 6) % 4, sx, c.y - 30, {alpha = 0.7}) end
 end
 

@@ -75,7 +75,7 @@ function SEL.draw()
   for i, id in ipairs(X.CHEFS) do
     local a = al[i] or {40 + (i - 1) * 70, 134, 50, 82}
     local on = i == SEL.sel
-    S.draw("chef_" .. id .. "_full", "select_" .. ((SEL.t // 8 + i) % 4), a[1] + a[3] // 2, feet + 2 - (on and math.floor(math.abs(math.sin(SEL.t / 8)) * 5) or 0), {dim = on and nil or 0.5})
+    S.draw("chef_" .. id, "select_" .. ((SEL.t // 12 + i) % 2), a[1] + a[3] // 2, feet + 2 - (on and math.floor(math.abs(math.sin(SEL.t / 8)) * 5) or 0), {dim = on and nil or 0.5})
   end
   label(lang.tr("select_title"), 240, 22, {align = "center", scale = 2, fit = 300, gradient = 0xFF8020})
   local id = X.CHEFS[SEL.sel]
@@ -106,7 +106,7 @@ end
 function R.draw(chef)
   S.count = 0
   S.back("title", 0, 0)
-  S.draw("chef_" .. Run.chef .. "_full", "win_" .. (R.t // 6) % 6, 110, 300, {})
+  S.draw("chef_" .. Run.chef, "win_" .. (R.t // 8) % 4, 110, 300, {})
   panel(190, 40, 270, 210)
   text(lang.tr("res_title"), 325, 52, {font = "bold", align = "center", color = 0x8a3a08})
   local y = 92
@@ -134,7 +134,7 @@ end
 function E.draw()
   S.count = 0
   S.back("title", 0, 0)
-  S.draw("chef_" .. Run.chef .. "_full", "win_" .. (E.t // 6) % 6, 240, 300, {})
+  S.draw("chef_" .. Run.chef, "win_" .. (E.t // 8) % 4, 240, 300, {})
   shade(0, 0, 480, 150)
   label(lang.tr("end_title"), 240, 24, {align = "center", scale = 2, fit = 460, gradient = 0xFF8020})
   text(lang.tr("end_text"), 240, 90, {font = "main", align = "center", width = 420, color = 0xFFFFFF, outline = 0x200010})

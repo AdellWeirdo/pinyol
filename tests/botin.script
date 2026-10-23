@@ -35,10 +35,10 @@ expect_lua dbg_run().escape == true
 shot huida
 expect_lua dbg_tp(3, 10)
 tick 20
-tick 200
+tick 120
 expect_lua G.state == "results"
 shot resultados
-tick 200
+tick 120
 press A
 tick 80
 expect_lua G.state == "map"
@@ -57,7 +57,7 @@ shot fragua
 hold RIGHT+B 120
 # hearts run out
 expect_lua dbg_hurt(3) <= 0
-tick 260
+tick 150
 expect_lua G.state == "over"
 shot fin
 press A
@@ -72,17 +72,17 @@ hold RIGHT+B 30
 tick 40
 expect_lua dbg_run().escape == true
 expect_lua dbg_time_out()
-tick 300
+tick 150
 expect_lua G.state == "over"
 # the golem
 expect_lua dbg_level(5)
 tick 150
 expect_lua dbg_boss().active == true
 shot gigante
-tick 400
+tick 200
 shot golpes
 expect_lua dbg_boss_hit(4) == 0
-tick 500
+tick 420
 expect_lua G.state == "ending" or G.state == "results"
 shot final
 # the explainer: four pages, each shown, then back to the game

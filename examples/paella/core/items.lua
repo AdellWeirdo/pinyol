@@ -77,7 +77,8 @@ function It.draw(cam)
       local bob = it.rest and math.floor(math.sin(it.t / 10) * 2) or 0
       local k = it.kind
       local frame
-      if k == "food" then frame = "food_" .. it.food .. "_" .. (it.t // 16) % 2 else frame = k .. "_" .. (it.t // 8) % 4 end
+      if k == "food" then frame = "food_" .. it.food else frame = k end
+      if not S.has("items", frame) then frame = frame .. "_" .. (it.t // 8) % math.max(1, S.n("items", frame)) end
       S.draw("items", frame, sx, it.y + bob, {})
     end
   end

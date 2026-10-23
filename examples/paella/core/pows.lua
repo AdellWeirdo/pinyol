@@ -60,10 +60,10 @@ function P.draw(cam)
     local sx = p.x - cam
     if sx > -100 and sx < C.W + 100 then
       local f
-      if p.state == "tied" then f = "tied_" .. (p.t // 8) % 6
-      elseif p.state == "free" then f = "free_" .. math.min(3, p.st // 6)
-      elseif p.state == "give" then f = "give_" .. math.min(5, p.st // 6)
-      else f = "run_" .. (p.t // 3) % 8 end
+      if p.state == "tied" then f = S.seq(p.kind, "tied", p.t // 8)
+      elseif p.state == "free" then f = "free_" .. math.min(S.n(p.kind, "free") - 1, p.st // 8)
+      elseif p.state == "give" then f = "give_" .. math.min(S.n(p.kind, "give") - 1, p.st // 12)
+      else f = S.seq(p.kind, "run", p.t // 4) end
       S.draw(p.kind, f, sx, C.FLOOR, {flip = p.state == "run" and false or false})
     end
   end

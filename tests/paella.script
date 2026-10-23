@@ -13,15 +13,15 @@ tick 90
 expect_lua G.state == "play" and G.chef_id == "espuma"
 shot mision
 # running and shooting kills the first gulls
-hold RIGHT+A 240
+hold RIGHT+A 150
 expect_lua dbg_state().score > 0
 shot disparo
 # each kind of enemy, one after the other
 expect_lua dbg_foe("soldier", 0) and dbg_foe("bazooka", 80) and dbg_foe("drone", 120) and dbg_foe("kamikaze", 200)
-hold RIGHT+A 200
+hold RIGHT+A 120
 shot gaviotas
 expect_lua dbg_foe("crab", 100)
-hold RIGHT+A 300
+hold RIGHT+A 150
 # a grandma is freed by shooting her ropes and hands over a crate
 expect_lua dbg_pow()
 hold A 100
@@ -61,20 +61,20 @@ tick 30
 expect_lua dbg_state().state == "play"
 # the golem: the pot opens and is hurt, the boss falls, the tally and the ending
 expect_lua dbg_boss()
-tick 400
+tick 200
 shot jefe
 expect_lua dbg_boss_open()
 hold RIGHT+A 120
 shot jefe2
 expect_lua dbg_boss_kill() <= 0
-tick 900
+tick 650
 expect_lua dbg_state().state == "results"
 shot cuenta
 tick 200
 press A
 tick 20
 expect_lua dbg_state().state == "ending"
-tick 700
+tick 650
 press A
 tick 30
 expect_lua G.state == "title"
@@ -98,6 +98,6 @@ tick 5
 expect_lua G.state == "play"
 # the attract mode plays by itself
 expect_lua dbg_demo()
-tick 600
+tick 300
 expect_lua G.state == "demo" or G.state == "title"
 shot demo

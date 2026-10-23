@@ -3,15 +3,11 @@
   "type": "sprite",
   "format": "packed",
   "bpp": 8,
-  "colours": 59,
-  "w": 192,
-  "h": 128,
-  "frames": 10,
+  "colours": 157,
+  "w": 224,
+  "h": 144,
+  "frames": 6,
   "frame_ms": [
-    0,
-    0,
-    0,
-    0,
     0,
     0,
     0,
@@ -25,19 +21,15 @@
     2,
     3,
     4,
-    5,
-    6,
-    7,
-    8,
-    9
+    5
   ],
   "anchor": [
-    96,
-    126
+    112,
+    140
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 107697,
-    "as_rgb565": 491520
+    "total": 73454,
+    "as_rgb565": 387072
   }
 }

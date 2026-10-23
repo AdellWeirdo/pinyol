@@ -4,12 +4,12 @@ local W = {}
 
 -- name: {sheet prefix, frames, rate (ticks between shots), speed, dmg, life (ticks), gravity, pierce, spread (pellets), sfx, size (hitbox), recoil}
 W.DEFS = {
-  estrella = {name = "knife", frames = 4, every = 5, speed = 15, dmg = 1, life = 40, gravity = 0, pierce = 0, pellets = 1, sfx = "knife", r = 9},
-  espuma = {name = "foam", frames = 4, every = 8, speed = 8, dmg = 1, life = 20, gravity = 0, pierce = 1, pellets = 3, spread = 0.18, sfx = "foam", r = 12},
-  pinche = {name = "croqueta", frames = 4, every = 16, speed = 9, dmg = 3, life = 60, gravity = 0.14, pierce = 0, pellets = 1, sfx = "croqueta", r = 13, splash = 36},
-  arrocero = {name = "rice", frames = 4, every = 10, speed = 10, dmg = 1, life = 26, gravity = 0.04, pierce = 0, pellets = 3, spread = 0.22, sfx = "rice", r = 10},
-  brioche = {name = "cream", frames = 4, every = 3, speed = 10, dmg = 0.5, life = 24, gravity = 0, pierce = 0, pellets = 1, sfx = "cream", r = 9, jitter = 0.08},
-  crianza = {name = "cork", frames = 4, every = 22, speed = 17, dmg = 4, life = 50, gravity = 0, pierce = 2, pellets = 1, sfx = "cork", r = 10},
+  estrella = {name = "knife", every = 5, speed = 15, dmg = 1, life = 40, gravity = 0, pierce = 0, pellets = 1, sfx = "knife", r = 9},
+  espuma = {name = "foam", every = 8, speed = 8, dmg = 1, life = 20, gravity = 0, pierce = 1, pellets = 3, spread = 0.18, sfx = "foam", r = 12},
+  pinche = {name = "croqueta", every = 16, speed = 9, dmg = 3, life = 60, gravity = 0.14, pierce = 0, pellets = 1, sfx = "croqueta", r = 13, splash = 36},
+  arrocero = {name = "rice", every = 10, speed = 10, dmg = 1, life = 26, gravity = 0.04, pierce = 0, pellets = 3, spread = 0.22, sfx = "rice", r = 10},
+  brioche = {name = "cream", every = 3, speed = 10, dmg = 0.5, life = 24, gravity = 0, pierce = 0, pellets = 1, sfx = "cream", r = 9, jitter = 0.08},
+  crianza = {name = "cork", every = 22, speed = 17, dmg = 4, life = 50, gravity = 0, pierce = 2, pellets = 1, sfx = "cork", r = 10},
 }
 
 W.NAMES = {

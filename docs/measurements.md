@@ -959,3 +959,13 @@ worlds and the boss with a bot playing (11 stops, 6 s each): **50.1 to 57.4 fps*
 without underruns, 59 KB of internal RAM and about 3.2-3.8 MB of PSRAM free, script memory 0.35-0.58 MB. The lowest figures are the tiki hill (50.4, the
 most sprites and breaking blocks) and the escape's haze (50.1). What it does not cover: a fight with the boss's rockets and the hero throwing at the same
 time was only held for a second (55.8 fps).
+
+
+## 2026-10-23 · Neo Geo run and gun (Paella de combate) on the console, with the gpt-image art
+
+Every picture is full-colour at 480x320 (sheets of 50 frames per cook, cut in pieces of at most 80 KB, backgrounds in 160 px slices). A silent copy
+with a bot playing the first mission (one cook, unhurt), 10 s per sample, firmware 3aff58e: **40.6 to 60 fps, mostly 48-55**, `render` 14.8-20.7 ms
+(world 1.8-4.5 ms, strips 6.3-10 ms), `_update` 1.2-2.4 ms, `_draw` 1.7-4.5 ms, audio 9-24% of a core with no underruns, 48 KB of internal RAM,
+script memory 0.31-0.35 MB. The low points are the busiest street fights (tractor, drones and explosions on screen); the end of the run is 60 fps.
+PSRAM is the tight resource: 72-440 KB free with the largest block between 19 and 66 KB, so a new picture must come in pieces (see the 10-frame
+pieces and `tools/pk_split.py`); no "no memory" message appeared in the run. Not measured: the boss fight and the six cooks one by one.

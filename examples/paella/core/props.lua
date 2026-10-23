@@ -67,7 +67,7 @@ function P.draw(cam)
     local sx = p.x - cam
     if sx > -80 and sx < C.W + 80 then
       if p.kind == "buoy" then
-        S.draw("props", "buoy_" .. (math.floor(p.x / 12) % 4), sx, C.FLOOR, {})
+        S.draw("props", S.seq("props", "buoy", math.floor(p.x / 12)), sx, C.FLOOR, {})
       else
         local k = p.hp <= 0 and math.min(5, 3 + p.st // 8) or (3 - p.hp)
         S.draw("props", p.kind .. "_" .. k, sx + ((p.shake or 0) % 2 == 1 and 2 or 0), C.FLOOR, {})

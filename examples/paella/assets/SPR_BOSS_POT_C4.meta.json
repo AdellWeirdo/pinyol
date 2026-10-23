@@ -1,0 +1,31 @@
+{
+  "asset": "SPR_BOSS_POT_C4",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 43,
+  "w": 224,
+  "h": 192,
+  "frames": 4,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "anchor": [
+    112,
+    176
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 82398,
+    "as_rgb565": 344064
+  }
+}

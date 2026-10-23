@@ -22,7 +22,7 @@ function Shots.fire(w, x, y, dx, dy, o)
     if w.jitter then a = a + (math.random() - 0.5) * 2 * w.jitter end
     local sp = w.speed * (1 + (math.random() - 0.5) * 0.06)
     Shots.mine[#Shots.mine + 1] = {x = x, y = y, vx = math.cos(a) * sp, vy = math.sin(a) * sp, w = w, t = 0, hit = {}, left = w.pierce or 0, sheet = o and o.sheet or "shots",
-                                   prefix = o and o.prefix or w.name, n = o and o.n or w.frames, angle = (o and o.angle) or nil, r = w.r, dmg = w.dmg}
+                                   prefix = o and o.prefix or w.name, n = o and o.n or S.n("shots", w.name), angle = (o and o.angle) or nil, r = w.r, dmg = w.dmg}
   end
   Sound.play(w.sfx or "knife", 0.5)
 end
@@ -121,7 +121,7 @@ end
 
 function Shots.draw(cam)
   for _, s in ipairs(Shots.mine) do
-    local f = s.prefix .. "_" .. ((s.t // 2) % s.n)
+    local f = s.prefix .. "_" .. ((s.t // 3) % math.max(1, s.n))
     local flip = s.vx < 0 and not s.angle
     S.draw(s.sheet, f, s.x - cam, s.y, {flip = flip, angle = s.angle and math.floor(math.deg(math.atan(s.vy, s.vx)) + 0.5) or nil})
   end
@@ -129,11 +129,11 @@ function Shots.draw(cam)
     if s.kind == "beam" then
       S.draw("boss_fx", "beam_" .. ((s.t // 2) % 4), s.x - cam, s.y, {})
     elseif s.kind ~= "shock" then
-      S.draw("shots", s.kind == "shell" and "bomb_" .. ((s.t // 3) % 4) or (s.kind .. "_" .. ((s.t // 3) % 4)), s.x - cam, s.y, {flip = s.vx > 0 and s.kind ~= "bomb"})
+      S.draw("shots", S.seq("shots", s.kind == "shell" and "bomb" or s.kind, s.t // 4), s.x - cam, s.y, {flip = s.vx > 0 and s.kind ~= "bomb"})
     end
   end
   for _, p in ipairs(Shots.pots) do
-    S.draw("shots", "pot_" .. ((p.t // 3) % 8), p.x - cam, p.y, {})
+    S.draw("shots", S.seq("shots", "pot", p.t // 3), p.x - cam, p.y, {})
   end
 end
 

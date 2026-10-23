@@ -1,0 +1,25 @@
+{
+  "asset": "BG_SELECT_1",
+  "type": "background",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 233,
+  "w": 160,
+  "h": 320,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    80,
+    319
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 53284,
+    "as_rgb565": 102400
+  }
+}

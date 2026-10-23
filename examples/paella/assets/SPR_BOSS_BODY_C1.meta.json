@@ -6,20 +6,14 @@
   "colours": 43,
   "w": 384,
   "h": 320,
-  "frames": 5,
+  "frames": 2,
   "frame_ms": [
-    0,
-    0,
-    0,
     0,
     0
   ],
   "order": [
     0,
-    1,
-    2,
-    3,
-    4
+    1
   ],
   "anchor": [
     192,
@@ -27,7 +21,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 171110,
-    "as_rgb565": 1228800
+    "total": 66809,
+    "as_rgb565": 491520
   }
 }

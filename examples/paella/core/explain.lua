@@ -9,7 +9,7 @@ local lang = require("lang")
 local Ex = {}
 
 Ex.active = false
-local PAGES = {"sprites", "halves", "shrink", "palettes"}
+local PAGES = {"sprites", "frames", "shrink", "palettes"}
 local page, t, sub = 1, 0, 1
 local play
 
@@ -41,28 +41,25 @@ function Ex.draw()
   panel(10, 8, 460, 100)
   text(lang.tr("ex_" .. pg .. "_title"), 240, 14, {font = "bold", align = "center", color = 0x8a3a08})
   text(lang.tr("ex_" .. pg .. "_text", {n = count, max = 380, line = 96}), 240, 40, {font = "main", align = "center", width = 440, color = 0x402010})
-  if pg == "halves" then
-    local k = sub % 3
-    local aim = ({"aim_fwd", "aim_up", "aim_down"})[k + 1]
-    S.draw("chef_" .. chef .. "_legs", "run_" .. (t // 4) % 8, 150, 270, {})
-    S.draw("chef_" .. chef .. "_torso", aim, 150, 214, {})
-    -- the same two halves apart
-    S.draw("chef_" .. chef .. "_legs", "run_" .. (t // 4) % 8, 330, 296, {})
-    S.draw("chef_" .. chef .. "_torso", aim, 330, 180, {})
-    rect(86, 120, 128, 160, 0xFFFFFF, false)
-    box(266, 120, 128, 70, 0xFF8040)
-    box(266, 232, 96, 64, 0x40C0FF)
+  if pg == "frames" then
+    -- a run cycle, frame by frame, side by side, and the same one playing
+    for i = 0, 3 do
+      S.draw("chef_" .. chef, "run_" .. i, 70 + i * 100, 270, {})
+      text(tostring(i + 1), 70 + i * 100, 278, {font = "main", align = "center", color = 0xFFFFFF, outline = 0x200010})
+    end
+    S.draw("chef_" .. chef, "run_" .. (t // 4) % 6, 430, 270, {})
   elseif pg == "shrink" then
     local scales = {1, 0.75, 0.5, 0.35}
     for i, k in ipairs(scales) do
-      local sh = S.sheets["chef_" .. chef .. "_full"]
+      local sh = S.sheets["chef_" .. chef]
       local x = 50 + (i - 1) * 110
-      img(sh.id and (sh.pieces and (sh.id .. "_C" .. ((sh.frames["select_0"]) // 10)) or sh.id), x, 300 - sh.h * k, {frame = (sh.frames["select_0"]) % 10, scale = k})
+      local f = sh.frames["select_0"]
+      img(sh.pieces and (sh.id .. "_C" .. (f // sh.per)) or sh.id, x, 300 - sh.h * k, {frame = f % (sh.per or 10), scale = k})
     end
     text("1", 90, 304, {font = "main", color = 0xFFFFFF, outline = 0x200010})
   elseif pg == "palettes" then
     for i, tint in ipairs(TINTS) do
-      S.draw("chef_" .. chef .. "_full", "select_" .. (t // 8 + i) % 4, 50 + (i - 1) * 76, 300, {mul = tint, scale = nil})
+      S.draw("chef_" .. chef, "select_" .. (t // 12 + i) % 2, 50 + (i - 1) * 76, 300, {mul = tint, scale = nil})
     end
   end
   text(lang.tr("ex_help"), 240, 300, {font = "main", align = "center", color = 0xFFFFFF, outline = 0x200010})

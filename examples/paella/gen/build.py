@@ -18,7 +18,8 @@ import contract as C  # noqa: E402
 import os  # noqa: E402
 
 ROOT = Path(os.environ.get("PINYOL_ROOT", HERE.parents[2]))  # the repository
-PIECE = 10
+PIECE_BYTES = 80_000   # a piece of a sheet is at most about this many bytes: the console needs ONE block of memory for a picture and its free blocks are small after a while
+SLICE_W = 160          # backgrounds are cut into columns this wide, so only the ones on the screen are in memory
 
 
 def lua(v, indent=0) -> str:
@@ -54,10 +55,12 @@ def main() -> None:
         n = len(meta["frames"])
         sid = "SPR_" + name.upper()
         run(ROOT / "tools/png2asset.py", art / f"{name}.png", assets, sid, "--packed", "--frames", n, "--anchor", f"{meta['anchor'][0]},{meta['anchor'][1]}")
-        pieces = n > PIECE
+        size = (assets / f"{sid}.pk").stat().st_size
+        per = max(1, min(10, PIECE_BYTES // max(1, size // n)))
+        pieces = n > per
         if pieces:
-            run(ROOT / "tools/pk_split.py", assets / f"{sid}.pk", "--frames", PIECE, "--remove")
-        entry = {"id": sid, "w": meta["w"], "h": meta["h"], "ax": meta["anchor"][0], "ay": meta["anchor"][1], "n": n, "pieces": pieces,
+            run(ROOT / "tools/pk_split.py", assets / f"{sid}.pk", "--frames", per, "--remove")
+        entry = {"id": sid, "w": meta["w"], "h": meta["h"], "ax": meta["anchor"][0], "ay": meta["anchor"][1], "n": n, "pieces": pieces, "per": per,
                  "frames": {f: i for i, f in enumerate(meta["frames"])}}
         for k, v in meta.items():
             if k not in ("w", "h", "anchor", "frames"):
@@ -69,8 +72,17 @@ def main() -> None:
         from PIL import Image
         im = Image.open(art / f"{name}.png")
         bid = "BG_" + name.upper()
-        run(ROOT / "tools/png2asset.py", art / f"{name}.png", assets, bid, "--packed", "--type", "background")
-        backs[name] = {"id": bid, "w": im.width, "h": im.height}
+        w = im.width
+        sw = 154 if name.startswith("far") else SLICE_W
+        slices = []
+        for i, x in enumerate(range(0, w, sw)):
+            part = im.crop((x, 0, min(w, x + sw), im.height))
+            tmp = art / f"_slice_{name}_{i}.png"
+            part.save(tmp)
+            run(ROOT / "tools/png2asset.py", tmp, assets, f"{bid}_{i}", "--packed", "--type", "background")
+            tmp.unlink()
+            slices.append({"id": f"{bid}_{i}", "x": x, "w": part.width})
+        backs[name] = {"id": bid, "w": im.width, "h": im.height, "slices": slices}
         for k, v in meta.items():
             if k not in ("w", "h"):
                 backs[name][k] = v

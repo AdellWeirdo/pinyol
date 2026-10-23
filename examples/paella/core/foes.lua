@@ -248,33 +248,35 @@ end
 
 local function frame_of(f)
   local k, t, st = f.kind, f.t, f.st
+  local sh = f.d.sheet
+  local function seq(prefix, i) return S.seq(sh, prefix, i) end
+  local function upto(prefix, i) return prefix .. "_" .. math.max(0, math.min(S.n(sh, prefix) - 1, i)) end
   if f.state == "dying" then
-    local n = (k == "soldier") and 8 or (k == "bazooka" and 8 or (k == "drone" and 8 or (k == "crab" and 10 or 8)))
+    if k == "soldier" then return upto(f.die, st // 5) end
     if k == "kamikaze" then return nil end
-    if k == "soldier" then return f.die .. "_" .. math.min(7, st // 3) end
-    return "die_" .. math.min(n - 1, st // 3)
+    return upto("die", st // 5)
   end
   if k == "soldier" then
-    if f.hit > 0 then return "hit_" .. (f.hit // 4) % 2 end
-    if f.state == "shoot" then return "shoot_" .. math.min(3, f.st // 6) end
-    if f.state == "peck" then return "peck_" .. math.min(3, f.st // 5) end
-    if f.state == "surrender" then return "surrender_" .. (t // 8) % 4 end
-    if f.state == "flee" or (f.state == "walk" and math.abs(f.chef_d or 999) > f.stop) then return "walk_" .. (t // 4) % 8 end
-    return "idle_" .. (t // 8) % 4
+    if f.hit > 0 then return "hit_0" end
+    if f.state == "shoot" then return upto("shoot", f.st // 8) end
+    if f.state == "peck" then return upto("peck", f.st // 7) end
+    if f.state == "surrender" then return seq("surrender", t // 8) end
+    if f.state == "flee" or (f.state == "walk" and math.abs(f.chef_d or 999) > f.stop) then return seq("walk", t // 5) end
+    return seq("idle", t // 10)
   elseif k == "bazooka" then
-    if f.state == "aim" then return "aim_" .. math.min(2, f.st // 12) end
-    if f.state == "fire" then return "fire_" .. math.min(3, f.st // 7) end
-    return "reload_" .. math.min(3, f.st // 18)
+    if f.state == "aim" then return upto("aim", f.st // 12) end
+    if f.state == "fire" then return upto("fire", f.st // 9) end
+    return upto("reload", f.st // 35)
   elseif k == "drone" then
-    if f.state == "drop" then return "drop_" .. math.min(3, f.st // 4) end
-    return "fly_" .. (t // 3) % 6
+    if f.state == "drop" then return upto("drop", f.st // 6) end
+    return seq("fly", t // 3)
   elseif k == "kamikaze" then
-    if f.state == "dive" then return "dive_" .. (t // 3) % 4 end
-    if f.state == "windup" then return "windup_" .. (t // 4) % 4 end
-    return "idle_" .. (t // 6) % 4
+    if f.state == "dive" then return seq("dive", t // 3) end
+    if f.state == "windup" then return seq("windup", t // 5) end
+    return seq("idle", t // 8)
   elseif k == "crab" then
-    if f.state == "fire" then return "fire_" .. math.min(5, f.st // 6) end
-    return (math.abs(f.chef_d or 999) > 230) and ("move_" .. (t // 4) % 8) or ("idle_" .. (t // 8) % 4)
+    if f.state == "fire" then return upto("fire", f.st // 9) end
+    return (math.abs(f.chef_d or 999) > 230) and seq("move", t // 4) or seq("idle", t // 12)
   end
 end
 
@@ -287,7 +289,7 @@ function Foes.update(chef, cam)
     if f.state == "dying" then
       f.st = f.st + 1
       if f.d.fly and f.kind == "drone" then f.y = f.y + 3 end
-      if f.st > 28 then table.remove(Foes.list, i) end
+      if f.st > 34 then table.remove(Foes.list, i) end
     elseif f.state == "gone" then
       table.remove(Foes.list, i)
     else

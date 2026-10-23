@@ -81,6 +81,16 @@ function T.eject(t)
   if T.on_leave then T.on_leave() end
 end
 
+-- where the cannon and the vulcan shoot from, in pixels from the tractor's anchor, facing right (the sheet's json may give its own)
+local MUZ = {cannon = {112, -78}, cannon_up = {84, -128}, vulcan = {92, -74}}
+local function muzzle(t, kind)
+  local sh = S.sheets.tractor
+  local fr = t.frame or "idle_0"
+  if sh["muzzle_" .. kind] and sh["muzzle_" .. kind][fr] then return S.point("tractor", "muzzle_" .. kind, fr, t.x, t.y, t.dir < 0) end
+  local m = MUZ[kind == "cannon" and t.aim_up and "cannon_up" or kind]
+  return t.x + m[1] * t.dir, t.y + m[2]
+end
+
 function T.update(chef, cam)
   for i = #T.list, 1, -1 do
     local t = T.list[i]
@@ -114,17 +124,17 @@ function T.update(chef, cam)
       t.vcool = t.vcool - 1
       if In.btn("a") and t.cool <= 0 then
         t.cool, t.fire_t = 16, 0
-        local mx, my = S.point("tractor", "muzzle_cannon", t.aim_up and "cannon_up_0" or "fire_0", t.x, t.y, t.dir < 0)
+        local mx, my = muzzle(t, "cannon")
         local dxn, dyn = t.dir, 0
         if t.aim_up then dxn, dyn = t.dir * 0.5, -0.87 end
-        Shots.fire({name = "pot", frames = 8, speed = 12, dmg = 5, life = 60, gravity = 0.1, pierce = 1, pellets = 1, sfx = "cannon", r = 18, splash = 50}, mx, my, dxn, dyn,
-                   {sheet = "shots", prefix = "pot", n = 8})
+        Shots.fire({name = "pot", speed = 12, dmg = 5, life = 60, gravity = 0.1, pierce = 1, pellets = 1, sfx = "cannon", r = 18, splash = 50}, mx, my, dxn, dyn,
+                   {sheet = "shots", prefix = "pot", n = S.n("shots", "pot")})
         Hook.shake(2)
       end
       if In.btn("c") and t.vcool <= 0 then
         t.vcool, t.vfire = 4, 6
-        local mx, my = S.point("tractor", "muzzle_vulcan", "vulcan_0", t.x, t.y, t.dir < 0)
-        Shots.fire({name = "pea", frames = 4, speed = 14, dmg = 1, life = 36, gravity = 0, pierce = 0, pellets = 1, sfx = "vulcan", r = 8, jitter = 0.05}, mx, my, t.dir, 0)
+        local mx, my = muzzle(t, "vulcan")
+        Shots.fire({name = "pea", speed = 14, dmg = 1, life = 36, gravity = 0, pierce = 0, pellets = 1, sfx = "vulcan", r = 8, jitter = 0.05}, mx, my, t.dir, 0)
       end
       if t.vfire and t.vfire > 0 then t.vfire = t.vfire - 1 end
       -- it flattens what it rolls over
@@ -143,19 +153,19 @@ end
 
 local function frame(t)
   local k = t.t
-  if t.state == "boom" then return "explode_" .. math.min(11, t.st // 3) end
-  if t.state == "enter" then return "enter_" .. math.min(5, t.st // 4) end
-  if t.state == "exit" then return "exit_" .. math.min(5, t.st // 3) end
-  if t.hit and t.hit > 0 then return "hit_" .. (t.hit // 4) % 2 end
+  local function seq(prefix, i) return S.seq("tractor", prefix, i) end
+  local function upto(prefix, i) return prefix .. "_" .. math.max(0, math.min(S.n("tractor", prefix) - 1, i)) end
+  if t.state == "boom" then return upto("explode", t.st // 5) end
+  if t.state == "enter" or t.state == "exit" then return seq("idle", k // 6) end
+  if t.hit and t.hit > 0 and S.has("tractor", "hit_0") then return "hit_0" end
   if t.state == "drive" then
-    if t.hp <= 2 then return "burning_" .. (k // 4) % 6 end
-    if not t.ground then return "jump_" .. (t.vy < -2 and 1 or (t.vy < 2 and 2 or 3)) end
-    if t.fire_t and t.fire_t < 8 then return t.aim_up and "cannon_up_" .. math.min(2, t.fire_t // 3) or "fire_" .. math.min(3, t.fire_t // 2) end
-    if t.vfire and t.vfire > 0 then return "vulcan_" .. (k // 2) % 2 end
-    if math.abs(t.vx) > 0.1 then return "drive_" .. (k // 3) % 8 end
+    if t.hp <= 2 and S.n("tractor", "burning") > 0 then return seq("burning", k // 5) end
+    if not t.ground then return upto("jump", t.vy < -2 and 0 or (t.vy < 2 and 1 or 2)) end
+    if t.fire_t and t.fire_t < 10 then return t.aim_up and upto("cannon_up", t.fire_t // 4) or upto("fire", t.fire_t // 4) end
+    if t.vfire and t.vfire > 0 then return upto("fire", (k // 2) % 2) end
+    if math.abs(t.vx) > 0.1 then return seq("drive", k // 3) end
   end
-  if t.hp <= 3 then return "damaged_idle_" .. (k // 6) % 4 end
-  return "idle_" .. (k // 6) % 4
+  return seq("idle", k // 7)
 end
 
 function T.draw(cam)

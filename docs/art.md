@@ -139,10 +139,14 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
   - **Hand-animated and funny**: Metal Slug is remembered for frames drawn by hand, far more than needed, and for comic
     deaths. Every gull here has two ways to die (flying apart in feathers and screws, or flattened), cowards that surrender and
     leave a dish, and the cooks are homages with invented names (no real person's face or name).
-  - **Legs and torso**: a cook is two sprites pinned at the hips (`art/chef_<id>_legs` and `_torso`, with the muzzle and the
-    grenade hand as points in the json), as Metal Slug composed its soldiers, so every aim (forward, up, down, crouched) works
-    with every step. The cooks are drawn by a paper-doll rig (`gen/chefkit.py`): the same skeleton, six different bodies.
-  - **Big and many**: the tractor is 224 px wide, the boss is six parts (body, head, wings, legs, a pot) placed on the body's
+  - **Painted by gpt-image, then fitted by code**: the first version drew the cooks with code (a paper-doll rig) and looked flat next to
+    the painted backgrounds, so every character, enemy and object is now generated with gpt-image (one reference image per cook, then one
+    sheet of 50 full-body frames: idle, run, shoot forward/up/down, crouch, jump, throw, stab, die, win). `gen/gpt_jobs.py` holds the
+    prompts, `gen/gpt_run.py` runs them (resumable, five at a time), `gen/gpt_make.py` cuts, keys out the background (some outputs
+    come with a checkerboard drawn into the picture), gives each sheet one scale and one baseline, and quantizes. The engine counts the
+    frames of each animation from the sheet (`S.n`), so the art decides how many there are. A palette of 48 colours looks the same as
+    160 but packed pictures are 8 bits either way (only 16 colours is 4 bits), and a cook 20% smaller looked too small: both kept.
+  - **Big and many**: the tractor is 224 px wide, the boss is six parts (body, head, wings, legs, a pot, still drawn by code) placed on the body's
     joints, backgrounds are painted chunks of 960 px that repeat behind a pillar, the far layer is mirrored. Every picture is
     packed (`--packed`), sheets are cut in pieces of ten frames (`tools/pk_split.py`) so the console never needs one big block.
   - **Neo Geo facts the menu shows**: up to 380 sprites a frame and 96 a line, sprites can only be shrunk (never grown) by
