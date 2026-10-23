@@ -238,3 +238,26 @@ r = subprocess.run([str(Path(sys.argv[1]) / "pinyol_headless"), "--game", str(sl
                    capture_output=True, text=True)
 assert "PASS" in r.stdout + r.stderr, (r.stdout + r.stderr)[-400:]
 print("slices: ok")
+
+# a strip of 70 frames is written in two pieces and found by lib/sheets.lua
+big = out / "bigsheet"
+shutil.copytree(ROOT / "tests/games/device/fonts", big / "fonts")
+(big / "assets").mkdir(parents=True)
+strip = Image.new("RGBA", (8 * 70, 8))
+for k in range(70):
+    strip.paste((k * 3 % 256, 40, 200, 255), (8 * k, 0, 8 * k + 8, 8))
+strip.save(out / "s70.png")
+subprocess.run([sys.executable, str(ROOT / "tools/png2asset.py"), str(out / "s70.png"), str(big / "assets"), "SPR_BIG", "--packed", "--frames", "70"], check=True,
+               capture_output=True)
+m1, m2 = (json.loads((big / f"assets/{n}.meta.json").read_text()) for n in ("SPR_BIG", "SPR_BIG_2"))
+assert m1["frames"] == 64 and m2["frames"] == 6, (m1["frames"], m2["frames"])
+(big / "game.json").write_text(json.dumps({"id": "bigsheet", "title": "bigsheet", "engine": "pinyol@2", "main": "main.lua"}))
+(big / "main.lua").write_text('local sheets = require("sheets")\nfunction _init() show(0) end function _update() end\n'
+                              'function _draw() cls(0) sheets.img("SPR_BIG", 0, 0, 3) sheets.img("SPR_BIG", 20, 0, 69) end\n'
+                              'p_id, p_f = sheets.piece("SPR_BIG", 130)\n')
+script = out / "bigsheet.script"
+script.write_text("tick 2\nexpect_lua p_id == 'SPR_BIG_3' and p_f == 2\nexpect_lua select(3, imgsize('SPR_BIG_2')) == 6\nshot bigsheet\nexpect_ok\n")
+r = subprocess.run([str(Path(sys.argv[1]) / "pinyol_headless"), "--game", str(big), "--saves", str(out / "big_saves"), "--fresh", "--script", str(script)],
+                   capture_output=True, text=True)
+assert "PASS" in r.stdout + r.stderr, (r.stdout + r.stderr)[-400:]
+print("sheets: ok")

@@ -17,18 +17,23 @@ transparent index 0. --palette PAL shares (and grows) assets/PAL.pal across seve
     uv run tools/png2asset.py ship.png games/mygame/assets SHIP --indexed --frames 4 --palette OBJ  # .idx .pal
 
 --tiles cuts the image into 8x8 tiles, keeps one copy of each (a flipped copy counts as the same tile) and writes
-the map that rebuilds the image. --frames N cuts a horizontal strip into N frames. Pixels with alpha < 128 are
+the map that rebuilds the image. --frames N cuts a horizontal strip into N frames (more than 64: written in pieces ID, ID_2, ID_3...,
+found by lib/sheets.lua). Pixels with alpha < 128 are
 transparent.
 """
 from __future__ import annotations
 
 import argparse
+import copy
 import json
-import struct
 import re
+import struct
+import tempfile
 from pathlib import Path
 
 from PIL import Image
+
+MAX_FRAMES = 64  # frames a picture holds (src/content.c); a longer strip is written in pieces
 
 
 def pack565(r: int, g: int, b: int) -> int:
@@ -249,6 +254,29 @@ def main() -> None:
     a = p.parse_args()
     if not re.fullmatch(r"[A-Za-z0-9_]+", a.id) or (a.palette and not re.fullmatch(r"[A-Za-z0-9_]+", a.palette)):
         p.error("IDs: letters, digits and _ only")
+    if a.frames > MAX_FRAMES and not a.tiles:
+        return convert_in_pieces(a, p)
+    convert(a, p)
+
+
+def convert_in_pieces(a: argparse.Namespace, p: argparse.ArgumentParser) -> None:
+    """A picture holds 64 frames: a longer strip is written in pieces ID, ID_2, ID_3... (frame f is frame f % 64 of piece f // 64; lib/sheets.lua
+    finds it), all sharing the palette of an --indexed sheet."""
+    img = Image.open(a.png).convert("RGBA")
+    if img.width % a.frames:
+        p.error(f"{img.width} px wide does not split into {a.frames} equal frames")
+    fw = img.width // a.frames
+    with tempfile.TemporaryDirectory() as tmp:
+        for k, f0 in enumerate(range(0, a.frames, MAX_FRAMES)):
+            n = min(MAX_FRAMES, a.frames - f0)
+            piece = Path(tmp) / f"piece{k}.png"
+            img.crop((f0 * fw, 0, (f0 + n) * fw, img.height)).save(piece)
+            b = copy.copy(a)
+            b.png, b.frames, b.id, b.palette = piece, n, a.id if k == 0 else f"{a.id}_{k + 1}", a.palette or a.id
+            convert(b, p)
+
+
+def convert(a: argparse.Namespace, p: argparse.ArgumentParser) -> None:
     if a.tiles or a.indexed:
         a.assets.mkdir(parents=True, exist_ok=True)
         pal_path = a.assets / f"{a.palette or a.id}.pal"
