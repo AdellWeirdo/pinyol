@@ -1,0 +1,51 @@
+# Malabarista: the clock, game A (every catch, the balls grow to three, the bonus at 100), three misses, game B, the explainer
+tick 30
+expect_lua state == "clock"
+shot reloj
+press A
+tick 5
+expect_lua state == "play" and mode == "A" and score == 0
+shot a0
+# both hands held: every ball is caught
+hold LEFT+RIGHT 700
+expect_lua score >= 4 and misses == 0
+shot a1
+hold LEFT+RIGHT 2400
+expect_lua score >= 10 and achievements()[1].done == true
+hold LEFT+RIGHT 6000
+expect_lua score >= 30 and balls_n == 3
+shot a3
+# let go: three misses and it is over
+tick 1800
+expect_lua state == "over" and misses == 3
+shot fin
+press B
+tick 5
+expect_lua state == "play" and mode == "B" and balls_n == 3
+hold LEFT+RIGHT 400
+expect_lua score >= 3
+shot b
+press START
+tick 3
+expect_lua state == "clock"
+lua require("explain").enter() state = "explain"
+tick 3
+shot e1
+press RIGHT
+tick 3
+shot e2
+press A
+tick 3
+press RIGHT
+tick 40
+shot e3
+press RIGHT
+tick 3
+press DOWN
+press A
+tick 3
+shot e4
+press START
+tick 3
+expect_lua state == "clock"
+expect_ok

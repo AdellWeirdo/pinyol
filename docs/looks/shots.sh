@@ -16,7 +16,7 @@ printf 'tick 10\npress A\nhold RIGHT 75\nshot 16bits\n' | shot 16bits veloz
 printf 'tick 30\npress A\ntick 100\nhold RIGHT 70\nhold A 1\ntick 7\nshot neogeo\n' | shot neogeo duelo
 printf 'tick 30\npress A\ntick 100\nhold RIGHT 50\npress B\ntick 8\nshot cps2\n' | shot cps2 torneo
 printf 'tick 20\npress A\ntick 3\npress A\ntick 40\npress DOWN\ntick 46\nshot pico8\n' | shot pico8 tumba
-printf 'tick 20\npress A\nhold RIGHT 2\ntick 150\nshot lcd\n' | shot lcd huevos
+printf 'tick 20\npress A\ntick 5\nhold LEFT+RIGHT 200\nshot lcd\n' | shot lcd malabar
 printf 'tick 20\npress A\ntick 5\nlua G.begin_level(7)\ntick 200\nhold LEFT 20\npress A\ntick 8\nshot vector\n' | shot vector pozo
 printf 'tick 20\npress A\nhold A 150\nshot vertical\n' | shot vertical tormenta
 printf 'tick 10\npress A\nlua P.x, P.y, P.a = 3.2, 13.5, 0 ghosts[1].x, ghosts[1].y = 10.5, 13.5\ntick 2\nshot firstperson\n' | shot firstperson laberinto

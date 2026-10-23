@@ -211,7 +211,7 @@ examined.
 | 20 | Life sim / pet | none | MISSING | |
 | 21 | Card / board | none | MISSING | |
 | 22 | Sports | futbol (5-a-side), paletes (pong) | PARTIAL | golf, tennis, skate missing |
-| 23 | Arcade classics | pozo, ladrillos, paletes, huevos (LCD) | COVERED | maze-chase (Pac-Man) missing |
+| 23 | Arcade classics | pozo, ladrillos, paletes, malabar (LCD; huevos in tests/games) | COVERED | maze-chase (Pac-Man) missing |
 | 24 | Sensor / peripheral | control (mic, battery, LED, video) | PARTIAL | no IMU/tilt, light sensor or RTC to build on |
 | 25 | Isometric / 2.5D | isla (a grid island: heights, crates, depth-sorted sprites) | PARTIAL | no isometric tactics or skate, no map with more standing things than 128 sprites |
 | 26 | Link multiplayer | juntos (whiteboard, ball passed between screens) | PARTIAL | no competitive/co-op game |

@@ -1,0 +1,18 @@
+key,es,ca,en
+press,PULSA A O B,PREM A O B,PRESS A OR B
+over,FIN,FI,GAME OVER
+how,Cómo funciona,Com funciona,How it works
+ach_diez,Diez al vuelo,Deu al vol,Ten catches
+ach_cien,Cien,Cent,One hundred
+ach_tres_bolas,Tres bolas,Tres boles,Three balls
+ach_curioso,Curioso,Curiós,Curious
+ach_juego_b,Juego B,Joc B,Game B
+ex_title_1,TODAS LAS FIGURAS,TOTES LES FIGURES,EVERY SHAPE
+ex_title_2,"UNA FIGURA, UN SITIO","UNA FIGURA, UN LLOC","ONE SHAPE, ONE PLACE"
+ex_title_3,SIETE SEGMENTOS,SET SEGMENTS,SEVEN SEGMENTS
+ex_title_4,EL PITIDO,EL PITIT,THE BEEPER
+ex_nav,IZQ/DER {n}/{m} · START,ESQ/DRE {n}/{m} · START,LEFT/RIGHT {n}/{m} · START
+ex_p1,Cada figura es fija: solo se enciende o se apaga.,Cada figura és fixa: només s'encén o s'apaga.,Every shape is fixed: it only lights or goes dark.
+ex_p2,A: siguiente sitio ({n} de {m}).,A: següent lloc ({n} de {m}).,A: next place ({n} of {m}).
+ex_p3,"Cada cifra son siete rayitas: a, b, c, d, e, f, g.","Cada xifra són set ratlletes: a, b, c, d, e, f, g.","Each digit is seven bars: a, b, c, d, e, f, g."
+ex_p4,"Un piezo, una sola nota: arriba/abajo elige, A la toca.","Un piezo, una sola nota: amunt/avall tria, A la toca.","A piezo, a single note: up/down picks, A plays it."

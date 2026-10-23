@@ -43,7 +43,7 @@ text, made with `uv run tools/font2fnt.py --pack <look> games/<id>`: the 37 pack
 Not every look needs an image model. The small ones (Game Boy, Spectrum, 16-bit, PICO-8, LCD, vector, first person)
 are best **drawn by code** in the game's `art.py`, from pictures written as text and simple shapes, as their examples
 do: no quota, and pixels exactly where they should be. A game can even draw everything while it runs, with no
-pictures at all (`examples/inventos`, `pozo`, `huevos`, `tormenta`).
+pictures at all (`examples/inventos`, `pozo`, `tormenta`).
 Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and CPS2.
 
 ### Game Boy: `examples/cerezo`
@@ -162,13 +162,16 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
   Lua rules and the Python ones agree.
 - The menu's "Cómo funciona": the palette (pick a colour, swap it with `pal()`), the map as numbers, the four channels live, and the fades.
 
-### Pocket LCD games: `examples/huevos`
+### Pocket LCD games: `examples/malabar`
 
-- Every figure is a fixed shape, either **on** (black) or **off** (a faint ghost that still shows), over a picture
-  printed in colour behind the glass. Draw the glass, the printed picture and every figure's ghost once on a canvas;
-  each frame show it and draw only what is on.
-- Things move a step at a time with a beep, faster as the score grows; the score in seven-segment digits.
-- All polygons (`poly`, `circ`, `rect`): no pictures.
+- Every figure is a fixed shape, either **on** (dark) or **off** (a faint ghost that still shows), over a picture printed in colour
+  behind the glass, inside the plate of the handheld. All of it is polygons (`poly`, `circ`, `rect`): the glass (`glass.lua`) is drawn
+  once with every figure as a ghost and kept as one picture (`gen/make_glass.py`); each frame the game draws only what is on.
+- **Do not hold the glass in a full-screen canvas**: on the console a 480×320 canvas costs about 100 ms a frame (`docs/measurements.md`),
+  a picture of the same size about 1 ms.
+- Things move a step at a time with a beep, faster as the score grows; the score in seven-segment digits; games A and B; a clock
+  (`clock()`) when nobody plays, with the juggler tossing a ball each few seconds.
+- The menu's "Cómo funciona": every shape at once (the factory test), one shape and its fixed places, the seven segments, the beeper.
 
 ### Vector arcade: `examples/pozo`
 

@@ -1,0 +1,36 @@
+{
+  "id": "malabar",
+  "title": "Malabarista",
+  "subtitle": "Pocket LCD",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Una maquinita LCD de bolsillo como las Game & Watch: un malabarista lanza bolas de mano en mano, cada figura es una forma fija que se enciende o se apaga sobre un dibujo impreso, el mundo avanza a pasos con pitidos y, cuando nadie juega, es un reloj. Dos juegos, A y B, y un menú que enseña cómo funciona una pantalla de segmentos.",
+  "achievements": [
+    {
+      "id": "diez",
+      "name": "Diez al vuelo",
+      "description": "Atrapa diez bolas."
+    },
+    {
+      "id": "cien",
+      "name": "Cien",
+      "description": "Llega a cien puntos."
+    },
+    {
+      "id": "tres_bolas",
+      "name": "Tres bolas",
+      "description": "Malabarea con tres bolas a la vez en el juego A."
+    },
+    {
+      "id": "curioso",
+      "name": "Curioso",
+      "description": "Mira cómo funciona una pantalla LCD en el menú."
+    },
+    {
+      "id": "juego_b",
+      "name": "Juego B",
+      "description": "Juega una partida del juego B."
+    }
+  ]
+}

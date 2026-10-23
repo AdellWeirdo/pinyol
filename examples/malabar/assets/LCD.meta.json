@@ -1,0 +1,28 @@
+{
+  "asset": "LCD",
+  "type": "background",
+  "w": 480,
+  "h": 320,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    240,
+    319
+  ],
+  "tile": null,
+  "rgb565": {
+    "endian": "little",
+    "order": "rgb",
+    "alpha": "none"
+  },
+  "memory_bytes": {
+    "pixels": 307200,
+    "mask": 0,
+    "total": 307200
+  }
+}

@@ -905,3 +905,24 @@ particles, screen shake and the gems and cracks changing tiles.
 
 Not measured: the explainer's pages (the map page draws 256 letters, once, into a canvas) and the level select.
 
+## 2026-10-23 · Pocket LCD (Malabarista) on the console, and a full-screen canvas
+
+A game that keeps its whole 480×320 screen (the glass of a handheld, with the picture printed behind it) in a canvas and shows it with
+`img("LCD", 0, 0)` ran at **9.2 fps** on the console running firmware 3aff58e: `perf("ops")` gave the `img` 172-193 ms (both cores added)
+for the frame, and the audio thread was at 75% of a core with hundreds of underruns. The old example `huevos`, which does exactly that,
+measured the same, 9.2 fps, though it had been at 60-61 on 14 October. A test game then showed each way of putting a full-screen picture
+on the screen:
+
+| How the 480×320 picture is kept and shown | fps |
+|---|---|
+| a picture of the game (`png2asset --type background`), `img("PIC", 0, 0)` | 60 |
+| a 480×320 canvas, `img("C480", 0, 0)` | 10 (19 the first seconds) |
+| a 240×160 canvas, `img("C240", 0, 0, {scale = 2})` | 60 |
+| a plain `rect` | 60 |
+
+So Malabarista draws its glass once, in the headless player (`gen/make_glass.py`), and keeps it as a picture; each frame it draws only what
+is on. With the miner holding both hands and the balls going: 57.7 to 60.0 fps, `render` 16.1-16.6 ms, the game's Lua 0.2-0.6 ms of
+`_update` and 0.9-1.7 ms of `_draw`, audio 11% of a core with no underruns, 63-75 KB of internal RAM and 4.75-4.98 MB of PSRAM free, script
+memory 62 KB. The cause of the canvas cost was not looked for; the data cache was made 32 KB and the code run from PSRAM on 22 October
+(95efeb7), after the 14 October measurements.
+
