@@ -1,0 +1,16 @@
+{
+  "id": "niebla",
+  "title": "Niebla",
+  "subtitle": "Terror de cámara fija",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Una calle de noche, una linterna y algo que te sigue. Cámaras fijas que cambian al cruzar la calle, controles de tanque, niebla que esconde lo lejano y una radio que crepita cuando se acerca. Todo con mesh(), como los juegos de terror de los 32 bits. Y un menú que enseña los trucos.",
+  "achievements": [
+    {"id": "llave", "name": "Una llave", "description": "Encuentra la llave del faro."},
+    {"id": "luz", "name": "Luz en los ojos", "description": "Detén a la Figura con la linterna."},
+    {"id": "correr", "name": "No mires atrás", "description": "Corre hasta quedarte sin aliento."},
+    {"id": "faro", "name": "El faro", "description": "Abre la puerta del faro."},
+    {"id": "curioso", "name": "Bajo el capó", "description": "Mira «Cómo funciona» desde el menú."}
+  ]
+}

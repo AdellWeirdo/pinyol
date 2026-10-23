@@ -1,0 +1,40 @@
+key,es,ca,en
+title,NIEBLA,BOIRA,FOG
+press,PULSA A,PREM A,PRESS A
+controls,Izquierda y derecha: girar · Arriba y abajo: andar · B: correr · A: actuar,Esquerra i dreta: girar · Amunt i avall: caminar · B: córrer · A: actuar,Left and right: turn · Up and down: walk · B: run · A: act
+hint,MENÚ: Cómo funciona,MENÚ: Com funciona,MENU: How it works
+caught,TE ALCANZÓ,T'HA ABASTAT,IT CAUGHT YOU
+won_title,EL FARO,EL FAR,THE LIGHTHOUSE
+won_text,La luz barre la niebla.,La llum escombra la boira.,The light sweeps the fog.
+won_deaths,Veces que te alcanzó: {n},Vegades que t'ha abastat: {n},Times it caught you: {n}
+take_key,A: coger la llave,A: agafar la clau,A: take the key
+open_door,A: abrir la puerta,A: obrir la porta,A: open the door
+try_door,A: probar la puerta,A: provar la porta,A: try the door
+msg_start,Tengo que llegar al faro. Algo me sigue entre la niebla.,He d'arribar al far. Alguna cosa em segueix entre la boira.,I have to reach the lighthouse. Something follows me in the fog.
+msg_figure,La radio crepita. Está cerca.,La ràdio cruix. És a prop.,The radio crackles. It is close.
+msg_light,La luz lo detiene. No dejes de mirarlo.,La llum l'atura. No deixis de mirar-lo.,The light stops it. Keep looking at it.
+msg_key,Una llave pesada. Huele a sal y a óxido.,Una clau pesant. Fa olor de sal i d'òxid.,A heavy key. It smells of salt and rust.
+msg_locked,Cerrada con llave. Necesito la llave.,Tancada amb clau. Necessito la clau.,Locked. I need the key.
+msg_breath,Sin aliento. Hay que esperar.,Sense alè. Cal esperar.,Out of breath. Wait.
+how,Cómo funciona,Com funciona,How it works
+how_title,TRUCOS DE LOS 32 BITS,TRUCS DELS 32 BITS,THE 32-BIT TRICKS
+fog,Niebla,Boira,Fog
+fog_d,Esconde lo lejano. Sin ella, todo se ve.,Amaga el que és lluny. Sense ella, tot es veu.,It hides what is far. Without it all shows.
+snap,Vértices enteros,Vèrtexs sencers,Whole-pixel vertices
+snap_d,Píxeles enteros: los vértices tiemblan.,Píxels sencers: els vèrtexs tremolen.,Whole pixels: vertices wobble.
+dither,Tramado,Tramat,Dither
+dither_d,Un patrón 4×4 en vez de bandas de color.,Un patró 4×4 en lloc de bandes de color.,A 4×4 pattern instead of colour bands.
+cams,Cámaras fijas,Càmeres fixes,Fixed cameras
+cams_d,El mundo se mueve; la cámara no gira.,El món es mou; la càmera no gira.,The world moves; the camera does not turn.
+music,Sonido,So,Sound
+music_d,"Viento, radio y música en vivo.","Vent, ràdio i música en directe.","Wind, radio and live music."
+on,SÍ,SÍ,ON
+off,NO,NO,OFF
+faces,caras,cares,faces
+back,B: volver,B: tornar,B: back
+toggle,A: cambiar · Arriba y abajo: elegir,A: canviar · Amunt i avall: triar,A: switch · Up and down: choose
+ach_llave,Una llave,Una clau,A key
+ach_luz,Luz en los ojos,Llum als ulls,Light in its eyes
+ach_correr,No mires atrás,No miris enrere,Do not look back
+ach_faro,El faro,El far,The lighthouse
+ach_curioso,Bajo el capó,Sota el capó,Under the hood

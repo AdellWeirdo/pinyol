@@ -1,0 +1,168 @@
+# Niebla: fixed cameras, tank controls, a torch, a Figure that follows and stops in the light, a key, a door. The title, a walk with the cuts between
+# cameras, running until the breath goes, the car that blocks the way, the Figure appearing, held in the beam and turning away, caught and put back at
+# the last cut, the key and the door, "Cómo funciona" with its switches, the three languages, and the rules over many random walks.
+new
+tick 40
+expect_lua state == "title"
+shot niebla_titulo
+lua W = require("world") V = require("view") C = require("cam") M = require("music") L = require("level")
+expect_lua M.mode == "title"
+press A
+tick 3
+expect_lua state == "play" and M.mode == "play" and W.p.z == 0 and W.msg.key == "start"
+# tank controls: up walks along where it looks; right turns it (3 degrees a tick); down backs away, slowly
+hold UP 60
+expect_lua W.p.z > 14 and W.p.z < 22
+shot niebla_andar
+hold RIGHT 30
+expect_lua W.p.h > 85 and W.p.h < 95
+lua W.p.h = 0 W.p.z = 20
+hold DOWN 20
+expect_lua W.p.z < 20 and W.p.z > 14
+# the cuts: another stretch, another camera, and a place to come back to
+lua W.f.state = "away" W.f.wait = 99999 W.p.x = 0 W.p.z = 100 W.p.h = 0
+tick 3
+expect_lua C.current() > 1 and W.check.z == 100
+lua W.p.z = 0
+tick 3
+expect_lua C.current() == 2
+# the car blocks the way, the street has walls, and there is nothing behind the start
+lua W.p.x = -22 W.p.z = 30 W.p.h = 0
+hold UP 120
+expect_lua W.p.z < 40 and W.p.z > 30
+lua W.p.x = 0 W.p.z = 5 W.p.h = 270
+hold UP 200
+expect_lua W.p.x >= -38.1 and W.p.x < -30
+lua W.p.x = 0 W.p.z = -50 W.p.h = 180
+hold UP 60
+expect_lua W.p.z >= -58.1
+# running is faster; it takes the breath, the player tires, must wait, and the achievement comes
+lua W.p.x = 0 W.p.z = 0 W.p.h = 0 W.p.breath = 1 W.p.tired = false z0 = W.p.z
+lua for i = 1, 60 do W.update({walk = 1, run = true}) end
+expect_lua W.p.z - z0 > 30 and W.p.breath < 0.7 and achievements()[3].done == true
+lua for i = 1, 140 do W.update({walk = 1, run = true}) end
+expect_lua W.p.tired == true and W.p.running == false
+lua W.p.z = 4 z1 = W.p.z
+lua for i = 1, 30 do W.update({walk = 1, run = true}) end
+expect_lua W.p.z - z1 < 12
+lua for i = 1, 200 do W.update({}) end
+expect_lua W.p.breath > 0.9 and W.p.tired == false
+# the Figure comes after the player has gone some way: behind, out of the beam, in the street; it follows
+lua W.p.x = 0 W.p.z = 60 W.p.h = 0 W.f.state = "away" W.f.wait = 0
+lua W.update({})
+expect_lua W.f.state == "stalk" and math.abs(W.f.x) <= 38
+lua W.update({})
+expect_lua W.danger > 0
+lua fd0 = math.sqrt((W.f.x - W.p.x) ^ 2 + (W.f.z - W.p.z) ^ 2)
+lua for i = 1, 60 do W.update({}) end
+expect_lua math.sqrt((W.f.x - W.p.x) ^ 2 + (W.f.z - W.p.z) ^ 2) < fd0 - 8 or W.caught_t > 0
+# in the beam it stops dead; held long enough it turns away into the fog, and that is an achievement
+lua W.caught_t = 0 W.p.x = 0 W.p.z = 100 W.p.h = 0 W.f.state = "stalk" W.f.x = 0 W.f.z = 140 W.f.lit_t = 0 W.f.speed = 0.3
+lua for i = 1, 30 do W.update({}) end
+expect_lua W.f.lit == true and W.f.speed == 0 and W.f.z == 140
+lua for i = 1, 70 do W.update({}) end
+expect_lua W.f.state == "away" and achievements()[2].done == true
+# off to the side of the beam it is not stopped
+lua W.f.state = "stalk" W.f.x = 30 W.f.z = 100 W.f.speed = 0.3 W.f.lit_t = 0
+lua W.update({})
+expect_lua W.f.lit == false
+# caught: the screen closes, and it is back at the last cut with the Figure gone for a while
+lua W.p.x = 0 W.p.z = 200 W.check = {x = 0, z = 180, h = 0} W.f.state = "stalk" W.f.x = 0 W.f.z = 204 W.deaths = 0
+lua W.update({})
+expect_lua W.caught_t > 0 and W.deaths == 1
+shot niebla_alcanzado
+tick 160
+expect_lua W.caught_t == 0 and W.p.z == 180 and W.f.state == "away" and W.p.breath == 1
+# the key on the bench in the plaza, and the door at the end of the pier
+lua W.f.state = "away" W.f.wait = 99999 W.p.x = 16 W.p.z = 184 W.p.h = 0 W.p.key = false W.key_taken = false
+tick 2
+expect_lua W.prompt == "take_key"
+press A
+tick 2
+expect_lua W.p.key == true and W.key_taken == true and achievements()[1].done == true and W.msg.key == "got_key"
+lua W.p.x = 0 W.p.z = 530 W.p.key = false W.won = false
+tick 2
+expect_lua W.prompt == "locked"
+press A
+tick 2
+expect_lua W.msg.key == "locked" and state == "play"
+lua W.p.key = true
+tick 2
+expect_lua W.prompt == "open_door"
+shot niebla_puerta
+press A
+tick 3
+expect_lua state == "won" and achievements()[4].done == true
+tick 260
+shot niebla_final
+press A
+tick 3
+expect_lua state == "title"
+# "Cómo funciona": the console's menu, its item, the switches (each changes what is drawn), back with B
+press A
+tick 20
+press MENU
+tick 3
+expect_menu open
+press DOWN
+press A
+tick 4
+expect_lua state == "explain" and achievements()[5].done == true and V.fog == true
+tick 20
+shot niebla_como
+press A
+tick 2
+expect_lua V.fog == false
+shot niebla_sin_niebla
+press DOWN
+press A
+tick 2
+expect_lua V.snap == false
+press DOWN
+press A
+tick 2
+expect_lua V.dither == false
+press DOWN
+press DOWN
+press A
+tick 2
+expect_lua M.on == false
+press A
+tick 2
+expect_lua M.on == true
+press UP
+press UP
+press UP
+press UP
+press A
+press DOWN
+press A
+press DOWN
+press A
+tick 2
+expect_lua V.fog == true and V.snap == true and V.dither == true
+press B
+tick 3
+expect_lua state == "play"
+# the three languages
+lua lang = require("lang") lang.set("ca")
+expect_lua lang.tr("press") == "PREM A"
+lua lang.set("en")
+expect_lua lang.tr("press") == "PRESS A"
+lua lang.set("es")
+expect_lua lang.tr("press") == "PULSA A"
+# the rules, without drawing: random walks over twelve seeds: the player stays in the street, the breath in its range, the Figure in the world
+lua function count(t) local n = 0 for _ in ipairs(t) do n = n + 1 end return n end
+lua function sane() return math.abs(W.p.x) <= 38.01 and W.p.z >= -58.01 and W.p.z <= 539 and W.p.breath >= 0 and W.p.breath <= 1 and W.p.h >= 0 and W.p.h < 360 end
+lua function walk_seed(seed) W.new(seed) local r = W.rng for i = 1, 1500 do local turn = r:int(-1, 1) local walk = r:int(-1, 2) > 0 and 1 or r:int(-1, 0) W.update({turn = turn, walk = walk, run = r:chance(0.3), act = r:chance(0.02)}) assert(sane(), "seed " .. seed .. " tick " .. i) end end
+lua W.hook = function() end far = 0
+lua walk_seed(1) far = math.max(far, W.p.z)
+lua walk_seed(2) far = math.max(far, W.p.z)
+lua walk_seed(3) far = math.max(far, W.p.z)
+lua walk_seed(4) far = math.max(far, W.p.z)
+lua walk_seed(5) far = math.max(far, W.p.z)
+lua walk_seed(6) far = math.max(far, W.p.z)
+lua walk_seed(7) far = math.max(far, W.p.z)
+lua walk_seed(8) far = math.max(far, W.p.z)
+lua W.new(1)
+expect_lua far > 20
