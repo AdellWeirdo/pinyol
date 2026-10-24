@@ -615,20 +615,31 @@ static void blit_plain(surface *s, const asset *a, int frame, int x, int y, int 
     int stride = (a->w + 7) / 8, xs = step_x(s);
     const uint8_t *mask = a->mask ? a->mask + (size_t)frame * stride * a->h : NULL;
     const int ys = step_y(s);
-    if (!half && (ys == 1 || ys == -1) && xs != 1 && xs != -1) { /* a turned strip: column by column, each contiguous */
-        for (int u = u0; u < u0 + n; u++) {
-            uint16_t *d = at(s, x + u, y + v0);
-            const uint16_t *sp = src + v0 * a->w + u;
+    if (!half && (ys == 1 || ys == -1) && xs != 1 && xs != -1) {
+        /* a turned strip: each destination column is contiguous but the picture's rows are not. Taken a column at a time the picture is
+         * read with a stride of its width (a PSRAM cache miss for every pixel: 34 ms for 448x288, measured); taken in blocks of PBLK
+         * columns, each row's PBLK pixels are one cache line, read once and put in PBLK columns of the strip, which is fast memory */
+        enum { PBLK = 16 };
+        for (int ub = u0; ub < u0 + n; ub += PBLK) {
+            const int nb = u0 + n - ub < PBLK ? u0 + n - ub : PBLK;
+            uint16_t *dc[PBLK];
+            for (int k = 0; k < nb; k++) dc[k] = at(s, x + ub + k, y + v0);
+            const uint16_t *sp = src + v0 * a->w + ub;
             if (!mask) {
-                if (s->swap)
-                    for (int j = 0; j < m; j++, d += ys, sp += a->w) *d = bswap16(*sp);
-                else
-                    for (int j = 0; j < m; j++, d += ys, sp += a->w) *d = *sp;
+                for (int j = 0, o = 0; j < m; j++, o += ys, sp += a->w) {
+                    if (s->swap)
+                        for (int k = 0; k < nb; k++) dc[k][o] = bswap16(sp[k]);
+                    else
+                        for (int k = 0; k < nb; k++) dc[k][o] = sp[k];
+                }
                 continue;
             }
-            const uint8_t *mp = mask + v0 * stride + (u >> 3), bit = (uint8_t)(0x80 >> (u & 7));
-            for (int j = 0; j < m; j++, d += ys, sp += a->w, mp += stride)
-                if (*mp & bit) *d = stored(s, *sp);
+            const uint8_t *mp = mask + v0 * stride;
+            for (int j = 0, o = 0; j < m; j++, o += ys, sp += a->w, mp += stride)
+                for (int k = 0; k < nb; k++) {
+                    const int u = ub + k;
+                    if (mp[u >> 3] & (0x80 >> (u & 7))) dc[k][o] = stored(s, sp[k]);
+                }
         }
         return;
     }
