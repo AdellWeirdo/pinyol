@@ -1,0 +1,135 @@
+# Taller de los Autómatas: title, choosing a clockmaker (and the second colours), stage 1 (a combo, a grab and a throw, a part, a special, a locked wave, props), a death and a continue,
+# the tally, stage 2 and 3, the boss Péndulo, the ending, the explainer and the demo
+tick 90
+expect_lua G.state == "title"
+shot titulo
+press A
+tick 20
+expect_lua G.state == "select"
+press RIGHT
+tick 5
+press B
+tick 5
+shot seleccion
+press A
+tick 90
+expect_lua G.state == "play" and G.hero_id == "tomas"
+shot calle
+# a combo on the first automatons
+expect_lua dbg_foe("rodete", "r", 270) and dbg_foe("rodete", "r", 285)
+hold RIGHT 120
+press A
+tick 8
+press A
+tick 8
+press A
+tick 30
+expect_lua dbg_state().score > 0
+shot combo
+# a grab and a throw
+expect_lua dbg_clear() and dbg_foe("rodete", "r", 270)
+hold RIGHT 200
+press A
+tick 20
+press A
+tick 40
+# a jump and a jump kick
+press B
+tick 10
+press A
+tick 40
+# a part from the street changes how it fights, and the steam gauge gives a special
+expect_lua dbg_part("hammer")
+expect_lua dbg_meter()
+expect_lua dbg_foe("resorte", "l", 270) and dbg_foe("caldero", "r", 280)
+tick 60
+press C
+tick 60
+shot especial
+# the locked wave: the camera stops until it is beaten, then GO
+expect_lua dbg_go(700)
+tick 10
+expect_lua dbg_clear()
+hold RIGHT 200
+shot ola
+expect_lua dbg_bot()
+tick 900
+expect_lua dbg_state().score > 500
+expect_lua dbg_god()
+tick 600
+shot bot
+# a death and a continue
+expect_lua dbg_clear()
+expect_lua dbg_die() >= 0
+tick 130
+expect_lua dbg_die() >= 0
+tick 130
+expect_lua dbg_die() >= 0
+tick 180
+shot continuar
+expect_lua dbg_state().state == "continue"
+press A
+tick 30
+expect_lua dbg_state().state == "play"
+# the end of stage 1: the tally and stage 2
+expect_lua dbg_go(2610)
+tick 120
+expect_lua dbg_state().play == "clear" or dbg_state().state == "results"
+tick 400
+shot resultados
+expect_lua dbg_state().state == "results"
+press A
+tick 200
+press A
+tick 60
+expect_lua dbg_state().stage == 2 and dbg_state().state == "play"
+shot fabrica
+expect_lua dbg_foe("resorte", "r", 270) and dbg_foe("caldero", "l", 280)
+tick 120
+shot fabrica2
+# stage 3 and the boss
+expect_lua dbg_play("mina", 3, 400)
+tick 60
+shot torre
+expect_lua dbg_boss()
+tick 240
+expect_lua dbg_state().play == "boss"
+shot jefe
+expect_lua dbg_god()
+expect_lua dbg_bot()
+tick 900
+shot jefe2
+expect_lua dbg_boss_kill() <= 0
+tick 400
+expect_lua dbg_state().state == "results" or dbg_state().play == "clear"
+tick 300
+press A
+tick 100
+shot final
+expect_lua dbg_state().state == "ending"
+tick 700
+press A
+tick 30
+expect_lua G.state == "title"
+# the explainer, from the title and from the game
+press DOWN
+press A
+tick 10
+expect_lua G.state == "explain"
+shot explicador
+press A
+tick 10
+shot explicador2
+press A
+tick 10
+shot explicador3
+press B
+tick 10
+expect_lua G.state == "title"
+# the demo plays itself
+expect_lua dbg_demo()
+tick 600
+shot demo
+press A
+tick 20
+expect_ok

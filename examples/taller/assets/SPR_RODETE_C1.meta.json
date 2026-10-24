@@ -1,0 +1,37 @@
+{
+  "asset": "SPR_RODETE_C1",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 15,
+  "w": 176,
+  "h": 148,
+  "frames": 7,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "anchor": [
+    88,
+    144
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 24540,
+    "as_rgb565": 364672
+  }
+}

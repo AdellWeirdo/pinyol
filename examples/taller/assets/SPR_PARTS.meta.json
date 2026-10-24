@@ -1,0 +1,35 @@
+{
+  "asset": "SPR_PARTS",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 15,
+  "w": 56,
+  "h": 56,
+  "frames": 6,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "anchor": [
+    28,
+    52
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 6135,
+    "as_rgb565": 37632
+  }
+}

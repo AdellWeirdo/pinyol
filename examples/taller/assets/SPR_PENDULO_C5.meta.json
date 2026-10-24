@@ -1,0 +1,25 @@
+{
+  "asset": "SPR_PENDULO_C5",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 15,
+  "w": 384,
+  "h": 300,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    192,
+    296
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 6615,
+    "as_rgb565": 230400
+  }
+}

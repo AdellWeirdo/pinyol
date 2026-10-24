@@ -1,0 +1,33 @@
+{
+  "asset": "SPR_PENDULO_C4",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 15,
+  "w": 384,
+  "h": 300,
+  "frames": 5,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "anchor": [
+    192,
+    296
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 50478,
+    "as_rgb565": 1152000
+  }
+}

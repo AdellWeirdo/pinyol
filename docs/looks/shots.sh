@@ -14,7 +14,7 @@ printf 'tick 440\npress A\ntick 10\npress A\ntick 40\nhold RIGHT 20\ntick 10\nsh
 printf 'tick 5\nlua dbg_level(1)\ntick 30\nlua dbg_tp(43, 10)\ntick 40\nshot gba\n' | shot gba botin
 printf 'tick 10\npress A\nhold RIGHT 75\nshot 16bits\n' | shot 16bits veloz
 printf 'tick 5\nlua dbg_play("pinche", 3300)\ntick 20\nlua dbg_tractor()\ntick 60\nlua dbg_foe("soldier", -120)\nlua dbg_foe("drone", -30)\nlua dbg_foe("soldier", 40)\ntick 25\nhold RIGHT+A 20\nshot neogeo\n' | shot neogeo paella
-printf 'tick 30\npress A\ntick 100\nhold RIGHT 50\npress B\ntick 8\nshot cps2\n' | shot cps2 torneo
+printf 'tick 5\nlua dbg_play("tomas", 1, 300)\nlua dbg_god()\ntick 10\nlua dbg_foe("rodete", "r", 270)\nlua dbg_foe("resorte", "r", 290)\nlua dbg_part("hammer") require("core.play").banner_t = 0\nhold RIGHT 70\npress A\ntick 8\npress A\ntick 4\nshot cps2\n' | shot cps2 taller
 printf 'tick 20\npress A\ntick 3\npress A\ntick 40\npress DOWN\ntick 46\nshot pico8\n' | shot pico8 tumba
 printf 'tick 20\npress A\ntick 5\nhold LEFT+RIGHT 200\nshot lcd\n' | shot lcd malabar
 printf 'tick 20\npress A\ntick 5\nlua G.begin_level(7)\ntick 200\nhold LEFT 20\npress A\ntick 8\nshot vector\n' | shot vector pozo

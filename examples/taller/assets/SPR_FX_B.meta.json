@@ -1,0 +1,35 @@
+{
+  "asset": "SPR_FX_B",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 15,
+  "w": 192,
+  "h": 192,
+  "frames": 6,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "anchor": [
+    96,
+    96
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 34589,
+    "as_rgb565": 442368
+  }
+}

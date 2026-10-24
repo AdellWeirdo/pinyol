@@ -182,14 +182,26 @@ Generate images (sections 2 to 4 below) for the big, detailed looks: Neo Geo and
 - Generated art. Style line: *late-1990s 32-bit console 2D sprite art, gothic action game: richly detailed
   hand-pixelled sprite with up to 256 colours, smooth careful shading, crisp pixel edges*.
 
-### CPS2: `torneo`, `mazmorra`
+### CPS2: `examples/taller`, `mazmorra`
 
 - Pictures at 480×320. Characters 125 to 140 pixels tall in **15 colours and see-through** (`--colours 16`, four bits
-  a pixel). **No zoom**: everyone keeps the size they were drawn at; the camera only pans. A floor in perspective drawn
-  in bands of rows (`torneo`), pillars in front of everyone, the same character in other colours (`pal`), many frames
-  per move.
-- Generated art. Style line: *mid-1990s 2D arcade fighting game sprite, hand-pixelled, bold dark outline, cel
-  shading with 3 or 4 tones per material, about 15 colours in total, anime-influenced proportions*.
+  a pixel). **No zoom**: everyone keeps the size they were drawn at; the camera only pans. A floor in perspective where
+  how far down a character stands decides what is in front of what, pillars in front of everyone, the same character in
+  other colours (`pal`), many frames per move.
+- Generated art. Style line: *mid-1990s 2D arcade game sprite (Armored Warriors, Battle Circuit), hand-pixelled, bold dark
+  outline, cel shading with 3 or 4 tones per material, about 15 colours in total, anime-influenced proportions*.
+- **`examples/taller`** (Taller de los Autómatas, a beat 'em up; the older fighting game `torneo` is now in `tests/games`):
+  - **Painted by gpt-image, fitted by code** as Paella is (`gen/gpt_jobs.py`, `gpt_run.py`, `gpt_make.py`): a canonical picture per
+    character, then sheets of frames made with it as the only reference; every character ends in ONE palette of 15 colours for all
+    its 43 frames (PIL's `MAXCOVERAGE` keeps a rare colour such as a teal jacket, which median cut turned brown).
+  - **Second colours**: `alternate()` turns the clothes half round the hue wheel and keeps skin and hair, in the same palette order, so
+    the game draws the first sheet with the second's palette (`img(..., {pal = "SPR_VERA_B"})`) and no pixel is stored twice.
+  - **A floor in perspective**: a character is at (x, y, z): along the street, how far down it, how high. Painting order is by y; the
+    walkable band is rows 240 to 304 of the 320. Stages are three chunks of 960 with a tall pillar painted in front of each seam, which
+    hides where two generated pictures meet and puts the hero behind it as CPS2 stages did.
+  - **The idea, from Armored Warriors**: parts torn from broken automatons (a hammer fist, spring legs, a wrench arm, a boiler chest) change
+    how the hero fights for a while, shown by a coloured ring (`img`'s `outline`); a steam gauge fills with every blow for a special move.
+  - **Sound**: ten songs as MIDI on a bank of clockwork samples (music box, bells, steam organ, pizzicato, ticks), `gen/songs.py`.
 
 ### PICO-8: `examples/tumba`
 

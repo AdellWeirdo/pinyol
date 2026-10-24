@@ -1,0 +1,23 @@
+{
+  "id": "taller",
+  "title": "Taller de los Autómatas",
+  "subtitle": "CPS2",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "pinyol examples",
+  "description": "Un beat 'em up a la manera de la CPS2: tres relojeros con exoesqueletos de engranajes contra los autómatas rebeldes por una calle, una fábrica y la torre del reloj. Personajes de 15 colores con colores alternativos, un suelo en perspectiva donde la profundidad manda y piezas arrancadas que cambian cómo luchas.",
+  "achievements": [
+    {"id": "primer_golpe", "name": "Primer golpe", "description": "Derriba a tu primer autómata."},
+    {"id": "demoledor", "name": "Demoledor", "description": "Rompe diez objetos de la calle."},
+    {"id": "pieza_nueva", "name": "Pieza nueva", "description": "Recoge una pieza de exoesqueleto."},
+    {"id": "coleccionista", "name": "Coleccionista", "description": "Usa las cuatro piezas distintas en una partida."},
+    {"id": "lanzador", "name": "Lanzador", "description": "Lanza a cinco autómatas."},
+    {"id": "vapor", "name": "A todo vapor", "description": "Desata un especial con el medidor de vapor."},
+    {"id": "cincuenta_mil", "name": "Cincuenta mil", "description": "Llega a cincuenta mil puntos."},
+    {"id": "colorista", "name": "Colorista", "description": "Juega con los colores alternativos."},
+    {"id": "pendulo", "name": "Hora de cerrar", "description": "Derrota a Péndulo."},
+    {"id": "sin_continuar", "name": "Sin continuar", "description": "Termina el juego sin usar un continue."},
+    {"id": "trio", "name": "El gremio al completo", "description": "Termina el juego con los tres relojeros."},
+    {"id": "curioso", "name": "Curioso", "description": "Mira cómo funciona la máquina en el menú."}
+  ]
+}

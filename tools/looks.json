@@ -110,7 +110,7 @@
       "avoid": ["code-drawn characters next to painted backgrounds (Paella's first version looked flat)", "one big picture per sheet (PSRAM fragments)"]
     },
     {
-      "id": "cps2", "name": "CPS2", "example": "torneo", "method": "generated", "font_pack": "cps2",
+      "id": "cps2", "name": "CPS2", "example": "taller", "method": "generated", "font_pack": "cps2",
       "era": "1993 · fifteen colours per fighter", "fps": 60,
       "world": "480x320 pictures",
       "aliases": ["cps2", "cps-2", "cps 2", "cps ii", "capcom", "street fighter", "capcom arcade", "marvel vs capcom", "juego de lucha", "fighting game"],

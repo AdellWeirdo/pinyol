@@ -1,0 +1,49 @@
+key,es,ca,en
+how_item,Cómo funciona,Com funciona,How it works
+title_de,TALLER DE LOS,TALLER DELS,TALLER DE LOS
+title_name,AUTOMATAS,AUTOMATS,AUTOMATAS
+title_start,EMPEZAR,COMENÇAR,START
+title_how,CÓMO FUNCIONA,COM FUNCIONA,HOW IT WORKS
+title_best,MEJOR,MILLOR,BEST
+select_title,ELIGE RELOJERO,TRIA RELLOTGER,CHOOSE A CLOCKMAKER
+select_help,A elegir   B colores   C volver,A triar   B colors   C tornar,A choose   B colours   C back
+hero_vera_name,VERA,VERA,VERA
+hero_tomas_name,TOMÁS,TOMÀS,TOMÁS
+hero_mina_name,MINA,MINA,MINA
+hero_vera_trait,"Inventora equilibrada: puño-llave inglesa, buen alcance y torbellino.","Inventora equilibrada: puny-clau anglesa, bon abast i torbellí.","Balanced inventor: wrench fist, good reach and a whirlwind."
+hero_tomas_trait,"Maestro relojero lento y enorme: puño-martillo, golpea muy fuerte.","Mestre rellotger lent i enorme: puny-martell, pega molt fort.","Huge slow master clockmaker: hammer fist, hits very hard."
+hero_mina_trait,Aprendiz ágil con patas de muelle: salta alto y golpea rápido.,Aprenent àgil amb potes de molla: salta alt i pega ràpid.,Agile apprentice with spring legs: jumps high and strikes fast.
+hud_special,¡ESPECIAL!,ESPECIAL!,SPECIAL!
+part_hammer,MARTILLO,MARTELL,HAMMER
+part_springs,MUELLES,MOLLES,SPRINGS
+part_wrench,LLAVE,CLAU,WRENCH
+part_boiler,CALDERA,CALDERA,BOILER
+partd_hammer,Golpes fuertes que derriban.,Cops forts que tomben.,Hard blows that knock down.
+partd_springs,Saltas y corres más.,Salts i corres més.,"Higher jumps, faster."
+partd_wrench,Combos más rápidos.,Combos més ràpids.,Faster combos.
+partd_boiler,Menos daño y vapor.,Menys dany i vapor.,"Less damage, steam."
+stage_n,FASE {n},FASE {n},STAGE {n}
+boss_name,PÉNDULO,PÈNDOL,PENDULUM
+boss_banner,EL RELOJ GIGANTE,EL RELLOTGE GEGANT,THE GIANT CLOCK
+res_title,FASE {n} SUPERADA,FASE {n} SUPERADA,STAGE {n} CLEAR
+res_kills,Derribados,Tombats,Beaten
+res_parts,Piezas,Peces,Parts
+res_props,Objetos rotos,Objectes trencats,Props broken
+res_bonus,Bonificación,Bonificació,Bonus
+res_score,TOTAL,TOTAL,TOTAL
+res_press,Pulsa A,Prem A,Press A
+end_title,¡EL TALLER ES TUYO!,EL TALLER ÉS TEU!,THE WORKSHOP IS YOURS!
+end_text,"Péndulo calla por fin y los autómatas se detienen. En la ciudad vuelven a sonar los relojes, todos a su hora.","Pèndol calla per fi i els autòmats s'aturen. A la ciutat tornen a sonar els rellotges, tots a la seva hora.","Pendulum falls silent at last and the automatons stop. The clocks of the city ring again, each at its own hour."
+over_title,FIN DEL JUEGO,FI DEL JOC,GAME OVER
+cont_title,¿CONTINUAR?,CONTINUAR?,CONTINUE?
+cont_press,Pulsa A,Prem A,Press A
+demo,DEMOSTRACIÓN,DEMOSTRACIÓ,DEMO
+ex_palette_title,Quince colores,Quinze colors,Fifteen colours
+ex_palette_text,"Cada personaje de la CPS2 usaba 15 colores. Para el segundo jugador bastaba otra paleta sobre los mismos píxeles: aquí, el mismo dibujo con otros colores.","Cada personatge de la CPS2 feia servir 15 colors. Per al segon jugador n'hi havia prou amb una altra paleta sobre els mateixos píxels: aquí, el mateix dibuix amb altres colors.","Every CPS2 character used 15 colours. A second player only needed another palette on the same pixels: here, the same drawing in other colours."
+ex_depth_title,Un suelo con profundidad,Un sòl amb profunditat,A floor with depth
+ex_depth_text,"La calle es un suelo en perspectiva: se camina a lo largo y hacia el fondo, entre las filas {ymin} y {ymax}. Quien está más abajo se pinta delante.","El carrer és un sòl en perspectiva: es camina al llarg i cap al fons, entre les files {ymin} i {ymax}. Qui és més avall es pinta davant.","The street is a floor in perspective: you walk along it and into the depth, between rows {ymin} and {ymax}. Whoever is lower is painted in front."
+ex_parts_title,Piezas arrancadas,Peces arrencades,Torn-off parts
+ex_parts_text,"Los autómatas rotos sueltan piezas. Al recoger una, cambias de estilo unos segundos; un aro de color te lo recuerda.","Els autòmats trencats deixen anar peces. En recollir-ne una, canvies d'estil uns segons; un anell de color t'ho recorda.",Broken automatons drop parts. Taking one changes your style for some seconds; a coloured ring reminds you.
+ex_sprites_title,Cuántas imágenes,Quantes imatges,How many pictures
+ex_sprites_text,Este cuadro se dibuja con {n} imágenes. La CPS2 mostraba hasta {max} a la vez y {line} como mucho en cada línea.,Aquest quadre es dibuixa amb {n} imatges. La CPS2 en mostrava fins a {max} alhora i {line} com a molt a cada línia.,This frame is drawn with {n} pictures. The CPS2 showed up to {max} at once and {line} at most on each line.
+ex_help,A: siguiente   B: volver,A: següent   B: tornar,A: next   B: back

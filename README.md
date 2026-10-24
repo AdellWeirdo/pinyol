@@ -28,7 +28,7 @@ takes them again).
 | ![A Game Boy Advance treasure-hunting platformer: a jungle in four layers, a ruin, a mushroom and a signpost](docs/looks/gba.png) | ![A 16-bit speed platformer: checkered earth, a sea moved line by line](docs/looks/16bits.png) |
 | **Game Boy Advance**: [botin](examples/botin), a treasure-hunting platformer | **SNES / Mega Drive**: [veloz](examples/veloz), all its art drawn by code |
 | ![A Neo Geo run and gun: a cook on a tractor in a village street, shooting at mechanical seagulls](docs/looks/neogeo.png) | ![A CPS2 fighting game: fighters in 15 colours on a floor in perspective](docs/looks/cps2.png) |
-| **Neo Geo**: [paella](examples/paella), a run and gun | **CPS2**: [torneo](examples/torneo) |
+| **Neo Geo**: [paella](examples/paella), a run and gun | **CPS2**: [taller](examples/taller) |
 | ![A PICO-8 tomb puzzle: 128x128 in sixteen colours](docs/looks/pico8.png) | ![A pocket LCD game: a juggling clown in a circus, figures on or off](docs/looks/lcd.png) |
 | **PICO-8**: [tumba](examples/tumba), a sliding puzzle | **Pocket LCD**: [malabar](examples/malabar), a Game & Watch |
 | ![A vector arcade game: glowing lines on black](docs/looks/vector.png) | ![A vertical shoot-'em-up, shown turned: hold the console on its side](docs/looks/vertical.png) |
@@ -139,7 +139,7 @@ You get a small game to change: a room bigger than the screen, a character to wa
 | [futbol](examples/futbol) | five a side on a pitch twice the screen's width: four kits that are one picture in four palettes |
 | [moto](examples/moto) | a motorbike race: the road on the world's Mode 7 floor, the coast, the roadside and the rivals at full resolution over it |
 | [duelo](examples/duelo) | a fighting game as a Neo Geo's: every pixel at 480x320, a stage in two layers, fighters in 192x184 frames as packed pictures, hit flashes and sparks, a rival played by the console |
-| [torneo](examples/torneo) | a fighting game as a CPS2's: fighters in 15 colours and thirty frames, never zoomed, a floor in perspective drawn in bands of rows, pillars in front, the same fighter twice in other colours |
+| [taller](examples/taller) | a beat 'em up as the CPS2's: three clockmakers in clockwork exo-frames (parts torn from broken automatons change how each one fights) against rebel automatons through a street, a factory and a clock tower, to a giant clock; every pixel at 480x320, characters in 15 colours painted with an image model and fitted in code (43 frames each, second colours borrowed from another palette), floors where depth decides what is in front, pillars at the seams, ten songs as MIDI and a menu that explains the CPS2's tricks |
 | [mazmorra](examples/mazmorra) | a beat-em-up in a dungeon as a CPS2's: goblins and skeletons in groups, torches that flicker, pillars that pass in front of everyone |
 | [cerezo](examples/cerezo) | a top-down adventure as the last Game Boy ones: a world of screens that slide, a dungeon, a boss, dialogue, four tones that C changes into the Color's palettes; art and music made by code |
 | [socavon](examples/socavon) | a one-screen mine platformer as a ZX Spectrum's, from the tape loading (striped border, the screen in its own order): eight rooms, blocks of two colours, sprites that clash, flashing keys, belts, crumbling floors, a beeper voice, and a menu that shows the attributes |
