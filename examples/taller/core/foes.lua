@@ -283,7 +283,7 @@ end
 
 function F.collect(out, cam)
   for _, f in ipairs(F.list) do
-    out[#out + 1] = {y = f.y, draw = function()
+    out[#out + 1] = {y = f.y, foe = true, draw = function()
       local flicker = f.st == "dying" and (f.t // 3) % 2 == 0
       if f.st ~= "dying" then require("core.hero").shadow(f.x - cam, f.y, f.z) end
       if flicker then return end

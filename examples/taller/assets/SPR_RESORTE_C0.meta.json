@@ -5,7 +5,7 @@
   "bpp": 4,
   "colours": 15,
   "w": 256,
-  "h": 160,
+  "h": 196,
   "frames": 10,
   "frame_ms": [
     0,
@@ -38,6 +38,6 @@
   "tile": null,
   "memory_bytes": {
     "total": 50618,
-    "as_rgb565": 819200
+    "as_rgb565": 1003520
   }
 }

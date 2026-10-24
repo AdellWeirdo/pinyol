@@ -734,7 +734,7 @@ return {
       ["ay"] = 96,
       ["n"] = 33,
       ["pieces"] = true,
-      ["per"] = 5,
+      ["per"] = 10,
       ["frames"] = {
         ["boom_s_0"] = 0,
         ["boom_s_1"] = 1,

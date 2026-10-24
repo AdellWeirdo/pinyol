@@ -148,7 +148,7 @@ local function street(cam, st)
   end
 end
 
-local scene = {}
+local scene, fxl = {}, {}
 
 function Play.draw_world()
   local ox, oy = Hook.offset()
@@ -162,10 +162,21 @@ function Play.draw_world()
   Items.collect(scene, cam)
   Foes.collect(scene, cam)
   Boss.collect(scene, cam)
-  Play.hero:collect(scene, cam)
-  Fx.collect(scene, cam)
   table.sort(scene, function(a, b) return a.y < b.y end)
+  -- the hero is painted by depth among the props and the pickups, but ALWAYS over the automatons and the boss: an enemy never hides a hero
+  local hero = {}
+  Play.hero:collect(hero, cam)
+  local at, last_foe = #scene + 1, 0
+  for i, e in ipairs(scene) do
+    if e.foe then last_foe = i end
+    if e.y > Play.hero.y and at > #scene then at = i end
+  end
+  at = math.max(at, last_foe + 1)
+  table.insert(scene, math.min(at, #scene + 1), hero[1])
   for _, e in ipairs(scene) do e.draw() end
+  for i = #fxl, 1, -1 do fxl[i] = nil end
+  Fx.collect(fxl, cam) -- the hit sparks, steam and dust over everyone
+  for _, e in ipairs(fxl) do e.draw() end
   -- the pillars in front of the seams: they hide where two chunks of street join and put the hero behind them as a CPS2 stage did
   for k = 1, 2 do
     local x = k * C.CHUNK - cam

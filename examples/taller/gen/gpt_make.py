@@ -263,6 +263,8 @@ def make_enemy(eid: str, spec: dict, colours: int = 15) -> None:
 SIZES = {"barrel": 64, "crate": 60, "lamp": 176, "clocks": 104, "mailbox": 84, "pipes": 76,
          "barrel_b": 72, "crate_b": 76, "lamp_b": 128, "clocks_b": 86, "mailbox_b": 72, "pipes_b": 76,
          "part_hammer": 54, "part_springs": 54, "part_wrench": 54, "part_boiler": 54, "oil": 32, "watch": 30}
+# effects: the biggest frame of each kind, in pixels (a hit spark is a fist's size, not a hero's), every frame of the kind scaled by the same factor so it still grows and fades
+GROUPS = {"hit": 72, "steam": 88, "gears": 100, "dust": 88, "boom": 176}
 OBJECT_FIT = {"parts": (44, True), "props_a": (96, True), "props_b": (96, True), "fx_a": (120, False), "fx_b": (160, False)}
 
 
@@ -279,8 +281,19 @@ def make_objects(oid: str, spec: dict, colours: int = 15) -> None:
         pieces = split_frames(key_background(Image.open(raw)), n)
         big = max(max(p.width, p.height) for p in pieces)
         k = target / big
+        gk = {}
         for fname, p in zip(fnames, pieces):
-            kk = SIZES[fname] / max(p.width, p.height) if fname in SIZES else k  # an object has the size it has next to a 124 px hero, not the biggest one's
+            g = fname.rsplit("_", 1)[0]
+            if g in GROUPS:
+                gk[g] = max(gk.get(g, 0), max(p.width, p.height))
+        for fname, p in zip(fnames, pieces):
+            g = fname.rsplit("_", 1)[0]
+            if fname in SIZES:   # an object has the size it has next to a 124 px hero, not the biggest one's
+                kk = SIZES[fname] / max(p.width, p.height)
+            elif g in GROUPS:    # an effect: its kind's biggest frame has the kind's size
+                kk = GROUPS[g] / gk[g]
+            else:
+                kk = k
             p = p.resize((max(1, round(p.width * kk)), max(1, round(p.height * kk))), Image.LANCZOS)
             if p.width > w - 4 or p.height > h - 4:
                 p.thumbnail((w - 4, h - 4))

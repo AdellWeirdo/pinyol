@@ -158,7 +158,7 @@ end
 function B.collect(out, cam)
   local b = B.ent
   if not b then return end
-  out[#out + 1] = {y = b.y, draw = function()
+  out[#out + 1] = {y = b.y, foe = true, draw = function()
     require("core.hero").shadow(b.x - cam, b.y, b.z * 0.5)
     S.draw("pendulo", frame_of(b), b.x - cam, b.y - b.z, {flip = b.face < 0, tint = b.flash > 0 and 0xFFFFFF or nil})
   end}
