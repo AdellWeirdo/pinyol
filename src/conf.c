@@ -102,6 +102,8 @@ bool conf_set(const char *key, const char *value) {
     return true;
 }
 
+const char *conf_lang_override; /* the headless player's --lang: the run's language whatever the settings say */
+
 void conf_load(void) {
     CONF = DEFAULTS;
     char p[400];
@@ -127,6 +129,7 @@ void conf_load(void) {
         }
         cJSON_Delete(j);
     }
+    if (conf_lang_override) conf_set("lang", conf_lang_override);
     conf_apply();
 }
 

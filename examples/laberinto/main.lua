@@ -200,7 +200,7 @@ function _draw()
   line(234, 160, 246, 160, 0xFFFFFF) line(240, 154, 240, 166, 0xFFFFFF) -- the sight
   rect(0, 288, 480, 32, 0x1A1A2A) -- the status bar
   text(lang.tr("lives", {n = lives}), 12, 296, {font = "arcade", color = 0xFF8080})
-  text(lang.tr("gems", {n = gems}), 330, 296, {font = "arcade", color = 0x80FFC0})
+  text(lang.tr("gems", {n = gems}), 466, 296, {font = "arcade", align = "right", color = 0x80FFC0})
   if state == "won" then text(lang.tr("won"), 240, 120, {font = "arcade", scale = 3, align = "center", color = 0x80FFC0, outline = 0x082010}) end
   if state == "over" then text(lang.tr("over"), 240, 120, {font = "arcade", scale = 3, align = "center", color = 0xFF6060, outline = 0x200808}) end
   if toast_t > 0 then

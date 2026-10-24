@@ -2,6 +2,7 @@
  *   pinyol_headless --game examples/hola [--saves DIR] [--fresh] (--validate | --script FILE)
  *               [--audio FILE.pcm] [--video FILE.mp4]   (tools/record.sh joins the two)
  *               [--crc FILE]   a CRC-32 of every other frame, to check that a change draws the same pixels
+ *               [--lang es|ca|en]  the console's language for the run (the game's words, the check-text of each)
  *               [--check-text]     fails (5) when a text is cut by the screen or does not fit its textbox
  *               [--check-strips]   every frame also drawn as the console's panel strips, which must match
  *               [--pictures KB]   the pictures' memory budget (PIC_BUDGET): small, they are let go and come back
@@ -16,6 +17,7 @@
 #include <unistd.h>
 
 #include "bp.h"
+#include "conf.h"
 #include "flashcheck.h"
 #include "record.h"
 #include "lua_prof.h"
@@ -152,6 +154,7 @@ int main(int argc, char **argv) {
     bp_config cfg = {PINYOL_GAME, NULL, true};
     const char *script = NULL, *profile = NULL, *record_path = NULL;
     bool validate = false, fresh = false;
+    const char *lang = NULL;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--game") && i + 1 < argc) cfg.game_dir = argv[++i];
         else if (!strcmp(argv[i], "--saves") && i + 1 < argc) cfg.save_dir = argv[++i];
@@ -166,6 +169,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--profile") && i + 1 < argc) profile = argv[++i];
         else if (!strcmp(argv[i], "--check-flashes")) check_flashes = true;
         else if (!strcmp(argv[i], "--check-text")) check_text = true;
+        else if (!strcmp(argv[i], "--lang") && i + 1 < argc) lang = argv[++i]; /* the console's language, as its settings would say */
         else if (!strcmp(argv[i], "--record") && i + 1 < argc) record_path = argv[++i]; /* the play, as a script of `in` lines */
         else if (!strcmp(argv[i], "--pictures") && i + 1 < argc) gfx_set_budget((size_t)atoi(argv[++i]) * 1024);
         else if (!strcmp(argv[i], "--video") && i + 1 < argc) {
@@ -173,7 +177,7 @@ int main(int argc, char **argv) {
         }
         else {
             fprintf(stderr, "usage: %s --game DIR [--saves DIR] [--fresh] (--validate | --script FILE) "
-                            "[--strict-assets] [--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--check-flashes] [--check-text] [--record FILE.script] [--profile FILE.folded] [--pictures KB] [--splash]\n", argv[0]);
+                            "[--strict-assets] [--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--check-flashes] [--check-text] [--lang es|ca|en] [--record FILE.script] [--profile FILE.folded] [--pictures KB] [--splash]\n", argv[0]);
             return 2;
         }
     }
@@ -182,6 +186,13 @@ int main(int argc, char **argv) {
     char default_saves[512];
     snprintf(default_saves, sizeof default_saves, "%s/saves", cfg.game_dir);
     if (fresh) wipe_saves(cfg.save_dir ? cfg.save_dir : default_saves);
+    if (lang) {
+        if (strcmp(lang, "es") && strcmp(lang, "ca") && strcmp(lang, "en")) {
+            fprintf(stderr, "--lang: es, ca or en\n");
+            return 2;
+        }
+        conf_lang_override = lang;
+    }
     if (!game_init(&cfg)) {
         fprintf(stderr, "game folder incomplete: %s\n", cfg.game_dir);
         return 2;

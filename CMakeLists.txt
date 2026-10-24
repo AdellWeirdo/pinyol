@@ -380,6 +380,12 @@ foreach(s ${SCRIPTS})
   endif()
   add_test(NAME script_${n} COMMAND pinyol_headless --game ${game}
            --saves ${CMAKE_BINARY_DIR}/saves_${n} --fresh --script ${s} --check-strips ${splash} ${text_check})
+  if(n IN_LIST TEXT_CHECKED) # the same play in Catalan and in English: their words are longer or shorter and must fit too
+    foreach(l ca en)
+      add_test(NAME script_${n}_${l} COMMAND pinyol_headless --game ${game}
+               --saves ${CMAKE_BINARY_DIR}/saves_${n}_${l} --fresh --script ${s} --check-strips --check-text --lang ${l})
+    endforeach()
+  endif()
 endforeach()
 # text that cannot be read: a line the screen's edge cuts and a box that is too small fail --check-text (5); a slide = true text and a
 # font tried when the first is too big pass

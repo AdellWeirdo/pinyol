@@ -22,6 +22,7 @@ typedef struct {
 
 extern conf_t CONF;
 
+extern const char *conf_lang_override; /* "es" "ca" "en" or NULL: set by the headless player before the game starts (--lang) */
 void conf_load(void);  /* from the platform's folder, or the defaults; applies them (volume, colour) */
 void conf_save(void);  /* after a change in the system menu */
 void conf_apply(void); /* what the settings do outside the menu: the user's volume, the colour filter's table */
