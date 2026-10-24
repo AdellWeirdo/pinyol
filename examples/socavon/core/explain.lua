@@ -36,18 +36,18 @@ function E.enter(sprite_sheet)
   SPR = sprite_sheet
   page, cx, cy, sx, t = 1, 10, 6, 40, 0
   E.page, E.sx = 1, 40
-  saved = {n = R.n}
+  saved = R.snapshot() -- nil before any room was loaded (the title of a fresh start)
   E.hook("curioso")
   E.show_page()
 end
 
 function E.show_page()
-  R.load(R.n) -- the room as the game has it (keys back: the explainer is a look, not a move)
+  R.load(saved and saved.n or 1) -- the room as the game has it at its start (the explainer is a look, not a move; leave() gives the real one back)
   if page == 2 then demo_blocks() end
 end
 
 function E.leave()
-  R.load(saved.n)
+  if saved then R.restore(saved) end
 end
 
 local function swatch(x, y, w, h, c) rect(x, y, w, h, c) end

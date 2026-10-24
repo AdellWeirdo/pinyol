@@ -276,6 +276,18 @@ def check(r: Room) -> list[str]:
         for x, c in enumerate(row):
             if c in "kX" and (x, y) not in touched:
                 probs.append(f"{r.name}: {c} at {x},{y} cannot be reached")
+    if probs:
+        return probs
+    # a key must not be a one-way trip: from where the miner stands to take it (some standing place beside it that can be reached) the
+    # portal must still be reachable (a high floor he can jump up to but not drop down from used to trap him, and four rooms were unwinnable)
+    portal = {(x, y) for y, row in enumerate(r.g) for x, c in enumerate(row) if c == "X"}
+    for y, row in enumerate(r.g):
+        for x, c in enumerate(row):
+            if c != "k":
+                continue
+            near = [p for p in seen if abs(p[0] // 8 - x) <= 1 and abs(p[1] // 8 - y) <= 2]
+            if not any(portal & reach(r, p)[1] for p in near[:8]):
+                probs.append(f"{r.name}: after taking the key at {x},{y} the portal cannot be reached (a one-way trap)")
     return probs
 
 
@@ -290,7 +302,7 @@ r.h(12, 5, 11).h(12, 16, 22).h(9, 1, 6).h(9, 11, 16).h(9, 21, 26).h(6, 5, 10).h(
 r.put(2, 13, "P").rect(25, 13, 26, 14, "X").put(7, 2, "l")
 for x, y in ((3, 8), (14, 8), (23, 8), (8, 5), (19, 5), (14, 2)):
     r.put(x, y, "k")
-r.put(9, 11, "*").put(19, 11, "*").put(12, 8, "*").put(24, 8, "*")
+r.put(9, 11, "*").put(19, 11, "*").put(24, 8, "*")  # (12, 8) had a plant too: with it the high floors were a one-way trip and the room could not be won
 r.guard("robot", 9, 13, 5, 21, 0.6)
 ROOMS.append(r)
 
@@ -301,7 +313,7 @@ r.h(12, 3, 8).h(12, 12, 16).h(12, 20, 25).h(9, 8, 12).h(9, 17, 21).h(6, 2, 7).h(
 r.put(2, 13, "P").rect(25, 13, 26, 14, "X")
 for x, y in ((5, 11), (14, 11), (10, 8), (4, 5), (15, 5), (24, 5), (10, 2), (21, 2)):
     r.put(x, y, "k")
-for x in (4, 15, 17, 26):
+for x in (4, 17, 26):  # (15, 1) had a stalactite too: the room could not be won with it
     r.put(x, 1, "v")
 r.put(16, 2, "v").put(6, 2, "v")
 r.guard("murcielago", 4, 9, 2, 25, 0.9, wave=14).guard("murcielago", 20, 4, 3, 24, 0.7, wave=10)
@@ -315,7 +327,7 @@ r.rect(13, 10, 13, 12, "#")
 r.put(2, 13, "P").rect(25, 13, 26, 14, "X")
 for x, y in ((6, 11), (20, 11), (8, 8), (20, 8), (4, 5), (22, 5), (9, 2), (20, 2)):
     r.put(x, y, "k")
-r.put(14, 14, "*").put(15, 14, "*").put(11, 5, "*").put(14, 2, "*")
+r.put(14, 14, "*").put(15, 14, "*").put(11, 5, "*")  # (14, 2) had a plant too: the room could not be won with it
 r.guard("robot", 6, 13, 3, 23, 0.7).guard("robot", 17, 4, 12, 24, 0.5)
 ROOMS.append(r)
 
@@ -339,7 +351,7 @@ r.rect(11, 10, 12, 12, "#").rect(2, 1, 3, 2, "#")
 r.put(2, 13, "P").rect(25, 13, 26, 14, "X")
 for x, y in ((7, 11), (20, 11), (9, 8), (24, 8), (3, 5), (18, 5), (6, 2), (21, 2)):
     r.put(x, y, "k")
-for x, y in ((5, 11), (17, 11), (22, 11), (8, 8), (20, 8), (2, 5), (15, 5), (7, 2), (17, 2), (21, 2)):
+for x, y in ((5, 11), (17, 11), (22, 11), (8, 8), (20, 8), (2, 5), (15, 5), (17, 2), (21, 2)):  # (7, 2) had a plant too: the room could not be won with it
     r.put(x, y, "*")
 r.guard("rata", 6, 13, 2, 20, 0.9).guard("rata", 22, 13, 12, 23, 0.7)
 ROOMS.append(r)

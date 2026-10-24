@@ -103,6 +103,23 @@ function R.load(n)
   R.colours(false)
 end
 
+-- the room as it stands (keys taken, floors fallen, the portal): the explainer shows rooms and must give this one back as it was
+function R.snapshot()
+  if not R.rm then return nil end
+  local cells, crumbling = {}, {}
+  for i, c in ipairs(R.cells) do cells[i] = c end
+  for k, v in pairs(R.crumbling) do crumbling[k] = v end
+  return {n = R.n, cells = cells, keys = R.keys, open = R.open, crumbling = crumbling}
+end
+
+function R.restore(s)
+  R.load(s.n)
+  for i, c in ipairs(s.cells) do R.cells[i] = c end
+  R.keys, R.open, R.crumbling = s.keys, s.open, s.crumbling
+  for ty = 0, R.ROWS - 1 do for tx = 0, R.W - 1 do R.draw(tx, ty) end end
+  R.colours(false)
+end
+
 function R.open_portal()
   R.open = true
   for ty = 0, R.H - 1 do for tx = 0, R.W - 1 do if R.char(tx, ty) == "X" then R.draw(tx, ty) end end end

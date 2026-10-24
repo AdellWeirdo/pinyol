@@ -113,3 +113,31 @@ press A
 tick 5
 expect_lua state == "title"
 expect_ok
+# "Cómo funciona" from the console's menu on a clean title used to crash (no room was loaded), and it gave back a reloaded room:
+# keys, fallen floors and the score's room were reset, so opening it twice paid a key twice
+new
+tick 60
+tick 200
+press A
+tick 3
+press A
+tick 5
+expect_lua state == "title"
+lua local mi = menuitem menuitem = function(l, cb) if cb then CB = cb end mi(l, cb) end _resume()
+expect_lua CB ~= nil
+lua CB()
+tick 5
+expect_lua state == "explain"
+press START
+tick 5
+expect_lua state == "title"
+press A
+tick 5
+expect_lua state == "play"
+lua local R = require("core.room") R.cells[1] = "." R.keys = R.keys - 1 KEYS_BEFORE = R.keys
+lua CB()
+tick 5
+press START
+tick 5
+expect_lua state == "play" and require("core.room").keys == KEYS_BEFORE
+expect_ok

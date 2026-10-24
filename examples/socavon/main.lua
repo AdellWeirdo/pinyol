@@ -18,6 +18,7 @@ local t = 0
 local miner_sh, enemy_sh, fx_sh
 local AIR_SECONDS = 75
 local toast_text, toast_t = nil, 0
+local explain_back = "play" -- where "Cómo funciona" was opened from
 local sparks = {} -- the glints of a key taken
 
 local function toast(s) toast_text, toast_t = s, 170 end
@@ -30,6 +31,7 @@ local function menu() -- the game's own item in the console's menu, in the langu
   menuitem()
   menuitem(lang.tr("how"), function()
     if state == "play" or state == "title" then
+      explain_back = state
       Explain.enter(miner_sh)
       state = "explain"
     end
@@ -222,7 +224,11 @@ function _update()
     update_clear()
     if t % 16 == 0 and not settings().reduce_flashing then R.colours((t // 16) % 2 == 1) end
   elseif state == "explain" then
-    if Explain.update() then Explain.leave() state = "play" end
+    if Explain.update() then
+      Explain.leave()
+      state = explain_back
+      if state == "title" then t = 0 Mu.play("titulo") show(0) end -- back where it was opened from (it used to go on playing with no game begun)
+    end
   elseif state == "win" or state == "over" then
     if t > 60 and btnp("a") then state, t = "title", 0 Mu.play("titulo") show(0) end
   end
