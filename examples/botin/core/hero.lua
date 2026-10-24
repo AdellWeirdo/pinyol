@@ -212,6 +212,12 @@ local function swim(h, l, r, u, d)
   if dirx ~= 0 then h.face = dirx end
   h.vx = U.approach(h.vx, dirx * C.SWIM_SPEED, 0.07)
   if not (l or r) then h.vx = h.vx * 0.96 end
+  if In.btnp("b") and h.swim_ram == 0 and not h.carry then -- a ram under water: it breaks the brown blocks that close the Galleon's sea
+    h.swim_ram = C.RAM_TICKS
+    Sound.play("ram")
+    Fx.add("bubble", H.cx(h) - h.face * 6, H.cy(h))
+  end
+  if h.swim_ram > 0 then h.vx = h.face * C.SWIM_SPEED * 2.2 end
   if In.btnp("a") then
     h.vy = C.SWIM_KICK
     Sound.play("swim")
@@ -237,6 +243,7 @@ function H.update(h, foes)
   if h.land_t > 0 then h.land_t = h.land_t - 1 end
   if h.throw_t > 0 then h.throw_t = h.throw_t - 1 end
   if h.lift_t > 0 then h.lift_t = h.lift_t - 1 end
+  if h.swim_ram > 0 then h.swim_ram = h.swim_ram - 1 end
   local l, r, u, d = In.btn("left"), In.btn("right"), In.btn("up"), In.btn("down")
 
   if h.state == "dead" then

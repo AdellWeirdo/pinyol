@@ -107,3 +107,15 @@ shot ex4
 press B
 tick 5
 expect_lua G.state == "play"
+# the Galleon's wall of brown blocks under water: a ram while swimming (B) breaks it (it used to close the sea for good: the level could not be finished)
+new
+lua dbg_level(3)
+tick 10
+expect_lua dbg_tp(19, 13)
+tick 2
+expect_lua dbg_cell(20, 12) == "b"
+lua btn = function(n) return n == "right" or n == "down" end
+lua btnp = function(n) return n == "b" and G.t % 6 == 0 end
+tick 600
+expect_lua dbg_cell(20, 12) ~= "b" and dbg_cell(21, 13) ~= "b"
+expect_ok

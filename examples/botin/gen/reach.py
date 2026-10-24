@@ -74,6 +74,10 @@ class Grid:
                     tx, ty = x + dx, y - rise
                     if not self.standing(tx, ty):
                         continue
+                    if abs(dx) >= 2 and not any(
+                            all(self.body_free(x + k * (1 if dx > 0 else -1), yy) for k in range(1, abs(dx)))
+                            for yy in range(min(y, ty), min(y, ty) - 3, -1)):
+                        continue  # the jump goes through a wall: some height up to two cells above the higher end must be clear all along
                     if rise > 0 and any(self.at(x, y - k) in WALL for k in range(2, rise + 2)):
                         continue  # head hits a wall going up
                     nxt.append((tx, ty))

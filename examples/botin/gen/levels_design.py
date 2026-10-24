@@ -106,6 +106,7 @@ def level1() -> Level:
     lv.rect(63, 8, 70, 10, "#")
     lv.rect(64, 9, 68, 10, ".")
     lv.rect(63, 9, 63, 10, "b")
+    lv.h_(9, 71, 72, "=")  # a step on the right face: the hill is 3 cells (48 px) and the highest jump is 45 px, so the way back from the frog had no way up
     lv.rect(65, 9, 65, 10, "W")
     lv.rect(67, 9, 67, 10, "W")
     lv.thing("jewel", 66, 9, n=3)
