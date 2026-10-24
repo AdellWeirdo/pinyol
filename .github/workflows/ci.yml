@@ -11,7 +11,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake libsdl2-dev
-          python3 -m pip install --user pillow fonttools
+          python3 -m pip install --user pillow fonttools numpy scipy
       - uses: actions/setup-node@v4
         with:
           node-version: 22  # the editor reads navigator, a global since Node 21

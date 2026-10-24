@@ -43,7 +43,6 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import depthcut  # noqa: E402
 from fit_sprite import fit  # noqa: E402
-import sprite_kit  # noqa: E402
 from png2asset import export_packed  # noqa: E402
 
 TOOLS = Path(__file__).resolve().parent
@@ -90,6 +89,7 @@ def frames_of(game: Path, e: dict) -> list[Image.Image]:
     if e.get("fit") == "feet":  # tools/sprite_kit.py: the sheet's own scale from an upright frame, soles on the ground row, feet centred, never cut
         if not (e.get("frame") and e.get("height")):
             raise ValueError('"fit": "feet" needs frame and height')
+        import sprite_kit  # (numpy and scipy: only a game that asks for this fit needs them)
         w, h = int(e["frame"][0]), int(e["frame"][1])
         keyed = sprite_kit.key_background(src) if e.get("key_bg") else src.convert("RGBA")
         kf = int(e.get("scale_frame", 0))

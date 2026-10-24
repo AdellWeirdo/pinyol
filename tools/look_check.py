@@ -23,7 +23,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import looks  # noqa: E402
-import sprite_check  # noqa: E402
 
 BANK = 16  # entries of one palette bank in a .pal (RGB565, little endian); entry 0 is see-through
 
@@ -64,6 +63,10 @@ def check(game: Path, look: dict) -> tuple[list[str], list[str]]:
             if re.search(pat, text):
                 errs.append(f"{src.relative_to(game)}: matches /{pat}/, which {look['name']} must not do (see its 'avoid' in tools/looks.json)")
     art = game / "art"
+    try:
+        import sprite_check  # needs numpy and scipy: without them the audit is skipped (the rest of look_check needs only Pillow)
+    except ImportError:
+        art = Path("/nonexistent")
     if art.is_dir():  # the strips the game's art scripts make: frames cut by their cell, feet off the ground line, sizes that jump (tools/sprite_check.py)
         bad = [e for f in sorted(art.glob("*.json")) for e in sprite_check.audit(f)[0]]
         if bad:
