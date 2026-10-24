@@ -123,7 +123,7 @@ end
 
 local function hud() -- the score, the level and the toast are letters
   text(string.format("%06d", P.score), 14, 8, BODY)
-  text(lang.tr("high") .. " " .. string.format("%06d", high), 240, 8, {font = "hud_s", color = 0x7088C0, align = "center"})
+  text(lang.tr("high") .. " " .. string.format("%06d", math.max(high, P.score)), 240, 8, {font = "hud_s", color = 0x7088C0, align = "center"})
   text(lang.tr("level", {n = P.level}), 14, 298, SMALL)
   if toast_t > 0 and toast_text then
     local w = textw(toast_text, "hud") + 24

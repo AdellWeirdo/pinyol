@@ -12,7 +12,8 @@ press A
 tick 90
 expect_lua G.state == "play" and G.chef_id == "espuma"
 shot mision
-# running and shooting kills the first gulls
+# running and shooting kills the first gulls (a fixed seed: the scene below depends on which gulls come)
+lua math.randomseed(1)
 hold RIGHT+A 150
 expect_lua dbg_state().score > 0
 shot disparo

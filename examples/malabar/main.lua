@@ -58,10 +58,19 @@ local function start(m)
   sfx("SFX_BONUS")
 end
 
+local function save_best()
+  if score > GAME.best then GAME.best = score store("best", score) end
+end
+
 local function level()
   if mode == "A" then
     local n = score < 10 and 1 or score < 30 and 2 or 3
-    if n > balls_n then balls_n = n if n == 3 then earn("tres_bolas") end end
+    if n > balls_n then
+      balls_n = n
+      set_balls() -- the new ball is on the board, not only counted
+      wait = 30
+      if n == 3 then earn("tres_bolas") end
+    end
   end
   step_ticks = math.max(8, (mode == "A" and 22 or 14) - score // 8)
 end
@@ -69,10 +78,15 @@ end
 local function step() -- one step of the world: every ball goes on; one that reached a hand is caught or falls
   sfx("SFX_STEP")
   local missed = false
+  local arrives = {false, false} -- which hands a ball reaches this step
+  for _, b in ipairs(balls) do
+    if b.k == 6 then arrives[b.dir == 1 and 2 or 1] = true end
+  end
   for _, b in ipairs(balls) do
     if b.k == 6 then -- it arrived at the hand of side `arrive` last step: caught if that button was pressed since
       local side = b.dir == 1 and 2 or 1
-      if caught[side] then
+      -- the other hand pressed as well, with no ball for it, is a clumsy grab: holding both buttons catches nothing
+      if caught[side] and (arrives[3 - side] or not caught[3 - side]) then
         score = score + 1
         GAME.catches = GAME.catches + 1
         sfx("SFX_CATCH")
@@ -95,7 +109,7 @@ local function step() -- one step of the world: every ball goes on; one that rea
     sfx("SFX_MISS")
     balls = {}
     wait = 90
-    if misses >= 3 then state = "over" if score > GAME.best then GAME.best = score store("best", score) end end
+    if misses >= 3 then state = "over" save_best() end
   end
 end
 
@@ -115,7 +129,7 @@ function _update()
     if c and c.sec ~= GAME.sec then GAME.sec = c.sec sfx("SFX_SECOND") beat = beat + 1 end
     return
   end
-  if btnp("start") and (state == "over" or state == "play") then state = "clock" return end
+  if btnp("start") and (state == "over" or state == "play") then save_best() state = "clock" return end
   if state == "over" then
     if btnp("a") then start("A") elseif btnp("b") then start("B") end
     if drop and t % 10 == 0 and drop.k < 3 then drop.k = drop.k + 1 end

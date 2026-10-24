@@ -297,6 +297,22 @@ static bool run_line(char *cmd, char *arg) {
         if (!v2_run(arg, cmd[0] == 'e', msg, sizeof msg)) FAIL("%s %s -> %s", cmd, arg, msg);
         return true;
     }
+    if (!strcmp(cmd, "luafile")) { /* luafile PATH: a whole Lua file run in the game (a bot that drives it; see tools/sim) */
+        FILE *f = fopen(arg, "rb");
+        if (!f) FAIL("luafile %s: cannot open", arg);
+        fseek(f, 0, SEEK_END);
+        long n = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        char *code = malloc((size_t)n + 1);
+        if (!code || fread(code, 1, (size_t)n, f) != (size_t)n) { fclose(f); free(code); FAIL("luafile %s: cannot read", arg); }
+        code[n] = 0;
+        fclose(f);
+        char msg[200];
+        bool ok = v2_run(code, false, msg, sizeof msg);
+        free(code);
+        if (!ok) FAIL("luafile %s -> %s", arg, msg);
+        return true;
+    }
     if (!strcmp(cmd, "expect_lua_error")) { /* pinyol@2: this code must fail (a limit of the sandbox) */
         char msg[200];
         if (v2_run(arg, false, msg, sizeof msg)) FAIL("expect_lua_error %s: it ran without an error", arg);

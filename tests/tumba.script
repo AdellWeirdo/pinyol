@@ -2,6 +2,15 @@
 # differed from gen/rules.py by a cell anywhere, a level would not be finished in its par. With --check-strips and --check-flashes.
 tick 5
 expect_lua state == "title"
+# "Cómo funciona" from the console menu before any level was loaded used to crash; leaving it goes back to the title, not into a level
+press MENU
+press DOWN
+press A
+tick 5
+expect_lua state == "explain"
+press START
+tick 90
+expect_lua state == "title" and GAME.unlocked == 1
 tick 920
 expect_lua state == "demo"
 tick 400
@@ -237,11 +246,9 @@ tick 45
 press A
 tick 45
 expect_lua state == "play" and GAME.level == 8 and GAME.moves == 0
-press RIGHT
+press DOWN
 tick 38
 shot n8
-press DOWN
-tick 38
 press LEFT
 tick 38
 press RIGHT
@@ -252,7 +259,7 @@ press RIGHT
 tick 38
 press DOWN
 tick 38
-press LEFT
+press RIGHT
 tick 38
 press UP
 tick 38
@@ -264,19 +271,19 @@ press LEFT
 tick 38
 press UP
 tick 38
-press RIGHT
-tick 38
-press DOWN
-tick 38
-press RIGHT
-tick 38
-press DOWN
+press UP
 tick 38
 press RIGHT
 tick 38
 press UP
 tick 38
-expect_lua state == "clear" and GAME.moves == 19
+press RIGHT
+tick 38
+press RIGHT
+tick 38
+press UP
+tick 38
+expect_lua state == "clear" and GAME.moves == 18
 tick 1
 tick 45
 press A

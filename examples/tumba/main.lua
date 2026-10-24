@@ -19,6 +19,7 @@ local hero_sh, small_sh
 local hx, hy, pose, pose_t, hidden = 0, 0, "idle", 0, false
 local phase_t = 0 -- ticks in the clear and dead states
 local cursor, demo_t, demo_wait = 1, 0, 0
+local explain_back = "play" -- where "Cómo funciona" was opened from
 local anim = nil
 local toast_text, toast_t = nil, 0
 local fade_target, fade_cb = nil, nil
@@ -32,7 +33,12 @@ local function earn(id) if achieve(id) then toast(lang.tr("ach_" .. id)) Sfx.pla
 local function menu()
   menuitem()
   menuitem(lang.tr("how"), function()
-    if state == "play" or state == "title" or state == "select" then Explain.enter(lv, st, hist) state = "explain" end
+    if state == "play" or state == "title" or state == "select" then
+      explain_back = state
+      local l = lv or Rules.new(Levels[1].rows) -- before any level was loaded the map still needs one to show
+      Explain.enter(l, st or Rules.initial(l), hist)
+      state = "explain"
+    end
   end)
 end
 
@@ -354,7 +360,12 @@ function _update()
   elseif state == "win" then
     if t > 120 and btnp("a") then fade_to(5, function() enter_title() fade_to(0) end) end
   elseif state == "explain" then
-    if Explain.update() then Explain.leave() state = "play" load_level(g.level) end
+    if Explain.update() then
+      Explain.leave()
+      if explain_back == "title" then enter_title() -- not load_level(g.level): the demo leaves g.level on its own level and that would skip the locks
+      elseif explain_back == "select" then enter_select()
+      else state = "play" load_level(g.level) end
+    end
   end
 end
 

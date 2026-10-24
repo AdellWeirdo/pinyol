@@ -314,8 +314,8 @@ local function update_warp()
     end
   end
   if P.t == 62 then
+    if P.lives <= 0 then P.mode, P.t = "over", 0 return end -- a crash on the last dive pays nothing (it could buy a life past the threshold)
     award(100 * P.level)
-    if P.lives <= 0 then P.mode, P.t = "over", 0 return end
     P.begin_level(P.level + 1)
     P.mode, P.t = "warp", 62
     Snd.play("SFX_LEVEL")

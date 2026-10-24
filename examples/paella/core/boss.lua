@@ -13,6 +13,9 @@ local B = {}
 
 B.active = false
 B.hp, B.max_hp = 100, 100
+-- the boss's life per chef: the weapons differ a lot in what they do to the open pot (cream and knives took 4 times as long as corks), so each chef gets the life that makes the
+-- fight about the same length (measured with a perfect bot)
+local HP = {estrella = 230, espuma = 240, pinche = 270, arrocero = 270, brioche = 230, crianza = 265}
 B.done = false
 
 local PLAN = {"rockets", "stomp", "beam", "pot"}
@@ -21,6 +24,7 @@ function B.reset() B.active, B.done, B.state = false, false, nil end
 
 function B.enter(cam)
   B.active, B.done = true, false
+  B.max_hp = HP[Run.chef] or 100
   B.hp = B.max_hp
   B.x = cam + 300 + 260       -- steps in from the right
   B.target_x = cam + 300
@@ -100,7 +104,7 @@ function B.update(chef, cam)
   if B.hurt_t > 0 then B.hurt_t = B.hurt_t - 1 end
   if B.flash > 0 then B.flash = B.flash - 1 end
   if B.flash_cd > 0 then B.flash_cd = B.flash_cd - 1 end
-  local fast = B.hp < 55
+  local fast = B.hp < B.max_hp * 0.55
   if B.state == "intro" then
     B.x = B.x + (B.target_x - B.x) * 0.03
     B.legs = (B.st // 6) % 2 == 0 and "step" or "stand"
@@ -177,7 +181,7 @@ local function pick()
   if B.state == "rockets" and st >= 40 and st < 110 then return "gat_" .. (t // 3) % 4 end
   if B.state == "stomp" and st >= 40 and st < 80 then return "stomp_" .. math.min(3, (st - 40) // 10) end
   if (B.state == "intro" and B.legs == "step") or (B.state == "stomp" and st < 40) then return "walk_" .. (t // 5) % 6 end
-  if B.hp < 66 then return "dmg_" .. (t // 12) % 2 end
+  if B.hp < B.max_hp * 0.66 then return "dmg_" .. (t // 12) % 2 end
   return "idle_" .. (t // 8) % 4
 end
 
