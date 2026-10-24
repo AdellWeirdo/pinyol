@@ -57,6 +57,42 @@ text("Hamburgefonstiv", 20, 140, {font = "snes_body"})
 | `sports` | **Sports / scoreboard**: bold jerseys and digits | Jersey 25 | Jersey 15 | Jersey 10 |
 | `terminal` | **Hacker terminal**: a green monitor | Major Mono Display | VT323 | Courier Prime |
 | `typewriter` | **Typewriter / detective**: typed pages and case files | Courier Prime Bold | Courier Prime | Courier Prime |
+| `cps1` | **CPS1 arcade**: heavy block caps: Final Fight and Street Fighter 2 era | Passion One* | Jersey 15 | Silkscreen |
+| `cps2_stencil` | **CPS2 stencil**: stencil cards and a tidy body | Saira Stencil One | Jersey 15 | Micro 5 |
+| `cps2_heavy` | **CPS2 heavy**: huge condensed poster caps | Anton | Jersey 15 | Tiny5 |
+| `cps3` | **CPS3 stylish**: tall clean modern fighter caps | Bebas Neue | Pixelify Sans | Tiny5 |
+| `neo_geo_chunky` | **Neo Geo chunky**: fat chunky cartoon caps | Bowlby One* | Jersey 15 | Silkscreen |
+| `neo_geo_toon` | **Neo Geo toon**: bold rounded toon titles | Titan One* | Jersey 15 | Silkscreen |
+| `neo_geo_shout` | **Neo Geo shout**: squared run and gun shouts | Squada One* | Jersey 10 | Micro 5 |
+| `neo_geo_samurai` | **Neo Geo samurai**: brush-painted martial arts titles | Knewave* | Pixelify Sans | Tiny5 |
+| `neo_geo_bubble` | **Neo Geo bubble**: bubbly round bright titles | Chango* | Jersey 15 | Silkscreen |
+| `snes_rpg` | **SNES RPG**: uncial fantasy titles, plain pixel body | Uncial Antiqua* | Pixelify Sans | Silkscreen |
+| `snes_fantasy` | **SNES fantasy**: storybook fantasy | Macondo* | Jersey 15 | Tiny5 |
+| `snes_kart` | **SNES racer**: italic speed caps | Racing Sans One* | Jersey 15 | Silkscreen |
+| `snes_hero` | **SNES hero**: fun heavy rounded caps | Lilita One* | Pixelify Sans | Silkscreen |
+| `mega_drive_speed` | **Mega Drive speed**: sliced fast italic caps | Faster One* | Jersey 10 | Tiny5 |
+| `mega_drive_beat` | **Mega Drive beat 'em up**: wide heavy mono titles | Rubik Mono One | Jersey 10 | Silkscreen |
+| `mega_drive_slab` | **Mega Drive slab**: heavy slab serif adventure titles | Alfa Slab One* | Jersey 10 | Tiny5 |
+| `mega_drive_neon` | **Mega Drive neon**: neon line titles | Monoton* | Jersey 10 | Tiny5 |
+| `pc_engine_arcade` | **PC Engine arcade**: hollow carved heavy caps | Rampart One | DotGothic16 | Micro 5 |
+| `master_system_bold` | **Master System bold**: fat friendly platformer caps | Sigmar One | Silkscreen | Tiny5 |
+| `arcade_stencil` | **Arcade stencil**: clean stencil shooter caps | Allerta Stencil* | VT323 | Silkscreen |
+| `arcade_army` | **Arcade army**: old stencil serif war titles | Stardos Stencil* | Jersey 15 | Micro 5 |
+| `arcade_neon_sign` | **Arcade cabinet sign**: signage caps with an inline | Bungee Inline | Jersey 15 | Silkscreen |
+| `japan_arcade` | **Japanese arcade**: rounded rock-and-roll caps | RocknRoll One | DotGothic16 | Micro 5 |
+| `japan_stick` | **Japanese stick**: hand-drawn stick letters | Stick | DotGothic16 | Micro 5 |
+| `korea_arcade` | **Korean arcade**: sharp slashed caps | Gugi | Jersey 15 | Tiny5 |
+| `sports_slab` | **Sports slab**: sporty slab caps for scores | Jockey One* | Jersey 15 | Silkscreen |
+| `saturn_techno` | **Saturn techno**: wide techno caps | Michroma | Chakra Petch | Tiny5 |
+| `dreamcast_sport` | **Dreamcast sport**: sporty sci-fi caps | Exo 2 | Chakra Petch | Tiny5 |
+| `scifi_hud` | **Sci-fi HUD**: squared HUD text | Aldrich* | Electrolize* | Iceland* |
+| `mecha` | **Mecha**: rounded wide techno for robots | Turret Road | Aldrich* | Iceland* |
+| `tournament` | **Tournament**: outlined competition caps | Tourney | Jersey 15 | Tiny5 |
+| `terminal_modern` | **Modern terminal**: coding monos | Kode Mono | Space Mono | Anonymous Pro* |
+| `pirate` | **Pirate**: blackletter pirate adventure | Pirata One* | Macondo* | Tiny5 |
+| `dungeon` | **Dungeon**: angular medieval caps | Germania One* | Jersey 15 | Micro 5 |
+| `glitch_pixel` | **Glitch pixel**: a chunky variable pixel face with glitchy colour-bleed | Bitcount Prop | Tiny5 | Micro 5 Charted |
+| `crt_misregister` | **CRT misregistered**: 8-bit with colour-bleed | Sixtyfour Convergence | Tiny5 | Micro 5 |
 
 ## The fonts
 
@@ -112,5 +148,53 @@ text("Hamburgefonstiv", 20, 140, {font = "snes_body"})
 | Cutive Mono | a light typewriter | `third_party/fonts/cutivemono` |
 | IBM Plex Mono* | a clear monospace: DOS and terminals | `third_party/fonts/ibmplexmono` |
 | IBM Plex Mono Bold* | the same, bold | `third_party/fonts/ibmplexmono` |
+| Passion One* | heavy rounded block caps: Final Fight and Street Fighter 2 title cards | `third_party/fonts/passionone` |
+| Teko | tall condensed techno-sport caps: fighting game HUDs | `third_party/fonts/teko` |
+| Anton | very heavy condensed poster caps: CPS2 and arcade logos | `third_party/fonts/anton` |
+| Bowlby One* | fat chunky caps: Neo Geo cartoon titles | `third_party/fonts/bowlbyone` |
+| Chango* | round bubbly heavy letters: bright Neo Geo and kart titles | `third_party/fonts/chango` |
+| Titan One* | bold rounded caps: SNES platformers and Neo Geo toons | `third_party/fonts/titanone` |
+| Squada One* | blocky squared shout caps: sports and run and gun | `third_party/fonts/squadaone` |
+| Racing Sans One* | italic speed caps: racing games, Mega Drive and SNES | `third_party/fonts/racingsansone` |
+| Saira Stencil One | stencil caps: military and CPS2 cards | `third_party/fonts/sairastencilone` |
+| Stardos Stencil* | old stencil serif: army crates, war games | `third_party/fonts/stardosstencil` |
+| Allerta Stencil* | clean stencil sans: arcade shooters | `third_party/fonts/allertastencil` |
+| Rubik Mono One | wide heavy mono caps: Streets of Rage-style titles | `third_party/fonts/rubikmonoone` |
+| Faster One* | fast sliced italic caps: Sonic-speed, racers | `third_party/fonts/fasterone` |
+| Gugi | sharp slashed caps: Korean-arcade, fighters | `third_party/fonts/gugi` |
+| Jockey One* | sporty slab caps: sports games, scoreboards | `third_party/fonts/jockeyone` |
+| Alfa Slab One* | heavy slab serif: 16-bit adventure and Mega Drive titles | `third_party/fonts/alfaslabone` |
+| Sigmar One | fat friendly caps: Master System, platformers | `third_party/fonts/sigmarone` |
+| Bebas Neue | tall clean caps: CPS3 and modern fighting titles | `third_party/fonts/bebasneue` |
+| Lilita One* | fun heavy rounded caps: SNES hero games | `third_party/fonts/lilitaone` |
+| Knewave* | brush-painted shout: samurai and martial arts titles | `third_party/fonts/knewave` |
+| Monoton* | neon line caps: Mega Drive and 80s arcade neon | `third_party/fonts/monoton` |
+| Bungee Inline | signage caps with an inline: arcade cabinets | `third_party/fonts/bungeeinline` |
+| Pirata One* | blackletter pirate caps: RPG and adventure titles | `third_party/fonts/pirataone` |
+| Almendra* | calligraphic fantasy text: SNES RPG menus | `third_party/fonts/almendra` |
+| Uncial Antiqua* | uncial fantasy letters: SNES and Mega Drive RPG titles | `third_party/fonts/uncialantiqua` |
+| Macondo* | quirky storybook capitals: fantasy adventures | `third_party/fonts/macondo` |
+| Eagle Lake* | ornate calligraphy: old RPG scrolls | `third_party/fonts/eaglelake` |
+| Germania One* | angular medieval caps: dungeon and brawler titles | `third_party/fonts/germaniaone` |
+| Electrolize* | rounded techno text: Saturn and Dreamcast menus | `third_party/fonts/electrolize` |
+| Michroma | wide techno caps: Saturn and PlayStation sci-fi | `third_party/fonts/michroma` |
+| Exo 2 | sporty sci-fi text: Dreamcast and racers | `third_party/fonts/exo2` |
+| Aldrich* | squared HUD text: shooters and mecha | `third_party/fonts/aldrich` |
+| Quantico* | military HUD text: tactical games | `third_party/fonts/quantico` |
+| Iceland* | tight tech text: small HUD labels | `third_party/fonts/iceland` |
+| Nova Mono* | square mono: computer terminals | `third_party/fonts/novamono` |
+| Tourney | outlined competition caps: tournament cards | `third_party/fonts/tourney` |
+| Turret Road | rounded wide techno: robots and mecha | `third_party/fonts/turretroad` |
+| Kode Mono | modern coding mono: terminals and hacker games | `third_party/fonts/kodemono` |
+| Space Mono | geometric mono: retro-future terminals | `third_party/fonts/spacemono` |
+| Anonymous Pro* | classic coding mono: plain terminals | `third_party/fonts/anonymouspro` |
+| Saira | clean techno text with widths and weights: HUDs | `third_party/fonts/saira` |
+| Rajdhani | squared Devanagari-inspired techno: sports HUDs | `third_party/fonts/rajdhani` |
+| Stick | hand-drawn stick letters: Japanese-arcade look | `third_party/fonts/stick` |
+| RocknRoll One | rounded rock-and-roll caps: Japanese arcade | `third_party/fonts/rocknrollone` |
+| Rampart One | hollow-carved heavy caps: PC Engine style | `third_party/fonts/rampartone` |
+| Sixtyfour Convergence | 8-bit with colour-bleed styles: CRT-misregistered titles | `third_party/fonts/sixtyfourconvergence` |
+| Micro 5 Charted | tiny pixel text with chart marks | `third_party/fonts/micro5charted` |
+| Bitcount Prop | proportional pixel text with many styles | `third_party/fonts/bitcountpropsingle` |
 
 Each folder holds the font's `OFL.txt`. The fonts are free to use, change and share, also in games that are sold, as long as the font is not sold on its own; `THIRD_PARTY_NOTICES.md` carries their notices.

@@ -1,6 +1,6 @@
 # Fonts that come with pinyol
 
-**Fifty fonts and 37 ready-made packs, one for each console's look: see [docs/fonts.md](../../docs/fonts.md)**
+**98 fonts and 73 ready-made packs, one for each console's look: see [docs/fonts.md](../../docs/fonts.md)**
 (`uv run tools/font2fnt.py --pack snes games/mygame`). `catalog.json` here says which font is which pack's title, body
 and small letters; the table below is the first dozen, the rest are listed in docs/fonts.md.
 
