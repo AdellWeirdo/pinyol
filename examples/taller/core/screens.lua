@@ -43,7 +43,7 @@ function T.draw()
     local on = i == T.sel
     label((on and "> " or "  ") .. lang.tr("title_" .. it), 240, 224 + (i - 1) * 28, {align = "center", scale = 1, color = on and 0xFFFFFF or 0xA09070})
   end
-  label(lang.tr("title_best") .. " " .. string.format("%07d", Game.best), 240, 296, {align = "center", color = 0xFFE070})
+  label(lang.tr("title_best") .. " " .. string.format("%07d", Game.best), 240, 284, {align = "center", color = 0xFFE070})
 end
 
 -- ------------------------------------------------------------------ choosing a hero

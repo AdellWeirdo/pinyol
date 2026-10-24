@@ -578,9 +578,34 @@ static int utf8_prefix(const char *s, int n, int *chars) { /* bytes of up to *ch
 typedef struct {
     int f, al, wrap, chars;
     uint16_t colour;
-    bool styled;
+    bool styled, slide;
     text_style st;
 } text_args;
+
+/* Text the player cannot read: a line that the screen's edge cuts, or a box's text that does not fit it (the headless
+ * player's --check-text fails the run on the first, platform/null/main.c). `slide = true` (text's option) says it is on
+ * its way in or out of the screen on purpose: a scroll, a ticker. */
+#define CUT_KEEP 4
+static int text_cut_n;
+static char text_cut_msg[CUT_KEEP][160];
+static void note_cut(const char *what, const char *s, int n, int x, int y, int w, int h) {
+    char line[160];
+    if (n > 40) n = 40;
+    snprintf(line, sizeof line, "%s: \"%.*s\" at (%d, %d), %dx%d", what, n, s, x, y, w, h);
+    for (int i = 0; i < text_cut_n; i++)
+        if (!strcmp(text_cut_msg[i], line)) return; /* each text once: a cut line is drawn every frame */
+    if (text_cut_n < CUT_KEEP) memcpy(text_cut_msg[text_cut_n++], line, sizeof line);
+}
+int text_cut(char *msg, size_t size) { /* how many different cut texts were drawn (up to 4), and each described */
+    if (msg && size) {
+        msg[0] = 0;
+        for (int i = 0; i < text_cut_n; i++) {
+            size_t l = strlen(msg);
+            snprintf(msg + l, size - l, "\n  %s", text_cut_msg[i]);
+        }
+    }
+    return text_cut_n;
+}
 
 /* text's options, as a table: {color, font, align, width, chars, outline, shadow, shadow_x, shadow_y, gradient,
  * scale, spacing, wave, shake} */
@@ -595,6 +620,7 @@ static void text_opts(lua_State *L, int t, text_args *a) {
     a->wrap = (int)opt_float(L, t, "width", 0, 0, 2 * SCREEN_W);
     a->chars = (int)opt_float(L, t, "chars", 1 << 30, 0, 1 << 30);
     a->colour = to565(opt_int(L, t, "color", 0xFFFFFF));
+    a->slide = opt_bool(L, t, "slide", false);
     text_style *st = &a->st;
     memset(st, 0, sizeof *st);
     st->color = a->colour;
@@ -626,6 +652,16 @@ static void text_line(const char *s, int n, int x, int y, const text_args *a) {
     memcpy(ov_text + ntext, s, (size_t)n);
     c->str = (uint16_t)ntext, c->len = (uint16_t)n, ntext += n;
     c->x = i16(x - (a->al == 1 ? w / 2 : a->al == 2 ? w : 0)), c->y = i16(y);
+    {
+        const font *fo = font_named(a->f);
+        const int k = a->styled ? a->st.scale : 1, h = fo->h * k;
+        int ink0 = 0, ink1 = fo->h;
+        font_ink_rows(fo, s, n, &ink0, &ink1); /* the rows with ink: the room a line leaves under its letters is not text */
+        const int x1 = c->x + w, top = y + ink0 * k, bottom = y + ink1 * k;
+        const bool seen = x1 > 0 && c->x < SCREEN_W && bottom > 0 && top < SCREEN_H && w > 0;
+        if (seen && !a->slide && !target && (c->x < 0 || x1 > SCREEN_W || top < 0 || bottom > SCREEN_H))
+            note_cut("cut by the screen's edge", s, n, c->x, y, w, h);
+    }
     c->font = (uint8_t)a->f, c->color = a->colour;
     c->w = i16(w), c->h = i16(font_named(a->f)->h * (a->styled ? a->st.scale : 1));
     if (a->styled && nstyle < OV_EXT) ov_style[nstyle] = a->st, c->ext = (uint8_t)(++nstyle); /* past it: plain */
@@ -666,7 +702,8 @@ static int l_text(lua_State *L) {
     return 2;
 }
 
-/* textw(str [, font | {font, scale, spacing}]) -> width, height */
+/* textw(str [, font | {font, scale, spacing, width}]) -> width, height [, lines]: what text would take, drawing nothing; with a
+ * width, wrapped to it (so a panel can be made to fit its text before the text is drawn) */
 static int l_textw(lua_State *L) {
     size_t n = 0;
     const char *s = luaL_checklstring(L, 1, &n);
@@ -674,9 +711,104 @@ static int l_textw(lua_State *L) {
     if (lua_istable(L, 2)) text_opts(L, 2, &a);
     else a.f = font_arg(L, 2); /* before pushing: a pushed result would become argument 2 */
     const font *f = font_named(a.f);
+    const int k = a.styled ? a.st.scale : 1;
+    if (a.wrap > 0) {
+        uint16_t starts[32], lens[32];
+        int lines = text_wrap(a.styled ? spaced(f, a.st.spacing) : f, s, a.wrap / k, starts, lens, 32), widest = 0;
+        for (int i = 0; i < lines; i++) {
+            int w = line_w(f, s + starts[i], lens[i], &a);
+            widest = w > widest ? w : widest;
+        }
+        lua_pushinteger(L, widest), lua_pushinteger(L, lines * f->h * k), lua_pushinteger(L, lines);
+        return 3;
+    }
     lua_pushinteger(L, line_w(f, s, (int)n, &a));
-    lua_pushinteger(L, f->h * (a.styled ? a.st.scale : 1));
+    lua_pushinteger(L, f->h * k);
     return 2;
+}
+
+/* textbox(str, x, y, w, h [, {options of text, valign = "top"|"middle"|"bottom", fonts = {names tried when the first is too big}}])
+ * -> width, height, scale, fits: the text drawn inside the box (x, y, w, h): wrapped to its width, in the largest scale (up to
+ * the option's `scale`) and then the first font of `fonts` that makes it fit its height. What still does not fit is cut with "...",
+ * and counted as text the player cannot read (--check-text). */
+static int l_textbox(lua_State *L) {
+    size_t n = 0;
+    const char *s = luaL_checklstring(L, 1, &n);
+    const int x = num(L, 2), y = num(L, 3), bw = num(L, 4), bh = num(L, 5);
+    text_args a = {0};
+    int cand[8], ncand = 0, valign = 0;
+    if (lua_istable(L, 6)) {
+        static const char *const vs[] = {"top", "middle", "bottom", NULL};
+        text_opts(L, 6, &a);
+        lua_getfield(L, 6, "valign");
+        valign = luaL_checkoption(L, -1, "top", vs);
+        lua_pop(L, 1);
+        cand[ncand++] = a.f;
+        lua_getfield(L, 6, "fonts");
+        if (lua_istable(L, -1))
+            for (int i = 1; i <= 7 && ncand < 8; i++) {
+                lua_rawgeti(L, -1, i);
+                if (lua_isstring(L, -1)) cand[ncand++] = font_by_name(L, lua_tostring(L, -1));
+                lua_pop(L, 1);
+            }
+        lua_pop(L, 1);
+    } else cand[ncand++] = 0;
+    bool plain = !a.st.has_outline && !a.st.has_shadow && !a.st.gradient && !a.st.spacing && !a.st.wave && !a.st.shake;
+    if (!lua_istable(L, 6)) a.colour = to565(0xFFFFFF), a.st.color = a.colour, a.st.scale = 1, plain = true;
+    const int top_scale = a.st.scale < 1 ? 1 : a.st.scale;
+    a.wrap = bw < 1 ? 1 : bw;
+    uint16_t starts[32], lens[32];
+    int lines = 0, scale = 1, best_f = cand[0];
+    bool fits = false;
+    for (int ci = 0; ci < ncand && !fits; ci++) {
+        for (int sc = top_scale; sc >= 1 && !fits; sc--) {
+            a.f = cand[ci], a.st.scale = (uint8_t)sc;
+            a.styled = !plain || sc > 1;
+            const font *f = font_named(a.f);
+            lines = text_wrap(a.styled ? spaced(f, a.st.spacing) : f, s, a.wrap / sc, starts, lens, 32);
+            int widest = 0;
+            for (int i = 0; i < lines; i++) {
+                int w = line_w(f, s + starts[i], lens[i], &a);
+                widest = w > widest ? w : widest;
+            }
+            if (lines * f->h * sc <= bh && widest <= bw) fits = true, scale = sc, best_f = a.f;
+            else if (ci == ncand - 1 && sc == 1) scale = 1, best_f = a.f;
+        }
+    }
+    a.f = best_f, a.st.scale = (uint8_t)scale, a.styled = !plain || scale > 1;
+    const font *f = font_named(a.f);
+    const int lh = f->h * scale;
+    int shown = lines;
+    if (!fits) {
+        shown = bh / lh;
+        if (shown < 1) shown = 1;
+        if (shown > lines) shown = lines;
+    }
+    const int ax = a.al == 1 ? x + bw / 2 : a.al == 2 ? x + bw : x;
+    const int used_h = shown * lh;
+    const int y0 = valign == 1 ? y + (bh - used_h) / 2 : valign == 2 ? y + bh - used_h : y;
+    int widest = 0, chars = a.chars;
+    for (int i = 0; i < shown && chars > 0; i++) {
+        const char *ls = s + starts[i];
+        int ln = lens[i];
+        char buf[320];
+        if (!fits && i == shown - 1 && (shown < lines || line_w(f, ls, ln, &a) > bw)) { /* the last line shown ends in "..." */
+            if (ln > 300) ln = 300;
+            memcpy(buf, ls, (size_t)ln);
+            for (;;) {
+                memcpy(buf + ln, "...", 3);
+                if (line_w(f, buf, ln + 3, &a) <= bw || ln == 0) break;
+                do ln--; while (ln > 0 && (buf[ln] & 0xC0) == 0x80);
+            }
+            ls = buf, ln += 3;
+        }
+        int w = line_w(f, ls, ln, &a);
+        widest = w > widest ? w : widest;
+        text_line(ls, utf8_prefix(ls, ln, &chars), ax, y0 + i * lh, &a);
+    }
+    if (!fits) note_cut("does not fit its box", s, (int)n, x, y, bw, bh);
+    lua_pushinteger(L, widest), lua_pushinteger(L, used_h), lua_pushinteger(L, scale), lua_pushboolean(L, fits);
+    return 4;
 }
 
 static int shape(lua_State *L, int op, bool colour) {
@@ -1454,7 +1586,7 @@ bool draw_covers_screen(void) {
 
 void draw_register(lua_State *L) {
     static const luaL_Reg F[] = {
-        {"text", l_text}, {"textw", l_textw}, {"rect", l_rect}, {"box", l_box}, {"shade", l_shade}, {"panel", l_panel},
+        {"text", l_text}, {"textw", l_textw}, {"textbox", l_textbox}, {"rect", l_rect}, {"box", l_box}, {"shade", l_shade}, {"panel", l_panel},
         {"plate", l_plate}, {"img", l_img}, {"quad", l_quad}, {"mesh_new", l_mesh_new}, {"mesh", l_mesh}, {"grad", l_grad}, {"light", l_light}, {"warp", l_warp}, {"linetint", l_linetint}, {"frame", l_frame}, {"pset", l_pset}, {"pget", l_pget}, {"line", l_line},
         {"circ", l_circ}, {"tri", l_tri}, {"poly", l_poly}, {"cls", l_cls}, {"canvas", l_canvas}, {"target", l_target},
         {"camera", l_camera}, {"clip", l_clip}, {"imgsize", l_imgsize}, {"preload", l_preload}, {NULL, NULL}};

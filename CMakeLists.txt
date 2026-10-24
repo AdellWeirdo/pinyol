@@ -345,8 +345,13 @@ if(NODE)
   add_test(NAME editor_anims COMMAND ${NODE} ${CMAKE_CURRENT_SOURCE_DIR}/editor/test/anims_test.mjs) # speed, loop, pivot, sheets
 endif()
 file(GLOB SCRIPTS CONFIGURE_DEPENDS tests/*.script)
+# the flagship demos must show no text cut by the screen or outside its box (--check-text); tools/demo_check.py names the same list
+set(TEXT_CHECKED cerezo socavon tumba malabar pozo botin veloz gotico tormenta laberinto taller paella)
 foreach(s ${SCRIPTS})
   get_filename_component(n ${s} NAME_WE)
+  if(n STREQUAL "textfit_cut" OR n STREQUAL "textfit_box" OR n STREQUAL "textfit_slide")
+    continue() # their own tests, below
+  endif()
   set(game ${CMAKE_CURRENT_SOURCE_DIR}/examples/${n})
   if(n STREQUAL "template_lua" OR n STREQUAL "tiled" OR n STREQUAL "neo" OR n STREQUAL "clip")
     if(NO_PIL)
@@ -369,9 +374,21 @@ foreach(s ${SCRIPTS})
   if(n MATCHES "^careta") # the careta plays first (the others start at _init, their ticks counted from there)
     set(splash --splash)
   endif()
+  set(text_check "")
+  if(n IN_LIST TEXT_CHECKED OR n STREQUAL "textfit")
+    set(text_check --check-text)
+  endif()
   add_test(NAME script_${n} COMMAND pinyol_headless --game ${game}
-           --saves ${CMAKE_BINARY_DIR}/saves_${n} --fresh --script ${s} --check-strips ${splash})
+           --saves ${CMAKE_BINARY_DIR}/saves_${n} --fresh --script ${s} --check-strips ${splash} ${text_check})
 endforeach()
+# text that cannot be read: a line the screen's edge cuts and a box that is too small fail --check-text (5); a slide = true text and a
+# font tried when the first is too big pass
+foreach(t cut box)
+  add_test(NAME text_${t}_caught COMMAND sh -c "$<TARGET_FILE:pinyol_headless> --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/textfit \
+    --saves ${CMAKE_BINARY_DIR}/saves_textfit_${t} --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/textfit_${t}.script --check-text; test $? -eq 5")
+endforeach()
+add_test(NAME text_slide_passes COMMAND pinyol_headless --game ${CMAKE_CURRENT_SOURCE_DIR}/tests/games/textfit
+         --saves ${CMAKE_BINARY_DIR}/saves_textfit_slide --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/tests/textfit_slide.script --check-text)
 if(Python3_FOUND)
   add_test(NAME quad_mesh_screen COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/quad_mesh_screen.py
            ${CMAKE_BINARY_DIR}/saves_quad/quad.ppm)

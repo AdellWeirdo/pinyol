@@ -58,10 +58,10 @@ function Ex.draw()
     for i, nm in ipairs(PART_NAMES) do
       S.draw("parts", nm, 70 + (i - 1) * 105, 190, {})
       text(lang.tr("part_" .. PART_KEYS[i]), 70 + (i - 1) * 105, 198, {font = "bold", align = "center", color = 0xFFFFFF, outline = 0x200010})
-      text(lang.tr("partd_" .. PART_KEYS[i]), 70 + (i - 1) * 105, 216, {font = "main", align = "center", width = 100, color = 0xFFFFFF, outline = 0x200010})
+      textbox(lang.tr("partd_" .. PART_KEYS[i]), 70 + (i - 1) * 105 - 52, 212, 104, 78, {font = "main", align = "center", color = 0xFFFFFF, outline = 0x200010})
     end
   end
-  text(lang.tr("ex_help"), 240, 308, {font = "main", align = "center", color = 0xFFFFFF, outline = 0x200010})
+  text(lang.tr("ex_help"), 240, 292, {font = "main", align = "center", color = 0xFFFFFF, outline = 0x200010})
 end
 
 return Ex

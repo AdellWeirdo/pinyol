@@ -1,0 +1,10 @@
+# text sliding in on purpose (slide = true) and a font tried when the first is too big: --check-text passes
+new
+lua G.mode = "slide"
+tick 2
+shot t
+lua G.mode = "fonts"
+tick 2
+shot t
+expect_lua G.r[4] == true
+expect_lua G.r[3] == 1 and G.r[2] <= 100

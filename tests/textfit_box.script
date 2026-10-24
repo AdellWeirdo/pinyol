@@ -1,0 +1,11 @@
+# a text that cannot fit its box is cut with "..." and counted: --check-text fails (5), and textbox says it did not fit
+new
+lua G.mode = "box"
+tick 2
+shot t
+expect_lua G.r[4] == false
+# lib/box.lua with a max_h: the frame stays that tall and the text it cannot hold is cut and reported
+lua G.mode = "capped"
+tick 2
+shot c
+expect_lua G.capped[1] == 40

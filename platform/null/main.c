@@ -2,6 +2,7 @@
  *   pinyol_headless --game examples/hola [--saves DIR] [--fresh] (--validate | --script FILE)
  *               [--audio FILE.pcm] [--video FILE.mp4]   (tools/record.sh joins the two)
  *               [--crc FILE]   a CRC-32 of every other frame, to check that a change draws the same pixels
+ *               [--check-text]     fails (5) when a text is cut by the screen or does not fit its textbox
  *               [--check-strips]   every frame also drawn as the console's panel strips, which must match
  *               [--pictures KB]   the pictures' memory budget (PIC_BUDGET): small, they are let go and come back
  *               [--splash]   the careta first, as a player sees it (without, the game starts at once: scripts count
@@ -94,7 +95,7 @@ static void compare_strips(const uint16_t *fb, unsigned n) {
     }
 }
 
-static bool check_flashes;
+static bool check_flashes, check_text;
 static int flash_worst, flash_tick; /* the biggest share of the screen found flashing past the limit, and when */
 
 static void frame_tick(void) {
@@ -164,6 +165,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--check-strips")) check_strips = true;
         else if (!strcmp(argv[i], "--profile") && i + 1 < argc) profile = argv[++i];
         else if (!strcmp(argv[i], "--check-flashes")) check_flashes = true;
+        else if (!strcmp(argv[i], "--check-text")) check_text = true;
         else if (!strcmp(argv[i], "--record") && i + 1 < argc) record_path = argv[++i]; /* the play, as a script of `in` lines */
         else if (!strcmp(argv[i], "--pictures") && i + 1 < argc) gfx_set_budget((size_t)atoi(argv[++i]) * 1024);
         else if (!strcmp(argv[i], "--video") && i + 1 < argc) {
@@ -171,7 +173,7 @@ int main(int argc, char **argv) {
         }
         else {
             fprintf(stderr, "usage: %s --game DIR [--saves DIR] [--fresh] (--validate | --script FILE) "
-                            "[--strict-assets] [--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--check-flashes] [--record FILE.script] [--profile FILE.folded] [--pictures KB] [--splash]\n", argv[0]);
+                            "[--strict-assets] [--audio FILE.pcm] [--video FILE.mp4] [--crc FILE] [--check-strips] [--check-flashes] [--check-text] [--record FILE.script] [--profile FILE.folded] [--pictures KB] [--splash]\n", argv[0]);
             return 2;
         }
     }
@@ -209,6 +211,13 @@ int main(int argc, char **argv) {
         fprintf(stderr, "check-flashes: %d%% of the screen flashed more than three times a second (around frame %d): it can "
                         "hurt photosensitive players\n", flash_worst, flash_tick);
         rc = rc ? rc : 4;
+    }
+    if (check_text) {
+        char msg[800];
+        if (text_cut(msg, sizeof msg)) {
+            fprintf(stderr, "check-text: %d text(s) the player cannot read:%s\n", text_cut(NULL, 0), msg);
+            rc = rc ? rc : 5;
+        }
     }
     if (video && pclose(video)) rc = rc ? rc : 1;
     return rc;

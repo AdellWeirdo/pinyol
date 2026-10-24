@@ -148,7 +148,7 @@ function _draw()
       Hud.label(lang.tr("over_title"), 240, 130, {align = "center", scale = 2, fit = 440, gradient = 0xFF4040})
     else
       Hud.draw(Play, G.t)
-      if st == "demo" then Hud.label(lang.tr("demo"), 240, 296, {align = "center", color = (G.t // 30) % 2 == 0 and 0xFFFFFF or 0xFFD040}) end
+      if st == "demo" then Hud.label(lang.tr("demo"), 240, 284, {align = "center", color = (G.t // 30) % 2 == 0 and 0xFFFFFF or 0xFFD040}) end
       if st == "continue" then Scr.cont.draw() end
     end
   elseif st == "results" then Scr.results.draw()

@@ -56,13 +56,13 @@ function Ex.draw()
       local f = sh.frames["select_0"]
       img(sh.pieces and (sh.id .. "_C" .. (f // sh.per)) or sh.id, x, 300 - sh.h * k, {frame = f % (sh.per or 10), scale = k})
     end
-    text("1", 90, 304, {font = "main", color = 0xFFFFFF, outline = 0x200010})
+    text("1", 90, 292, {font = "main", color = 0xFFFFFF, outline = 0x200010})
   elseif pg == "palettes" then
     for i, tint in ipairs(TINTS) do
       S.draw("chef_" .. chef, "select_" .. (t // 12 + i) % 2, 50 + (i - 1) * 76, 300, {mul = tint, scale = nil})
     end
   end
-  text(lang.tr("ex_help"), 240, 300, {font = "main", align = "center", color = 0xFFFFFF, outline = 0x200010})
+  text(lang.tr("ex_help"), 240, 290, {font = "main", align = "center", color = 0xFFFFFF, outline = 0x200010})
 end
 
 return Ex

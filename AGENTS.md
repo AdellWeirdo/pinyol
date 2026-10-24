@@ -60,6 +60,7 @@ over the box's border or past the screen's edge, readable on what is under it.
   The table of looks and their limits is `tools/looks.json`. The small looks are drawn by code
   (`art.py`): they need no image generation.
 - Generated sprites: fit them with `tools/sprite_kit.py` (one scale per sheet from an upright frame, soles on the ground row, feet centred, never cut, objects and effects at their own size) ask the image model through `tools/sheet_jobs.py` (raw pictures in the game's `raw/`, `--plan` first: a call is about 1% of the plan), check them with `uv run tools/sprite_check.py games/<id>/art --regen --fresh`, and measure with `uv run tools/board_perf.py games/<id> --tour`: docs/art.md, "Sprites that fit".
+- Text must fit the first time: size a panel from `textw(str, {font, width})` or draw the text in `textbox` / `lib/box.lua`; a test script of a flagship game runs with `--check-text` (no line cut by the screen's edge, no text too big for its box; `slide = true` for a scroll), registered in CMake's `TEXT_CHECKED`.
 - A finished example game passes `uv run tools/demo_check.py games/<id>`: a card with its look, 5+ achievements, es/ca/en words, a "how it works" menu item, `reduce_flashing` read if it flashes, a cover, a test script, its look's fonts, sprites that fit and a measured frame rate.
 - Pictures: generated images (backgrounds removed, frames cut, scale and feet fitted) are in
   [docs/art.md](docs/art.md): read it before making art. Or draw them by code in the game's `art.py`, as the

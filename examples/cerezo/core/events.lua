@@ -267,7 +267,7 @@ function Ev.draw_credits()
         return line(str:sub(cut + 1), size)
       end
     end
-    text(str, 240, y, {font = "ps", color = ink, align = "center", scale = size or 1})
+    text(str, 240, y, {font = "ps", color = ink, align = "center", scale = size or 1, slide = true}) -- the credits scroll in from below
     y = y + (size == 2 and 44 or 30)
   end
   line("CEREZO", 2)

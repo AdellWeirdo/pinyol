@@ -1,0 +1,13 @@
+# textbox fits text inside its box, textw measures wrapped text, and none of it is cut by the screen (CMake's text_fit_* tests)
+new
+tick 2
+shot t
+expect_lua G.r[4] == true
+expect_lua G.r[3] >= 1 and G.r[3] <= 2
+expect_lua G.r[2] <= 120 and G.r[1] <= 300
+expect_lua G.tw[3] >= 3 and G.tw[1] <= 200 and G.tw[2] == G.tw[3] * G.one[2]
+# lib/box.lua: the frame is as tall as its text, measured before drawing; (its cap is tested in textfit_box)
+lua G.mode = "ui"
+tick 2
+shot ui
+expect_lua G.h == G.ht and G.h > 40 and G.h < 200

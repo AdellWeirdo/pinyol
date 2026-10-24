@@ -1234,6 +1234,25 @@ int font_width(const font *f, const char *s, int nbytes) {
     return w;
 }
 
+/* The first and last row of ink (the bottom exclusive) of a text in the font's own rows: what the player sees of it, not the room a
+ * line leaves for its tallest letter. False when there is none (spaces). */
+bool font_ink_rows(const font *f, const char *s, int nbytes, int *top, int *bottom) {
+    if (!s || !f->box) return false;
+    if (nbytes < 0) nbytes = (int)strlen(s);
+    const char *e = s + nbytes;
+    int t = f->h, b = 0;
+    while (s < e) {
+        int c = utf8_cp1252(&s, e);
+        const uint8_t *g = f->box + 4 * (c < 0 ? '?' : c);
+        if (g[3] == 0) continue;
+        if (g[2] < t) t = g[2];
+        if (g[3] > b) b = g[3];
+    }
+    if (b == 0) return false;
+    *top = t, *bottom = b;
+    return true;
+}
+
 int font_draw(surface *sf, const font *f, int x, int y, const char *s, int nbytes, int maxchars, uint16_t col) {
     if (!s || !f->bits) return 0;
     if (nbytes < 0) nbytes = (int)strlen(s);

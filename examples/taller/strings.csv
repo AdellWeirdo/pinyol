@@ -18,7 +18,7 @@ part_hammer,MARTILLO,MARTELL,HAMMER
 part_springs,MUELLES,MOLLES,SPRINGS
 part_wrench,LLAVE,CLAU,WRENCH
 part_boiler,CALDERA,CALDERA,BOILER
-partd_hammer,Golpes fuertes que derriban.,Cops forts que tomben.,Hard blows that knock down.
+partd_hammer,Golpea y derriba.,Colpeja i tomba.,Hits and knocks down.
 partd_springs,Saltas y corres más.,Salts i corres més.,"Higher jumps, faster."
 partd_wrench,Combos más rápidos.,Combos més ràpids.,Faster combos.
 partd_boiler,Menos daño y vapor.,Menys dany i vapor.,"Less damage, steam."

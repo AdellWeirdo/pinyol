@@ -1,0 +1,6 @@
+# a text the screen's edge cuts: --check-text fails the run (exit code 5)
+new
+lua G.mode = "cut"
+tick 2
+shot t
+expect_ok

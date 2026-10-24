@@ -261,7 +261,7 @@ function _draw()
   if state == "load" then
     Tape.draw(t, settings().reduce_flashing)
     if t >= Tape.TOTAL and (t // 30) % 2 == 0 then
-      text(lang.tr("press"), 240, 306, {font = H.F.body, align = "center", color = Z.BWHITE})
+      text(lang.tr("press"), 240, 288, {font = H.F.body, align = "center", color = Z.BWHITE})
     end
     return
   end

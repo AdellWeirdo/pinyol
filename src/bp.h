@@ -182,6 +182,7 @@ typedef struct {
 } font;
 
 asset *gfx_asset(const char *id); /* cached, never NULL; missing files give a checkerboard */
+int text_cut(char *msg, size_t size); /* texts drawn cut by the screen or not fitting their box (--check-text), and the first one */
 const char *gfx_missing_asset(void); /* first required picture missing or malformed, or "" */
 /* A game's pictures share PIC_BUDGET bytes of memory. Past it, those not asked for in the frame being made go,
  * least recently asked for first, and come back by themselves when asked for again (a moment's load from the card):
@@ -241,6 +242,7 @@ uint16_t hex565(const char *hex, uint16_t dflt);
 bool font_load(font *f, const char *path);
 int utf8_cp1252(const char **p, const char *end); /* next char as cp1252, -1 if unencodable */
 int font_width(const font *f, const char *s, int nbytes);
+bool font_ink_rows(const font *f, const char *s, int nbytes, int *top, int *bottom); /* where the ink of a text is, in the font's rows */
 int font_draw(surface *sf, const font *f, int x, int y, const char *s, int nbytes, int maxchars,
               uint16_t col);
 int text_wrap(const font *f, const char *s, int max_w, uint16_t *starts, uint16_t *lens, int max_lines);

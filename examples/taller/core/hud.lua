@@ -65,8 +65,8 @@ function H.draw(play, t)
     label(lang.tr("boss_name"), 240, 232, {align = "center", color = 0xFFFFFF})
   end
   if play.go_t > 0 and (play.go_t // 20) % 2 == 0 and play.state == "play" then
-    label("GO!", 410, 120, {scale = 2, gradient = 0xFF5020})
-    label(">>>", 410, 160, {scale = 2})
+    label("GO!", 434, 120, {scale = 2, align = "center", gradient = 0xFF5020})
+    label(">>>", 434, 160, {scale = 2, align = "center"})
   end
   if play.banner_t > 0 then
     local st = play.stage()

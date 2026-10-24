@@ -18,6 +18,7 @@ Each check is OK, WARN (worth fixing) or FAIL (a demo must not ship without it):
   test     tests/<id>.script (here or in the engine's tests/) that plays the game and checks it (5+ expect_ lines)                                         FAIL
   fonts    the look's font pack, or a font of the game's own, is in fonts/ and used                                         WARN
   art      tools/sprite_check.py finds no cut frame or floating feet (if the game has art/)                                  WARN
+  text     its test script plays with the simulator's --check-text: no text cut by the screen's edge or too big for its textbox   FAIL
   numbers  docs/measurements.md has the game's frame rate measured on the console                                           WARN
 Exit 1 if any FAIL.
 """
@@ -25,6 +26,8 @@ from __future__ import annotations
 
 import argparse
 import csv
+import subprocess
+import tempfile
 import json
 import re
 import sys
@@ -97,6 +100,13 @@ def check(game: Path) -> list[tuple[str, str, str]]:
     else:
         out.append(("fonts", "WARN", f"draws with the generic fonts only (the look's pack: {pack}: uv run tools/font2fnt.py --pack {pack} {game})"))
 
+    headless = ROOT / "build" / "pinyol_headless"
+    if scripts and headless.exists():
+        with tempfile.TemporaryDirectory() as saves:
+            r = subprocess.run([str(headless), "--game", str(game), "--saves", saves, "--fresh", "--script", str(scripts[0]), "--check-text"],
+                               capture_output=True, text=True, timeout=300)
+        said = [ln.strip() for ln in r.stderr.splitlines() if "check-text" in ln or "the screen's edge" in ln or "its box" in ln]
+        out.append(("text", "FAIL" if r.returncode == 5 else "OK", "; ".join(said[:2]) if r.returncode == 5 else "no text cut or outside its box"))
     art = game / "art"
     if art.is_dir() and any(art.glob("*.json")):
         try:
