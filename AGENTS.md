@@ -61,6 +61,12 @@ turns it into a PNG you can open. Look at it: a game that passes but draws nothi
 screen with text (title, messages, game over, the end) and look at each text: inside its box with a margin, never
 over the box's border or past the screen's edge, readable on what is under it.
 
+## Playtest it when it is finished
+
+`uv run tools/playtest.py games/<id>` plays it with 50 perfect and 50 imperfect bots (human-like and monkeys) and writes a report of
+crashes, softlocks, flashing, where players die and how hard it is (docs/playtest.md). Give the game a `tests/playtest.lua` adapter
+(progress, end, `where`, a perfect player) so the numbers mean something; the bots run in the background, a few at a time.
+
 ## Art and sound
 
 - The look: a game is made to look like a console (Game Boy, ZX Spectrum, PICO-8, a pocket LCD game, a vector
