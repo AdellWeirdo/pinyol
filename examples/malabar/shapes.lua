@@ -38,7 +38,7 @@ local DIGIT = {[0] = "abcdef", "bc", "abdeg", "abcdg", "bcfg", "acdfg", "acdefg"
 local function digit(x, y, n, c) -- seven segments; n nil: all of them (the ghost)
   for s in (n and DIGIT[n] or "abcdefg"):gmatch(".") do local r = SEG[s] rect(x + r[1], y + r[2], r[3], r[4], c) end
 end
-local DX, DY = 166, 46 -- where the four digits go
+local DX, DY = 58, 46 -- where the four digits go
 local function digits(str, c) for i = 1, 4 do digit(DX + (i - 1) * 26, DY, tonumber(str:sub(i, i)), c) end end
 local function colon(c) rect(DX + 52 + 2, DY + 8, 6, 6, c) rect(DX + 52 + 2, DY + 24, 6, 6, c) end
 

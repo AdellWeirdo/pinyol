@@ -11,6 +11,7 @@ local PAGES = {"layers", "banks", "sprites", "lines"}
 local page, sub, t = 1, 1, 0
 local play
 local MASKS
+local BODY_H = {}
 
 function Ex.enter(p)
   play = p
@@ -63,7 +64,7 @@ function Ex.draw()
       S.draw("HERO", "idle_" .. ((t // 10) % 6), 30 + (i - 1) * 46, 60, {bank = b})
     end
   end
-  panel(8, 8, 464, 128)
+  panel(8, 8, 464, 36 + (BODY_H[pg] or 112) + 10) -- as tall as its text was last frame: the long pages used to run out of it
   text(lang.tr("ex_" .. pg .. "_title"), 240, 16, {font = "gba_body", align = "center", color = 0x8a3a08})
   local info = {}
   if pg == "layers" then
@@ -72,7 +73,8 @@ function Ex.draw()
   elseif pg == "sprites" then
     info = {n = S.n, max = 128, line = worst_line(), budget = 1210}
   end
-  text(lang.tr("ex_" .. pg .. "_text", info), 240, 44, {font = "gba_body", align = "center", color = 0x3a1c08, width = 440})
+  local _, h = text(lang.tr("ex_" .. pg .. "_text", info), 240, 44, {font = "gba_body", align = "center", color = 0x3a1c08, width = 440})
+  BODY_H[pg] = h
   text(lang.tr("ex_help"), 240, 300, {font = "gba_small", align = "center", color = 0xFFFFFF, outline = 0x301808})
 end
 

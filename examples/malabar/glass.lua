@@ -42,7 +42,7 @@ local function printed() -- the picture printed behind the glass: the circus
     local x = GX + 56 + i * 56
     poly({x, GY + 100, x + 8, GY + 116, x - 8, GY + 116}, i % 2 == 0 and 0xE8C040 or 0x7AA0B0)
   end
-  rect(158, 42, 124, 44, 0xD2D6BE) -- (a pale plate behind the digits so they read)
+  rect(50, 42, 124, 44, 0xD2D6BE) -- (a pale plate behind the digits so they read)
 end
 
 function G.paint() -- the printed picture and every figure as a ghost, once
