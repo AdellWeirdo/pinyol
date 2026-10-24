@@ -1,0 +1,31 @@
+{
+  "asset": "SPR_TRACTOR_C5",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 160,
+  "w": 384,
+  "h": 288,
+  "frames": 4,
+  "frame_ms": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "order": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "anchor": [
+    192,
+    248
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 91636,
+    "as_rgb565": 884736
+  }
+}

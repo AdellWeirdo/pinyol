@@ -151,7 +151,7 @@ ENEMIES = {
     "grandma": {
         "ref": ("A tied-up old grandmother from the market (headscarf, apron, cardigan, a shopping trolley beside her), sitting bound with ropes and muffled by a mechanical gull's beak-clamp over her mouth, "
                 "furious eyes. Full body, side view facing LEFT, about 90 pixels tall in the game. " + STYLE + " " + FLAT),
-        "frame": (128, 120), "anchor": (64, 116), "height": 90, "faces": "left",
+        "frame": (192, 168), "anchor": (96, 140), "height": 90, "faces": "left",
         "sheets": [
             ("tied", 5, "five frames of being TIED UP: wriggling in the ropes, muffled shouts, a furious glare (a loop)", ["tied_0", "tied_1", "tied_2", "tied_3", "tied_4"], 0),
             ("free", 6, "three frames of the ropes BURSTING and jumping to her feet, then three frames handing over a wooden crate with a big smile and patting a cheek", ["free_0", "free_1", "free_2", "give_0", "give_1", "give_2"], 0),
@@ -241,7 +241,7 @@ TRACTOR = {
     "ref": ("A small red-and-cream fishing-village farm tractor, big rear wheels and small front wheels, an exhaust pipe puffing, armoured with plates made from fish boxes (stencilled PESCADOS Y VERDURAS PACO) "
             "and a burnt paella pan welded on the front as a shield, a long sardine-tin-and-drainpipe cannon on top and a small vulcan gun beside it, a brass bell and a bulb horn, with an empty driver's seat "
             "(the seat back visible, no driver). Side view facing RIGHT, about 150 pixels wide in the game. " + STYLE + " " + FLAT),
-    "frame": (224, 144), "anchor": (112, 140), "height": 100, "faces": "right",
+    "frame": (384, 288), "anchor": (192, 248), "height": 128, "faces": "right",
     "sheets": [
         ("a", 6, "three frames IDLE (engine shaking, exhaust puff) and three frames of the DRIVE cycle (wheels turning, body bouncing)", ["idle_0", "idle_1", "idle_2", "drive_0", "drive_1", "drive_2"], 0),
         ("b", 6, "three more frames of the DRIVE cycle and three frames of a HOP on the suspension (squash, rise, fall)", ["drive_3", "drive_4", "drive_5", "jump_0", "jump_1", "jump_2"], 0),

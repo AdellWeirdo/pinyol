@@ -154,7 +154,7 @@ function AI.soldier(f, chef)
     if math.abs(d) > f.stop then f.x = f.x + f.dir * 1.4 end
     f.cool = f.cool - 1
     if math.abs(d) < 56 and chef.state == "play" then f.state, f.st = "peck", 0
-    elseif f.cool <= 0 and math.abs(d) < 400 then f.state, f.st, f.cool = "shoot", 0, 90 + math.random(80) end
+    elseif f.cool <= 0 and math.abs(d) < 400 and f.x > (Foes.cam or 0) - 10 and f.x < (Foes.cam or 0) + C.W + 10 then f.state, f.st, f.cool = "shoot", 0, 90 + math.random(80) end
   elseif f.state == "shoot" then
     f.st = f.st + 1
     if f.st == 12 then
@@ -173,10 +173,10 @@ function AI.bazooka(f, chef)
   face(f, chef)
   f.st = f.st + 1
   if f.state == "aim" then
-    if f.st > 36 then f.state, f.st = "fire", 0 end
+    if f.st > 52 then f.state, f.st = "fire", 0 end -- a longer wind-up: the first bazooka was half of all the deaths
   elseif f.state == "fire" then
     if f.st == 8 then
-      Shots.hostile("rocket", f.x + f.dir * 44, f.y - 40, f.dir * 5, 0)
+      Shots.hostile("rocket", f.x + f.dir * 44, f.y - 40, f.dir * 4.2, 0)
       Sound.play("rocket", 0.5)
     end
     if f.st > 28 then f.state, f.st = "reload", 0 end
@@ -281,6 +281,7 @@ local function frame_of(f)
 end
 
 function Foes.update(chef, cam)
+  Foes.cam = cam
   for i = #Foes.list, 1, -1 do
     local f = Foes.list[i]
     f.t = f.t + 1

@@ -165,7 +165,7 @@ end
 -- everything of the world, in painting order. Positions are world pixels minus the camera (the shake moves the camera a few pixels)
 function Play.draw_world()
   local ox, oy = Hook.offset()
-  local cam = math.floor(Play.cam) - math.floor(ox)
+  local cam = math.max(0, math.floor(Play.cam) - math.floor(ox)) -- the shake at camera 0 must not go negative (street() indexes the zone by it)
   S.count = 0
   camera(0, math.floor(oy))
   far_layer(Play.far, cam)

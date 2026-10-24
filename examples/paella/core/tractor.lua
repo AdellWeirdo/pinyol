@@ -23,7 +23,7 @@ function T.park(x)
   t.damage = function(n) T.damage(t, n) end
   t.seat_pos = function(cam)
     local sh = S.sheets.tractor
-    local seat = (sh.seat_frames and t.frame and sh.seat_frames[t.frame]) or sh.seat or {90, 70}
+    local seat = (sh.seat_frames and t.frame and sh.seat_frames[t.frame]) or sh.seat or {sh.ax - 13, sh.ay - 74}
     local px = seat[1] - sh.ax
     if t.dir < 0 then px = -px end
     return {t.x - cam + px, t.y + (seat[2] - sh.ay)}
@@ -82,7 +82,7 @@ function T.eject(t)
 end
 
 -- where the cannon and the vulcan shoot from, in pixels from the tractor's anchor, facing right (the sheet's json may give its own)
-local MUZ = {cannon = {112, -78}, cannon_up = {84, -128}, vulcan = {92, -74}}
+local MUZ = {cannon = {68, -92}, cannon_up = {58, -194}, vulcan = {51, -82}}  -- from the anchor (the middle of the tractor, on the ground), measured on the painted frames
 local function muzzle(t, kind)
   local sh = S.sheets.tractor
   local fr = t.frame or "idle_0"

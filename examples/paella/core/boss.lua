@@ -27,7 +27,7 @@ function B.enter(cam)
   B.y = C.FLOOR + 8 -- the frame's anchor row is the soles (the arena's sand is a little deep)
   B.t, B.st, B.state, B.plan_i = 0, 0, "intro", 0
   B.pot_open, B.head_open = false, false
-  B.hurt_t, B.flash = 0, 0
+  B.hurt_t, B.flash, B.flash_cd = 0, 0, 0
   B.wing, B.legs = "rest", "stand"
   B.charge = 0
   Music.play("jefe", 100)
@@ -78,7 +78,7 @@ function B.damage(d)
   if B.state == "dying" then return end
   B.hp = B.hp - d
   B.hurt_t = 6
-  B.flash = 3
+  if B.flash_cd <= 0 and not settings().reduce_flashing then B.flash, B.flash_cd = 3, 20 end -- one white blink at most 3 times a second (rapid fire made the whole boss strobe)
   Sound.play("hit", 0.35)
   if B.hp <= 0 then
     B.state, B.st = "dying", 0
@@ -99,6 +99,7 @@ function B.update(chef, cam)
   B.t, B.st = B.t + 1, B.st + 1
   if B.hurt_t > 0 then B.hurt_t = B.hurt_t - 1 end
   if B.flash > 0 then B.flash = B.flash - 1 end
+  if B.flash_cd > 0 then B.flash_cd = B.flash_cd - 1 end
   local fast = B.hp < 55
   if B.state == "intro" then
     B.x = B.x + (B.target_x - B.x) * 0.03
@@ -126,9 +127,9 @@ function B.update(chef, cam)
     end
     if B.st > 110 then B.legs = "stand" next_plan() end
   elseif B.state == "beam" then
-    B.head_open = B.st > 20 and B.st < 150
+    B.head_open = B.st > 20 and B.st < 170
     B.charge = B.st
-    if B.st == 90 or (fast and B.st == 110) then
+    if B.st == 110 or (fast and B.st == 130) then -- the beak charges 20 ticks longer than before: three beams that killed on the first try
       local mx, my = world(LOCAL.beak[1], LOCAL.beak[2]) -- the beak's muzzle
       for k = -1, 1 do
         local tx = chef.x + k * 90
@@ -138,7 +139,7 @@ function B.update(chef, cam)
       end
       Sound.play("beam", 0.7)
     end
-    if B.st > 160 then B.head_open = false next_plan() end
+    if B.st > 180 then B.head_open = false next_plan() end
   elseif B.state == "pot" then
     B.pot_open = B.st > 30 and B.st < 330
     if B.st == 30 then Sound.play("stomp", 0.5) end
@@ -154,7 +155,7 @@ function B.update(chef, cam)
   if B.state ~= "dying" and chef.state == "play" then
     -- the legs hurt a chef who stands under them
     if math.abs(chef.x - (B.x - 110)) < 70 and B.state == "stomp" and B.st >= 55 and B.st < 66 and chef.y > C.FLOOR - 20 then Hook.shake(2) chef.hurt() end
-    if chef.x > B.x - 60 and chef.vehicle == nil then chef.hurt() end
+    if chef.x > B.x - 60 and chef.vehicle == nil and B.state ~= "intro" then chef.hurt() end
   end
 end
 
@@ -183,7 +184,7 @@ end
 function B.draw(cam)
   if not B.active then return end
   S.draw("boss", pick(), B.x - cam, B.y, {tint = B.flash > 0 and 0xFFFFFF or nil})
-  if B.state == "beam" and B.head_open and B.st < 90 then
+  if B.state == "beam" and B.head_open and B.st < 110 then
     local mx, my = world(LOCAL.beak[1], LOCAL.beak[2])
     S.draw("boss_fx", "charge_" .. (B.t // 4) % 6, mx - cam, my, {})
   end
