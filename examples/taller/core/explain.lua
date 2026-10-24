@@ -12,6 +12,7 @@ Ex.active = false
 local PAGES = {"palette", "depth", "parts", "sprites"}
 local page, t = 1, 0
 local play
+local BODY_H = {} -- each page's text height, learnt when drawn: the panel is as tall as its text
 
 function Ex.enter(p)
   play = p
@@ -38,9 +39,10 @@ function Ex.draw()
   local count = S.count
   local id = play.hero.id
   shade(0, 0, 480, 320)
-  Hud.panel(10, 8, 460, 128)
+  Hud.panel(10, 8, 460, 38 - 8 + (BODY_H[pg] or 100) + 30)
   text(lang.tr("ex_" .. pg .. "_title"), 240, 14, {font = "bold", align = "center", color = 0x8a3a08})
-  text(lang.tr("ex_" .. pg .. "_text", {n = count, max = 380, line = 96, ymin = C.Y_MIN, ymax = C.Y_MAX}), 240, 38, {font = "main", align = "center", width = 440, color = 0x402010})
+  local _, h = text(lang.tr("ex_" .. pg .. "_text", {n = count, max = 380, line = 96, ymin = C.Y_MIN, ymax = C.Y_MAX}), 240, 38, {font = "main", align = "center", width = 396, color = 0x402010})
+  BODY_H[pg] = h
   if pg == "palette" then
     S.draw(id, "select_0", 140, 290, {})
     S.draw(id, "select_0", 340, 290, {alt = true})
@@ -56,10 +58,10 @@ function Ex.draw()
     for i, nm in ipairs(PART_NAMES) do
       S.draw("parts", nm, 70 + (i - 1) * 105, 190, {})
       text(lang.tr("part_" .. PART_KEYS[i]), 70 + (i - 1) * 105, 198, {font = "bold", align = "center", color = 0xFFFFFF, outline = 0x200010})
-      text(lang.tr("partd_" .. PART_KEYS[i]), 70 + (i - 1) * 105, 220, {font = "main", align = "center", width = 100, color = 0xFFFFFF, outline = 0x200010})
+      text(lang.tr("partd_" .. PART_KEYS[i]), 70 + (i - 1) * 105, 216, {font = "main", align = "center", width = 100, color = 0xFFFFFF, outline = 0x200010})
     end
   end
-  text(lang.tr("ex_help"), 240, 300, {font = "main", align = "center", color = 0xFFFFFF, outline = 0x200010})
+  text(lang.tr("ex_help"), 240, 308, {font = "main", align = "center", color = 0xFFFFFF, outline = 0x200010})
 end
 
 return Ex
