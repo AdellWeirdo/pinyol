@@ -50,6 +50,7 @@ icon.save(game / "raw" / "key.png")
         {"id": "SPR_WALK", "src": "raw/walk.png", "split": 4, "frame": [48, 64], "height": 50, "key_bg": True, "ms": 120},
         {"id": "BG_BAR", "src": "raw/bar.png", "size": [480, 320], "depth": {"map": "raw/bar_depth.png", "z_from_bottom": True}},
         {"id": "ICO_KEY", "src": "raw/key.png", "copy": True, "colours": 16},
+        {"id": "SPR_FEET", "src": "raw/walk.png", "split": 4, "frame": [64, 80], "height": 50, "key_bg": True, "fit": "feet"},
     ]}))
 
 
@@ -66,6 +67,14 @@ f0 = built.crop((0, 0, 48, 64))
 box = f0.getchannel("A").point(lambda a: 255 if a >= 128 else 0).getbbox()
 check(box is not None and abs((box[3] - box[1]) - 50) <= 4 and box[3] in (62, 63), f"its body is 50 tall and stands on the foot: {box}")
 check(f0.getpixel((0, 0))[3] == 0, "the white background is gone")
+# the "feet" fit (tools/sprite_kit.py): every frame's soles on the foot row (80 - 1 - 1 = 78 + 1), the middle of the feet on the middle column, inside its cell
+fm = json.loads((game / "assets" / "SPR_FEET.meta.json").read_text())
+check(fm["w"] == 64 and fm["h"] == 80 and fm["frames"] == 4, f"the feet fit: 4 frames of 64x80 ({fm['w']}x{fm['h']})")
+fb = Image.open(game / "art" / ".built" / "SPR_FEET.png").convert("RGBA")
+for i in range(4):
+    a = fb.crop((i * 64, 0, (i + 1) * 64, 80)).getchannel("A").point(lambda v: 255 if v >= 128 else 0)
+    bb = a.getbbox()
+    check(bb is not None and bb[3] == 78 and 0 <= bb[0] and bb[2] <= 64, f"feet fit frame {i}: soles on the anchor row (78), inside the cell: {bb}")
 bgm = json.loads((game / "assets" / "BG_BAR.meta.json").read_text())
 check(bgm["w"] == 480 and bgm["h"] == 320, "the background covers 480x320")
 dl = (game / "bg_bar_depth.lua").read_text()
@@ -73,11 +82,11 @@ check('pic = "BG_BAR_1", x = 100, y = 200, z = 260' in dl, "its counter cut at h
 check(json.loads((game / "assets" / "ICO_KEY.meta.json").read_text())["w"] == 16, "the icon as it is")
 check((out / "sheet.png").exists(), "the sheet to look at")
 r2 = build()
-check(r2.stdout.count("unchanged") == 3 and "built" not in r2.stdout, "a second run builds nothing: " + r2.stdout)
+check(r2.stdout.count("unchanged") == 4 and "built" not in r2.stdout, "a second run builds nothing: " + r2.stdout)
 ImageDraw.Draw(icon).rectangle((6, 6, 9, 9), fill=(200, 40, 40, 255))  # (a change to its pixels)
 icon.save(game / "raw" / "key.png")
 r3 = build()
-check("ICO_KEY" in r3.stdout and r3.stdout.count("unchanged") == 2 and r3.stdout.count(" built") == 1, "a changed source is built again: " + r3.stdout)
+check("ICO_KEY" in r3.stdout and r3.stdout.count("unchanged") == 3 and r3.stdout.count(" built") == 1, "a changed source is built again: " + r3.stdout)
 (game / "art.json").write_text(json.dumps({"pictures": [{"id": "X", "src": "raw/key.png", "colour": 3}]}))
 check(build().returncode != 0, "an unknown key is refused (a typo is not silently ignored)")
 

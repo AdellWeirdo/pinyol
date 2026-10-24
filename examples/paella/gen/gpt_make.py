@@ -23,8 +23,8 @@ import gpt_jobs as J  # noqa: E402
 
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
-from sprite_kit import (ALPHA_MIN, alternate, cut_columns, drop_border_bits, fit_sheet, key_background, quantized, sheet_scale, solid, split_frames)  # noqa: E402,F401
-RAW = Path(os.environ.get("PAELLA_RAW", "/private/tmp/claude-501/-Users-pauavila-Desktop-DEV-pinyol/0c2c8ddb-2909-4ab2-9a6a-d16056eabb26/scratchpad/paella/gpt"))
+from sprite_kit import (build_character, write_strip, ALPHA_MIN, alternate, cut_columns, drop_border_bits, fit_sheet, key_background, quantized, sheet_scale, solid, split_frames)  # noqa: E402,F401
+RAW = Path(os.environ['PAELLA_RAW']) if os.environ.get('PAELLA_RAW') else HERE.parent / "raw"  # the raw pictures live in the game (raw/, ignored by git), made by gen/gpt_run.py
 ART = HERE.parent / "art"
 FIT = ROOT / "tools" / "fit_sprite.py"
 ALPHA_MIN = 16
@@ -71,40 +71,20 @@ def make_chef(chef: str, colours: int = 160) -> None:
 
 
 def make_enemy(eid: str, spec: dict, colours: int = 160) -> None:
-    """A character of the enemy kind (a canonical picture and sheets fitted like the chefs'): art/<id>.png + json."""
-    ref = RAW / f"{eid}_ref.png"
-    w, h = spec["frame"]
-    ax, ay = spec["anchor"]
-    names, frames = [], []
-    with tempfile.TemporaryDirectory() as t:
-        t = Path(t)
-        still = t / "still.png"
-        im = key_background(Image.open(ref).convert("RGBA"))
-        a = im.getchannel("A").point(lambda v: 255 if v >= ALPHA_MIN else 0)
-        im = im.crop(a.getbbox())
-        k = spec["height"] / im.height
-        im = im.resize((max(1, round(im.width * k)), spec["height"]), Image.LANCZOS)
-        fr = Image.new("RGBA", (w, h))
-        fr.alpha_composite(im, (ax - im.width // 2, ay - spec["height"]))
-        fr.save(still)
-        # the raw sheets are NOT drawn at one scale (the model fits the character to each sheet: 30% bigger in a sheet of four poses than of six), so every sheet has its own, set by
-        # an upright frame of it (its `kf`); a sheet with none (a jump, a fall) takes the size the model gives a body in a sheet of this height
-        for sheet in spec["sheets"]:
-            name, n, _, fnames, kf = sheet
-            raw = RAW / f"{eid}_{name}.png"
-            if not raw.exists():
-                print(f"  {eid}: {name} missing")
-                continue
-            for fname, fr in zip(fnames, fit_sheet(key_background(Image.open(raw)), n, spec["frame"], spec["anchor"], kf, spec["height"], flying=spec.get("flying", False))):
-                names.append(fname)
-                frames.append(fr)
-    strip = Image.new("RGBA", (w * len(frames), h))
-    for i, f in enumerate(frames):
-        strip.alpha_composite(solid(f.resize((w, h)) if f.size != (w, h) else f), (i * w, 0))
-    ART.mkdir(exist_ok=True)
-    quantized(strip, colours).save(ART / f"{eid}.png")
-    (ART / f"{eid}.json").write_text(json.dumps({"w": w, "h": h, "anchor": [ax, ay], "faces": spec["faces"], "frames": names}))
-    print(f"  {eid}: {len(frames)} frames")
+    """A character from its raw sheets (tools/sprite_kit.py: every sheet by its own upright frame, soles on the ground row, feet centred, never cut): art/<id>.png + .json, with the
+    raw sheet of every frame in the json (sprite_check --regen asks for those again) and, for a hero, the second colours."""
+    sheets = []
+    for name, n, _, fnames, kf in spec["sheets"]:
+        raw = RAW / f"{eid}_{name}.png"
+        if not raw.exists():
+            print(f"  {eid}: {name} missing")
+            continue
+        sheets.append((Image.open(raw), n, fnames, kf, raw.name))
+    if not sheets:
+        sys.exit(f"{eid}: no raw sheets in {RAW} (python3 gen/gpt_run.py --plan says what to ask)")
+    strip, meta = build_character(sheets, spec["height"], tuple(spec["frame"]), tuple(spec["anchor"]), colours, spec["faces"], spec.get("flying", False))
+    write_strip(ART, eid, strip, meta, alt=False)
+    print(f"  {eid}: {len(meta['frames'])} frames")
 
 
 # per group: the biggest object of a sheet is scaled to this many px, and objects stand on the bottom (True) or are centred (False)

@@ -199,17 +199,28 @@ def blobs(keyed: Image.Image, n: int):
     return a, pieces
 
 
+def pick_upright(pieces: list[dict]) -> int:
+    """The frame to scale a sheet by, found: among the frames whose body is about as tall as the sheet's median (a crouch, a tuck or a stretch is not), the one whose body is most
+    over its feet (a punch, a lean or raised arms pull the body's middle away from them). Used when a sheet's `kf` is "auto"."""
+    hs = [p["mbottom"] - p["mtop"] for p in pieces]
+    med = float(np.median(hs))
+    ok = [i for i, h in enumerate(hs) if abs(h - med) <= 0.15 * med] or list(range(len(hs)))
+    return min(ok, key=lambda i: abs(pieces[i]["mcx"] - pieces[i]["fcx"]))
+
+
 def sheet_scale(keyed: Image.Image, n: int, kf: int, height: int) -> float:
     """The scale that makes the body of frame `kf` (an UPRIGHT one) `height` pixels tall."""
     _, pieces = blobs(keyed.convert("RGBA"), n)
     return height / max(1, pieces[kf]["mbottom"] - pieces[kf]["mtop"])
 
 
-def fit_sheet(keyed: Image.Image, n: int, frame: tuple[int, int], anchor: tuple[int, int], kf: int | None, height: int, const_frac: float = 0.70, flying: bool = False) -> list[Image.Image]:
+def fit_sheet(keyed: Image.Image, n: int, frame: tuple[int, int], anchor: tuple[int, int], kf: int | str | None, height: int, const_frac: float = 0.70, flying: bool = False) -> list[Image.Image]:
     """The n frames of one sheet as frames of the game: scaled by the sheet's own factor (frame `kf`'s body = `height`; else the model's usual `const_frac` of the sheet's height),
     the middle of the feet on the anchor's column and the soles of the body on the anchor's row (a `flying` one: the middle of its body on both). A frame that would leave its cell is moved back inside, never cut."""
     keyed = keyed.convert("RGBA")
     a, pieces = blobs(keyed, n)
+    if kf == "auto":
+        kf = pick_upright(pieces)
     scale = height / max(1, pieces[kf]["mbottom"] - pieces[kf]["mtop"]) if kf is not None and 0 <= kf < len(pieces) else height / (const_frac * keyed.height)
     out, (w, h) = [], frame
     for p in pieces:
@@ -243,22 +254,28 @@ def auto_cell(frames: list[Image.Image], anchor: tuple[int, int], margin: int = 
 
 
 def build_character(sheets: list[tuple[Image.Image, int, list[str], int | None]], height: int, frame: tuple[int, int] | None = None, anchor: tuple[int, int] | None = None,
-                    colours: int = 15, faces: str = "right") -> tuple[Image.Image, dict]:
-    """A whole character from its raw sheets [(image, frames in it, their names, upright frame or None)]: every sheet fitted (see fit_sheet), the frames in one row and one
+                    colours: int = 15, faces: str = "right", flying: bool = False) -> tuple[Image.Image, dict]:
+    """A whole character from its raw sheets [(image, frames in it, their names, upright frame, "auto" or None [, the raw sheet's name])]: every sheet fitted (see fit_sheet), the frames in one row and one
     palette of `colours`. Without `frame`/`anchor` the cell is found (`auto_cell`). Returns (strip, json to write beside it)."""
     big = (int(height * 3.2) // 8 * 8, int(height * 2.6) // 8 * 8)
     big_anchor = (big[0] // 2, int(big[1] * 0.78))
     f0, a0 = (frame, anchor) if frame and anchor else (big, big_anchor)
     names, frames = [], []
-    for im, n, fnames, kf in sheets:
+    origin = {}
+    for im, n, fnames, kf, *rest in sheets:
         names += fnames
-        frames += fit_sheet(key_background(im), n, f0, a0, kf, height)
+        if rest:
+            origin.update({f: rest[0] for f in fnames})
+        frames += fit_sheet(key_background(im), n, f0, a0, kf, height, flying=flying)
     if not (frame and anchor):
         frames, f0, a0 = auto_cell(frames, a0)
     strip = Image.new("RGBA", (f0[0] * len(frames), f0[1]))
     for i, f in enumerate(frames):
         strip.alpha_composite(solid(f), (i * f0[0], 0))
-    return quantized(strip, colours), {"w": f0[0], "h": f0[1], "anchor": list(a0), "faces": faces, "frames": names}
+    meta = {"w": f0[0], "h": f0[1], "anchor": list(a0), "faces": faces, "frames": names}
+    if origin:
+        meta["raw"] = origin  # frame -> the raw sheet it came from: what sprite_check --regen asks the image model for again
+    return quantized(strip, colours), meta
 
 
 def write_strip(art: Path, name: str, strip: Image.Image, meta: dict, alt: bool = False) -> None:

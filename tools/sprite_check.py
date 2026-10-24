@@ -8,6 +8,8 @@ between animations. A strip is art/<name>.png (frames side by side) with art/<na
     uv run tools/sprite_check.py examples/taller/art              # every strip of a folder
     uv run tools/sprite_check.py examples/taller/art/vera.json    # one
     uv run tools/sprite_check.py GAME/art --contact out.png       # also a picture of each strip with its ground line and cell borders
+    uv run tools/sprite_check.py GAME/art --regen                 # which raw sheets made the frames with errors (to ask the image model again: gen/gpt_run.py --redo ...)
+    uv run tools/sprite_check.py GAME/art --fresh                 # art/ newer than the assets built from it (a build forgotten)
 Exit 1 if there is an error. What it checks (the numbers are in the code, in pixels):
 
   clipped   an opaque pixel on the cell's border: the frame was cut (error). Only the body counts, not an effect that grazes the edge by a pixel.
@@ -87,6 +89,25 @@ def audit(json_path: Path) -> tuple[list[str], list[str], dict]:
     return errs, warns, heights
 
 
+def bad_sheets(json_path: Path, errs: list[str]) -> list[str]:
+    """The raw sheets (art/<id>.json's "raw": frame -> file) of the frames that have an error, without repeats."""
+    raw = json.loads(json_path.read_text()).get("raw", {})
+    frames = {e.split(": ")[0].split(".", 1)[1] for e in errs}
+    return sorted({raw[f] for f in frames if f in raw})
+
+
+def stale(art: Path) -> list[str]:
+    """Strips whose picture is newer than the packed assets of the game (assets/SPR_<NAME>*.pk or .rgb565): art that was changed and not built again."""
+    assets = art.parent / "assets"
+    out = []
+    for js in sorted(art.glob("*.json")):
+        png = js.with_suffix(".png")
+        built = [f for f in assets.glob(f"SPR_{js.stem.upper()}*") if f.suffix in (".pk", ".rgb565", ".idx")] if assets.is_dir() else []
+        if png.exists() and (not built or max(f.stat().st_mtime for f in built) < png.stat().st_mtime - 1):
+            out.append(js.stem)
+    return out
+
+
 def contact(json_path: Path, out: Path, cols: int = 10) -> None:
     m = json.loads(json_path.read_text())
     im = Image.open(json_path.with_suffix(".png")).convert("RGBA")
@@ -109,11 +130,20 @@ def main() -> None:
     p.add_argument("path", type=Path, help="a strip's .json or a folder of them")
     p.add_argument("--contact", type=Path, help="write a picture of each strip (out.png: out_<name>.png)")
     p.add_argument("--quiet", action="store_true", help="only errors")
+    p.add_argument("--regen", action="store_true", help="say which raw sheets to ask the image model for again")
+    p.add_argument("--fresh", action="store_true", help="say which art was not built into assets/ again")
     a = p.parse_args()
     files = sorted(a.path.glob("*.json")) if a.path.is_dir() else [a.path]
     bad = 0
+    redo: set[str] = set()
+    if a.fresh:
+        old = stale(a.path if a.path.is_dir() else a.path.parent)
+        for n in old:
+            print("STALE", f"art/{n}.png is newer than its assets: build again (gen/build.py or tools/build_art.py)")
+        bad += len(old)
     for f in files:
         errs, warns, _ = audit(f)
+        redo.update(bad_sheets(f, errs))
         if not (errs or warns):
             continue
         for e in errs:
@@ -124,6 +154,10 @@ def main() -> None:
         bad += len(errs)
         if a.contact:
             contact(f, a.contact.with_name(f"{a.contact.stem}_{f.stem}.png"))
+    if a.regen:
+        print("REDO " + " ".join(sorted(redo)) if redo else "nothing to ask again (or the strips do not say their raw sheets: build them with sprite_kit)")
+        if redo:
+            print("  -> python3 gen/gpt_run.py --redo " + " ".join(sorted(redo)) + "   then gen/gpt_make.py and gen/build.py")
     print(f"{len(files)} strips: {bad} errors")
     sys.exit(1 if bad else 0)
 

@@ -25,7 +25,9 @@ A sprite (frame, or like): the image (or a sheet cut into `split` frames along i
 `height` pixels tall (the largest blob: motion lines and sparks do not shrink it) and stood on the frame's foot, `feet` pixels
 above it (default 1), centred (`anchor`: "left"/"right" for a punch that reaches out). `like` takes the size, scale and foot from a
 frame you already have instead. A picture with `size` is resized to cover it and cut to it (a background). `copy` packs a PNG as it
-is. `depth` cuts a background's pieces that pass in front of the characters (tools/depthcut.py's map and z). Every picture is
+is. `"fit": "feet"` fits it with tools/sprite_kit.py instead (docs/art.md, "Sprites that fit"): each sheet is scaled by an UPRIGHT frame of it
+(`scale_frame`, 0 by default; -1: none, for a jump or a fall), every frame stands with the soles of its body on the frame's foot row and the middle of its feet on the middle
+column (an arm that reaches out does not drag it), nothing is cut (a frame is moved inside its cell), and `flying` centres the body on the anchor instead. `depth` cuts a background's pieces that pass in front of the characters (tools/depthcut.py's map and z). Every picture is
 packed (a palette of `colours`, only the opaque runs, as png2asset --packed): `art/.built/<ID>.png` keeps what was packed, to look at.
 """
 from __future__ import annotations
@@ -41,11 +43,12 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import depthcut  # noqa: E402
 from fit_sprite import fit  # noqa: E402
+import sprite_kit  # noqa: E402
 from png2asset import export_packed  # noqa: E402
 
 TOOLS = Path(__file__).resolve().parent
 KNOWN = {"id", "src", "split", "frame", "height", "feet", "like", "key_bg", "keep_main", "anchor", "scale_frame", "ms", "colours",
-         "type", "size", "copy", "depth", "anchor_point"}
+         "type", "size", "copy", "depth", "anchor_point", "fit", "flying", "cell"}
 
 
 def ref_frame(w: int, h: int, height: int, feet: int) -> Image.Image:
@@ -63,7 +66,7 @@ def digest(game: Path, e: dict) -> str:
             h.update((game / e[key]).read_bytes())
     if e.get("depth", {}).get("map"):
         h.update((game / e["depth"]["map"]).read_bytes())
-    for tool in ("build_art.py", "fit_sprite.py", "png2asset.py", "depthcut.py"):
+    for tool in ("build_art.py", "fit_sprite.py", "sprite_kit.py", "png2asset.py", "depthcut.py"):
         h.update((TOOLS / tool).read_bytes())
     return h.hexdigest()
 
@@ -84,6 +87,14 @@ def frames_of(game: Path, e: dict) -> list[Image.Image]:
         im = im.resize((max(w, round(im.width * k)), max(h, round(im.height * k))), Image.LANCZOS)
         x, y = (im.width - w) // 2, (im.height - h) // 2
         return [im.crop((x, y, x + w, y + h))]
+    if e.get("fit") == "feet":  # tools/sprite_kit.py: the sheet's own scale from an upright frame, soles on the ground row, feet centred, never cut
+        if not (e.get("frame") and e.get("height")):
+            raise ValueError('"fit": "feet" needs frame and height')
+        w, h = int(e["frame"][0]), int(e["frame"][1])
+        keyed = sprite_kit.key_background(src) if e.get("key_bg") else src.convert("RGBA")
+        kf = int(e.get("scale_frame", 0))
+        return sprite_kit.fit_sheet(keyed, int(e.get("split", 1)), (w, h), (w // 2, h - 1 - int(e.get("feet", 1))), None if kf < 0 else kf, int(e["height"]),
+                                    flying=bool(e.get("flying")))
     if e.get("like"):
         ref = Image.open(game / e["like"])
     elif e.get("frame") and e.get("height"):

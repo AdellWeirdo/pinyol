@@ -53,7 +53,18 @@ together in a game (every rule below was a mistake made once, in Paella or Talle
 uv run tools/sprite_check.py games/mygame/art --contact /tmp/art.png     # errors: clipped frames and soles off the ground; warnings: sizes and sliding feet
 ```
 
-`look_check` runs it too (as a warning). A game's art script calls `sprite_kit.build_character(sheets, height)` (the cell is found) and `fit_objects(...)`: see `examples/taller/gen/gpt_make.py`.
+`look_check` runs it too (as a warning). `--regen` names the raw sheets behind the frames with errors, `--fresh` the art that was changed and not built again.
+
+**Generating without losing or wasting a call** (`tools/sheet_jobs.py`, used by `gen/gpt_run.py` of Paella and Taller): the raw pictures live in the game's `raw/` (made and ignored by git: the art can be
+fitted again when the rules change, without asking the model again); nothing that exists is asked twice; a sheet whose reference picture is missing is reported, not asked (it would come out with the
+face drifted); `--plan` says what would be asked (a call is about 1% of a ChatGPT five-hour window); `--only vera` asks just those, `--redo vera_air.png` asks one again and keeps the old one in `raw/old/`.
+Every sheet's prompt ends with the same sentence (`sheet()`): only the character, always the same size, no smoke, dust, motion lines or sparks round it; effects are separate pictures, made on purpose.
+A sheet's upright frame can be left to the tool: `kf = "auto"` takes the frame whose body is about the median height and most over its feet.
+
+**Measuring on the console along a route**: `uv run tools/board_perf.py games/mygame --tour` plays the game's `tour.lua` (`return {{12, 'dbg_play("vera") dbg_bot()'}, {20, "dbg_boss()"}}`: seconds in the
+step, the Lua that starts it; the game's own `dbg_*` hooks) with the sound off and prints a line of figures per step.
+
+`tools/build_art.py` has the same fitting for a game that lists its pictures in `art.json`: `"fit": "feet"` (with `scale_frame` the upright frame, -1 for none, and `flying` for what flies). A game's art script calls `sprite_kit.build_character(sheets, height)` (the cell is found) and `fit_objects(...)`: see `examples/taller/gen/gpt_make.py`.
 
 ## 0. Choose a look
 

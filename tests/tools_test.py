@@ -1,6 +1,7 @@
 """The importers and checkers in tools/, on files made here: an .aseprite written by hand (two frames, a tag, a slice),
 an LDtk simplified export, and a strings.csv against the device test game's fonts. Usage: tools_test.py BUILD_DIR"""
 import json
+import time
 import struct
 import subprocess
 import sys
@@ -317,3 +318,60 @@ cut.save(out / "kit_art/bad.png")
 errs, _, _ = sprite_check.audit(out / "kit_art/bad.json")
 assert any("clipped" in e for e in errs), errs
 print("sprite_kit: ok")
+
+# sheet_jobs: nothing asked twice, a missing reference reported, a reference made first, raw/ ignored by git, --redo keeps the old one
+import sheet_jobs as SJ  # noqa: E402
+
+gj = out / "jobgame"
+gj.mkdir()
+raw = SJ.raw_dir(gj)
+assert raw == gj / "raw" and "raw/" in (gj / ".gitignore").read_text().splitlines()
+SJ.raw_dir(gj)
+assert (gj / ".gitignore").read_text().count("raw/") == 1
+(raw / "style.png").write_bytes(b"0" * 20000)
+(raw / "have.png").write_bytes(b"0" * 20000)
+jobs_ = [SJ.Job("a ref", raw / "hero_ref.png", raw / "style.png"), SJ.Job("a sheet", raw / "hero_idle.png", raw / "hero_ref.png"),
+         SJ.Job("orphan", raw / "x_idle.png", raw / "x_ref.png"), SJ.Job("kept", raw / "have.png", raw / "style.png")]
+todo, blocked = SJ.plan(jobs_)
+assert [j.out.name for j in todo] == ["hero_ref.png", "hero_idle.png"] and [j.out.name for j in blocked] == ["x_idle.png"], (todo, blocked)
+assert SJ.sheet("six frames.").endswith("sparks or stars around it.") and "ONLY the character" in SJ.sheet("x")
+asked = []
+SJ.BRIDGE = Path("/bin/true")  # (no image model in a test)
+SJ.ask = lambda job, tries=2: (asked.append(job.out.name), job.out.write_bytes(b"1" * 20000), True)[2]
+assert SJ.run(jobs_, 2) == 0 and asked[0] == "hero_ref.png" and sorted(asked) == ["hero_idle.png", "hero_ref.png"], asked  # the reference first; the orphan skipped; the existing one kept
+try:
+    SJ.main(jobs_, 2, ["--redo", "hero_idle.png"])
+except SystemExit as e:
+    assert e.code == 0
+assert (raw / "old").is_dir() and len(list((raw / "old").iterdir())) == 1 and asked.count("hero_idle.png") == 2
+print("sheet_jobs: ok")
+
+# sprite_check --regen / --fresh: the raw sheets of the frames with errors, and art newer than its assets
+import os as _os  # noqa: E402
+bad_json = out / "kit_art/bad.json"
+meta_bad = json.loads(bad_json.read_text())
+meta_bad["raw"] = {"idle_0": "hero_idle.png", "idle_1": "hero_walk.png"}
+bad_json.write_text(json.dumps(meta_bad))
+errs, _, _ = sprite_check.audit(bad_json)
+assert sprite_check.bad_sheets(bad_json, errs) == ["hero_idle.png"], (errs, sprite_check.bad_sheets(bad_json, errs))
+fresh = out / "freshgame"
+(fresh / "art").mkdir(parents=True)
+(fresh / "assets").mkdir()
+Image.new("RGBA", (10, 10)).save(fresh / "art/hero.png")
+(fresh / "art/hero.json").write_text(json.dumps({"w": 10, "h": 10, "anchor": [5, 9], "frames": ["idle_0"]}))
+assert sprite_check.stale(fresh / "art") == ["hero"]                       # nothing built yet
+(fresh / "assets/SPR_HERO.pk").write_bytes(b"x")
+assert sprite_check.stale(fresh / "art") == []
+_os.utime(fresh / "art/hero.png", (time.time() + 100, time.time() + 100))   # the art changed afterwards
+assert sprite_check.stale(fresh / "art") == ["hero"]
+print("sprite_check regen/fresh: ok")
+
+# board_perf --tour: the steps of a tour file, and the log cut by step
+import board_perf  # noqa: E402
+
+(out / "tour.lua").write_text('return {{10, \'dbg_play("a", 1) dbg_god()\'}, {8.5, "dbg_boss()"}}')
+assert board_perf.eval_steps(out / "tour.lua") == [(10.0, 'dbg_play("a", 1) dbg_god()'), (8.5, "dbg_boss()")]
+log = ("lua: TOUR 1 dbg_play\nperf: tick 0.1 ms, render 16.0 ms, present 0 ms, 59.0 fps | x\nperf: tick 0.1 ms, render 16.0 ms, present 0 ms, 41.0 fps | x\n"
+       "lua: TOUR 2 dbg_boss()\nperf: tick 0.1 ms, render 16.0 ms, present 0 ms, 50.0 fps | x\n")
+assert board_perf.by_step(log) == [("1 dbg_play", [59.0, 41.0]), ("2 dbg_boss()", [50.0])]
+print("board_perf tour: ok")
