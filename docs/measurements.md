@@ -1007,3 +1007,15 @@ So on a game that draws at 480x320 the scanlines cost about a sixth of the frame
 a picture-drawn game (it works on the 240x160 world, and costs 8.5 ms there): use it in games that draw small. The first version of the scanlines walked each pixel's address; stepping one pointer
 along the window took them from about 4 ms to 3.
 
+
+
+## 2026-10-24 · Taller de los Autómatas and Paella's new boss, measured with tools/board_perf.py
+
+Silent copies driven by a bot (the three heroes in stage 1, stages 2 and 3, the boss), 10 s samples, no error or memory message in either log:
+
+| Game | fps (min / mean / max) | `render` mean (worst) | `_update` / `_draw` mean | free internal RAM, PSRAM largest block |
+|---|---|---|---|---|
+| Taller de los Autómatas (100 s tour) | 40.9 / 55.5 / 59.9 | 14.8 ms (16.4) | 2.3 / 3.7 ms | 56 KB, 8 KB |
+| Paella, the boss alone (70 s) | 36.4 / 55.4 / 59.8 | 15.0 ms (21.7) | 3.0 / 10.6 ms | 55 KB, 1536 KB |
+
+The dips are the first draws of a sheet's pieces (Taller's heroes have 43 frames each) and the boss's entrance; Taller's PSRAM runs tight (a largest free block of 8 KB), so a sheet that loads late can still wait. Preloading a hero's sheets behind the select screen would remove them: not done.
