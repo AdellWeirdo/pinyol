@@ -14,7 +14,7 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(pinyol_console)
 
 # Games in the flash (FLASH_GAME, a ;-list of folders), so the console has something to play without a microSD.
-# A game's music and ambience beds stay on the card when its audio is big; saves and art sources never go.
+# A game's music and ambience beds stay on the card when its audio is big; saves, art sources, tests, gen/ and docs/ never go.
 # Re-run `idf.py reconfigure` after changing a game's files.
 #   idf.py -DFLASH_GAME="/abs/games/a;/abs/games/b" build
 set(FLASH_GAME ${CMAKE_SOURCE_DIR}/../examples/hola CACHE STRING "Game folders baked into the flash (a ;-list)")
@@ -32,7 +32,8 @@ foreach(game ${FLASH_GAME})
   get_filename_component(GAME_ID ${game} NAME)
   list(APPEND FLASH_IDS ${GAME_ID})
   file(COPY ${game}/ DESTINATION ${GAME_IMG}/games/${GAME_ID}
-       PATTERN audio EXCLUDE PATTERN saves EXCLUDE PATTERN art EXCLUDE PATTERN art.py EXCLUDE)
+       PATTERN audio EXCLUDE PATTERN saves EXCLUDE PATTERN art EXCLUDE PATTERN art.py EXCLUDE
+       PATTERN tests EXCLUDE PATTERN gen EXCLUDE PATTERN docs EXCLUDE PATTERN raw EXCLUDE)
   if(EXISTS ${game}/audio)
     file(GLOB WAVS ${game}/audio/*.wav)
     set(audio_bytes 0)
