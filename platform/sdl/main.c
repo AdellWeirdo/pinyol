@@ -19,6 +19,7 @@
 #include "record.h"
 #ifndef __EMSCRIPTEN__
 #include "capture.h"
+#include "update.h"
 #endif
 #ifndef __EMSCRIPTEN__
 #include "desktop.h"
@@ -496,7 +497,28 @@ static const char *say(const char *es, const char *ca, const char *en) {
     return lang == 0 ? es : lang == 1 ? ca : en;
 }
 
+#ifdef PINYOL_RELEASE
+/* A newer release was found: said once for each version, in the system's language, with a way to its page */
+static void tell_update(const char *tag) {
+    char msg[300];
+    snprintf(msg, sizeof msg, say("Hay una versión nueva de Cirera: %s.\n\nTrae juegos y mejoras. Para tu consola, copia su firmware.bin a la tarjeta (está en la página).",
+                                  "Hi ha una versió nova de Cirera: %s.\n\nPorta jocs i millores. Per a la teva consola, copia el seu firmware.bin a la targeta (és a la pàgina).",
+                                  "There is a new version of Cirera: %s.\n\nIt brings games and improvements. For your console, copy its firmware.bin to the card (it is on the page)."), tag);
+    SDL_MessageBoxButtonData buttons[2] = {
+        {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, say("Ver la página", "Veure la pàgina", "Open the page")},
+        {SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, say("Ahora no", "Ara no", "Not now")}};
+    SDL_MessageBoxData box = {SDL_MESSAGEBOX_INFORMATION, win, "Cirera", msg, 2, buttons, NULL};
+    int hit = 0;
+    if (SDL_ShowMessageBox(&box, &hit) == 0 && hit == 1) SDL_OpenURL(UPDATE_PAGE);
+    update_told(tag);
+}
+#endif
+
 static void console_frame(void) { /* a frame of the console, and a game's .zip dropped on the window installed */
+#ifdef PINYOL_RELEASE
+    const char *newer = update_found();
+    if (newer) tell_update(newer);
+#endif
     frame();
     if (!dropped[0]) return;
     char name[128], msg[1300];
@@ -602,6 +624,9 @@ int main(int argc, char **argv) {
             return 1;
         }
         console_mode = true, menu = menu_dir;
+#ifdef PINYOL_RELEASE
+        update_start(PINYOL_RELEASE); /* is there a newer release? (platform/sdl/update.h) */
+#endif
     }
     if (console_mode && !menu) menu = "firmware/cirera";
     win = SDL_CreateWindow(console_mode ? "Cirera" : "pinyol", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,

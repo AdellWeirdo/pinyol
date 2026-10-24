@@ -283,6 +283,8 @@ cmake --build build-app --target pinyol_sim             # -> build-app/Cirera (C
 python3 tools/make_app.py build-app/Cirera -o dist/     # -> dist/Cirera-mac.zip (Cirera-linux-*.tar.gz on Linux)
 ```
 
+The app asks GitHub once at start (a thread, `curl`, nothing is sent but the request) whether a release newer than its `VERSION` exists and, if so, tells the player once for that version, with a button to its page (the console itself only changes its firmware by a `firmware.bin` copied to its card). `PINYOL_NO_UPDATE_CHECK=1` turns it off. The release process bumps `VERSION`.
+
 The Windows app is built from a Mac or Linux with MinGW-w64 (`cmake/mingw-w64-x86_64.cmake`).
 [.github/workflows/desktop.yml](.github/workflows/desktop.yml) builds them all with SDL inside, so they need nothing
 installed, and opens each one on its own system before publishing it. The simulator plays the console too:

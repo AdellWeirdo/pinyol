@@ -96,7 +96,7 @@ old_name(pinyol_headless bp_headless)
 
 find_package(SDL2 CONFIG QUIET)
 if(SDL2_FOUND)
-  add_executable(pinyol_sim platform/sdl/main.c platform/sdl/desktop.c platform/sdl/capture.c platform/link_udp.c)
+  add_executable(pinyol_sim platform/sdl/main.c platform/sdl/desktop.c platform/sdl/capture.c platform/sdl/update.c platform/link_udp.c)
   target_compile_options(pinyol_sim PRIVATE -Wall -Wextra ${SAN})
   target_include_directories(pinyol_sim PRIVATE third_party/msf_gif) # the GIF of the last eight seconds (F9)
   set_source_files_properties(platform/sdl/capture.c PROPERTIES COMPILE_OPTIONS "-Wno-missing-field-initializers;-Wno-unused-parameter") # (msf_gif's)
@@ -107,6 +107,12 @@ if(SDL2_FOUND)
   target_link_libraries(capture_test pinyol_core)
 
   target_compile_definitions(pinyol_sim PRIVATE PINYOL_GAME="${GAME_DIR}")
+  file(STRINGS VERSION PINYOL_RELEASE LIMIT_COUNT 1) # the release this source is (VERSION, bumped by the release process): the app tells when GitHub has a newer one
+  target_compile_definitions(pinyol_sim PRIVATE PINYOL_RELEASE="${PINYOL_RELEASE}")
+  add_executable(update_test tests/update_test.c)
+  target_include_directories(update_test PRIVATE platform/sdl)
+  target_compile_options(update_test PRIVATE -Wall -Wextra -Werror)
+  add_test(NAME update COMMAND update_test) # the app's "newer release" comparison
   # the app links SDL statically where SDL was built so (SDL2::SDL2-static): one file, nothing to install beside it
   if(PINYOL_APP AND TARGET SDL2::SDL2-static)
     set(PINYOL_SDL SDL2::SDL2-static)
