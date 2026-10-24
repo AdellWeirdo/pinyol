@@ -2,8 +2,8 @@
   "asset": "SPR_UI",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 160,
+  "bpp": 4,
+  "colours": 15,
   "w": 330,
   "h": 120,
   "frames": 6,
@@ -29,7 +29,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 46356,
+    "total": 31008,
     "as_rgb565": 475200
   }
 }

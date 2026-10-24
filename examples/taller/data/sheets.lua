@@ -613,7 +613,7 @@ return {
       ["ay"] = 0,
       ["n"] = 1,
       ["pieces"] = false,
-      ["per"] = 1,
+      ["per"] = 2,
       ["frames"] = {
         ["logo"] = 0
       }
