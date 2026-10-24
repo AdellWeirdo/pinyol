@@ -77,7 +77,7 @@ CHARS["resorte"] = {
     "frame": (256, 196), "anchor": (128, 156), "height": 112, "faces": "right",
     "sheets": [
         ("move", 6, "six frames: two of an IDLE loop (bouncing on the springs) and a four-frame HOP cycle forward (crouch, launch, in the air, land)", ["idle_0", "idle_1", "hop_0", "hop_1", "hop_2", "hop_3"], 0),
-        ("fight", 5, "three frames of a POUNCE attack (coiling down, leaping with the scissor hands out, landing) and two frames of getting HIT", ["atk_0", "atk_1", "atk_2", "hurt_0", "hurt_1"], 3),
+        ("fight", 5, "three frames of a POUNCE attack (coiling down on its springs, leaping forward with the scissor hands out, landing in a crouch) and two frames of getting HIT (recoiling, standing at its normal height) Draw ONLY the character, every frame at exactly the SAME size and scale as the reference, standing on the same ground line; NO smoke or steam clouds, NO dust, NO motion lines, NO swoosh, NO shock rings, NO sparks around it.", ["atk_0", "atk_1", "atk_2", "hurt_0", "hurt_1"], 3),
         ("die", 6, "six frames of a COMIC DEFEAT, no blood: knocked flat, lying with the springs twitching, then boing, springs flying everywhere in a pop", ["fall_0", "fall_1", "lie_0", "die_0", "die_1", "die_2"], None),
     ],
 }
@@ -87,8 +87,8 @@ CHARS["caldero"] = {
     "frame": (288, 248), "anchor": (144, 204), "height": 150, "faces": "right",
     "sheets": [
         ("move", 6, "six frames: two of an IDLE loop (steam puffing from the chimney, the gauge needle shaking) and a four-frame slow heavy WALK cycle", ["idle_0", "idle_1", "walk_0", "walk_1", "walk_2", "walk_3"], 0),
-        ("fight", 6, "four frames of a SLAM attack (both fists up, slamming down, a burst of steam, recovery) and two frames of getting HIT", ["atk_0", "atk_1", "atk_2", "atk_3", "hurt_0", "hurt_1"], 0),
-        ("die", 6, "six frames of a COMIC DEFEAT, no blood: staggering, the boiler swelling and whistling, a huge steam burst and the machine falling apart into a heap of plates and pipes", ["fall_0", "fall_1", "lie_0", "die_0", "die_1", "die_2"], None),
+        ("fight", 6, "four frames of a SLAM attack (both fists raised high over its head, the fists coming down, both fists planted on the ground with the body bent over them, standing back up) and two frames of getting HIT (recoiling, leaning back) Draw ONLY the character, every frame at exactly the SAME size and scale as the reference, standing on the same ground line; NO smoke or steam clouds, NO dust, NO motion lines, NO swoosh, NO shock rings, NO sparks around it.", ["atk_0", "atk_1", "atk_2", "atk_3", "hurt_0", "hurt_1"], 0),
+        ("die", 6, "six frames of a COMIC DEFEAT, no blood: staggering back, falling backwards, lying flat on its back dazed, then the boiler swelling, bursting apart into a few separate big plates and pipes, ending as a low heap of plates and pipes lying on the ground Draw ONLY the character, every frame at exactly the SAME size and scale as the reference, standing on the same ground line; NO smoke or steam clouds, NO dust, NO motion lines, NO swoosh, NO shock rings, NO sparks around it.", ["fall_0", "fall_1", "lie_0", "die_0", "die_1", "die_2"], None),
     ],
 }
 CHARS["pendulo"] = {
