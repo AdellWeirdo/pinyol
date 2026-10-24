@@ -78,10 +78,10 @@ function SEL.draw()
   end
   label(lang.tr("select_title"), 240, 22, {align = "center", scale = 2, fit = 300, gradient = 0xFF8020})
   local id = X.CHEFS[SEL.sel]
-  Hud.panel(50, 224, 380, 94)
-  text(lang.tr("chef_" .. id .. "_name"), 240, 246, {font = "bold", align = "center", color = 0x402010})
-  text(W.NAMES[id][lang.code] or W.NAMES[id].es, 240, 268, {font = "main", align = "center", color = 0x402010})
-  text(lang.tr("chef_" .. id .. "_trait"), 240, 286, {font = "main", align = "center", color = 0x8a3a08})
+  Hud.panel(40, 206, 400, 108)
+  text(lang.tr("chef_" .. id .. "_name"), 240, 220, {font = "bold", align = "center", color = 0x402010})
+  text(W.NAMES[id][lang.code] or W.NAMES[id].es, 240, 238, {font = "main", align = "center", color = 0x402010})
+  text(lang.tr("chef_" .. id .. "_trait"), 240, 256, {font = "main", align = "center", width = 380, color = 0x8a3a08})
 end
 
 -- ------------------------------------------------------------------ the tally
