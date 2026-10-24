@@ -2,8 +2,8 @@
   "asset": "SPR_GULL_SOLDIER_C0",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 147,
+  "bpp": 4,
+  "colours": 16,
   "w": 144,
   "h": 120,
   "frames": 10,
@@ -37,7 +37,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 59260,
+    "total": 38425,
     "as_rgb565": 345600
   }
 }

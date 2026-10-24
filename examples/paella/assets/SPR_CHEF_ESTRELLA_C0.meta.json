@@ -2,8 +2,8 @@
   "asset": "SPR_CHEF_ESTRELLA_C0",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 150,
+  "bpp": 4,
+  "colours": 16,
   "w": 176,
   "h": 120,
   "frames": 10,
@@ -37,7 +37,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 35066,
+    "total": 25304,
     "as_rgb565": 422400
   }
 }

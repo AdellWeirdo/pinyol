@@ -2,13 +2,12 @@
   "asset": "SPR_GRANDMA_C1",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 160,
+  "bpp": 4,
+  "colours": 16,
   "w": 192,
   "h": 168,
-  "frames": 8,
+  "frames": 7,
   "frame_ms": [
-    0,
     0,
     0,
     0,
@@ -24,8 +23,7 @@
     3,
     4,
     5,
-    6,
-    7
+    6
   ],
   "anchor": [
     96,
@@ -33,7 +31,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 61131,
-    "as_rgb565": 516096
+    "total": 32181,
+    "as_rgb565": 451584
   }
 }

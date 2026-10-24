@@ -2,12 +2,16 @@
   "asset": "SPR_CRAB_TANK_C0",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 157,
+  "bpp": 4,
+  "colours": 16,
   "w": 224,
   "h": 144,
-  "frames": 6,
+  "frames": 10,
   "frame_ms": [
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -21,7 +25,11 @@
     2,
     3,
     4,
-    5
+    5,
+    6,
+    7,
+    8,
+    9
   ],
   "anchor": [
     112,
@@ -29,7 +37,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 73454,
-    "as_rgb565": 387072
+    "total": 75179,
+    "as_rgb565": 645120
   }
 }

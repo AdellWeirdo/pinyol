@@ -2,8 +2,8 @@
   "asset": "SPR_SHOTS_C1",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 126,
+  "bpp": 4,
+  "colours": 15,
   "w": 56,
   "h": 56,
   "frames": 10,
@@ -37,7 +37,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 11860,
+    "total": 8990,
     "as_rgb565": 62720
   }
 }

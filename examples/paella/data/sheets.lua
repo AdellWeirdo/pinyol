@@ -516,7 +516,7 @@ return {
       ["ay"] = 140,
       ["n"] = 18,
       ["pieces"] = true,
-      ["per"] = 6,
+      ["per"] = 10,
       ["frames"] = {
         ["move_0"] = 0,
         ["move_1"] = 1,
@@ -547,7 +547,7 @@ return {
       ["ay"] = 140,
       ["n"] = 17,
       ["pieces"] = true,
-      ["per"] = 9,
+      ["per"] = 10,
       ["frames"] = {
         ["tied_0"] = 0,
         ["tied_1"] = 1,
@@ -725,7 +725,7 @@ return {
       ["ay"] = 248,
       ["n"] = 29,
       ["pieces"] = true,
-      ["per"] = 4,
+      ["per"] = 7,
       ["frames"] = {
         ["idle_0"] = 0,
         ["idle_1"] = 1,

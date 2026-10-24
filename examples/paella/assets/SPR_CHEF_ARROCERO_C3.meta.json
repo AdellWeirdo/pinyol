@@ -2,8 +2,8 @@
   "asset": "SPR_CHEF_ARROCERO_C3",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 158,
+  "bpp": 4,
+  "colours": 16,
   "w": 176,
   "h": 120,
   "frames": 10,
@@ -37,7 +37,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 46240,
+    "total": 31344,
     "as_rgb565": 422400
   }
 }

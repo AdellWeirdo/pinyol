@@ -2,8 +2,8 @@
   "asset": "SPR_GULL_KAMIKAZE_C1",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 160,
+  "bpp": 4,
+  "colours": 16,
   "w": 176,
   "h": 136,
   "frames": 1,
@@ -19,7 +19,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 5126,
+    "total": 3472,
     "as_rgb565": 47872
   }
 }

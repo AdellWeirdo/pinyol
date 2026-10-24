@@ -2,8 +2,8 @@
   "asset": "SPR_CHEF_ESPUMA_C2",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 155,
+  "bpp": 4,
+  "colours": 16,
   "w": 176,
   "h": 120,
   "frames": 10,
@@ -37,7 +37,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 33251,
+    "total": 24168,
     "as_rgb565": 422400
   }
 }

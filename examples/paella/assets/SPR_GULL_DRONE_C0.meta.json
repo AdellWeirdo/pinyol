@@ -2,8 +2,8 @@
   "asset": "SPR_GULL_DRONE_C0",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 160,
+  "bpp": 4,
+  "colours": 16,
   "w": 208,
   "h": 152,
   "frames": 10,
@@ -37,7 +37,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 42538,
+    "total": 30324,
     "as_rgb565": 632320
   }
 }

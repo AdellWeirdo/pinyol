@@ -2,8 +2,8 @@
   "asset": "SPR_GULL_BAZOOKA_C0",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 159,
+  "bpp": 4,
+  "colours": 16,
   "w": 144,
   "h": 120,
   "frames": 10,
@@ -37,7 +37,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 49656,
+    "total": 32617,
     "as_rgb565": 345600
   }
 }

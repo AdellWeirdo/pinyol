@@ -2,8 +2,8 @@
   "asset": "SPR_FISHERMAN_C1",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 156,
+  "bpp": 4,
+  "colours": 16,
   "w": 128,
   "h": 120,
   "frames": 7,
@@ -31,7 +31,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 37933,
+    "total": 23886,
     "as_rgb565": 215040
   }
 }

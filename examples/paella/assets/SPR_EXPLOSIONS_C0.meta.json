@@ -2,8 +2,8 @@
   "asset": "SPR_EXPLOSIONS_C0",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 122,
+  "bpp": 4,
+  "colours": 16,
   "w": 192,
   "h": 192,
   "frames": 10,
@@ -37,7 +37,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 48626,
+    "total": 33476,
     "as_rgb565": 737280
   }
 }

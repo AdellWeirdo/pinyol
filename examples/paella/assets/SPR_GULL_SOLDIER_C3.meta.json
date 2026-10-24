@@ -2,8 +2,8 @@
   "asset": "SPR_GULL_SOLDIER_C3",
   "type": "sprite",
   "format": "packed",
-  "bpp": 8,
-  "colours": 147,
+  "bpp": 4,
+  "colours": 16,
   "w": 144,
   "h": 120,
   "frames": 2,
@@ -21,7 +21,7 @@
   ],
   "tile": null,
   "memory_bytes": {
-    "total": 15405,
+    "total": 9438,
     "as_rgb565": 69120
   }
 }
