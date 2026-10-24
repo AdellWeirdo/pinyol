@@ -7,7 +7,7 @@ local function w(kind, side, delay) return {kind, side, delay or 0} end
 L.END_CAM = 2400
 
 L.STAGES = {
-  {id = "calle", far = "far_calle", near = {"near_calle_a", "near_calle_b", "near_calle_c"}, music = "calle", pillar = "calle",
+  {id = "calle", near = {"near_calle_a", "near_calle_b", "near_calle_c"}, music = "calle", pillar = "calle",
    name = {es = "CALLE DE LOS RELOJEROS", ca = "CARRER DELS RELLOTGERS", en = "CLOCKMAKERS' STREET"},
    events = {
      {at = 0, props = {{"barrel", 380}, {"crate", 520}, {"lamp", 760}}},
@@ -17,7 +17,7 @@ L.STAGES = {
      {at = 1500, lock = true, wave = {w("rodete", "r"), w("resorte", "l", 20), w("rodete", "r", 80), w("resorte", "r", 120)}, props = {{"crate", 1880}, {"pipes", 2020}}},
      {at = 2100, lock = true, wave = {w("caldero", "r"), w("rodete", "l", 150)}},
    }},
-  {id = "fabrica", far = "far_fabrica", near = {"near_fabrica_a", "near_fabrica_b", "near_fabrica_c"}, music = "fabrica", pillar = "fabrica",
+  {id = "fabrica", near = {"near_fabrica_a", "near_fabrica_b", "near_fabrica_c"}, music = "fabrica", pillar = "fabrica",
    name = {es = "LA FÁBRICA", ca = "LA FÀBRICA", en = "THE FACTORY"},
    events = {
      {at = 0, props = {{"pipes", 380}, {"crate", 560}, {"barrel", 740}}},
@@ -27,7 +27,7 @@ L.STAGES = {
      {at = 1500, lock = true, wave = {w("caldero", "l"), w("resorte", "r", 60), w("resorte", "r", 100)}, props = {{"crate", 1900}, {"mailbox", 2040}}},
      {at = 2100, lock = true, wave = {w("rodete", "r"), w("rodete", "l", 20), w("resorte", "r", 70), w("caldero", "r", 120)}},
    }},
-  {id = "torre", far = "far_torre", near = {"near_torre_a", "near_torre_b", "near_torre_c"}, music = "torre", pillar = "torre",
+  {id = "torre", near = {"near_torre_a", "near_torre_b", "near_torre_c"}, music = "torre", pillar = "torre",
    name = {es = "LA TORRE DEL RELOJ", ca = "LA TORRE DEL RELLOTGE", en = "THE CLOCK TOWER"},
    events = {
      {at = 0, props = {{"clocks", 400}, {"lamp", 620}, {"barrel", 800}}},

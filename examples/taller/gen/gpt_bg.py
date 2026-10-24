@@ -1,4 +1,4 @@
-"""The backgrounds of Taller de los Autómatas, made with the image model and fitted: three stages (a far layer and three 960x320 street chunks each), the pillars that stand in front of
+"""The backgrounds of Taller de los Autómatas, made with the image model and fitted: three stages (three 960x320 street chunks each, whole scenes), the pillars that stand in front of
 the seams, the title and the character-select backdrop.
 
     python3 gen/gpt_bg.py gen     # the raw pictures (resumes)
@@ -59,7 +59,6 @@ def gen() -> None:
     for st, (near, far) in STAGES.items():
         for k, v in zip("abc", variants):
             jobs.append((f"{near}. Variant: {v}. {FLOOR} {STYLE}", RAW / f"bg_near_{st}_{k}.png", style, "1920x640"))
-        jobs.append((f"{far}. Wide panoramic strip 8:3 for a distant parallax layer, soft and hazy, low contrast, no floor. {STYLE}", RAW / f"bg_far_{st}.png", style, "1536x576"))
     jobs.append(("Three tall support PILLARS side by side in one row for the foreground of a beat 'em up, front-on, each full height of the picture and about one fifth of its width, with wide gaps: "
                  "1) a cast-iron lamp-post column with brass rings and a gas lantern halfway up, 2) a riveted factory girder column with a pipe and a pressure gauge, 3) a carved wooden clock-tower beam "
                  f"wrapped in a chain with a small brass gear. {STYLE} Plain flat transparent background.", RAW / "bg_pillars.png", style, "1536x1024"))
@@ -82,8 +81,6 @@ def make() -> None:
         for k in "abc":
             im = Image.open(RAW / f"bg_near_{st}_{k}.png").convert("RGB").resize((960, 320), Image.LANCZOS)
             quant(im).save(ART / f"near_{st}_{k}.png")
-        im = Image.open(RAW / f"bg_far_{st}.png").convert("RGB").resize((614, 230), Image.LANCZOS)
-        quant(im).save(ART / f"far_{st}.png")
     for name in ("title", "select"):
         quant(Image.open(RAW / f"bg_{name}.png").convert("RGB").resize((480, 320), Image.LANCZOS)).save(ART / f"{name}.png")
     # the pillars: three tall pictures, each scaled to 320 rows tall and 96 wide at most, on one strip

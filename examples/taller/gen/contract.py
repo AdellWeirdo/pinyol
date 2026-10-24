@@ -25,7 +25,6 @@ SHEETS["pillars"] = (128, 320, (64, 319), STAGES)
 # pictures that are not sprite rows: name: (w, h)
 BACKGROUNDS = {}
 for _z in STAGES:
-    BACKGROUNDS[f"far_{_z}"] = (614, 230)
     for _k in "abc":
         BACKGROUNDS[f"near_{_z}_{_k}"] = (960, 320)
 BACKGROUNDS["title"] = (480, 320)

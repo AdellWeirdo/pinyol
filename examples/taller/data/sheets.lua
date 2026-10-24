@@ -580,28 +580,6 @@ return {
     }
   },
   ["backs"] = {
-    ["far_calle"] = {
-      ["id"] = "BG_FAR_CALLE",
-      ["w"] = 614,
-      ["h"] = 230,
-      ["slices"] = {{
-  ["id"] = "BG_FAR_CALLE_0",
-  ["x"] = 0,
-  ["w"] = 154
-}, {
-  ["id"] = "BG_FAR_CALLE_1",
-  ["x"] = 154,
-  ["w"] = 154
-}, {
-  ["id"] = "BG_FAR_CALLE_2",
-  ["x"] = 308,
-  ["w"] = 154
-}, {
-  ["id"] = "BG_FAR_CALLE_3",
-  ["x"] = 462,
-  ["w"] = 152
-}}
-    },
     ["near_calle_a"] = {
       ["id"] = "BG_NEAR_CALLE_A",
       ["w"] = 960,
@@ -692,28 +670,6 @@ return {
   ["w"] = 160
 }}
     },
-    ["far_fabrica"] = {
-      ["id"] = "BG_FAR_FABRICA",
-      ["w"] = 614,
-      ["h"] = 230,
-      ["slices"] = {{
-  ["id"] = "BG_FAR_FABRICA_0",
-  ["x"] = 0,
-  ["w"] = 154
-}, {
-  ["id"] = "BG_FAR_FABRICA_1",
-  ["x"] = 154,
-  ["w"] = 154
-}, {
-  ["id"] = "BG_FAR_FABRICA_2",
-  ["x"] = 308,
-  ["w"] = 154
-}, {
-  ["id"] = "BG_FAR_FABRICA_3",
-  ["x"] = 462,
-  ["w"] = 152
-}}
-    },
     ["near_fabrica_a"] = {
       ["id"] = "BG_NEAR_FABRICA_A",
       ["w"] = 960,
@@ -802,28 +758,6 @@ return {
   ["id"] = "BG_NEAR_FABRICA_C_5",
   ["x"] = 800,
   ["w"] = 160
-}}
-    },
-    ["far_torre"] = {
-      ["id"] = "BG_FAR_TORRE",
-      ["w"] = 614,
-      ["h"] = 230,
-      ["slices"] = {{
-  ["id"] = "BG_FAR_TORRE_0",
-  ["x"] = 0,
-  ["w"] = 154
-}, {
-  ["id"] = "BG_FAR_TORRE_1",
-  ["x"] = 154,
-  ["w"] = 154
-}, {
-  ["id"] = "BG_FAR_TORRE_2",
-  ["x"] = 308,
-  ["w"] = 154
-}, {
-  ["id"] = "BG_FAR_TORRE_3",
-  ["x"] = 462,
-  ["w"] = 152
 }}
     },
     ["near_torre_a"] = {

@@ -1,5 +1,5 @@
 -- play: a stage. It sets everything up for a hero, runs a tick of the world (the camera that only goes forward and stops where a wave must be beaten, the foes that come in from the
--- sides, the props, the pickups, the boss at the end of the last stage) and draws the frame in painting order: the far layer, the street, then everything that stands on it from the
+-- sides, the props, the pickups, the boss at the end of the last stage) and draws the frame in painting order: the street (three painted chunks, each a whole scene), then everything that stands on it from the
 -- back of the street floor to the front (sorted by depth), then the pillars in front of the seams and the effects.
 local C = require("core.const")
 local U = require("core.util")
@@ -141,18 +141,6 @@ end
 
 -- ------------------------------------------------------------------ drawing
 
-local function far_layer(name, cam)
-  local fw = S.back_size(name)
-  local off = -((cam * 0.2) % (2 * fw))
-  for k = 0, 2 do
-    local x = off + k * 2 * fw
-    if x < C.W and x + 2 * fw > 0 then
-      S.back(name, math.floor(x), 0)
-      S.back(name, math.floor(x + fw), 0, true)
-    end
-  end
-end
-
 local function street(cam, st)
   for i, name in ipairs(st.near) do
     local x = (i - 1) * C.CHUNK - cam
@@ -168,7 +156,6 @@ function Play.draw_world()
   local st = Play.stage()
   S.count = 0
   camera(0, math.floor(oy))
-  far_layer(st.far, cam)
   street(cam, st)
   for i = #scene, 1, -1 do scene[i] = nil end
   Props.collect(scene, cam)
