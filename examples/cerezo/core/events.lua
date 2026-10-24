@@ -256,6 +256,17 @@ function Ev.draw_credits()
   local t = Ev.credits_t
   local y = 340 - t * 0.5
   local function line(str, size)
+    -- a line wider than the picture breaks at the space nearest its middle
+    if textw(str, {font = "ps", scale = size or 1}) > 460 then
+      local mid, cut = #str // 2, nil
+      for i = 1, #str do
+        if str:sub(i, i) == " " and (not cut or math.abs(i - mid) < math.abs(cut - mid)) then cut = i end
+      end
+      if cut then
+        line(str:sub(1, cut - 1), size)
+        return line(str:sub(cut + 1), size)
+      end
+    end
     text(str, 240, y, {font = "ps", color = ink, align = "center", scale = size or 1})
     y = y + (size == 2 and 44 or 30)
   end
