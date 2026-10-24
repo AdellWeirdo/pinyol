@@ -17,30 +17,31 @@ COUNTER = "https://pinyol.goatcounter.com"  # GoatCounter: visits and plays, no 
 # The twelve looks: their example, the console it follows, its frame rate on the console as (slowest, fastest
 # second), and the first measure when the board made it faster (docs/measurements.md, "The looks on the console").
 LOOKS = [
-    dict(id="gameboy", name="Game Boy", example="cerezo", era="1998 · cuatro verdes, un mundo de pantallas", art=False, fps=(58, 60), hue="#8bac0f",
+    dict(id="gameboy", name="Game Boy", example="cerezo", era="1998 · cuatro verdes, un mundo de pantallas", art=False, fps=(53, 60), hue="#8bac0f",
          what="Una aventura al estilo Zelda: una isla, una cueva, un jefe y diálogos.", alt="Una plaza empedrada con un cerezo sin hojas y vecinos alrededor, en cuatro tonos de verde"),
     dict(id="spectrum", name="ZX Spectrum", example="socavon", era="1982 · dos colores por bloque", art=False, fps=(58, 60), hue="#ff3b3b",
          what="Ocho salas de una mina, con carga de cinta y choque de color.", alt="Una sala de mina de ZX Spectrum: un minero, llaves, un robot guardián y bloques de dos colores"),
-    dict(id="pico8", name="PICO-8", example="tumba", era="2015 · 128×128 · dieciséis colores", art=False, fps=(59, 60), hue="#ff77a8",
+    dict(id="pico8", name="PICO-8", example="tumba", era="2015 · 128×128 · dieciséis colores", art=False, fps=(56, 60), hue="#ff77a8",
          what="Un puzle de deslizamiento por tumbas, con la paleta de esta consola de fantasía.", alt="Un nivel de tumba de PICO-8: un explorador, gemas y muros, en dieciséis colores"),
     dict(id="lcd", name="Maquinita LCD", example="malabar", era="1980 · figuras que se encienden", art=False, fps=(58, 60), hue="#9aa58c",
          what="Un malabarista, un reloj y dos juegos, figura a figura.", alt="Una maquinita LCD: un malabarista en un circo, con figuras que se encienden y se apagan"),
-    dict(id="vector", name="Vectorial", example="pozo", era="1979 · solo líneas que brillan", art=False, fps=(59, 60), hue="#7cf7ff",
+    dict(id="vector", name="Vectorial", example="pozo", era="1979 · solo líneas que brillan", art=False, fps=(54, 60), hue="#7cf7ff",
          what="Un tirador en un pozo hecho de líneas, con un menú que enseña cómo dibuja el haz.",
          alt="Un pozo en forma de estrella hecho de líneas brillantes sobre negro, con un cañón amarillo y enemigos rojos"),
-    dict(id="gba", name="Game Boy Advance", example="botin", era="2001 · capas, sprites, agua que ondula", art=False, fps=(50, 57), hue="#6c5ce7",
+    dict(id="gba", name="Game Boy Advance", example="botin", era="2001 · capas, sprites, agua que ondula", art=False, fps=(49, 60), hue="#6c5ce7",
          what="Un plataformas de botín en cuatro mundos, con paralaje, agua que ondula y un jefe.", alt="Un plataformas de Game Boy Advance con un pirata, una selva en paralaje y joyas"),
-    dict(id="16bits", name="Super Nintendo · Mega Drive", example="veloz", era="1991 · velocidad y scroll por línea", art=False, fps=(40, 59), hue="#2f7bff",
+    dict(id="16bits", name="Super Nintendo · Mega Drive", example="veloz", era="1991 · velocidad y scroll por línea", art=False, fps=(56, 60), was=(40, 59), hue="#2f7bff",
          what="Un pangolín muy rápido y un mar que se mueve línea a línea.", alt="Un plataformas de 16 bits: tierra a cuadros y un mar que se mueve línea a línea"),
     dict(id="32bits", name="PlayStation · Saturn 2D", example="gotico", era="1997 · 256 colores, luces translúcidas", art=True, fps=(59, 61), was=(31, 31), hue="#b388ff",
          what="Un castillo de noche: velas que brillan y un fantasma semitransparente.", alt="La sala de un castillo gótico: velas que brillan, un fantasma y una cazadora con látigo"),
-    dict(id="neogeo", name="Neo Geo", example="paella", era="1990 · sprites enormes pintados a mano", art=True, fps=(41, 60), hue="#ffc94a",
+    dict(id="neogeo", name="Neo Geo", example="paella", era="1990 · sprites enormes pintados a mano", art=True, fps=(38, 59), hue="#ffc94a",
          what="Un correr y disparar: cocineros contra gaviotas mecánicas, con tractor y jefe.", alt="Un run and gun de Neo Geo: un cocinero en un tractor por una calle de pueblo, disparando a gaviotas mecánicas"),
-    dict(id="cps2", name="CPS2", example="torneo", era="1993 · quince colores por luchador", art=True, fps=(60, 61), hue="#e8344e",
-         what="Lucha sobre un suelo en perspectiva dibujado en bandas.", alt="Un juego de lucha de CPS2: luchadores de quince colores sobre un suelo en perspectiva"),
-    dict(id="vertical", name="Recreativa vertical", example="tormenta", era="1985 · la pantalla girada", art=False, fps=(30, 30), was=(20, 20), hue="#4dd2a1",
+    dict(id="cps2", name="CPS2", example="taller", era="1993 · quince colores por personaje", art=True, fps=(41, 60), hue="#e8344e",
+         what="Un beat 'em up de relojeros: tres héroes, autómatas rotos que sueltan piezas y un jefe péndulo.",
+         alt="Un beat 'em up de CPS2 en una calle de relojes: un relojero con un martillo gigante frente a autómatas de cobre"),
+    dict(id="vertical", name="Recreativa vertical", example="tormenta", era="1985 · la pantalla girada", art=False, fps=(58, 60), was=(20, 20), hue="#4dd2a1",
          what="Un matamarcianos para jugar con la consola de lado.", alt="Un matamarcianos vertical que se juega con la consola de lado"),
-    dict(id="firstperson", name="Primera persona", example="laberinto", era="1992 · a lo Wolfenstein 3D", art=False, fps=(38, 60), was=(20, 31), hue="#c08a5a",
+    dict(id="firstperson", name="Primera persona", example="laberinto", era="1992 · a lo Wolfenstein 3D", art=False, fps=(58, 60), was=(20, 31), hue="#c08a5a",
          what="Un laberinto visto desde dentro, con fantasmas y gemas.", alt="Un laberinto en primera persona: pasillos de piedra y un fantasma"),
 ]
 # The shelf's order on a wide screen: two big cartridges (the arcade and 16/32-bit looks), four small, and again
@@ -51,7 +52,7 @@ HIGHLIGHTS = {"neogeo", "cps2", "32bits", "gba", "gameboy", "spectrum"}  # the h
 HERO_EXTRA = [("loading", "La pantalla de carga de un juego de ZX Spectrum"), ("32bits_boss", "El jefe calavera girando y creciendo")]
 
 # The other examples, playable too (id, title)
-OTHERS: list[tuple[str, str]] = []
+OTHERS: list[tuple[str, str]] = [("cromota", "Cromota")]  # (a touch puzzle: not one of the twelve looks)
 # The demos not shown on the site (no page, no zip, not in the lists): to bring one back, move it to OTHERS
 HIDDEN_DEMOS = [
     ("selva", "Selva"), ("niebla", "Niebla"), ("recortes", "Recortes"), ("cajas", "Cajas"),
@@ -184,7 +185,7 @@ def looks(shelf: list[dict]) -> str:
 <h2 id="aspectos-t">Doce aspectos, un motor</h2>
 <p class="intro">Cada cartucho es un ejemplo jugable con las reglas de su consola: su resolución, sus colores, sus capas. Se juega con el teclado (flechas, Z y X) o, en el móvil, con los botones en pantalla. Las cifras de fps se midieron jugando en la consola real.</p>
 <ul class="shelf">{carts}</ul>
-{f'<div class="more"><h3>Y {len(OTHERS)} ejemplos más</h3><ul>{others}</ul></div>' if OTHERS else ''}
+{f'<div class="more"><h3>{"Y un ejemplo más" if len(OTHERS) == 1 else f"Y {len(OTHERS)} ejemplos más"}</h3><ul>{others}</ul></div>' if OTHERS else ''}
 </div></section>"""
 
 
@@ -215,7 +216,7 @@ def code(text: str, wide: bool = False) -> str:
 def make_one() -> str:
     return f"""<section id="hazlo" aria-labelledby="hazlo-t"><div class="wrap">
 <h2 id="hazlo-t">Hazte un juego</h2>
-<p class="intro">pinyol está pensado para usarse con un agente de código, como Codex o Claude Code. El agente lee las instrucciones del repositorio, instala lo que falta, sigue la receta del aspecto que pidas y prueba el juego antes de dártelo.</p>
+<p class="intro">pinyol está pensado para usarse con un agente de código, como Codex o Claude Code. El agente lee las instrucciones del repositorio, te hace como mucho cuatro preguntas (gráficos, logo, universo y dónde vivirá), decide el resto, sigue la receta del aspecto que pidas y prueba el juego antes de dártelo.</p>
 <ol class="steps">
 <li><h3>Baja el motor</h3><p>En un Mac con Homebrew o en Linux.</p>{code(f"git clone {REPO}.git" + chr(10) + "cd pinyol")}</li>
 <li><h3>Pídeselo a tu agente</h3><p>Abre la carpeta con tu agente y dile qué quieres, en tu idioma.</p>{code("Hazme un plataformas con aspecto de Game Boy: un ratón que busca queso en una biblioteca.")}</li>
@@ -232,6 +233,7 @@ def engine() -> str:
              ("Sonido", "Efectos hechos con recetas o con números, cuatro voces de sintetizador como las de la Game Boy Advance, instrumentos, reverbs de PlayStation, música en capas que cambia en el compás y módulos .mod, .xm y .s3m."),
              ("El studio", "Un secuenciador de pasos dentro del audio: pistas de sonidos y un bajo ácido como el de una TB-303, con eco, reverb y Lo-fi GBA. Cada paso suena en su muestra exacta, y un patrón nuevo entra justo en el siguiente compás."),
              ("La consola", "Pantalla táctil con lápiz y varios dedos, micrófono, el LED y la batería, vídeo desde la tarjeta y partidas entre consolas cercanas, sin router. El menú se abre sobre cualquier juego, con ajustes, favoritos y logros."),
+             ("Texto y calidad", "textbox mete el texto en su caja, textw lo mide antes de dibujarlo y la librería box hace marcos del tamaño de su texto. El simulador comprueba en español, catalán e inglés que nada se corte, que no haya destellos peligrosos y que las imágenes sean rápidas en la consola, y unos bots juegan cada demo hasta el final."),
              ("Para programar", "Lua, con más de treinta librerías dentro: física, partículas, historias, cámara, escenas, inteligencia artificial, niveles generados, el movimiento de Celeste y el kit de aventuras. Las partidas se guardan sin congelar el juego, un guion prueba cada juego solo y un perfilador dice dónde se va el tiempo.")]
     items = "".join(f'<li class="engine-card"><h3>{escape(name)}</h3><p>{escape(text)}</p></li>' for name, text in parts)
     return f"""<section id="motor" aria-labelledby="motor-t"><div class="wrap">
@@ -406,6 +408,7 @@ def desktop() -> str:
 <p class="intro">La consola, hecha aplicación para Mac, Windows y Linux: su menú, los juegos de ejemplo dentro y cualquier juego de la Biblioteca. Es el mismo motor, así que el juego es el mismo, con teclado o con mando.</p>
 <div class="dl-row">{download("mac", f"{dl}/Cirera-mac.zip", "Descargar para Mac", "Intel y Apple Silicon")}{download("windows", f"{dl}/Cirera-windows.zip", "Descargar para Windows", "64 bits")}{download("linux", f"{dl}/Cirera-linux-x86_64.tar.gz", "Descargar para Linux", "x86_64")}</div>
 <p class="meta">Mac: macOS 11 o posterior, una sola aplicación para los Mac con Intel y con Apple Silicon · Windows 10 o posterior · Linux: Ubuntu 22.04, Debian 12 o posteriores · entre 10 y 12 MB</p>
+<p class="meta">Al abrirla, la aplicación mira una vez si hay una versión nueva y te avisa solo una vez por versión. Para que no mire, abre Cirera con PINYOL_NO_UPDATE_CHECK=1 en el entorno.</p>
 <p class="meta">¿Linux en ARM, como una Raspberry Pi con el sistema de 64 bits? <a href="{dl}/Cirera-linux-aarch64.tar.gz" data-goatcounter-click="cirera-linux-arm">Descárgala para ARM</a>.</p>
 <ol class="steps">
 <li><h3>Ábrela la primera vez</h3><p>Aún no está firmada por Apple ni por Microsoft, así que el sistema te avisa la primera vez.</p>
@@ -445,6 +448,7 @@ def making(stats: dict) -> str:
 <p><strong>Una persona y Claude.</strong> El motor, los ejemplos, las herramientas y esta web se escribieron hablando con Claude Code: cada idea se probaba en el simulador, se medía en la placa y se corregía según lo que mostraban las mediciones.</p>
 <p><strong>El arte, generado y ajustado.</strong> Los aspectos que lo necesitan (Neo Geo, CPS2, 32 bits) usan imágenes generadas con IA. Las herramientas del motor las recortan, las escalan a la altura justa, separan los fotogramas y las reducen a la paleta de la consola. Los aspectos de baja resolución se dibujan con código.</p>
 <p><strong>Medido antes de darlo por bueno.</strong> Cada ejemplo tiene un guion que lo juega solo. En el ordenador, el guion compara la suma de control de cada fotograma con la guardada; en la placa, anota los fps de cada segundo. Así se comprueba que las optimizaciones no cambian ni un píxel.</p>
+<p><strong>Una puerta de calidad.</strong> Cada demo pasa una lista: ficha con su aspecto, cinco logros, textos en tres idiomas, un menú «cómo funciona», portada, un guion de prueba y sus números medidos en la placa. El guion se ejecuta en español, catalán e inglés, y el simulador falla si un texto se corta por el borde o no cabe en su caja. Unos bots juegan cada demo hasta el final, y así se encontraron niveles que no se podían ganar.</p>
 <p><strong>Libre de verdad.</strong> El código tiene licencia MIT; el arte, el sonido y los vídeos de los ejemplos, CC0. Cógelo, cámbialo y haz tu propia consola.</p>
 </div>
 {art_pipeline()}
@@ -499,9 +503,10 @@ def days() -> str:
         ("2026-10-21", "21 oct.", "El menú de la consola sobre cualquier juego, con ajustes, favoritos y logros; partidas entre consolas por radio; movimiento al estilo de Celeste; y el código desde la PSRAM, que acelera el mundo hasta un 30 %."),
         ("2026-10-22", "22 oct.", "Módulos XM y S3M, canciones de FamiStudio, vuelta atrás (rollback) entre consolas, campo de visión en cuadrículas, la memoria de la consola reordenada y el firmware 0.4.0."),
         ("2026-10-23", "23 oct.", "mesh(): modelos 3D dibujados en C, y cuatro juegos con el aspecto de los 32 bits: Selva, Niebla, Recortes y Cajas. Firmware 0.5.0."),
+        ("2026-10-24", "24 oct.", "Doce demos pulidos y medidos en la placa: Taller de los Autómatas (CPS2) y Cromota, un puzle táctil; logos, menús y tipografías propias; textos que siempre caben; imágenes que se dibujan hasta tres veces más rápido en la consola; y un aviso de versión nueva en la aplicación de escritorio."),
     ]
     li = "".join(f'<li><time datetime="{d}">{label}</time><p>{escape(t)}</p></li>' for d, label, t in items)
-    return f"""<div class="days reveal"><h3>Trece días en el repositorio</h3><ol>{li}</ol></div>"""
+    return f"""<div class="days reveal"><h3>Catorce días en el repositorio</h3><ol>{li}</ol></div>"""
 
 
 def thousands(v: int) -> str:
