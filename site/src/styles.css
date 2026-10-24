@@ -502,6 +502,8 @@ esp-web-install-button:not(:defined) [slot="unsupported"], esp-web-install-butto
 .game-more .cart h3 { font-size: 1.3rem; }
 .stretch { text-decoration: none; }
 .stretch::after { content: ""; position: absolute; inset: 0; } /* the whole card opens the game */
+.cart:has(.stretch) { cursor: pointer; }
+.cart a:not(.stretch), .cart button { position: relative; z-index: 1; } /* Jugar, Descargar and the reactions stay their own links over the card's */
 
 /* ------------------------------------------------------------------ the tabs' pages */
 .page-head { padding-block: var(--s7) var(--s4); }

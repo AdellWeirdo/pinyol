@@ -15,6 +15,7 @@ Each check is OK, WARN (worth fixing) or FAIL (a demo must not ship without it):
   how      a menu item ("How it works": menuitem) that explains the trick of its era                                         WARN
   flash    the game reads settings().reduce_flashing                                                                       WARN
   cover    cover.rgb565, 240x160 (76800 bytes), for the console's menu                                                       FAIL
+  picture  the cover is a picture (no colour fills 80% of it), not a blank frame                                                      WARN
   test     tests/<id>.script (here or in the engine's tests/) that plays the game and checks it (5+ expect_ lines)                                         FAIL
   fonts    the look's font pack, or a font of the game's own, is in fonts/ and used                                         WARN
   art      tools/sprite_check.py finds no cut frame or floating feet (if the game has art/)                                  WARN
@@ -83,7 +84,13 @@ def check(game: Path) -> list[tuple[str, str, str]]:
     out.append(("flash", "OK" if reads or not flashes else "WARN", "settings().reduce_flashing read" if reads else "no screen flashes" if not flashes else "flashes the screen and does not read reduce_flashing"))
 
     cv = game / "cover.rgb565"
-    out.append(("cover", "OK" if cv.exists() and cv.stat().st_size == 240 * 160 * 2 else "FAIL", "240x160" if cv.exists() else "no cover.rgb565 (tools/cover.py)"))
+    cover_ok = cv.exists() and cv.stat().st_size == 240 * 160 * 2
+    out.append(("cover", "OK" if cover_ok else "FAIL", "240x160" if cv.exists() else "no cover.rgb565 (tools/cover.py)"))
+    if cover_ok:  # a cover that is nearly one colour is the screen of a moment before the game drew anything (tools/cover.py takes 1.5 s in)
+        raw = cv.read_bytes()
+        from collections import Counter
+        top = Counter(raw[i:i + 2] for i in range(0, len(raw), 2)).most_common(1)[0][1] / (240 * 160)
+        out.append(("picture", "OK" if top < 0.8 else "WARN", f"{top:.0%} of the cover is one colour: a blank frame or a loading screen? (tools/cover.py --at, --keys or --from)" if top >= 0.8 else "not a blank frame"))
 
     scripts = [p for p in (game / "tests" / f"{game.name}.script", ROOT / "tests" / f"{game.name}.script") if p.exists()]
     if not scripts:

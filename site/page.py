@@ -162,7 +162,7 @@ def cart(k: dict, n: int, shelf: bool = True) -> str:
 <ul class="chips"><li class="chip fps{low}">{fps} fps en la consola</li><li class="chip">{made}</li></ul>
 <div class="row"><a class="play" href="{play_url(k['example'])}" data-goatcounter-click="jugar/{k['example']}" aria-label="Jugar a {escape(k['example'])} ({escape(k['name'])})">Jugar</a>
 <a class="zip" href="games/{k['example']}.zip" download data-goatcounter-click="descargar/{k['example']}" aria-label="Descargar {escape(k['example'])} para la consola">Descargar .zip</a>
-<a class="sheet-link" href="{HOME}juegos/{k['example']}/" aria-label="Ficha de {escape(k['example'])} ({escape(k['name'])})">Ficha</a></div></div></li>"""
+<a class="sheet-link stretch" href="{HOME}juegos/{k['example']}/" aria-label="Ficha de {escape(k['example'])} ({escape(k['name'])})">Ficha</a></div></div></li>"""
 
 
 def measured(board: dict) -> list[dict]:
@@ -216,7 +216,7 @@ def code(text: str, wide: bool = False) -> str:
 def make_one() -> str:
     return f"""<section id="hazlo" aria-labelledby="hazlo-t"><div class="wrap">
 <h2 id="hazlo-t">Hazte un juego</h2>
-<p class="intro">pinyol está pensado para usarse con un agente de código, como Codex o Claude Code. El agente lee las instrucciones del repositorio, te hace como mucho cuatro preguntas (gráficos, logo, universo y dónde vivirá), decide el resto, sigue la receta del aspecto que pidas y prueba el juego antes de dártelo.</p>
+<p class="intro">pinyol está pensado para usarse con un agente de código, como Codex o Claude Code. El agente lee las instrucciones del repositorio, te hace como mucho cinco preguntas (gráficos, logo, universo, portada y dónde vivirá), decide el resto, sigue la receta del aspecto que pidas y prueba el juego antes de dártelo.</p>
 <ol class="steps">
 <li><h3>Baja el motor</h3><p>En un Mac con Homebrew o en Linux.</p>{code(f"git clone {REPO}.git" + chr(10) + "cd pinyol")}</li>
 <li><h3>Pídeselo a tu agente</h3><p>Abre la carpeta con tu agente y dile qué quieres, en tu idioma.</p>{code("Hazme un plataformas con aspecto de Game Boy: un ratón que busca queso en una biblioteca.")}</li>
@@ -348,7 +348,7 @@ def codex() -> str:
 <p class="after">{escape(j['after'])}</p>
 <div class="row"><a class="play" href="{play_url(j['id'])}" aria-label="Jugar a {escape(j['title'])}">Jugar</a>
 <a class="zip" href="games/{j['id']}.zip" download aria-label="Descargar {escape(j['title'])} para la consola">Descargar .zip</a>
-<a class="sheet-link" href="{HOME}juegos/{j['id']}/" aria-label="Ficha de {escape(j['title'])}">Ficha</a></div></div></li>""" for j in CODEX)
+<a class="sheet-link stretch" href="{HOME}juegos/{j['id']}/" aria-label="Ficha de {escape(j['title'])}">Ficha</a></div></div></li>""" for j in CODEX)
     return f"""<section id="codex" aria-labelledby="codex-t"><div class="wrap">
 <h2 id="codex-t">La escalera: cinco encargos</h2>
 <p class="intro">De lo más sencillo a lo más difícil. Cada encargo partió de un clon limpio del repositorio, con un solo mensaje y sin responder a ninguna pregunta. Codex leyó AGENTS.md, compiló el motor, siguió la receta del aspecto y escribió un guion que juega solo al juego, y no paró hasta que pasó la prueba. Luego cada juego se midió en la consola con ese mismo guion. Con {escape(CODEX_RUN)}.</p>

@@ -24,14 +24,15 @@ outside this folder, so ask the user to approve it. Homebrew itself (https://bre
 
 ## Ask before you make it
 
-When the user asks for a game, ask only what changes the work and cannot be assumed: at most four questions, all in one go (the agent's question tool, the recommended option first), and only the ones the request does not answer. Never ask when the user says "decide yourself" or "don't ask": assume the defaults below and say so in one line.
+When the user asks for a game, ask only what changes the work and cannot be assumed: at most five questions, all in one go (the agent's question tool, the recommended option first), and only the ones the request does not answer. Never ask when the user says "decide yourself" or "don't ask": assume the defaults below and say so in one line.
 
 Ask (each one decides a different pipeline):
 
 1. **Graphics**: from the image model (`gen/` + `tools/sprite_kit.py`, one reference picture for the style, 1% of a window a call; ask for a reference if they have one), or drawn by code (the small looks: Game Boy, ZX, PICO-8, LCD, vector)? Recommend by look: the big looks (CPS2, Neo Geo, PlayStation, 16-bit) the image model, the small ones code.
 2. **Logo**: from the image model (two variants, they choose) or by code? Recommend the image model for a flagship.
 3. **Universe**: its own (recommended; the demos never borrow a franchise) or an existing one (then ask which and where its references are).
-4. **Where it will live**: the console's flash (small: no raw big pictures, the flash is nearly full), the card, or the web demo (needs es/ca/en, a cover and a test)? It sets the size budget and the gate.
+4. **Cover** (the picture of the game's card on the web and in the console's menu, 240x160 at `cover.rgb565`): the title screen at the right moment (the default, `tools/cover.py`), a picture from the image model made for it (key art, in the logo's style; recommend it for a flagship, one or two variants), or a moment of play they choose (`--at`, `--keys`)? Never leave the tool's first guess: it takes the screen at 1.5 s, which can be a loading screen or the careta. Look at the cover before saying it is done.
+5. **Where it will live**: the console's flash (small: no raw big pictures, the flash is nearly full), the card, or the web demo (needs es/ca/en, a cover and a test)? It sets the size budget and the gate.
 
 Assume without asking (change only if the user says so): the look's font pack, and a second font only for the logo or titles; es, ca and en; touch or buttons by the genre (a puzzle: touch with buttons as support); music and sound synthesised by code in the look's own sound; five levels or about three minutes of play; five or more achievements; a "how it works" menu item; `reduce_flashing`; a test script that plays it; everything the quality gate (`tools/demo_check.py`) asks. Write the answers and the assumptions in `brief.md` of the game (one line each) so the next session does not ask again.
 

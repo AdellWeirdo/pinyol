@@ -152,7 +152,7 @@ if (lib) {
       const id = zip && (zip.getAttribute('href').match(/\/library\/([a-z0-9_-]{1,40})\/game\.zip$/) || [])[1];
       const title = (card.querySelector('h3') || {}).textContent || id;
       if (id) card.dataset.id = id;
-      if (id && pages.has(id)) zip.after(' ', el('a', { class: 'sheet-link', href: sheetUrl(id), 'aria-label': W.sheetX(title) }, W.sheet));
+      if (id && pages.has(id)) zip.after(' ', el('a', { class: 'sheet-link stretch', href: sheetUrl(id), 'aria-label': W.sheetX(title) }, W.sheet));
     }
     for (const card of lib.querySelectorAll('.cart[data-id]')) decorate(card);
   };
