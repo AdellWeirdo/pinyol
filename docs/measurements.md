@@ -1046,3 +1046,21 @@ as Malabarista's glass does). The console's strips are turned, so the picture's 
 them; a packed one (`png2asset.py --packed`) is stored column by column, as the strips want it. Packing `LOAD` and `LOAD_MONO` (11 and 2 colours, 4 bits, 67 KB each) made both screens
 58-60 fps. The audio was suspected first and is not it: the music, the pilot tone and the noise channel, alone and together, left the blank frame at 59.6 fps.
 `tools/png2asset.py` now warns when it writes such a picture, and `tools/demo_check.py` has a `pictures` row for a game that draws one with `img`.
+
+## 2026-10-24 · Cromota (a touch puzzle) on the console, and the raw pictures on the turned strips
+
+Cromota's 56 drops, its brush and six paintings were raw sheets (31.9 fps); packed, the title ran 54 fps and a level 19. A level's
+`perf("ops")` said where: 67 `img` commands, 45 ms of CPU (both cores), of which the 480x320 `FONDO` picture alone 31 ms. A raw picture
+was copied a column at a time, reading the picture with a stride of its width (a PSRAM cache miss a pixel). `gfx.c` now takes blocks of
+16 columns: each row's 16 pixels are read once and put in 16 columns of the strip (firmware gfxtest, the same pixels in every `--check-strips`
+test).
+
+| Cromota | before | after the blocks |
+|---|---|---|
+| a level (render, fps) | 47.6 ms, 20-22 | 32.8 ms, 27-29 |
+| `img`, CPU ms of a level | 45.3 | 28.1 (`FONDO` 14, the drops 7) |
+| title | 44 fps | 44 fps |
+
+Packing `FONDO` too (121 colours, lossless) gave 29.4 against 28.7. The title (44 fps) draws no raw picture: its cost is the text (two
+shadowed lines 2.5 ms) and the REF canvases. A tour step can print `perf("ops")` and `tools/board_perf.py --log` keeps it.
+

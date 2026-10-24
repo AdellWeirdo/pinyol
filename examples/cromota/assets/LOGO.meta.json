@@ -1,0 +1,25 @@
+{
+  "asset": "LOGO",
+  "type": "ui",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 211,
+  "w": 312,
+  "h": 89,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    156,
+    88
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 24637,
+    "as_rgb565": 55536
+  }
+}

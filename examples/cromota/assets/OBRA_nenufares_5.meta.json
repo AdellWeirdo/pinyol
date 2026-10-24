@@ -1,0 +1,25 @@
+{
+  "asset": "OBRA_nenufares_5",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 16,
+  "w": 152,
+  "h": 104,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    76,
+    103
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 1802,
+    "as_rgb565": 31616
+  }
+}

@@ -1,0 +1,161 @@
+key,es,ca,en
+col_rojo,ROJO,ROIG,RED
+colm_rojo,rojo,roig,red
+col_amarillo,AMARILLO,GROC,YELLOW
+colm_amarillo,amarillo,groc,yellow
+col_azul,AZUL,BLAU,BLUE
+colm_azul,azul,blau,blue
+col_blanco,BLANCO,BLANC,WHITE
+colm_blanco,blanco,blanc,white
+col_negro,NEGRO,NEGRE,BLACK
+colm_negro,negro,negre,black
+col_naranja,NARANJA,TARONJA,ORANGE
+colm_naranja,naranja,taronja,orange
+col_verde,VERDE,VERD,GREEN
+colm_verde,verde,verd,green
+col_violeta,VIOLETA,VIOLETA,VIOLET
+colm_violeta,violeta,violeta,violet
+col_celeste,CELESTE,CELESTE,SKY BLUE
+colm_celeste,celeste,celeste,sky blue
+col_marino,MARINO,MARÍ,NAVY
+colm_marino,marino,marí,navy
+hud_level,NIVEL,NIVELL,LEVEL
+hud_moves,MOV,MOV,MOVES
+hud_stock,RESERVA,RESERVA,STOCK
+hud_goals,OBJETIVOS,OBJECTIUS,GOALS
+hud_mix,MEZCLA,MESCLA,MIX
+hud_combo,COMBO,COMBO,COMBO
+hud_combo_moves,+{n} MOV,+{n} MOV,+{n} MOVES
+mix_ready,LISTO,LLEST,READY
+mix_missing,FALTAN,FALTEN,MISSING
+mix_none1,Aquí se mezclan colores.,Aquí es mesclen colors.,Colors are mixed here.
+mix_none2,Este nivel no lo necesita.,Aquest nivell no ho necessita.,This level does not need it.
+mix_recipe,< receta {i}/{n} >,< recepta {i}/{n} >,< recipe {i}/{n} >
+brush_empty,PINCEL VACÍO,PINZELL BUIT,EMPTY BRUSH
+msg_shuffled,Tablero barajado,Tauler barrejat,Board shuffled
+msg_nogroup,Esa jugada no forma grupo,Aquesta jugada no forma grup,That move makes no group
+msg_nomoves,Sin movimientos: termina de pintar,Sense moviments: acaba de pintar,No moves left: finish painting
+msg_nomix,Este nivel no pide mezclar,Aquest nivell no demana mesclar,This level needs no mixing
+msg_mixed,Mezclado: {color},Mesclat: {color},Mixed: {color}
+msg_missing,Faltan: {parts},Falten: {parts},Missing: {parts}
+msg_stockfull,Reserva llena de {color},Reserva plena de {color},Stock full of {color}
+msg_brush,Pincel {color}: pinta {region},Pinzell {color}: pinta {region},{color} brush: paint {region}
+msg_need,Faltan {n} de {color},Falten {n} de {color},Need {n} more {color}
+msg_zonedone,Esa zona ya está restaurada,Aquesta zona ja està restaurada,That area is already restored
+msg_brushempty,Pincel vacío: toca un objetivo,Pinzell buit: toca un objectiu,Empty brush: tap a goal
+msg_wrongzone,Zona incorrecta: lleva {color},Zona incorrecta: porta {color},Wrong area: it holds {color}
+msg_zoneok,¡Zona restaurada!,Zona restaurada!,Area restored!
+msg_nopigment,Aún no hay pigmento para pintar,Encara no hi ha pigment per pintar,Not enough pigment to paint yet
+help_region,Toca la zona que brilla,Toca la zona que brilla,Tap the glowing area
+help_load,Carga el pincel: toca el objetivo,Carrega el pinzell: toca l'objectiu,Load the brush: tap the goal
+help_mix,Toca el resultado: mezcla,Toca el resultat: mescla,Tap the result to mix
+help_recipe,Toca aquí: cambia de receta,Toca aquí: canvia de recepta,Tap here to switch recipe
+help_drag,Arrastra una gota: alinea 3 iguales,Arrossega una gota: alinea'n 3 d'iguals,Drag a drop: line up 3 alike
+tour_next,Toca para seguir,Toca per continuar,Tap to continue
+tour_next_n,Toca para seguir  ({n} más),Toca per continuar  ({n} més),Tap to continue  ({n} more)
+tour_new,{c}: NUEVO,{c}: NOU,{c}: NEW
+tour_newcolor,{c}: NUEVO COLOR,{c}: NOU COLOR,{c}: NEW COLOR
+tour_moves_t,MOVIMIENTOS,MOVIMENTS,MOVES
+tour_moves,"Cada jugada gasta uno. Si se acaban antes de restaurar el cuadro, pierdes.","Cada jugada en gasta un. Si s'acaben abans de restaurar el quadre, perds.","Every move uses one. If they run out before the painting is restored, you lose."
+tour_goals_t,OBJETIVOS,OBJECTIUS,GOALS
+tour_goals,Lo que tienes que reunir. Cada color pinta una zona del cuadro. El número es lo que llevas.,El que has de reunir. Cada color pinta una zona del quadre. El número és el que portes.,What you must collect. Each color paints one area of the painting. The number is what you have.
+tour_stock_t,RESERVA,RESERVA,STOCK
+tour_stock,Aquí se guarda el pigmento que ganas al formar grupos de 3 o más.,Aquí es guarda el pigment que guanyes en formar grups de 3 o més.,Pigment you earn from groups of 3 or more is kept here.
+tour_painting_t,EL CUADRO,EL QUADRE,THE PAINTING
+tour_painting,El de abajo se va coloreando al pintar. El de arriba es el modelo.,El d'abaix es va acolorint a mesura que pintes. El de dalt és el model.,The lower one gets colored as you paint. The upper one is the model.
+tour_white,Sirve para aclarar otros colores al mezclar.,Serveix per aclarir altres colors en mesclar.,It lightens other colors when mixing.
+tour_black,Sirve para oscurecer otros colores al mezclar.,Serveix per enfosquir altres colors en mesclar.,It darkens other colors when mixing.
+tour_sponge_t,ESPONJA,ESPONJA,SPONGE
+tour_sponge,No se puede mover. Desaparece cuando un grupo explota a su lado.,No es pot moure. Desapareix quan un grup explota al seu costat.,It cannot be moved. It vanishes when a group bursts next to it.
+tour_mix_t,MEZCLA,MESCLA,MIX
+tour_mix,Combina pigmentos de la reserva para crear colores nuevos. Toca el resultado para fabricar uno.,Combina pigments de la reserva per crear colors nous. Toca el resultat per fabricar-ne un.,Combine pigments from the stock to create new colors. Tap the result to make one.
+tour_recipe,{c} = {ing}. Hace falta tenerlos en la reserva.,{c} = {ing}. Cal tenir-los a la reserva.,{c} = {ing}. You need them in the stock.
+tour_recipes_t,CAMBIAR DE RECETA,CANVIAR DE RECEPTA,SWITCH RECIPE
+tour_recipes,Este nivel tiene varias recetas. Toca los ingredientes para pasar a la siguiente.,Aquest nivell té diverses receptes. Toca els ingredients per passar a la següent.,This level has several recipes. Tap the ingredients to move to the next one.
+tour_combo_t,¡COMBO!,COMBO!,COMBO!
+tour_combo,"Si al caer las gotas forman otro grupo, hay combo: pigmento extra y, con 3 o más, movimientos de regalo.","Si en caure les gotes formen un altre grup, hi ha combo: pigment extra i, amb 3 o més, moviments de regal.","If the falling drops form another group, that is a combo: extra pigment and, with 3 or more, bonus moves."
+tour_brush_t,¡PINCEL ANCHO!,PINZELL AMPLE!,WIDE BRUSH!
+tour_brush,Un grupo de 4 lo crea. Cámbialo con una gota vecina: limpia su fila (de lado) o su columna (arriba o abajo).,Un grup de 4 el crea. Canvia'l amb una gota veïna: neteja la seva fila (de costat) o la seva columna (amunt o avall).,A group of 4 makes it. Swap it with a neighboring drop: it clears its row (sideways) or its column (up or down).
+tour_tube_t,¡TUBO DE PINTURA!,TUB DE PINTURA!,PAINT TUBE!
+tour_tube,Un grupo de 5 lo crea. Cámbialo con una gota de color vecina: se van todas las gotas de ese color.,Un grup de 5 el crea. Canvia'l amb una gota de color veïna: se'n van totes les gotes d'aquell color.,A group of 5 makes it. Swap it with a neighboring colored drop: every drop of that color goes away.
+title_tag,El último trazo,L'últim traç,The Final Stroke
+title_levels,{n}/{m} niveles,{n}/{m} nivells,{n}/{m} levels
+title_locked,Bloqueada,Bloquejada,Locked
+title_hint1,Completa una obra para abrir la siguiente,Completa una obra per obrir la següent,Finish a painting to open the next one
+title_hint2,"Arrastra gotas, mezcla colores y devuelve el color al cuadro","Arrossega gotes, mescla colors i torna el color al quadre","Drag drops, mix colors and bring the color back to the painting"
+levels_back,< OBRAS,< OBRES,< GALLERY
+levels_tap,Toca un nivel,Toca un nivell,Tap a level
+intro_level,NIVEL {n},NIVELL {n},LEVEL {n}
+intro_goal,Para restaurar el cuadro:,Per restaurar el quadre:,To restore the painting:
+intro_line,{u} {color} para pintar {region},{u} {color} per pintar {region},{u} {color} to paint {region}
+intro_line_mix,{u} {color} (mezcla) para pintar {region},{u} {color} (mescla) per pintar {region},{u} {color} (mixed) to paint {region}
+intro_moves,{n} movimientos,{n} moviments,{n} moves
+intro_start,Toca para empezar,Toca per començar,Tap to start
+fin_won,¡RESTAURADO!,RESTAURAT!,RESTORED!
+fin_lost,SIN MOVIMIENTOS,SENSE MOVIMENTS,OUT OF MOVES
+fin_score,Puntos {p}   Movs. sobrantes {m},Punts {p}   Movs. sobrants {m},Score {p}   Moves left {m}
+fin_newwork,¡Obra restaurada! Nueva obra abierta,Obra restaurada! Nova obra oberta,Painting restored! A new one is open
+fin_allwork,¡Has devuelto el color a toda la obra!,Has tornat el color a tota l'obra!,You brought the color back to the whole painting!
+fin_lost1,Faltan colores por restaurar.,Falten colors per restaurar.,Some colors are still missing.
+fin_lost2,Planifica mejor las mezclas.,Planifica millor les mescles.,Plan your mixes better.
+btn_next,SIGUIENTE,SEGÜENT,NEXT
+btn_newwork,NUEVA OBRA,NOVA OBRA,NEW PAINTING
+btn_retry,REPETIR,REPETIR,RETRY
+btn_menu,MENU,MENÚ,MENU
+menu_retry,Reintentar nivel,Reintentar nivell,Retry level
+how_item,Cómo funciona,Com funciona,How it works
+menu_music_on,Música: sí,Música: sí,Music: on
+menu_music_off,Música: no,Música: no,Music: off
+obra_noche,La noche estrellada,La nit estrellada,The Starry Night
+obra_ola,La gran ola,La gran ona,The Great Wave
+obra_nenufares,Nenúfares,Nenúfars,Water Lilies
+reg_noche_1,el cielo,el cel,the sky
+reg_noche_2,los remolinos,els remolins,the swirls
+reg_noche_3,la noche,la nit,the night
+reg_noche_4,el ciprés,el xiprer,the cypress
+reg_noche_5,las estrellas,les estrelles,the stars
+reg_noche_6,los halos,els halos,the halos
+reg_ola_1,las sombras,les ombres,the shadows
+reg_ola_2,el mar,el mar,the sea
+reg_ola_3,las crestas,les crestes,the crests
+reg_ola_4,la espuma,l'escuma,the foam
+reg_ola_5,el cielo,el cel,the sky
+reg_ola_6,el horizonte,l'horitzó,the horizon
+reg_nenufares_1,el agua,l'aigua,the water
+reg_nenufares_2,las sombras,les ombres,the shadows
+reg_nenufares_3,el reflejo,el reflex,the reflection
+reg_nenufares_4,las hojas,les fulles,the leaves
+reg_nenufares_5,los brillos,les brillantors,the highlights
+reg_nenufares_6,las flores,les flors,the flowers
+zone_generic,la zona,la zona,the area
+lvl_nivel_1,Primer trazo,Primer traç,First Stroke
+lvl_nivel_1_n,Alinea 3 gotas iguales para ganar pigmento. Con él se carga el pincel y se pinta el cuadro.,Alinea 3 gotes iguals per guanyar pigment. Amb ell es carrega el pinzell i es pinta el quadre.,Line up 3 matching drops to earn pigment. Use it to load the brush and paint the picture.
+lvl_nivel_2,Nace el naranja,Neix el taronja,Orange Is Born
+lvl_nivel_2_n,Novedad: MEZCLA. Rojo + amarillo = naranja. Toca el resultado de la bandeja para fabricarlo.,Novetat: MESCLA. Roig + groc = taronja. Toca el resultat de la safata per fabricar-lo.,New: MIX. Red + yellow = orange. Tap the result on the tray to make it.
+lvl_nivel_3,Verde de noche,Verd de nit,Green by Night
+lvl_nivel_3_n,"Si al caer las gotas forman otro grupo, ¡es un combo! Da pigmento extra y movimientos.","Si en caure les gotes formen un altre grup, és un combo! Dona pigment extra i moviments.","If the falling drops form another group, it is a combo! It gives extra pigment and moves."
+lvl_nivel_4,Cielo profundo,Cel profund,Deep Sky
+lvl_nivel_4_n,El blanco aclara: 2 azul + 1 blanco = celeste. Toca los ingredientes para cambiar de receta.,El blanc aclareix: 2 blau + 1 blanc = celeste. Toca els ingredients per canviar de recepta.,White lightens: 2 blue + 1 white = sky blue. Tap the ingredients to switch recipe.
+lvl_nivel_5,El último reflejo,L'últim reflex,The Last Reflection
+lvl_nivel_5_n,Las esponjas no se mueven: desaparecen cuando un grupo explota a su lado.,Les esponges no es mouen: desapareixen quan un grup explota al seu costat.,Sponges do not move: they vanish when a group bursts next to them.
+lvl_ola_1,Mar en calma,Mar en calma,Calm Sea
+lvl_ola_1_n,"Otra obra, otros colores: aquí el cielo es amarillo claro y el mar, azul.","Una altra obra, uns altres colors: aquí el cel és groc clar i el mar, blau.","A new painting, new colors: here the sky is pale yellow and the sea is blue."
+lvl_ola_2,Espuma,Escuma,Foam
+lvl_ola_2_n,El blanco no es solo para mezclar: la espuma de la ola es blanca.,El blanc no és només per mesclar: l'escuma de l'ona és blanca.,White is not only for mixing: the foam of the wave is white.
+lvl_ola_3,Azul profundo,Blau profund,Deep Blue
+lvl_ola_4,Horizonte,Horitzó,Horizon
+lvl_ola_5,La gran ola,La gran ona,The Great Wave
+lvl_nenufares_1,Orilla,Riba,Shore
+lvl_nenufares_1_n,Un estanque: casi todo es agua azul. Las hojas claras son amarillas.,Un estany: gairebé tot és aigua blava. Les fulles clares són grogues.,A pond: almost all of it is blue water. The pale leaves are yellow.
+lvl_nenufares_2,Flores rosas,Flors roses,Pink Flowers
+lvl_nenufares_3,Hojas,Fulles,Leaves
+lvl_nenufares_4,Reflejos,Reflexos,Reflections
+lvl_nenufares_5,El estanque,L'estany,The Pond
+ach_new,LOGRO,ASSOLIMENT,ACHIEVEMENT
+ach_primer_trazo,Primer trazo,Primer traç,First Stroke
+ach_combo,Cascada,Cascada,Cascade
+ach_tres_estrellas,Maestro del color,Mestre del color,Master of Color
+ach_ultimo_trazo,El último trazo,L'últim traç,The Final Stroke
+ach_pieza_especial,Manos de artista,Mans d'artista,Artist's Touch
+ach_obra_maestra,Obra maestra,Obra mestra,Masterpiece
+ach_alquimista,Alquimista,Alquimista,Alchemist

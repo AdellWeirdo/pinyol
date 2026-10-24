@@ -352,7 +352,7 @@ if(NODE)
 endif()
 file(GLOB SCRIPTS CONFIGURE_DEPENDS tests/*.script)
 # the flagship demos must show no text cut by the screen or outside its box (--check-text); tools/demo_check.py names the same list
-set(TEXT_CHECKED cerezo socavon tumba malabar pozo botin veloz gotico tormenta laberinto taller paella)
+set(TEXT_CHECKED cerezo socavon tumba malabar pozo botin veloz gotico tormenta laberinto taller paella cromota)
 foreach(s ${SCRIPTS})
   get_filename_component(n ${s} NAME_WE)
   if(n STREQUAL "textfit_cut" OR n STREQUAL "textfit_box" OR n STREQUAL "textfit_slide")
@@ -392,6 +392,13 @@ foreach(s ${SCRIPTS})
                --saves ${CMAKE_BINARY_DIR}/saves_${n}_${l} --fresh --script ${s} --check-strips --check-text --lang ${l})
     endforeach()
   endif()
+endforeach()
+# Cromota's own scripts (its rules, the tutorial's screens, a short play); --strict-assets: its art is packed. `humano` (6 min) and `partida`
+# (3 min), two bots playing whole paintings, are run by hand: examples/cromota/tests/
+foreach(n reglas visual juego)
+  add_test(NAME cromota_${n} COMMAND pinyol_headless --game ${CMAKE_CURRENT_SOURCE_DIR}/examples/cromota
+           --saves ${CMAKE_BINARY_DIR}/saves_cromota_${n} --fresh --script ${CMAKE_CURRENT_SOURCE_DIR}/examples/cromota/tests/${n}.script
+           --strict-assets --check-strips)
 endforeach()
 # text that cannot be read: a line the screen's edge cuts and a box that is too small fail --check-text (5); a slide = true text and a
 # font tried when the first is too big pass

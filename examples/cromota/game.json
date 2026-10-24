@@ -1,0 +1,19 @@
+{
+  "id": "cromota",
+  "title": "Cromota",
+  "subtitle": "Puzle táctil de pigmentos",
+  "engine": "pinyol@2",
+  "main": "main.lua",
+  "author": "Pau Avila",
+  "look": "16bits",
+  "description": "Combina gotas de pigmento, mezcla colores y devuelve el color a tres obras maestras: La noche estrellada, La gran ola y Nenúfares. Táctil.",
+  "achievements": [
+    {"id": "primer_trazo", "name": "Primer trazo", "description": "El primer nivel restaurado."},
+    {"id": "combo", "name": "Cascada", "description": "Una cadena de tres o más en un solo movimiento."},
+    {"id": "tres_estrellas", "name": "Maestro del color", "description": "Tres estrellas en un nivel."},
+    {"id": "ultimo_trazo", "name": "El último trazo", "description": "Las tres obras restauradas por completo."},
+    {"id": "pieza_especial", "name": "Manos de artista", "description": "Usa por primera vez un pincel ancho o un tubo de pintura."},
+    {"id": "obra_maestra", "name": "Obra maestra", "description": "Restaura todos los niveles de una obra."},
+    {"id": "alquimista", "name": "Alquimista", "description": "Mezcla tu primer color nuevo."}
+  ]
+}

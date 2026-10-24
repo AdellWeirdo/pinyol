@@ -1,0 +1,3533 @@
+new
+lua bot = require("tests.bot"); G.habilidad = 0.6; math.randomseed(7)
+tick 3
+shot h_titulo
+tap 86 170
+tick 40
+tap 71 178
+tick 40
+shot h_intro
+tick 5
+lua G.avanza()
+tick 100
+shot h_tour
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 1, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 2, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 3, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 4, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 5, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 6, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 7, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 8, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 9, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 10, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 11, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 12, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 13, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 14, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 15, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 16, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 17, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 18, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 19, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 20, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 21, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 22, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 23, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 24, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 25, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_01
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 26, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 27, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 28, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 29, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 30, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 31, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 32, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 33, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 34, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 35, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 36, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 37, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 38, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 39, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 40, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 41, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 42, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 43, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 44, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 45, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 46, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 47, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 48, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 49, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 50, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_02
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 51, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 52, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 53, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 54, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 55, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 56, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 57, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 58, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 59, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 60, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 61, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 62, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 63, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 64, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 65, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 66, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 67, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 68, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 69, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 70, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 71, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 72, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 73, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 74, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 75, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_03
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 76, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 77, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 78, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 79, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 80, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 81, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 82, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 83, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 84, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 85, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 86, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 87, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 88, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 89, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 90, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 91, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 92, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 93, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 94, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 95, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 96, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 97, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 98, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 99, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 100, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_04
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 101, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 102, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 103, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 104, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 105, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 106, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 107, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 108, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 109, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 110, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 111, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 112, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 113, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 114, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 115, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 116, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 117, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 118, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 119, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 120, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 121, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 122, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 123, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 124, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 125, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_05
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 126, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 127, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 128, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 129, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 130, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 131, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 132, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 133, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 134, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 135, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 136, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 137, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 138, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 139, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 140, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 141, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 142, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 143, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 144, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 145, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 146, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 147, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 148, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 149, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 150, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_06
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 151, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 152, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 153, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 154, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 155, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 156, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 157, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 158, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 159, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 160, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 161, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 162, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 163, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 164, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 165, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 166, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 167, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 168, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 169, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 170, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 171, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 172, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 173, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 174, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 175, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_07
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 176, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 177, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 178, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 179, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 180, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 181, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 182, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 183, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 184, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 185, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 186, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 187, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 188, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 189, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 190, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 191, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 192, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 193, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 194, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 195, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 196, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 197, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 198, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 199, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 200, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_08
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 201, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 202, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 203, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 204, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 205, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 206, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 207, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 208, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 209, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 210, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 211, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 212, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 213, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 214, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 215, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 216, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 217, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 218, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 219, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 220, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 221, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 222, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 223, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 224, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 225, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_09
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 226, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 227, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 228, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 229, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 230, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 231, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 232, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 233, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 234, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 235, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 236, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 237, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 238, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 239, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 240, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 241, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 242, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 243, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 244, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 245, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 246, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 247, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 248, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 249, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 250, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_10
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 251, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 252, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 253, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 254, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 255, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 256, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 257, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 258, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 259, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 260, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 261, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 262, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 263, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 264, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 265, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 266, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 267, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 268, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 269, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 270, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 271, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 272, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 273, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 274, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 275, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_11
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 276, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 277, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 278, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 279, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 280, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 281, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 282, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 283, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 284, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 285, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 286, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 287, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 288, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 289, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 290, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 291, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 292, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 293, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 294, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 295, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 296, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 297, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 298, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 299, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 300, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_12
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 301, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 302, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 303, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 304, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 305, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 306, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 307, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 308, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 309, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 310, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 311, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 312, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 313, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 314, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 315, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 316, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 317, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 318, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 319, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 320, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 321, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 322, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 323, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 324, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 325, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_13
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 326, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 327, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 328, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 329, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 330, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 331, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 332, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 333, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 334, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 335, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 336, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 337, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 338, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 339, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 340, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 341, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 342, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 343, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 344, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 345, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 346, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 347, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 348, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 349, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 350, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_14
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 351, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 352, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 353, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 354, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 355, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 356, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 357, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 358, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 359, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 360, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 361, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 362, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 363, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 364, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 365, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 366, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 367, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 368, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 369, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 370, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 371, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 372, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 373, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 374, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 375, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_15
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 376, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 377, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 378, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 379, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 380, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 381, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 382, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 383, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 384, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 385, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 386, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 387, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 388, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 389, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 390, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 391, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 392, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 393, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 394, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 395, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 396, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 397, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 398, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 399, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 400, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_16
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 401, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 402, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 403, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 404, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 405, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 406, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 407, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 408, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 409, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 410, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 411, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 412, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 413, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 414, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 415, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 416, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 417, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 418, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 419, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 420, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 421, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 422, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 423, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 424, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 425, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_17
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 426, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 427, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 428, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 429, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 430, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 431, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 432, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 433, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 434, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 435, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 436, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 437, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 438, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 439, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 440, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 441, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 442, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 443, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 444, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 445, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 446, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 447, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 448, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 449, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 450, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_18
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 451, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 452, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 453, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 454, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 455, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 456, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 457, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 458, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 459, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 460, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 461, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 462, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 463, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 464, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 465, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 466, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 467, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 468, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 469, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 470, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 471, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 472, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 473, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 474, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 475, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_19
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 476, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 477, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 478, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 479, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 480, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 481, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 482, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 483, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 484, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 485, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 486, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 487, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 488, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 489, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 490, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 491, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 492, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 493, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 494, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 495, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 496, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 497, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 498, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 499, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 500, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_20
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 501, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 502, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 503, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 504, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 505, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 506, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 507, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 508, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 509, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 510, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 511, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 512, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 513, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 514, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 515, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 516, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 517, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 518, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 519, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 520, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 521, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 522, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 523, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 524, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 525, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_21
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 526, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 527, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 528, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 529, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 530, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 531, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 532, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 533, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 534, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 535, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 536, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 537, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 538, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 539, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 540, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 541, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 542, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 543, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 544, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 545, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 546, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 547, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 548, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 549, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 550, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_22
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 551, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 552, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 553, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 554, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 555, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 556, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 557, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 558, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 559, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 560, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 561, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 562, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 563, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 564, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 565, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 566, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 567, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 568, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 569, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 570, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 571, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 572, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 573, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 574, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 575, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_23
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 576, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 577, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 578, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 579, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 580, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 581, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 582, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 583, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 584, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 585, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 586, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 587, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 588, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 589, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 590, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 591, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 592, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 593, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 594, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 595, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 596, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 597, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 598, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 599, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 600, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_24
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 601, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 602, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 603, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 604, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 605, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 606, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 607, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 608, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 609, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 610, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 611, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 612, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 613, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 614, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 615, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 616, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 617, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 618, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 619, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 620, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 621, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 622, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 623, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 624, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 625, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_25
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 626, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 627, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 628, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 629, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 630, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 631, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 632, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 633, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 634, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 635, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 636, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 637, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 638, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 639, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 640, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 641, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 642, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 643, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 644, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 645, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 646, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 647, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 648, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 649, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 650, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_26
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 651, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 652, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 653, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 654, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 655, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 656, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 657, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 658, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 659, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 660, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 661, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 662, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 663, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 664, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 665, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 666, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 667, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 668, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 669, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 670, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 671, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 672, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 673, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 674, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 675, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+shot h_27
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 676, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 677, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 678, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 679, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 680, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 681, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 682, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 683, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 684, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 685, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 686, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 687, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 688, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 689, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 690, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 691, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 692, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 693, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 694, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 695, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 696, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+lua if G.estado == "fin" then log("RESULTADO nivel", G.P.n, G.P.s.fin, "estrellas", G.P.resultado.estrellas, "mov", G.P.s.mov); shot_pending = true; G.avanza() end
+tick 50
+lua if G.estado == "intro" then G.avanza() end
+tick 100
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 697, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 698, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+tap 30 200
+tick 8
+lua ACC = bot(); if ACC ~= "espera" then log("n", 699, ACC, "nivel", G.P.n, "mov", G.P.s.mov, "fin", tostring(G.P.s.fin)) end
+tick 66
+expect_ok

@@ -1,0 +1,72 @@
+# CROMOTA: title, the paintings, a level card and its tutorial, swipes (from just outside the board and short ones), the held drop, a mix, a wide brush, the result and the achievements. Language-independent: it checks state, not words.
+new
+lua len = function(t) local c = 0; for _ in ipairs(t) do c = c + 1 end; return c end; R = require("reglas"); J = require("juego"); L = require("layout"); O = require("obras"); function cx(c) return 70 + (c - 1) * 28 + 14 end; function cy(r) return 10 + (r - 1) * 28 + 14 end; function ganado(id) for _, l in ipairs(G.logros) do if l.id == id then return true end end return false end
+tick 3
+expect_lua G.estado == "titulo" and len(G.obras) == 3
+shot titulo
+# a locked painting does not open, the first one does
+tap 244 170
+tick 5
+expect_lua G.estado == "titulo"
+tap 86 170
+tick 40
+expect_lua G.estado == "niveles"
+shot niveles
+tap 71 178
+tick 40
+expect_lua G.estado == "intro" and G.P.n == 1
+shot intro
+tick 20
+tap 240 150
+tick 90
+expect_lua G.estado == "juego" and G.P.tour ~= nil and len(G.P.tour) == 4
+shot tutorial
+lua G.P.tour = nil
+# a short swipe (8 px) that starts 4 px outside the board's left edge picks the first column's cell and swaps rows 1-2
+lua j = R.jugadas(G.P.s.b)[1]; mov0 = G.P.s.mov
+expect_lua j[1] == 1 and j[2] == 1 and j[3] == 2 and j[4] == 1
+drag 66 24 66 32 6
+tick 150
+expect_lua G.P.s.mov == mov0 - 1 and len(G.P.cola) == 0
+# the held drop is drawn bigger and lifted above the finger
+lua G.P.arrastre = {4, 4, cx(4), cy(4)}; G.P.dedo = {cx(4), cy(4) + 30}
+shot arrastre
+lua G.P.arrastre = nil; G.P.dedo = nil
+# mixing: the ingredients leave, the result arrives, and the first mix is an achievement
+lua G.nuevo_nivel(2)
+tick 40
+lua G.avanza()
+tick 100
+lua G.P.tour = nil; G.P.s.stock = {rojo = 1, amarillo = 1}; G.P.shown = {rojo = 1, amarillo = 1}
+tap 158 260
+tick 20
+expect_lua G.P.s.stock.naranja == 1 and G.P.s.stock.rojo == 0 and ganado("alquimista")
+shot mezcla
+# the wide brush: swapped with a neighbour it clears a column, the first special piece used is an achievement
+lua G.obra = O[2]; G.nuevo_nivel(3)
+tick 40
+lua G.avanza()
+tick 100
+lua s = G.P.s; G.P.tour = nil; for r = 1, 7 do for c = 1, 8 do s.b.g[r][c] = ({"azul", "amarillo", "blanco"})[(r * 2 + c) % 3 + 1] end end; s.b.g[4][2] = "pincel"; G.P.V = require("util").copia(s.b.g)
+tap 1 1
+lua G.toca(cx(2), cy(4)); G.P.arrastre = nil; G.toca(cx(2), cy(3))
+tick 150
+expect_lua s.pinceles == 1 and ganado("pieza_especial")
+# winning the first level: the result, the first stroke
+lua G.obra = O[1]; G.nuevo_nivel(1)
+tick 40
+lua G.avanza()
+tick 100
+lua G.P.tour = nil; G.P.s.stock = {azul = 20, amarillo = 16}; G.P.shown = {azul = 20, amarillo = 16}; function aqui(k) for gy, fila in ipairs(L.obras.noche.rejilla) do for gx = 1, string.len(fila) do if tonumber(fila:sub(gx, gx)) == k then return 313 + (gx - 1) * 4 + 2, 145 + (gy - 1) * 4 + 2 end end end end
+lua G.toca(320, 290); wx, wy = aqui(1); G.toca(wx, wy)
+tick 60
+lua G.toca(356, 290); wx, wy = aqui(5); G.toca(wx, wy)
+tick 60
+expect_lua G.P.s.fin == "gana"
+tick 80
+expect_lua G.estado == "fin" and G.P.resultado.gana and ganado("primer_trazo")
+shot fin
+tap 240 200
+tick 50
+expect_lua G.estado == "intro" or G.estado == "titulo"
+expect_ok

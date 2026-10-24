@@ -1,0 +1,76 @@
+new
+lua len = function(t) local c = 0; for _ in ipairs(t) do c = c + 1 end; return c end
+tick 3
+expect_lua G.estado == "titulo"
+shot titulo
+# a locked painting and a locked level do not open
+tap 244 170
+tick 5
+expect_lua G.estado == "titulo"
+tap 86 170
+tick 40
+expect_lua G.estado == "niveles"
+shot niveles
+tap 220 178
+tick 5
+expect_lua G.estado == "niveles"
+tap 71 178
+tick 40
+expect_lua G.estado == "intro"
+shot intro
+tick 20
+tap 240 150
+tick 90
+expect_lua G.P.tour ~= nil and len(G.P.tour) == 4
+shot tour1
+tap 240 160
+tick 14
+tap 240 160
+tick 14
+tap 240 160
+tick 14
+tap 240 160
+tick 14
+expect_lua G.P.tour == nil and G.visto.reserva == true
+expect_lua G.estado == "juego"
+expect_ok
+lua len = function(t) local c = 0; for _ in ipairs(t) do c = c + 1 end; return c end; R = require("reglas"); J = require("juego"); function cx(c) return 70 + (c - 1) * 28 + 14 end; function cy(r) return 10 + (r - 1) * 28 + 14 end
+# level 1 starts from a fixed seed: its first move is rows 1-2 of column 1
+lua j = R.jugadas(G.P.s.b)[1]; mov0 = G.P.s.mov
+expect_lua j[1] == 1 and j[2] == 1 and j[3] == 2 and j[4] == 1
+drag 84 24 84 52 10
+tick 150
+expect_lua G.P.s.mov == mov0 - 1 and len(G.P.cola) == 0
+lua tot = 0; for k, v in pairs(G.P.s.stock) do tot = tot + v end
+expect_lua tot >= 3
+shot tras_jugada
+# a swap that makes no group goes back and costs nothing
+lua mov1 = G.P.s.mov; bad = nil; for r = 1, 7 do for c = 1, 7 do if not bad and G.P.s.b.g[r][c] ~= G.P.s.b.g[r][c+1] then local ok = R.intercambiar(G.P.s.b, r, c, r, c + 1); if ok then R.intercambiar(G.P.s.b, r, c, r, c + 1) else bad = {r, c} end end end end
+expect_lua bad ~= nil
+lua b0 = G.P.s.b.g[bad[1]][bad[2]]; tp, tq = cx(bad[2]), cy(bad[1]); tp2 = cx(bad[2] + 1)
+lua G.toca(tp, tq); G.P.arrastre = nil; G.toca(tp2, tq)
+tick 60
+expect_lua G.P.s.mov == mov1 and G.P.s.b.g[bad[1]][bad[2]] == b0
+# not enough pigment: refused, nothing consumed
+lua G.P.s.stock = {}; G.toca(320, 290)
+expect_lua G.P.s.brush == nil
+lua G.P.s.stock = {azul = 20, amarillo = 16}; G.toca(320, 290)
+expect_lua G.P.s.brush ~= nil and G.P.s.brush.color == "azul" and G.P.s.stock.azul == 0
+# the wrong region keeps the load; the right one paints
+lua function aqui(k) for gy, fila in ipairs(L.obras.noche.rejilla) do for gx = 1, string.len(fila) do if tonumber(fila:sub(gx, gx)) == k then return 313 + (gx - 1) * 4 + 2, 145 + (gy - 1) * 4 + 2 end end end end
+lua L = require("layout"); wx, wy = aqui(5); G.toca(wx, wy)
+expect_lua G.P.s.brush ~= nil and G.P.s.obj[1].hecho == false
+lua wx, wy = aqui(1); G.toca(wx, wy)
+tick 60
+shot pintando
+expect_lua G.P.s.obj[1].hecho and G.P.s.brush == nil and G.P.barrido == nil
+lua G.toca(356, 290); wx, wy = aqui(5); G.toca(wx, wy)
+tick 60
+expect_lua G.P.s.fin == "gana"
+tick 80
+expect_lua G.estado == "fin" and G.P.resultado.gana
+shot fin
+tap 240 200
+tick 50
+expect_lua G.estado == "intro" or G.estado == "titulo"
+expect_ok

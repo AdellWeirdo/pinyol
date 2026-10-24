@@ -1,0 +1,26 @@
+new
+lua G.visto = {mov = true, objetivos = true, reserva = true, cuadro = true, receta_verde = true}
+tick 3
+lua G.nuevo_nivel(5)
+tick 30
+tap 240 150
+tick 100
+shot t_a
+tap 240 160
+tick 14
+shot t_b
+tap 240 160
+tick 14
+shot t_c
+tap 240 160
+tick 14
+shot t_d
+tap 240 160
+tick 14
+shot t_e
+tap 240 160
+tick 14
+shot t_f
+tap 240 160
+tick 14
+shot t_g
