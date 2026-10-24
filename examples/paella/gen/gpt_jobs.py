@@ -123,7 +123,7 @@ ENEMIES = {
     },
     "gull_drone": {
         "ref": GULL + ", flying: a propeller instead of a beak cannon, an aviator cap, a rack of fish-shaped bombs under its belly. Full body, side view facing LEFT, wings out, about 80 pixels wide in the game. ",
-        "frame": (160, 120), "anchor": (80, 60), "height": 70, "faces": "left",
+        "frame": (208, 152), "anchor": (104, 76), "height": 70, "faces": "left", "flying": True,
         "sheets": [
             ("fly", 6, "a six-frame FLIGHT cycle, flapping wings and a spinning propeller", ["fly_0", "fly_1", "fly_2", "fly_3", "fly_4", "fly_5"], 0),
             ("drop", 5, "three frames DROPPING a fish-shaped bomb (the rack opens, the bomb falls, the rack closes) and two frames getting HIT", ["drop_0", "drop_1", "drop_2", "hit_0", "hit_1"], 0),
@@ -132,7 +132,7 @@ ENEMIES = {
     },
     "gull_kamikaze": {
         "ref": GULL + ", wearing goggles and a long white scarf, strapped to a red rocket with a painted sardine, a wide grin. Full body, side view facing LEFT, about 70 pixels wide in the game. ",
-        "frame": (128, 104), "anchor": (64, 52), "height": 62, "faces": "left",
+        "frame": (176, 136), "anchor": (88, 68), "height": 62, "faces": "left", "flying": True,
         "sheets": [
             ("idle", 5, "four frames HOVERING with a grin (the scarf flapping) and then one frame getting HIT", ["idle_0", "idle_1", "idle_2", "idle_3", "hit_0"], 0),
             ("dive", 6, "three frames WINDING UP (shaking, sweating, the rocket sputtering) then three frames DIVING at top speed with the scarf streaming", ["windup_0", "windup_1", "windup_2", "dive_0", "dive_1", "dive_2"], 0),

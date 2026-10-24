@@ -1,1 +1,1 @@
-{"w": 128, "h": 104, "anchor": [64, 52], "faces": "left", "frames": ["idle_0", "idle_1", "idle_2", "idle_3", "hit_0", "windup_0", "windup_1", "windup_2", "dive_0", "dive_1", "dive_2"]}
+{"w": 176, "h": 136, "anchor": [88, 68], "faces": "left", "frames": ["idle_0", "idle_1", "idle_2", "idle_3", "hit_0", "windup_0", "windup_1", "windup_2", "dive_0", "dive_1", "dive_2"]}

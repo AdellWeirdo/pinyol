@@ -205,9 +205,9 @@ def sheet_scale(keyed: Image.Image, n: int, kf: int, height: int) -> float:
     return height / max(1, pieces[kf]["mbottom"] - pieces[kf]["mtop"])
 
 
-def fit_sheet(keyed: Image.Image, n: int, frame: tuple[int, int], anchor: tuple[int, int], kf: int | None, height: int, const_frac: float = 0.70) -> list[Image.Image]:
+def fit_sheet(keyed: Image.Image, n: int, frame: tuple[int, int], anchor: tuple[int, int], kf: int | None, height: int, const_frac: float = 0.70, flying: bool = False) -> list[Image.Image]:
     """The n frames of one sheet as frames of the game: scaled by the sheet's own factor (frame `kf`'s body = `height`; else the model's usual `const_frac` of the sheet's height),
-    the middle of the feet on the anchor's column and the soles of the body on the anchor's row. A frame that would leave its cell is moved back inside, never cut."""
+    the middle of the feet on the anchor's column and the soles of the body on the anchor's row (a `flying` one: the middle of its body on both). A frame that would leave its cell is moved back inside, never cut."""
     keyed = keyed.convert("RGBA")
     a, pieces = blobs(keyed, n)
     scale = height / max(1, pieces[kf]["mbottom"] - pieces[kf]["mtop"]) if kf is not None and 0 <= kf < len(pieces) else height / (const_frac * keyed.height)
@@ -217,8 +217,8 @@ def fit_sheet(keyed: Image.Image, n: int, frame: tuple[int, int], anchor: tuple[
         crop.putalpha(ImageChops.multiply(crop.getchannel("A"), Image.fromarray((a[p["top"]:p["bottom"], p["x0"]:p["x1"]] * 255).astype(np.uint8))))
         crop = crop.resize((max(1, round(crop.width * scale)), max(1, round(crop.height * scale))), Image.LANCZOS)
         fr = Image.new("RGBA", (w, h))
-        px = round(anchor[0] - (p["fcx"] - p["x0"]) * scale)
-        py = round(anchor[1] - (p["mbottom"] - p["top"]) * scale)
+        px = round(anchor[0] - ((p["mcx"] if flying else p["fcx"]) - p["x0"]) * scale)
+        py = round(anchor[1] - (((p["mtop"] + p["mbottom"]) / 2 if flying else p["mbottom"]) - p["top"]) * scale)
         if crop.width <= w and crop.height <= h:
             px, py = min(max(px, 0), w - crop.width), min(max(py, 0), h - crop.height)
             fr.alpha_composite(crop, (px, py))
