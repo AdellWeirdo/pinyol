@@ -2,6 +2,7 @@
   "id": "laberinto",
   "title": "Laberinto",
   "subtitle": "Primera persona",
+  "look": "firstperson",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

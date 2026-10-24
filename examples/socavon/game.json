@@ -2,6 +2,7 @@
   "id": "socavon",
   "title": "Socavón",
   "subtitle": "ZX Spectrum",
+  "look": "spectrum",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

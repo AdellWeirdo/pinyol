@@ -2,6 +2,7 @@
   "id": "paella",
   "title": "Paella de combate",
   "subtitle": "Neo Geo",
+  "look": "neogeo",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

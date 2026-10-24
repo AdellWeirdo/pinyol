@@ -2,6 +2,7 @@
   "id": "gotico",
   "title": "Gótico",
   "subtitle": "PlayStation · Saturn",
+  "look": "32bits",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

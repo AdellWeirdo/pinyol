@@ -2,6 +2,7 @@
   "id": "cerezo",
   "title": "Cerezo",
   "subtitle": "Game Boy",
+  "look": "gameboy",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

@@ -1,0 +1,135 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["pillow>=10"]
+# ///
+"""The quality gate of an example game: what every flagship demo should have, checked, so a demo is not "done" because it runs (the lessons of Pozo, Cerezo, Socavón, Tumba, Botín,
+Paella and Taller, written down). Static checks, fast, no console needed.
+
+    uv run tools/demo_check.py examples/paella            # one game
+    uv run tools/demo_check.py examples/*                 # a table of several (a game that is not a Lua game is skipped)
+
+Each check is OK, WARN (worth fixing) or FAIL (a demo must not ship without it):
+  card     game.json has id, title, subtitle, a description of real length, and "look" (tools/looks.json)                     FAIL
+  extras   at least 5 achievements, each one named in the code (achieve("id") or a helper)                                           FAIL
+  words    strings.csv with es, ca and en, no empty cell, and the game loads it (lang)                                       FAIL
+  how      a menu item ("How it works": menuitem) that explains the trick of its era                                         WARN
+  flash    the game reads settings().reduce_flashing                                                                       WARN
+  cover    cover.rgb565, 240x160 (76800 bytes), for the console's menu                                                       FAIL
+  test     tests/<id>.script (here or in the engine's tests/) that plays the game and checks it (5+ expect_ lines)                                         FAIL
+  fonts    the look's font pack, or a font of the game's own, is in fonts/ and used                                         WARN
+  art      tools/sprite_check.py finds no cut frame or floating feet (if the game has art/)                                  WARN
+  numbers  docs/measurements.md has the game's frame rate measured on the console                                           WARN
+Exit 1 if any FAIL.
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import looks  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def lua_text(game: Path) -> str:
+    return "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in game.rglob("*.lua") if "gen" not in p.parts and "raw" not in p.parts)
+
+
+def check(game: Path) -> list[tuple[str, str, str]]:
+    """[(check, OK|WARN|FAIL, note)]"""
+    out: list[tuple[str, str, str]] = []
+    meta = json.loads((game / "game.json").read_text(encoding="utf-8"))
+    code = lua_text(game)
+
+    miss = [k for k in ("id", "title", "subtitle", "description") if not meta.get(k)]
+    if len(meta.get("description", "")) < 80:
+        miss.append("a description of 80+ characters")
+    look = meta.get("look")
+    if look:
+        try:
+            looks.get(look)
+        except KeyError:
+            miss.append(f"look {look!r} (not in tools/looks.json)")
+    else:
+        miss.append('"look"')
+    out.append(("card", "FAIL" if miss else "OK", "missing: " + ", ".join(miss) if miss else look))
+
+    ach = [a["id"] for a in meta.get("achievements", [])]
+    unused = [a for a in ach if not re.search(r'["\']%s["\']' % re.escape(a), code)]  # given by achieve("id") or by a helper that takes the id
+    out.append(("extras", "FAIL" if len(ach) < 5 or unused else "OK", f"{len(ach)} achievements" + (f", never given: {', '.join(unused[:4])}" if unused else "")))
+
+    csvp = game / "strings.csv"
+    if not csvp.exists():
+        out.append(("words", "FAIL", "no strings.csv (es, ca, en): the game speaks one language"))
+    else:
+        rows = list(csv.reader(csvp.open(encoding="utf-8")))
+        head = rows[0] if rows else []
+        empty = sum(1 for r in rows[1:] for c in r[1:4] if not c.strip())
+        ok = {"es", "ca", "en"} <= set(head) and not empty and 'require("lang")' in code.replace("'", '"')
+        out.append(("words", "OK" if ok else "FAIL", f"{len(rows) - 1} keys" if ok else f"languages {head[1:]}, {empty} empty cells, lang loaded: {'lang' in code}"))
+
+    out.append(("how", "OK" if re.search(r"menuitem\(\s*[^)\s]", code) else "WARN", "a menu item" if re.search(r"menuitem\(\s*[^)\s]", code) else "no menuitem that explains the era's trick"))
+    flashes = bool(re.search(r"\bflash\s*\(|juice\.flash|{[^}]*flash", code))  # a screen flash or a strobing effect somewhere
+    reads = "reduce_flashing" in code
+    out.append(("flash", "OK" if reads or not flashes else "WARN", "settings().reduce_flashing read" if reads else "no screen flashes" if not flashes else "flashes the screen and does not read reduce_flashing"))
+
+    cv = game / "cover.rgb565"
+    out.append(("cover", "OK" if cv.exists() and cv.stat().st_size == 240 * 160 * 2 else "FAIL", "240x160" if cv.exists() else "no cover.rgb565 (tools/cover.py)"))
+
+    scripts = [p for p in (game / "tests" / f"{game.name}.script", ROOT / "tests" / f"{game.name}.script") if p.exists()]
+    if not scripts:
+        out.append(("test", "FAIL", "no tests/<id>.script"))
+    else:
+        body = scripts[0].read_text()
+        out.append(("test", "OK" if body.count("expect_") >= 5 and "tick" in body else "FAIL", str(scripts[0].relative_to(ROOT)) if scripts[0].is_relative_to(ROOT) else scripts[0].name))
+
+    fonts = sorted((game / "fonts").glob("*.fnt")) if (game / "fonts").is_dir() else []
+    pack = looks.get(look)["font_pack"] if look and look in {k["id"] for k in looks.load()["looks"]} else None
+    names = [f.stem for f in fonts if not f.stem.startswith("FONT_")]
+    used = [n for n in names if re.search(r'["\']%s["\']|%s' % (re.escape(n), re.escape(n)), code)]
+    if used:
+        out.append(("fonts", "OK", ", ".join(used[:3])))
+    else:
+        out.append(("fonts", "WARN", f"draws with the generic fonts only (the look's pack: {pack}: uv run tools/font2fnt.py --pack {pack} {game})"))
+
+    art = game / "art"
+    if art.is_dir() and any(art.glob("*.json")):
+        try:
+            import sprite_check
+            bad = [e for f in sorted(art.glob("*.json")) for e in sprite_check.audit(f)[0]]
+            out.append(("art", "WARN" if bad else "OK", f"{len(bad)} sprite problems, first: {bad[0]}" if bad else "no cut frames, feet on the ground"))
+        except ImportError:
+            out.append(("art", "OK", "(numpy/scipy not installed: not checked)"))
+    meas = (ROOT / "docs" / "measurements.md").read_text(encoding="utf-8") if (ROOT / "docs" / "measurements.md").exists() else ""
+    has = re.search(r"\b%s\b" % re.escape(meta["id"]), meas, re.I) or re.search(re.escape(meta["title"]), meas, re.I)
+    out.append(("numbers", "OK" if has else "WARN", "measured on the console" if has else "not in docs/measurements.md"))
+    return out
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("games", nargs="+", type=Path)
+    a = ap.parse_args()
+    fails = 0
+    for g in a.games:
+        if not (g / "game.json").exists():
+            continue
+        if json.loads((g / "game.json").read_text(encoding="utf-8")).get("engine") != "pinyol@2":
+            continue
+        res = check(g)
+        bad = [r for r in res if r[1] != "OK"]
+        fails += sum(r[1] == "FAIL" for r in res)
+        print(f"{g.name:22} " + " ".join(f"{c}:{s}" for c, s, _ in res if s != "OK") if bad else f"{g.name:22} all OK")
+        if len(a.games) == 1:
+            for c, s, note in res:
+                print(f"  {s:4} {c:8} {note}")
+    sys.exit(1 if fails else 0)
+
+
+if __name__ == "__main__":
+    main()

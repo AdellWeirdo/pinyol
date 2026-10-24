@@ -392,3 +392,16 @@ for i in range(3):
     bb = f.getchannel("A").point(lambda v: 255 if v >= 128 else 0).getbbox()
     assert bb[3] == 70 and bb[0] >= 0 and bb[2] <= 64, (i, bb)
 print("fit_sprite --feet: ok")
+
+# demo_check: a finished demo passes every check, a bare folder fails the ones that matter
+import demo_check  # noqa: E402
+
+res = {c: s for c, s, _ in demo_check.check(ROOT / "examples" / "taller")}
+assert all(v in ("OK", "WARN") for v in res.values()) and res["card"] == "OK" and res["words"] == "OK" and res["cover"] == "OK", res
+bare = out / "baregame"
+bare.mkdir()
+(bare / "game.json").write_text(json.dumps({"id": "baregame", "title": "Bare", "engine": "pinyol@2", "main": "main.lua"}))
+(bare / "main.lua").write_text("function _draw() end\n")
+res = {c: s for c, s, _ in demo_check.check(bare)}
+assert res["card"] == "FAIL" and res["extras"] == "FAIL" and res["words"] == "FAIL" and res["cover"] == "FAIL" and res["test"] == "FAIL", res
+print("demo_check: ok")

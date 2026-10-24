@@ -25,6 +25,15 @@ function U.dir_of(dx, dy)
   return dy < 0 and "up" or "down"
 end
 
+-- a white hit-flash on `o` (a foe, a prop, the hero): at most three a second for each, and none for a player who asked for fewer flashes (a combo must not strobe)
+function U.blink(o)
+  if settings().reduce_flashing then return false end
+  local t = ticks()
+  if t < (o.flash_next or 0) then return false end
+  o.flash_next = t + 20
+  return true
+end
+
 function U.copy(t)
   local out = {}
   for k, v in pairs(t) do out[k] = type(v) == "table" and U.copy(v) or v end

@@ -38,7 +38,7 @@ function E:hit(dmg, dir, flags, atkid)
   self.last_atk = atkid
   B.hp = B.hp - dmg
   self.hp = B.hp
-  self.flash = 4
+  if U.blink(self) then self.flash = 4 end
   Run.add(math.floor(dmg * 8))
   self.stagger = self.stagger + dmg
   if B.hp <= 0 then

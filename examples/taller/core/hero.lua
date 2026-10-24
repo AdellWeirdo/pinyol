@@ -108,7 +108,7 @@ function H:hurt(dmg, dir, flags)
   dmg = math.floor(dmg * (p.armor or 1) + 0.5)
   self.hp = self.hp - dmg
   self.meter = math.min(C.METER, self.meter + 10)
-  self.flash = 4
+  if U.blink(self) then self.flash = 4 end
   Sound.play("hit")
   Hook.shake(2)
   if self.held then self.held.st, self.held.t, self.held = "walk", 0, nil end

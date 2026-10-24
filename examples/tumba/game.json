@@ -2,6 +2,7 @@
   "id": "tumba",
   "title": "Tumba",
   "subtitle": "PICO-8",
+  "look": "pico8",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

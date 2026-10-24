@@ -1,6 +1,7 @@
 -- props: the things of the street that break: barrels, crates, lamps, clock cases, mailboxes, pipes. A blow breaks them (they are targets like the foes) and they leave a heap and
 -- what was inside (a part, oil, a watch: the play module decides through `on_break`).
 local C = require("core.const")
+local U = require("core.util")
 local S = require("core.spr")
 local Fx = require("core.fx")
 local Sound = require("core.sound")
@@ -25,7 +26,7 @@ function E:hit(dmg, dir, flags, atkid)
   if not self.alive or (atkid > 0 and self.last_atk == atkid) then return false end
   self.last_atk = atkid
   self.hp = self.hp - dmg
-  self.flash = 4
+  if U.blink(self) then self.flash = 4 end
   if self.hp <= 0 then
     self.alive = false
     self.t = 0

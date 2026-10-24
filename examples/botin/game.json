@@ -2,6 +2,7 @@
   "id": "botin",
   "title": "Botín",
   "subtitle": "Game Boy Advance",
+  "look": "gba",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

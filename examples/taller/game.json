@@ -2,6 +2,7 @@
   "id": "taller",
   "title": "Taller de los Autómatas",
   "subtitle": "CPS2",
+  "look": "cps2",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

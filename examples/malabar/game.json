@@ -2,6 +2,7 @@
   "id": "malabar",
   "title": "Malabarista",
   "subtitle": "Pocket LCD",
+  "look": "lcd",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

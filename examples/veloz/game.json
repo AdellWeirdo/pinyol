@@ -2,6 +2,7 @@
   "id": "veloz",
   "title": "Pangolín veloz",
   "subtitle": "Mega Drive · SNES",
+  "look": "16bits",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",

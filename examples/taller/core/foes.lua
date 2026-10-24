@@ -61,7 +61,7 @@ function E:hit(dmg, dir, flags, atkid)
   if self.st == "dying" then return false end
   self.last_atk = atkid
   self.hp = self.hp - dmg
-  self.flash = 5
+  if U.blink(self) then self.flash = 5 end
   Run.add(math.floor(dmg * 10))
   if self.held_by then self.held_by.held = nil self.held_by = nil end
   if self.hp <= 0 then
@@ -104,7 +104,7 @@ function E:thrown(face, dmg)
   self.hit_list = {}
   set(self, "down")
   self.hp = self.hp - dmg
-  self.flash = 5
+  if U.blink(self) then self.flash = 5 end
   Run.add(math.floor(dmg * 10))
   if self.hp <= 0 then
     self.alive = false

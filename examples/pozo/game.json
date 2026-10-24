@@ -2,6 +2,7 @@
   "id": "pozo",
   "title": "Pozo",
   "subtitle": "Vectorial",
+  "look": "vector",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",
