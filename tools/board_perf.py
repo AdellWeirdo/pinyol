@@ -62,7 +62,7 @@ end
 
 
 def by_step(text: str) -> list[tuple[str, list[float]]]:
-    """The fps samples after each `TOUR n code` line of the log, until the next one: [(label, [fps...])]."""
+    """The fps samples after each `TOUR n code` line of the log, until the next one: [(label, [fps...])]. Their render times are in `by_step_render`."""
     steps: list[tuple[str, list[float]]] = []
     for line in text.splitlines():
         m = re.search(r"lua: TOUR (\d+) (.*)", line)
@@ -72,6 +72,19 @@ def by_step(text: str) -> list[tuple[str, list[float]]]:
         m = re.search(r"perf: .*?, ([\d.]+) fps", line)
         if m and steps:
             steps[-1][1].append(float(m[1]))
+    return steps
+
+
+def by_step_render(text: str) -> list[list[float]]:
+    """The render milliseconds of each step's samples, in the order of `by_step` (fps jumps in steps of the 60 Hz frame; milliseconds do not)."""
+    steps: list[list[float]] = []
+    for line in text.splitlines():
+        if re.search(r"lua: TOUR (\d+) (.*)", line):
+            steps.append([])
+            continue
+        m = re.search(r"perf: .*?render ([\d.]+) ms", line)
+        if m and steps:
+            steps[-1].append(float(m[1]))
     return steps
 
 
@@ -95,7 +108,10 @@ def summarize(text: str) -> tuple[str, bool]:
     steps = by_step(text)
     if steps:
         lines.append("by step:")
-        lines += [f"  {lab:50} fps min {min(f):5.1f} mean {statistics.mean(f):5.1f} ({len(f)} samples)" for lab, f in steps if f]
+        rend = by_step_render(text)
+        for (lab, f), r in zip(steps, rend):
+            if f:
+                lines.append(f"  {lab:50} fps min {min(f):5.1f} mean {statistics.mean(f):5.1f}, render {statistics.mean(r):5.1f} ms ({len(f)} samples)")
     return "\n".join(lines), ok
 
 
@@ -112,6 +128,7 @@ def main() -> None:
     p.add_argument("--drive", type=Path, help="Lua appended to main.lua: a bot or a tour")
     p.add_argument("--tour", nargs="?", const="tour.lua", metavar="FILE", help="a route through the game, measured step by step (tour.lua of the game by default)")
     p.add_argument("--port", default="/dev/cu.usbmodem2101")
+    p.add_argument("--log", type=Path, help="write the console's whole log here (what the game print()s too: a tour step can print perf(\"ops\") figures)")
     p.add_argument("--keep", type=Path, help="leave the silent copy here (to look at, or to resend with send_game.py --only)")
     a = p.parse_args()
     if not Path(a.port).exists():
@@ -138,6 +155,8 @@ def main() -> None:
             main_lua.write_text(main_lua.read_text(encoding="utf-8") + TOUR_DRIVER, encoding="utf-8")
         r = subprocess.run([sys.executable, str(HERE / "send_game.py"), str(copy), "--port", a.port, "--log", str(a.seconds)], capture_output=True, text=True)
     text = r.stdout + r.stderr
+    if a.log:
+        a.log.write_text(text, encoding="utf-8")
     report, ok = summarize(text)
     print(f"{a.game.name} on the console:\n{report}")
     sys.exit(0 if ok else 1)
