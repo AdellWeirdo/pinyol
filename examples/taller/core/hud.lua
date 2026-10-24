@@ -31,7 +31,7 @@ end
 
 function H.draw(play, t)
   local h = play.hero
-  label(lang.tr("hero_" .. h.id .. "_name"), 16, 8, {color = 0xFFFFFF})
+  label(lang.tr("hero_" .. h.id .. "_name"), 16, 10, {color = 0xFFFFFF})
   bar(16, 28, 150, 10, h.hp / h.max_hp, h.hp / h.max_hp < 0.3 and 0xF04030 or 0xF0B020)
   label("x" .. math.max(0, h.lives), 176, 24, {color = 0xFFFFFF})
   -- the steam gauge
