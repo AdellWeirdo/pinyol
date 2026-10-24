@@ -121,17 +121,12 @@ def drop_border_bits(sub: np.ndarray) -> np.ndarray:
     return sub & keep
 
 
-def fit_sheet(keyed: Image.Image, n: int, frame: tuple[int, int], anchor: tuple[int, int], kf: int | None, height: int, const_frac: float = 0.70) -> list[Image.Image]:
-    """The n frames of a sheet as frames of the game: cut left to right, every one scaled by the SAME factor (from the body of frame `kf` if it is upright, else
-    from the sheet's height: the model draws a character about `const_frac` of a sheet's height), the body's centre on the anchor's column and the frames' common baseline
-    (the median of their bottoms) on the anchor's row, so a jump stays above the floor and a lying frame lies on it."""
-    keyed = keyed.convert("RGBA")
+def _blobs(keyed: Image.Image, n: int):
+    """Cut a sheet into its n cells and measure each: the whole opaque extent (top, bottom), the main blob (the largest component: the body, not a spark or a cloud) and the centre
+    column of its feet (the lowest 18% of its rows), which stays put while an arm or a weapon swings."""
     a = np.array(keyed.getchannel("A")) >= ALPHA_MIN
-    cols = a.any(axis=0)
-    gap = max(6, keyed.width // 120)
-    runs = cut_columns(a, n)
     pieces = []
-    for x0, x1 in runs:
+    for x0, x1 in cut_columns(a, n):
         sub = drop_border_bits(a[:, x0:x1])
         a[:, x0:x1] = sub
         lab, k = ndimage.label(sub)
@@ -143,12 +138,28 @@ def fit_sheet(keyed: Image.Image, n: int, frame: tuple[int, int], anchor: tuple[
         ys = np.where(main.any(axis=1))[0]
         xs = np.where(main.any(axis=0))[0]
         ally = np.where(sub.any(axis=1))[0]
-        pieces.append({"x0": x0, "x1": x1, "top": int(ally.min()), "bottom": int(ally.max()) + 1, "mtop": int(ys.min()), "mbottom": int(ys.max()) + 1, "mcx": x0 + (int(xs.min()) + int(xs.max())) / 2})
-    if kf is not None and 0 <= kf < len(pieces):
-        scale = height / max(1, pieces[kf]["mbottom"] - pieces[kf]["mtop"])
-    else:
-        scale = height / (const_frac * keyed.height)
-    base = float(np.median([p["mbottom"] for p in pieces]))
+        lo = int(ys.max()) - max(2, int(0.18 * (ys.max() - ys.min())))
+        fx = np.where(main[lo:ys.max() + 1].any(axis=0))[0]
+        pieces.append({"x0": x0, "x1": x1, "top": int(ally.min()), "bottom": int(ally.max()) + 1, "mtop": int(ys.min()), "mbottom": int(ys.max()) + 1,
+                       "mcx": x0 + (int(xs.min()) + int(xs.max())) / 2, "fcx": x0 + (int(fx.min()) + int(fx.max())) / 2})
+    return a, pieces
+
+
+def sheet_scale(keyed: Image.Image, n: int, kf: int, height: int) -> float:
+    """The scale that makes the body of frame `kf` (an upright one) `height` pixels tall: one such number per character, made from its first sheet."""
+    _, pieces = _blobs(keyed.convert("RGBA"), n)
+    return height / max(1, pieces[kf]["mbottom"] - pieces[kf]["mtop"])
+
+
+def fit_sheet(keyed: Image.Image, n: int, frame: tuple[int, int], anchor: tuple[int, int], kf: int | None, height: int, const_frac: float = 0.70,
+              scale: float | None = None) -> list[Image.Image]:
+    """The n frames of a sheet as frames of the game, ALL at the same scale (`scale`, the character's; else from the body of frame `kf`, else from the sheet's height), each with the
+    centre of its feet on the anchor's column and the soles of its body on the anchor's row (the game lifts a jump with its own height, so a frame never carries it). A frame that would
+    leave its cell is moved back inside, not cut."""
+    keyed = keyed.convert("RGBA")
+    a, pieces = _blobs(keyed, n)
+    if scale is None:
+        scale = height / max(1, pieces[kf]["mbottom"] - pieces[kf]["mtop"]) if kf is not None and 0 <= kf < len(pieces) else height / (const_frac * keyed.height)
     out = []
     w, h = frame
     for p in pieces:
@@ -157,9 +168,13 @@ def fit_sheet(keyed: Image.Image, n: int, frame: tuple[int, int], anchor: tuple[
         crop.putalpha(ImageChops.multiply(crop.getchannel("A"), mask))
         crop = crop.resize((max(1, round(crop.width * scale)), max(1, round(crop.height * scale))), Image.LANCZOS)
         fr = Image.new("RGBA", (w, h))
-        px = round(anchor[0] - (p["mcx"] - p["x0"]) * scale)
-        py = round(anchor[1] + (p["bottom"] - base) * scale - crop.height)
-        fr.alpha_composite(crop, (px, py)) if 0 <= px and 0 <= py and px + crop.width <= w and py + crop.height <= h else _paste_clipped(fr, crop, px, py)
+        px = round(anchor[0] - (p["fcx"] - p["x0"]) * scale)
+        py = round(anchor[1] - (p["mbottom"] - p["top"]) * scale)
+        if crop.width <= w and crop.height <= h:  # inside the cell, always
+            px, py = min(max(px, 0), w - crop.width), min(max(py, 0), h - crop.height)
+            fr.alpha_composite(crop, (px, py))
+        else:
+            _paste_clipped(fr, crop, px, py)
         out.append(fr)
     return out
 
@@ -230,13 +245,15 @@ def make_enemy(eid: str, spec: dict, colours: int = 160) -> None:
         fr = Image.new("RGBA", (w, h))
         fr.alpha_composite(im, (ax - im.width // 2, ay - spec["height"]))
         fr.save(still)
+        # the raw sheets are NOT drawn at one scale (the model fits the character to each sheet: 30% bigger in a sheet of four poses than of six), so every sheet has its own, set by
+        # an upright frame of it (its `kf`); a sheet with none (a jump, a fall) takes the size the model gives a body in a sheet of this height
         for sheet in spec["sheets"]:
             name, n, _, fnames, kf = sheet
             raw = RAW / f"{eid}_{name}.png"
             if not raw.exists():
                 print(f"  {eid}: {name} missing")
                 continue
-            for fname, fr in zip(fnames, fit_sheet(key_background(Image.open(raw)), n, spec["frame"], spec["anchor"], kf, spec["height"] * spec.get("mult", {}).get(name, 1))):
+            for fname, fr in zip(fnames, fit_sheet(key_background(Image.open(raw)), n, spec["frame"], spec["anchor"], kf, spec["height"])):
                 names.append(fname)
                 frames.append(fr)
     strip = Image.new("RGBA", (w * len(frames), h))

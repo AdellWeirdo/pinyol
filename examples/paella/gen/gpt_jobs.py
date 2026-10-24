@@ -175,7 +175,7 @@ ENEMIES = {
 # iron lid), then whole-body sheets, as an enemy. The lid is hinged open (never thrown away) so the silhouette keeps its height from sheet to sheet.
 ENEMIES["boss"] = {
     "ref": None,  # boss_ref.png, made from the chosen design (boss_design.png)
-    "frame": (384, 320), "anchor": (192, 316), "height": 288, "faces": "left", "mult": {"pot_b": 1.07},
+    "frame": (448, 336), "anchor": (224, 332), "height": 288, "faces": "left",
     "sheets": [
         ("idle", 4, "four frames of an IDLE loop: steam puffing from the pipes, the wind-up key turning, the long neck bobbing a little, the tiny seagull pilot looking around in the porthole, heavy breathing",
          ["idle_0", "idle_1", "idle_2", "idle_3"], 0),

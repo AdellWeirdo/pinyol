@@ -31,7 +31,7 @@ HEROES = {
              "special": "a FLYING DRILL KICK: she coils the springs, launches up and forward spinning with one foot out like a drill, and lands in a skid",
              "hit": "kicking and punching quickly"},
 }
-HERO_FRAME, HERO_ANCHOR, HERO_H = (192, 192), (96, 188), 124
+HERO_FRAME, HERO_ANCHOR, HERO_H = (256, 200), (128, 196), 124
 
 # name: (frames, what, frame names, index of the frame that sets the sheet's scale)
 HERO_SHEETS = {
@@ -41,14 +41,14 @@ HERO_SHEETS = {
     "punch": (6, "six frames of a three-hit COMBO, two frames each (wind-up and impact): a jab, a second strike with the other side, and a big finisher; {hit}",
               ["atk_0", "atk_1", "atk_2", "atk_3", "atk_4", "atk_5"], 0),
     "air": (5, "five frames: JUMPING rising, the jump peak (tucked), falling, and two frames of a JUMP ATTACK (a flying kick, then the follow-through)",
-            ["jump_0", "jump_1", "jump_2", "jumpatk_0", "jumpatk_1"], 1),
+            ["jump_0", "jump_1", "jump_2", "jumpatk_0", "jumpatk_1"], None),
     "special": (6, "six frames of the SIGNATURE SPECIAL MOVE: {special}", ["special_0", "special_1", "special_2", "special_3", "special_4", "special_5"], 0),
     "grab": (5, "five frames: GRABBING an enemy by the collar, holding him up, and a THROW over the shoulder (wind-up, release, follow-through); the enemy is not drawn, just the hero's pose with empty hands",
              ["grab_0", "grab_1", "throw_0", "throw_1", "throw_2"], 0),
     "down": (6, "six frames of being KNOCKED DOWN: flying back, hitting the floor, lying flat on the back dazed, then getting up in three frames (a push-up, a crouch, standing ready)",
              ["fall_0", "fall_1", "lie_0", "getup_0", "getup_1", "getup_2"], None),
     "win": (4, "four frames: a VICTORY pose (arms up, a cheer, a wink, hands on hips, chin up) for the end of a stage and the character select screen",
-            ["win_0", "win_1", "win_2", "select_0"], 0),
+            ["win_0", "win_1", "win_2", "select_0"], 3),
 }
 
 # the enemies and the boss: autómatas
@@ -64,7 +64,7 @@ for hid, h in HEROES.items():
 CHARS["rodete"] = {
     "ref": ("RODETE, " + AUTO + ": a stocky humanoid with a round tin-bucket head with two lamp eyes and a grilled mouth, big gloved pipe fists; the basic street thug. Full body, side view "
             "facing RIGHT, fists up, about 116 pixels tall in the game. " + STYLE + " " + FLAT),
-    "frame": (176, 148), "anchor": (88, 144), "height": 116, "faces": "right",
+    "frame": (256, 160), "anchor": (128, 156), "height": 116, "faces": "right",
     "sheets": [
         ("move", 6, "six frames: two of an IDLE loop (swaying, the key turning) and a four-frame heavy WALK cycle", ["idle_0", "idle_1", "walk_0", "walk_1", "walk_2", "walk_3"], 0),
         ("fight", 5, "three frames of a big PUNCH (wind-up, impact, recovery) and two frames of getting HIT (recoil, sparks)", ["atk_0", "atk_1", "atk_2", "hurt_0", "hurt_1"], 0),
@@ -74,17 +74,17 @@ CHARS["rodete"] = {
 CHARS["resorte"] = {
     "ref": ("RESORTE, " + AUTO + ": a thin bouncy one with huge coiled springs for legs, a small head like a bell with a bowler hat, long wiry arms with scissor hands, a manic grin; a jumping "
             "enemy that pounces from above. Full body, side view facing RIGHT, crouched on its springs, about 112 pixels tall in the game. " + STYLE + " " + FLAT),
-    "frame": (176, 148), "anchor": (88, 144), "height": 112, "faces": "right",
+    "frame": (256, 160), "anchor": (128, 156), "height": 112, "faces": "right",
     "sheets": [
         ("move", 6, "six frames: two of an IDLE loop (bouncing on the springs) and a four-frame HOP cycle forward (crouch, launch, in the air, land)", ["idle_0", "idle_1", "hop_0", "hop_1", "hop_2", "hop_3"], 0),
-        ("fight", 5, "three frames of a POUNCE attack (coiling down, leaping with the scissor hands out, landing) and two frames of getting HIT", ["atk_0", "atk_1", "atk_2", "hurt_0", "hurt_1"], 0),
+        ("fight", 5, "three frames of a POUNCE attack (coiling down, leaping with the scissor hands out, landing) and two frames of getting HIT", ["atk_0", "atk_1", "atk_2", "hurt_0", "hurt_1"], 3),
         ("die", 6, "six frames of a COMIC DEFEAT, no blood: knocked flat, lying with the springs twitching, then boing, springs flying everywhere in a pop", ["fall_0", "fall_1", "lie_0", "die_0", "die_1", "die_2"], None),
     ],
 }
 CHARS["caldero"] = {
     "ref": ("CALDERO, " + AUTO + ": a huge round-bellied heavy built around a riveted steam boiler with a pressure gauge, a stovepipe chimney on its head letting out steam, tiny legs "
             "and enormous arms with piston fists, a furious scowl; the slow mid-boss bruiser. Full body, side view facing RIGHT, about 150 pixels tall in the game. " + STYLE + " " + FLAT),
-    "frame": (240, 192), "anchor": (120, 188), "height": 150, "faces": "right",
+    "frame": (288, 208), "anchor": (144, 204), "height": 150, "faces": "right",
     "sheets": [
         ("move", 6, "six frames: two of an IDLE loop (steam puffing from the chimney, the gauge needle shaking) and a four-frame slow heavy WALK cycle", ["idle_0", "idle_1", "walk_0", "walk_1", "walk_2", "walk_3"], 0),
         ("fight", 6, "four frames of a SLAM attack (both fists up, slamming down, a burst of steam, recovery) and two frames of getting HIT", ["atk_0", "atk_1", "atk_2", "atk_3", "hurt_0", "hurt_1"], 0),
@@ -112,12 +112,12 @@ OBJECTS = {
                            "little oil can (health), a pocket watch (a score bonus)", ["part_hammer", "part_springs", "part_wrench", "part_boiler", "oil", "watch"])],
     },
     "props_a": {
-        "frame": (112, 112), "anchor": (56, 108),
+        "frame": (160, 192), "anchor": (80, 188),
         "sheets": [("a", 6, "six breakable street props standing: a wooden barrel with brass hoops, a crate of gears, a gas street lamp, a stack of three small clock cases, a mailbox, a pile of copper pipes",
                     ["barrel", "crate", "lamp", "clocks", "mailbox", "pipes"])],
     },
     "props_b": {
-        "frame": (112, 112), "anchor": (56, 108),
+        "frame": (160, 192), "anchor": (80, 188),
         "sheets": [("a", 6, "the same six street props BROKEN into debris heaps: splintered barrel staves with hoops, a crate burst open with gears spilling, a bent gas lamp lying down, "
                            "smashed clock cases with springs, a dented mailbox with letters, bent copper pipes", ["barrel_b", "crate_b", "lamp_b", "clocks_b", "mailbox_b", "pipes_b"])],
     },
