@@ -29,6 +29,7 @@ from PIL import Image, ImageChops
 from scipy import ndimage
 
 ALPHA_MIN = 16
+SPECK = 0.0015  # a blob smaller than this part of the body's is dropped
 FEET = 0.18  # the lowest part of the body whose middle is where the feet are
 
 
@@ -188,7 +189,13 @@ def blobs(keyed: Image.Image, n: int):
         sub = drop_border_bits(a[:, x0:x1])
         a[:, x0:x1] = sub
         lab, k = ndimage.label(sub)
-        main = lab == (1 + int(np.argmax(ndimage.sum(sub, lab, range(1, k + 1))))) if k else sub
+        if k:
+            sizes = ndimage.sum(sub, lab, range(1, k + 1))
+            main = lab == (1 + int(np.argmax(sizes)))
+            specks = np.isin(lab, [i + 1 for i, z in enumerate(sizes) if z < SPECK * sizes.max()])  # stray dots (a hit's white sparks) are noise, not art
+            a[:, x0:x1] &= ~specks
+        else:
+            main = sub
         ys = np.where(main.any(axis=1))[0]
         xs = np.where(main.any(axis=0))[0]
         ally = np.where(sub.any(axis=1))[0]
@@ -221,7 +228,10 @@ def fit_sheet(keyed: Image.Image, n: int, frame: tuple[int, int], anchor: tuple[
     a, pieces = blobs(keyed, n)
     if kf == "auto":
         kf = pick_upright(pieces)
-    scale = height / max(1, pieces[kf]["mbottom"] - pieces[kf]["mtop"]) if kf is not None and 0 <= kf < len(pieces) else height / (const_frac * keyed.height)
+    if isinstance(kf, float):  # a factor on the sheet-height scale, set by eye for a sheet no frame of which is a fair measure (a hit, with smoke and sparks on it)
+        scale = kf * height / (const_frac * keyed.height)
+    else:
+        scale = height / max(1, pieces[kf]["mbottom"] - pieces[kf]["mtop"]) if kf is not None and 0 <= kf < len(pieces) else height / (const_frac * keyed.height)
     out, (w, h) = [], frame
     for p in pieces:
         crop = keyed.crop((p["x0"], p["top"], p["x1"], p["bottom"]))
@@ -255,7 +265,7 @@ def auto_cell(frames: list[Image.Image], anchor: tuple[int, int], margin: int = 
 
 def build_character(sheets: list[tuple[Image.Image, int, list[str], int | None]], height: int, frame: tuple[int, int] | None = None, anchor: tuple[int, int] | None = None,
                     colours: int = 15, faces: str = "right", flying: bool = False) -> tuple[Image.Image, dict]:
-    """A whole character from its raw sheets [(image, frames in it, their names, upright frame, "auto" or None [, the raw sheet's name])]: every sheet fitted (see fit_sheet), the frames in one row and one
+    """A whole character from its raw sheets [(image, frames in it, their names, upright frame, "auto", None or a factor (float) [, the raw sheet's name])]: every sheet fitted (see fit_sheet), the frames in one row and one
     palette of `colours`. Without `frame`/`anchor` the cell is found (`auto_cell`). Returns (strip, json to write beside it)."""
     big = (int(height * 3.2) // 8 * 8, int(height * 2.6) // 8 * 8)
     big_anchor = (big[0] // 2, int(big[1] * 0.78))
