@@ -229,7 +229,7 @@ function _draw()
     rect(262, 12, 204, 14, 0x100818)
     rect(264, 14, math.floor(200 * boss.hp / 30), 10, 0x8040C0)
   end
-  if state == "won" then text("LA CALAVERA CAE", 240, 120, {font = "gothic", scale = 2, align = "center", color = 0xE8D8FF, outline = 0x100818}) end
+  if state == "won" then text("LA CALAVERA CAE", 240, 120, {font = "gothic", scale = textw("LA CALAVERA CAE", {font = "gothic", scale = 2}) <= 460 and 2 or 1, align = "center", color = 0xE8D8FF, outline = 0x100818}) end
   if state == "over" then text("FIN", 240, 120, {font = "gothic", scale = 3, align = "center", color = 0xC02040, outline = 0x100818}) end
   juice.draw()
 end
