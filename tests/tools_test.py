@@ -375,3 +375,20 @@ log = ("lua: TOUR 1 dbg_play\nperf: tick 0.1 ms, render 16.0 ms, present 0 ms, 5
        "lua: TOUR 2 dbg_boss()\nperf: tick 0.1 ms, render 16.0 ms, present 0 ms, 50.0 fps | x\n")
 assert board_perf.by_step(log) == [("1 dbg_play", [59.0, 41.0]), ("2 dbg_boss()", [50.0])]
 print("board_perf tour: ok")
+
+# fit_sprite --feet: the ref's ground row and middle column, every frame inside its cell
+ref_f = Image.new("RGBA", (64, 80), (0, 0, 0, 0))
+ref_f.paste((255, 255, 255, 255), (28, 30, 36, 70))      # a body 40 tall standing on row 70
+ref_f.save(out / "ref_feet.png")
+sheet_f = Image.new("RGBA", (300, 120), (0, 0, 0, 0))
+for i, (bh, dx, arm) in enumerate(((80, 0, 0), (60, 5, 0), (90, -8, 30))):
+    sheet_f.alpha_composite(pose(100, 120, bh, dx, arm), (i * 100, 0))
+sheet_f.save(out / "sheet_feet.png")
+r = subprocess.run([sys.executable, str(ROOT / "tools/fit_sprite.py"), str(out / "sheet_feet.png"), str(out / "feet_out"), "--like", str(out / "ref_feet.png"), "--split", "3", "--feet"],
+                   capture_output=True, text=True)
+assert r.returncode == 0, r.stderr
+for i in range(3):
+    f = Image.open(out / "feet_out" / f"feet_out_{i}.png").convert("RGBA")
+    bb = f.getchannel("A").point(lambda v: 255 if v >= 128 else 0).getbbox()
+    assert bb[3] == 70 and bb[0] >= 0 and bb[2] <= 64, (i, bb)
+print("fit_sprite --feet: ok")

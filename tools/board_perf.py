@@ -29,7 +29,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SILENT = "\n-- board_perf.py: silent\ndo local __update = _update function _update(...) volume(0) return __update(...) end end\n"
-SKIP = shutil.ignore_patterns("art", "saves", "tests", "gen", "docs", ".git", "__pycache__", "*.script", "preview_*")
+SKIP = shutil.ignore_patterns("art", "raw", "saves", "tests", "gen", "docs", ".git", "__pycache__", "*.script", "preview_*")
 
 
 def silent_copy(game: Path, out: Path, drive: Path | None) -> None:

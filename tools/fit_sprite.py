@@ -15,7 +15,9 @@ center. With --split N the sheet is cut into N frames along its empty columns, e
 frame gets the same scale (taken from frame K's body) and the same vertical offset,
 so motion inside the sheet (a rocket rising) survives; frames are written as
 <out_set_dir>/<dir name>_<i>.png.
---key-bg removes a white or fake-checkerboard background touching the border, for
+--feet (recommended for characters; the rules are tools/sprite_kit.py's, docs/art.md "Sprites that fit"): every sheet is scaled by an UPRIGHT frame of
+it (--scale-frame, -1: none, for a jump or a fall), the soles of the body stand on the ref's ground row in every frame, the middle of the feet on the ref's middle column (an arm that
+reaches out does not drag the character) and nothing is cut. --key-bg removes a white or fake-checkerboard background touching the border, for
 outputs without real alpha. --keep-main drops everything not touching the main body
 (motion lines). Run with --selftest to check the logic.
 """
@@ -244,11 +246,21 @@ if __name__ == "__main__":
     ap.add_argument("--split", type=int, default=1, help="cut a sheet into N frames")
     ap.add_argument("--scale-frame", type=int, default=0, help="frame whose body sets the sheet's scale")
     ap.add_argument("--keep-main", action="store_true", help="drop marks not touching the main body")
+    ap.add_argument("--feet", action="store_true", help="fit with tools/sprite_kit.py: soles on the ref's ground row, feet centred, never cut (see above)")
     ap.add_argument("--anchor", choices=("center", "left", "right"), default="center",
                     help="align frames by body center, or by its left/right edge (a trail growing on the other side)")
     a = ap.parse_args()
     try:
-        frames = fit(Image.open(a.generated), Image.open(a.like), a.height, a.key_bg, a.split, a.scale_frame, a.keep_main, a.anchor)
+        if a.feet:
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import sprite_kit
+            ref = Image.open(a.like).convert("RGBA")
+            rb = body_bbox(ref)
+            src = Image.open(a.generated)
+            keyed = sprite_kit.key_background(src) if a.key_bg else src.convert("RGBA")
+            frames = sprite_kit.fit_sheet(keyed, a.split, ref.size, ((rb[0] + rb[2]) // 2, rb[3]), None if a.scale_frame < 0 else a.scale_frame, a.height or rb[3] - rb[1])
+        else:
+            frames = fit(Image.open(a.generated), Image.open(a.like), a.height, a.key_bg, a.split, a.scale_frame, a.keep_main, a.anchor)
     except ValueError as e:
         sys.exit(f"fit_sprite: {e}")
     if a.split == 1:
