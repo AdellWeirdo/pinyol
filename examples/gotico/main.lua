@@ -5,6 +5,7 @@
 -- Lluna: arrows walk, up jumps, A lashes the whip, B dashes back leaving afterimages. Reach the skull and break it.
 local juice = require("juice")
 local particles = require("particles")
+local lang = require("lang")
 
 local HALL_W, LEVEL_W = 720, 720 * 3
 local FLOOR, ARENA = 300, 720 * 3 - 480   -- where the feet are; where the camera stops for the boss
@@ -20,6 +21,20 @@ local t = 0
 local fx = particles.new()
 local trail = {} -- the dash's afterimages: where she was, and how she looked
 local look = {}
+local toast_text, toast_t = nil, 0
+local back_to = "title" -- where the "how it works" screen returns to
+local calm = false      -- settings().reduce_flashing: no strobing tints
+
+local function earn(id)
+  if achieve(id) then toast_text, toast_t = lang.tr("ach_" .. id), 170 end
+end
+
+local function menu()
+  menuitem()
+  menuitem(lang.tr("how"), function()
+    if state == "title" or state == "play" then back_to, state = state, "explain" earn("curioso") end
+  end)
+end
 
 local function reset()
   L = {x = 80, y = 0, vx = 0, vy = 0, dir = 1, act = "idle", t = 0, hp = 100, hurt = 0, frame = 0}
@@ -32,6 +47,9 @@ local function reset()
 end
 
 function _init()
+  lang.load()
+  calm = settings().reduce_flashing and true or false
+  menu()
   show(0)
   sound("SFX_WHIP", {wave = "noise", freq = 2000, slide = -6000, sustain = 0.02, decay = 0.12, volume = 0.3})
   sound("SFX_HIT", "hit", 5)
@@ -64,12 +82,12 @@ local function update_lluna()
       local hx = L.dir > 0 and L.x + 20 or L.x - 170
       local hy = FLOOR - 70 + L.y
       for _, b in ipairs(bats) do
-        if b.hp > 0 and hit_box(hx, hy, 150, 24, b.x - 30, b.y - 20, 60, 40) then b.hp = 0 sfx("SFX_HIT") fx:burst(b.x - cam, b.y, 14, {speed = 3, colours = {0xC080FF, 0x402060}, life = 18, size = 2}) end
+        if b.hp > 0 and hit_box(hx, hy, 150, 24, b.x - 30, b.y - 20, 60, 40) then b.hp = 0 earn("murcielago") sfx("SFX_HIT") fx:burst(b.x - cam, b.y, 14, {speed = 3, colours = {0xC080FF, 0x402060}, life = 18, size = 2}) end
       end
       if ghost and ghost.flash == 0 and hit_box(hx, hy, 150, 24, ghost.x - 40, ghost.y - 60, 80, 120) then
         ghost.hp, ghost.flash = ghost.hp - 1, 20
         sfx("SFX_HIT")
-        if ghost.hp <= 0 then fx:burst(ghost.x - cam, ghost.y, 30, {speed = 2, colours = {0xC0E0FF, 0x406080}, life = 30, size = 3}) ghost = nil end
+        if ghost.hp <= 0 then fx:burst(ghost.x - cam, ghost.y, 30, {speed = 2, colours = {0xC0E0FF, 0x406080}, life = 30, size = 3}) ghost = nil earn("fantasma") end
       end
       if boss and boss.flash == 0 and hit_box(hx, hy - 60, 150, 90, boss.x - 90, boss.y - 90, 180, 180) then
         boss.hp, boss.flash = boss.hp - 1, 12
@@ -88,8 +106,8 @@ local function update_lluna()
       if dx ~= 0 then L.dir = dx end
     end
     if ground and btnp("up") then L.vy, L.act, L.t = -7, "jump", 0 end
-    if btnp("a") then L.act, L.t = "whip", 0 sfx("SFX_WHIP") end
-    if btnp("b") and ground then L.act, L.t = "dash", 0 sfx("SFX_DASH") end
+    if btnp("a") then L.act, L.t = "whip", 0 sfx("SFX_WHIP") earn("latigo") end
+    if btnp("b") and ground then L.act, L.t = "dash", 0 sfx("SFX_DASH") earn("estela") end
     if L.act ~= "whip" and L.act ~= "dash" then
       if not ground then L.act, L.frame = "jump", L.vy < -3 and 16 or (L.vy < 1 and 17 or 18)
       elseif dx ~= 0 then L.act, L.frame = "walk", 5 + (L.t // 6) % 5
@@ -133,6 +151,8 @@ local function update_foes()
       sfx("SFX_BOOM")
       juice.shake(10)
       boss, state, t = nil, "won", 0
+      earn("calavera")
+      if L.hp >= 100 then earn("intacta") end
     end
   end
   for i = #fire, 1, -1 do
@@ -144,6 +164,13 @@ local function update_foes()
 end
 
 function _update()
+  calm = settings().reduce_flashing and true or false
+  if toast_t > 0 then toast_t = toast_t - 1 end
+  if state == "explain" then
+    t = t + 1
+    if btnp("b") or btnp("start") then state = back_to end
+    return
+  end
   local frozen = juice.update()
   fx:update()
   t = t + 1
@@ -187,12 +214,42 @@ local function lluna_at(x, y, frame, dir, o)
   img("SPR_LLUNA", x - (dir < 0 and W - 1 - BACK or BACK), FLOOR - FEET + y, o)
 end
 
+-- the "how it works" screen: the trick of the era, with the game's own sprites running live
+local function draw_toast()
+  if toast_t <= 0 or not toast_text then return end
+  local w = textw(toast_text, {font = "arcade"})
+  rect(240 - w // 2 - 8, 290, w + 16, 22, 0x100818)
+  text(toast_text, 240, 295, {font = "arcade", align = "center", color = 0xFFE080})
+end
+
+local INK = 0x201830
+local ROWS = {"hw_add", "hw_alpha", "hw_turn", "hw_trail"}
+local function explain_draw()
+  rect(0, 0, 480, 320, 0x100818)
+  panel(8, 8, 464, 304)
+  text(lang.tr("how"), 240, 12, {font = "gothic", align = "center", color = 0x402060})
+  for i, key in ipairs(ROWS) do
+    text(lang.tr(key), 150, 52 + (i - 1) * 60, {font = "main", color = INK, width = 310})
+  end
+  img("FX_GLOW", 80 - 48, 80 - 48, {add = true, scale = 1 + 0.08 * noise(7, t / 7)})
+  circ(80, 80, 3, 0xFFF0C0)
+  img("SPR_GHOST", 44, 80, {alpha = 0.5, scale = 0.6})
+  local k = 1 + 0.06 * math.sin(t / 20)
+  img("SPR_BOSS", 50, 168, {angle = math.sin(t / 50) * 20, scale = 0.3 * k})
+  for i = 0, 3 do
+    img("SPR_LLUNA", i * 22 - 5, 225, {scale = 0.5, frame = 5 + (t // 6) % 5, alpha = (i + 1) / 4, tint = i < 3 and 0x8080FF or nil})
+  end
+  text(lang.tr("hw_back"), 240, 294, {font = "arcade", align = "center", color = 0x604080})
+  draw_toast()
+end
+
 function _draw()
+  if state == "explain" then explain_draw() return end
   if state == "title" then
     hall(t % (LEVEL_W * 2))
-    text("GÓTICO", 240, 70, {font = "gothic", scale = 2, align = "center", color = 0xE8D8FF, gradient = 0x8040C0,
+    text(lang.tr("title"), 240, 70, {font = "gothic", scale = 2, align = "center", color = 0xE8D8FF, gradient = 0x8040C0,
                              outline = 0x100818, shadow = 0x000000})
-    if (t // 30) % 2 == 0 then text("PULSA A", 240, 230, {font = "arcade", align = "center", color = 0xFFFFFF, outline = 0x100818}) end
+    if (t // 30) % 2 == 0 then text(lang.tr("press"), 240, 230, {font = "arcade", align = "center", color = 0xFFFFFF, outline = 0x100818}) end
     return
   end
   local ox, oy = juice.offset()
@@ -202,18 +259,18 @@ function _draw()
     if b.hp > 0 then img("SPR_BAT", b.x - cam - 60, b.y - 50, {frame = (t // 4) % 5, flip_x = L.x > b.x}) end
   end
   if ghost then -- half seen; whiter when struck
-    img("SPR_GHOST", ghost.x - cam - 60, ghost.y - 90, {alpha = ghost.flash > 0 and 0.9 or 0.5, flip_x = L.x > ghost.x})
+    img("SPR_GHOST", ghost.x - cam - 60, ghost.y - 90, {alpha = ghost.flash > 0 and not calm and 0.9 or 0.5, flip_x = L.x > ghost.x})
   end
   if boss then
     local k = 1 + 0.06 * math.sin(boss.t / 20) -- it breathes
-    img("SPR_BOSS", boss.x - cam - 100, boss.y - 100, {angle = boss.angle, scale = k, tint = boss.flash > 0 and boss.flash % 4 < 2 and 0xFFFFFF or nil})
+    img("SPR_BOSS", boss.x - cam - 100, boss.y - 100, {angle = boss.angle, scale = k, tint = boss.flash > 0 and not calm and boss.flash % 4 < 2 and 0xFFFFFF or nil})
   end
   for _, tr in ipairs(trail) do -- the dash's afterimages, fading
     look.alpha, look.tint, look.add = tr.life / 20, 0x8080FF, nil
     lluna_at(tr.x - cam, tr.y, tr.frame, tr.dir, look)
   end
   look.alpha, look.add = nil, nil
-  look.tint = L.hurt > 0 and L.hurt % 6 < 3 and 0xFFFFFF or nil
+  look.tint = L.hurt > 0 and not calm and L.hurt % 6 < 3 and 0xFFFFFF or nil
   if state ~= "over" then lluna_at(L.x - cam, L.y, L.frame, L.dir, look) end
   for _, f in ipairs(fire) do img("FX_GLOW", f.x - cam - 24, f.y - 24, {add = true, scale = 0.5}) end
   if cam < ARENA - 200 then -- the columns, nearer than everyone, now and then (none in the skull's room)
@@ -224,12 +281,13 @@ function _draw()
   fx:draw()
   rect(14, 12, 204, 14, 0x100818)
   rect(16, 14, math.max(0, 2 * L.hp), 10, 0xC02040)
-  text("LLUNA", 16, 30, {font = "gothic", color = 0xE8D8FF, outline = 0x100818})
+  text(lang.tr("hero"), 16, 30, {font = "gothic", color = 0xE8D8FF, outline = 0x100818})
   if boss and cam >= ARENA - 4 then
     rect(262, 12, 204, 14, 0x100818)
     rect(264, 14, math.floor(200 * boss.hp / 30), 10, 0x8040C0)
   end
-  if state == "won" then text("LA CALAVERA CAE", 240, 120, {font = "gothic", scale = textw("LA CALAVERA CAE", {font = "gothic", scale = 2}) <= 460 and 2 or 1, align = "center", color = 0xE8D8FF, outline = 0x100818}) end
-  if state == "over" then text("FIN", 240, 120, {font = "gothic", scale = 3, align = "center", color = 0xC02040, outline = 0x100818}) end
+  if state == "won" then text(lang.tr("won"), 240, 120, {font = "gothic", scale = textw(lang.tr("won"), {font = "gothic", scale = 2}) <= 460 and 2 or 1, align = "center", color = 0xE8D8FF, outline = 0x100818}) end
+  if state == "over" then text(lang.tr("over"), 240, 120, {font = "gothic", scale = 3, align = "center", color = 0xC02040, outline = 0x100818}) end
+  draw_toast()
   juice.draw()
 end

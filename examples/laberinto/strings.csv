@@ -1,0 +1,23 @@
+key,es,ca,en
+title,LABERINTO,LABERINT,LABYRINTH
+press,PULSA A,PREM A,PRESS A
+lives,VIDAS {n},VIDES {n},LIVES {n}
+gems,GEMAS {n}/5,GEMMES {n}/5,GEMS {n}/5
+won,¡FUERA!,FORA!,OUT!
+over,FIN,FI,THE END
+how,Cómo funciona,Com funciona,How it works
+how_title,UN RAYO POR COLUMNA,UN RAIG PER COLUMNA,ONE RAY PER COLUMN
+how_body,Un rayo por cada una de las {cols} columnas avanza por el mapa hasta chocar con una pared. Más lejos: columna más baja y más oscura.,Un raig per cadascuna de les {cols} columnes avança pel mapa fins a topar amb una paret. Més lluny: columna més baixa i més fosca.,"One ray for each of the {cols} columns walks the map until it hits a wall. Farther: a shorter, darker column."
+how_live,"Pared delante: {d} casillas, de {wall}.","Paret davant: {d} caselles, de {wall}.","Wall ahead: {d} squares, of {wall}."
+wall_stone,piedra,pedra,stone
+wall_brick,ladrillo,maó,brick
+wall_wood,madera,fusta,wood
+wall_door,la puerta,la porta,the door
+how_back,B o START: volver,B o START: tornar,B or START: back
+ach_primer_paso,¡Una gema!,Una gemma!,A gem!
+ach_cazafantasmas,Fantasma fuera,Fantasma fora,Ghost gone
+ach_susto,Qué susto,Quin ensurt,What a fright
+ach_tesoro,Las cinco gemas,Les cinc gemmes,All five gems
+ach_salida,Salida encontrada,Sortida trobada,Way out found
+ach_intacto,Sin un rasguño,Sense cap ratllada,Without a scratch
+ach_curioso,Curioso,Curiós,Curious

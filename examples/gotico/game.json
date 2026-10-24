@@ -2,9 +2,46 @@
   "id": "gotico",
   "title": "Gótico",
   "subtitle": "PlayStation · Saturn",
-  "look": "32bits",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",
-  "description": "Un castillo de noche a la manera de los 32 bits (PlayStation, Saturn): luz que se suma, fantasmas y estelas medio transparentes, y una calavera gigante que gira y crece."
+  "description": "Un castillo de noche a la manera de los 32 bits (PlayStation, Saturn): luz que se suma, fantasmas y estelas medio transparentes, y una calavera gigante que gira y crece.",
+  "achievements": [
+    {
+      "id": "latigo",
+      "name": "Primer latigazo",
+      "description": "Restalla el látigo por primera vez."
+    },
+    {
+      "id": "murcielago",
+      "name": "Cazamurciélagos",
+      "description": "Derriba un murciélago con el látigo."
+    },
+    {
+      "id": "estela",
+      "name": "Estela",
+      "description": "Esquiva hacia atrás dejando imágenes residuales."
+    },
+    {
+      "id": "fantasma",
+      "name": "Exorcista",
+      "description": "Disipa al fantasma medio transparente."
+    },
+    {
+      "id": "calavera",
+      "name": "La calavera cae",
+      "description": "Rompe la calavera gigante."
+    },
+    {
+      "id": "intacta",
+      "name": "Intacta",
+      "description": "Vence a la calavera sin perder nada de vida."
+    },
+    {
+      "id": "curioso",
+      "name": "Curioso",
+      "description": "Mira cómo funciona el truco de los 32 bits en el menú."
+    }
+  ],
+  "look": "32bits"
 }

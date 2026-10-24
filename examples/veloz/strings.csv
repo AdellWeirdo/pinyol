@@ -1,0 +1,22 @@
+key,es,ca,en
+title_1,PANGOLIN,PANGOLÍ,PANGOLIN
+title_2,VELOZ,RÀPID,SWIFT
+press,PULSA A,PREM A,PRESS A
+score,PUNTOS,PUNTS,SCORE
+time,TIEMPO,TEMPS,TIME
+gems,GEMAS,GEMMES,GEMS
+goal,¡META!,META!,GOAL!
+over,GAME OVER,FI DE LA PARTIDA,GAME OVER
+how,Cómo funciona,Com funciona,How it works
+how_title,CÓMO FUNCIONA,COM FUNCIONA,HOW IT WORKS
+how_back,B o START: volver,B o START: tornar,B or START: back
+how_1,"MEGA DRIVE: cada línea del mar va a su ritmo ({a} a {b} px). Cámara: {c} px.","MEGA DRIVE: cada línia del mar va al seu ritme ({a} a {b} px). Càmera: {c} px.","MEGA DRIVE: each line of the sea has its own pace ({a} to {b} px). Camera: {c} px."
+how_2,"Colinas a media velocidad ({h} px), nivel a la par: así nace la profundidad.","Turons a mitja velocitat ({h} px), nivell a la par: així neix la profunditat.","Hills at half speed ({h} px), level at par: that is how depth is born."
+how_3,"SNES: cielo degradado línea a línea y agua translúcida. El título gira en Mode 7.","SNES: cel degradat línia a línia i aigua translúcida. El títol gira en Mode 7.","SNES: sky shaded line by line, see-through water. The title spins in Mode 7."
+ach_primera_gema,Primera gema,Primera gemma,First gem
+ach_rodando,Rodando,Rodolant,Rolling
+ach_rescate,Rescate de gemas,Rescat de gemmes,Gem rescue
+ach_muelle,Al aire,A l'aire,Sky high
+ach_meta,A meta,A meta,Goal reached
+ach_intacto,Sin perder ni una vida,Sense perdre cap vida,Not a life lost
+ach_curioso,Curioso,Curiós,Curious

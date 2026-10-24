@@ -32,5 +32,16 @@ expect_lua P.vy < -5
 lua P.x, P.y, P.vy, P.vx, cam = 188 * 8, 96, 0, 2, 180 * 8 - 120
 tick 30
 expect_lua state == "won"
+expect_lua achieve("meta") == false and achieve("primera_gema") == false and achieve("muelle") == false
 shot meta
+lua P.x, P.y, P.vx, P.vy, cam = 32, 96, 0, 0, 300
+lua state = "play" timer = 0
+lua HOW()
+tick 5
+expect_lua state == "how"
+expect_lua achieve("curioso") == false
+shot como
+press B
+tick 2
+expect_lua state == "play"
 expect_ok

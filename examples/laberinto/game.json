@@ -2,9 +2,46 @@
   "id": "laberinto",
   "title": "Laberinto",
   "subtitle": "Primera persona",
-  "look": "firstperson",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",
-  "description": "Primera persona a la manera de Wolfenstein 3D: un laberinto visto desde dentro, columna a columna, con texturas, fantasmas y gemas. Todo dibujado con código."
+  "description": "Primera persona a la manera de Wolfenstein 3D: un laberinto visto desde dentro, columna a columna, con texturas, fantasmas y gemas. Todo dibujado con código.",
+  "achievements": [
+    {
+      "id": "primer_paso",
+      "name": "Primera gema",
+      "description": "Recoge tu primera gema."
+    },
+    {
+      "id": "cazafantasmas",
+      "name": "Cazafantasmas",
+      "description": "Dispara a un fantasma y hazlo desaparecer."
+    },
+    {
+      "id": "susto",
+      "name": "Qué susto",
+      "description": "Deja que un fantasma te quite una vida."
+    },
+    {
+      "id": "tesoro",
+      "name": "Las cinco gemas",
+      "description": "Recoge las cinco gemas del laberinto."
+    },
+    {
+      "id": "salida",
+      "name": "Salida encontrada",
+      "description": "Sal del laberinto por la puerta verde."
+    },
+    {
+      "id": "intacto",
+      "name": "Sin un rasguño",
+      "description": "Sal del laberinto sin perder ninguna vida."
+    },
+    {
+      "id": "curioso",
+      "name": "Curioso",
+      "description": "Mira cómo funciona el laberinto en el menú."
+    }
+  ],
+  "look": "firstperson"
 }

@@ -4,6 +4,7 @@
 -- edge down. The arrows are read turned too. Bullets in hundreds: swarms, moved and drawn in C (docs/lua.md). No
 -- pictures: ships drawn with polygons, the sky with rectangles and a swarm of streaks.
 -- Holding the console on its side: the D-pad moves, A fires (held), B moves slowly for squeezing between bullets.
+local lang = require("lang")
 local VW, VH = 160, 240
 local HIT = 2 -- half the ship's real size: only its heart is hit, as in those games
 
@@ -12,12 +13,28 @@ ship, foes, boss = {}, {}, nil
 local t, flash = 0, 0
 wave, shots, bullets, streaks = 0, nil, nil, nil -- (global too: the test)
 local look = {angle = 90, scale = 2}
+local toast_text, toast_t = nil, 0
+local how_from = "title"
+local HOW_X, HOW_Y = VW // 2, 182
+
+local function calm() return settings().reduce_flashing end -- the player wants no flashing or strobing
+
+local function earn(id) -- an achievement, with a toast drawn on the standing canvas so it reads turned like the rest
+  if achieve(id) then toast_text, toast_t = lang.tr("ach_" .. id), 150 end
+end
+
+function enter_how() -- the console's menu item (global: tests/tormenta.script)
+  if state == "play" or state == "title" then how_from, state = state, "how" earn("curioso") end
+end
 
 local function dpad() -- the arrows, read as they point with the console turned (its left edge down)
   return (btn("down") and 1 or 0) - (btn("up") and 1 or 0), (btn("left") and 1 or 0) - (btn("right") and 1 or 0)
 end
 
 function _init()
+  lang.load()
+  menuitem()
+  menuitem(lang.tr("how"), enter_how)
   show(0)
   canvas("V", VW, VH)
   canvas("ORB", 5, 5) target("ORB") circ(2, 2, 2, 0xFF4080) pset(2, 2, 0xFFF0F8) target()
@@ -35,6 +52,7 @@ local function start()
   state, score, lives, wave, foes, boss = "play", 0, 3, 0, {}, nil
   ship = {x = VW / 2, y = VH - 30, safe = 120}
   shots:clear() bullets:clear()
+  earn("despegue")
 end
 
 -- ------------------------------------------------------------------ bullets
@@ -58,7 +76,8 @@ end
 
 local function next_wave()
   wave = wave + 1
-  if wave > 5 then boss = {x = VW / 2, y = -30, hp = 300, t = 0} return end
+  if wave >= 3 then earn("oleada") end
+  if wave > 5 then boss = {x = VW / 2, y = -30, hp = 300, t = 0} earn("jefe") return end
   for i = 1, 6 + wave do -- a line of small ships coming in on a curve, from one side or the other
     local left = (wave + i) % 2 == 0
     foes[#foes + 1] = {x = left and -10 - i * 15 or VW + 10 + i * 15, y = 30 + (i % 3) * 20, vx = left and 0.8 or -0.8,
@@ -77,7 +96,8 @@ local function update_ship()
     sfx("SFX_SHOT")
   end
   if ship.safe == 0 and bullets:hit(ship.x - HIT, ship.y - HIT, HIT * 2, HIT * 2) > 0 then
-    lives, ship.safe, flash = lives - 1, 150, 8
+    lives, ship.safe, flash = lives - 1, 150, calm() and 0 or 8
+    earn("tocado")
     bullets:clear()
     sfx("SFX_HIT")
     if lives <= 0 then state, t = "over", 0 end
@@ -97,6 +117,7 @@ local function update_foes()
     if f.hp <= 0 then
       table.remove(foes, i)
       score = score + 100
+      earn("derribo")
       sfx("SFX_POP")
     elseif f.t > 0 and (f.x < -40 or f.x > VW + 40 or f.y > VH + 15) then
       table.remove(foes, i)
@@ -121,6 +142,7 @@ local function update_boss()
   if b.hp <= 0 then
     score, boss, state, t = score + 5000, nil, "won", 0
     bullets:clear()
+    earn("victoria")
     sfx("SFX_BOOM")
   end
 end
@@ -128,8 +150,19 @@ end
 function _update()
   t = t + 1
   if flash > 0 then flash = flash - 1 end
+  if toast_t > 0 then toast_t = toast_t - 1 end
   if t % 3 == 0 then streaks:add(math.random(VW), -5, 0, 3 + math.random() * 2) end -- the sky rushing past
   streaks:step()
+  if state == "how" then
+    if t % 6 == 0 then -- a live spiral like the boss's, from the middle of the panel
+      local a = t / 25
+      bullets:add(HOW_X, HOW_Y, math.cos(a) * 0.8, math.sin(a) * 0.8)
+      bullets:add(HOW_X, HOW_Y, math.cos(a + math.pi) * 0.8, math.sin(a + math.pi) * 0.8)
+    end
+    bullets:step()
+    if btnp("b") or btnp("start") or btnp("a") then state, t = how_from, 0 bullets:clear() end
+    return
+  end
   if state == "title" or state == "over" or state == "won" then
     if (btnp("a") or btnp("start")) and (state == "title" or t > 60) then start() end
     return
@@ -156,31 +189,53 @@ end
 local function boss_shape(b)
   poly({b.x - 30, b.y - 10, b.x + 30, b.y - 10, b.x + 20, b.y + 10, b.x - 20, b.y + 10}, 0x5040A0)
   poly({b.x - 15, b.y + 10, b.x + 15, b.y + 10, b.x, b.y + 20}, 0x8070E0)
-  circ(math.floor(b.x), math.floor(b.y), 5, b.t % 20 < 10 and 0xFF4080 or 0xFFF0F8)
+  circ(math.floor(b.x), math.floor(b.y), 5, (calm() or b.t % 20 < 10) and 0xFF4080 or 0xFFF0F8)
 end
 
 local function say(s, y, c, k) text(s, VW // 2, y, {font = "p8", align = "center", color = c, scale = k or 1}) end
 
+local function how_panel() -- the era's trick; the panel is drawn first, then the live bullets over it
+  rect(8, 14, VW - 16, 212, 0x101838) box(8, 14, VW - 16, 212, 0x60D0FF)
+end
+
+local function how_text()
+  say(lang.tr("how_title"), 20, 0xFFF070)
+  local _, h1 = text(lang.tr("how_body"), 14, 34, {font = "p8", color = 0xFFFFFF, width = VW - 28})
+  text(lang.tr("how_hit"), 14, 34 + h1 + 8, {font = "p8", color = 0xA0C0FF, width = VW - 28})
+  say(lang.tr("how_live", {n = #bullets}), 196, 0x80F0FF)
+  say(lang.tr("how_back"), 210, 0xFFFFFF)
+end
+
 function _draw()
   target("V")
-  cls(flash > 0 and 0x402030 or 0x0A1028)
+  cls(flash > 0 and not calm() and 0x402030 or 0x0A1028)
   streaks:draw("STREAK")
-  if state ~= "title" then
+  if state == "how" then
+    how_panel()
+    bullets:draw("ORB")
+    circ(HOW_X, HOW_Y, 1, 0xFFFFFF)
+    how_text()
+  elseif state ~= "title" then
     for _, f in ipairs(foes) do foe_shape(f) end
     if boss then boss_shape(boss) end
     shots:draw("SHOT")
-    if state == "play" and (ship.safe == 0 or t % 8 < 5) then ship_shape(ship.x, ship.y, 0x60D0FF) end
+    if state == "play" and (ship.safe == 0 or calm() or t % 8 < 5) then ship_shape(ship.x, ship.y, 0x60D0FF) end
     bullets:draw("ORB")
     text(tostring(score), 4, 4, {font = "p8", color = 0xFFFFFF})
     for i = 1, lives do ship_shape(VW - i * 10, 10, 0x60D0FF) end
     if boss then rect(20, 20, math.floor(120 * boss.hp / 300), 2, 0xFF4080) end
   end
   if state == "title" then
-    say("TORMENTA", 80, 0xFFF070, 2)
-    say("GIRA LA CONSOLA", 115, 0xA0C0FF)
-    if (t // 30) % 2 == 0 then say("PULSA A", 150, 0xFFFFFF) end
-  elseif state == "over" then say("FIN", 110, 0xFF6060, 2)
-  elseif state == "won" then say("¡VICTORIA!", 110, 0xFFF070) end
+    say(lang.tr("title"), 80, 0xFFF070, 2)
+    say(lang.tr("turn"), 115, 0xA0C0FF)
+    if calm() or (t // 30) % 2 == 0 then say(lang.tr("press"), 150, 0xFFFFFF) end
+  elseif state == "over" then say(lang.tr("over"), 110, 0xFF6060, 2)
+  elseif state == "won" then say(lang.tr("won"), 110, 0xFFF070) end
+  if toast_t > 0 then
+    local w, h = textw(toast_text, {font = "p8", width = VW - 20})
+    rect(VW // 2 - w // 2 - 4, 224, w + 8, h + 8, 0x101838)
+    text(toast_text, VW // 2, 228, {font = "p8", align = "center", color = 0xFFF070, width = VW - 20})
+  end
   target()
   img("V", 240 - VW, 160 - VH, look) -- turned a quarter round, twice as big: its top on the console's right edge
 end

@@ -3,6 +3,7 @@
 -- and lamps standing in it hidden by the walls in front; the game shows it twice as big under a status bar.
 -- Up and down walk, left and right turn (with B held, they step sideways). A shoots straight ahead. Take the five
 -- gems and find the green door; the ghosts take a life when they reach you.
+local lang = require("lang")
 local MAP = {
   "################",
   "#......#.......#",
@@ -27,6 +28,10 @@ local FOV = 66
 state, lives, gems = "title", 3, 0 -- (global: tests/laberinto.script)
 P, ghosts, items = {}, {}, {}
 local t, flash, shot_t = 0, 0, 0
+local toast_text, toast_t = nil, 0
+local how_from, how_angle, how_h, how_wall, how_d = "title", 0, 120, "#", 0
+local WALL_KEY = {["#"] = "wall_stone", B = "wall_brick", W = "wall_wood", D = "wall_door"}
+local hurt_any = false -- a life lost in this run (for "intacto")
 local view = {map = MAP, walls = WALLS, fov = FOV, fog = 12, ceiling = 0x2A2A38, floor = 0x4A4038, sprites = {}}
 
 local function open(x, y) -- a square one can stand in
@@ -45,10 +50,35 @@ local function reset()
   for _, l in ipairs({{4.5, 5.5}, {12.5, 7.5}, {8.5, 13.5}, {6.5, 10.5}}) do
     items[#items + 1] = {x = l[1], y = l[2], picture = "LAMP"}
   end
-  lives, gems, state = 3, 0, "play"
+  lives, gems, state, hurt_any = 3, 0, "play", false
+end
+
+local function earn(id) -- an achievement, with a toast the first time
+  if achieve(id) then toast_text, toast_t = lang.tr("ach_" .. id), 170 end
+end
+
+local function leave_how()
+  P.a, state = how_angle, how_from
+end
+
+local function menu() -- the game's own item in the console's menu: how the picture is made
+  menuitem()
+  menuitem(lang.tr("how"), function()
+    if state == "title" or state == "play" then
+      how_from, how_angle, state = state, P.a, "how"
+      earn("curioso")
+    end
+  end)
+end
+
+function _resume()
+  lang.load()
+  menu()
 end
 
 function _init()
+  lang.load()
+  menu()
   show(0)
   canvas("VIEW", 240, 144) -- (the status bar covers the rest)
   sound("SFX_SHOT", {wave = "noise", freq = 1200, slide = -2000, sustain = 0.02, decay = 0.15, volume = 0.35})
@@ -67,6 +97,7 @@ end
 local function shoot()
   shot_t = 8
   sfx("SFX_SHOT")
+  view.x, view.y, view.angle = P.x, P.y, P.a -- (the view is only set in _draw: a shot looks from where you are now)
   local wall_d = raycast("VIEW", view) -- what is straight ahead, and how far
   local a = math.rad(P.a)
   for i = #ghosts, 1, -1 do
@@ -77,6 +108,7 @@ local function shoot()
     if ahead > 0 and ahead < wall_d and aside < 0.35 then
       table.remove(ghosts, i)
       sfx("SFX_POOF")
+      earn("cazafantasmas")
       return
     end
   end
@@ -99,7 +131,8 @@ local function update_play()
     else nx = g.x + g.dir * 0.02 end
     if open(nx, ny) then g.x, g.y = nx, ny else g.dir = -g.dir end
     if d < 0.5 and P.hurt == 0 then
-      lives, P.hurt, flash = lives - 1, 90, 10
+      lives, P.hurt, flash, hurt_any = lives - 1, 90, 10, true
+      earn("susto")
       sfx("SFX_HURT")
       if lives <= 0 then state, t = "over", 0 end
     end
@@ -110,20 +143,26 @@ local function update_play()
       table.remove(items, i)
       gems = gems + 1
       sfx("SFX_GEM")
+      earn("primer_paso")
+      if gems == 5 then earn("tesoro") end
     end
   end
-  if gems == 5 and P.x > 14.5 and math.floor(P.y) == 14 then state, t = "won", 0 sfx("SFX_WIN") end -- at the door
+  if gems == 5 and P.x > 14.5 and math.floor(P.y) == 14 then state, t = "won", 0 sfx("SFX_WIN") earn("salida") if not hurt_any then earn("intacto") end end -- at the door
 end
 
 function _update()
   t = t + 1
   if flash > 0 then flash = flash - 1 end
+  if toast_t > 0 then toast_t = toast_t - 1 end
   if shot_t > 0 then shot_t = shot_t - 1 end
   if state == "title" then
     P.x, P.y, P.a = 8, 7.5, (t / 2) % 360
     if btnp("a") or btnp("start") then reset() end
   elseif state == "play" then
     update_play()
+  elseif state == "how" then
+    P.a = (P.a + 0.5) % 360 -- the view turns by itself: every column is worked out again each frame
+    if btnp("b") or btnp("start") then leave_how() end
   elseif t > 60 and btnp("a") then
     state = "title"
   end
@@ -139,17 +178,34 @@ function _draw()
   for i = n + 1, #sprites do sprites[i] = nil end
   raycast("VIEW", view)
   img("VIEW", 0, 0, {scale = 2})
-  if flash > 0 then rect(0, 0, 480, 320, 0x800000) end
+  if flash > 0 and not settings().reduce_flashing then rect(0, 0, 480, 320, 0x800000) end -- (a red flash: not for who asked for less)
   if state == "title" then
-    text("LABERINTO", 240, 80, {font = "arcade", scale = 3, align = "center", color = 0xFFE070, outline = 0x200808})
-    if (t // 30) % 2 == 0 then text("PULSA A", 240, 200, {font = "arcade", align = "center", color = 0xFFFFFF, outline = 0x200808}) end
+    text(lang.tr("title"), 240, 80, {font = "arcade", scale = 3, align = "center", color = 0xFFE070, outline = 0x200808})
+    if (t // 30) % 2 == 0 or settings().reduce_flashing then text(lang.tr("press"), 240, 200, {font = "arcade", align = "center", color = 0xFFFFFF, outline = 0x200808}) end
+    return
+  end
+  if state == "how" then
+    local d, wall = raycast("VIEW", view)
+    how_d, how_wall = d, wall
+    line(240, 0, 240, 130, 0xFFE070) -- the ray whose wall is measured below
+    panel(12, 130, 456, 180)
+    text(lang.tr("how_title"), 28, 140, {font = "arcade", color = 0x902020})
+    local _, h = text(lang.tr("how_body", {cols = 240}), 28, 164, {font = "main", color = 0x201810, width = 420})
+    how_h = h or how_h
+    text(lang.tr("how_live", {d = string.format("%.1f", d), wall = lang.tr(WALL_KEY[wall] or "wall_stone")}), 28, 164 + how_h + 8, {font = "main", color = 0x105030, width = 420})
+    text(lang.tr("how_back"), 452, 288, {font = "main", color = 0x605040, align = "right"})
     return
   end
   if shot_t > 0 then circ(240, 160, 10 - shot_t, 0xFFF0A0) end
   line(234, 160, 246, 160, 0xFFFFFF) line(240, 154, 240, 166, 0xFFFFFF) -- the sight
   rect(0, 288, 480, 32, 0x1A1A2A) -- the status bar
-  text("VIDAS " .. lives, 12, 296, {font = "arcade", color = 0xFF8080})
-  text("GEMAS " .. gems .. "/5", 330, 296, {font = "arcade", color = 0x80FFC0})
-  if state == "won" then text("¡FUERA!", 240, 120, {font = "arcade", scale = 3, align = "center", color = 0x80FFC0, outline = 0x082010}) end
-  if state == "over" then text("FIN", 240, 120, {font = "arcade", scale = 3, align = "center", color = 0xFF6060, outline = 0x200808}) end
+  text(lang.tr("lives", {n = lives}), 12, 296, {font = "arcade", color = 0xFF8080})
+  text(lang.tr("gems", {n = gems}), 330, 296, {font = "arcade", color = 0x80FFC0})
+  if state == "won" then text(lang.tr("won"), 240, 120, {font = "arcade", scale = 3, align = "center", color = 0x80FFC0, outline = 0x082010}) end
+  if state == "over" then text(lang.tr("over"), 240, 120, {font = "arcade", scale = 3, align = "center", color = 0xFF6060, outline = 0x200808}) end
+  if toast_t > 0 then
+    local w = textw(toast_text, {font = "arcade"})
+    plate(240 - w // 2 - 8, 8, w + 16, 22, 0x202030)
+    text(toast_text, 240, 12, {font = "arcade", align = "center", color = 0xFFE070})
+  end
 end

@@ -7,6 +7,7 @@
 -- breaks the beetles; touched otherwise, it loses its gems, which bounce away and can be caught again; with none, a
 -- life. Springs throw it up. Reach the goal.
 local LEVEL = require("level")
+local lang = require("lang")
 local TW, TH = #LEVEL[1], #LEVEL
 local ACCEL, DECEL, SKID, TOP_SPEED = 0.08, 0.06, 0.3, 4
 local GRAVITY, JUMP, SPRING, MAX_FALL = 0.21, -4.6, -7.5, 6
@@ -17,6 +18,12 @@ state, score, lives, carried = "title", 0, 3, 0
 cam, springs = 0, {}
 local timer, goal_x, goal_y, mosaic_t, clock = 0, 0, 0, 0, 0
 local start_x, start_y = 32, 96
+local toast_text, toast_t, how_t, lost_life = nil, 0, 0, false
+local calm = false -- settings().reduce_flashing: no blinking, nothing that strobes
+
+local function earn(id) -- an achievement, with a note on screen the first time
+  if achieve(id) then toast_text, toast_t = lang.tr("ach_" .. id), 180 end
+end
 
 local function tile(tx, ty)
   if tx < 0 or tx >= TW then return "#" end
@@ -43,7 +50,7 @@ local function respawn()
 end
 
 local function reset_level()
-  beetles, gems, flying, springs, score, lives = {}, {}, {}, {}, 0, 3
+  beetles, gems, flying, springs, score, lives, lost_life = {}, {}, {}, {}, 0, 3, false
   for ty = 0, TH - 1 do
     for tx = 0, TW - 1 do
       local c = tile(tx, ty)
@@ -58,7 +65,17 @@ local function reset_level()
   respawn()
 end
 
+local function open_how() -- the console's menu item: the trick of the era, with this level's own numbers
+  if state ~= "play" then return end
+  state, how_t = "how", 0
+  earn("curioso")
+end
+HOW = open_how -- (global: tests/veloz.script)
+
 function _init()
+  lang.load()
+  menuitem()
+  menuitem(lang.tr("how"), open_how)
   hero_sh, beetle_sh, gem_sh = sheet("HERO"), sheet("BEETLE"), sheet("GEM")
   spring_sh, goal_sh = sheet("SPRING"), sheet("GOAL")
   palette("OBJ", true)
@@ -90,7 +107,7 @@ local function hurt()
     carried, P.hurt, P.vx, P.vy = 0, 90, -P.face * 2, -3
     sfx("SFX_LOSE")
   else
-    P.dead, P.vy, lives = 1, -5, lives - 1
+    P.dead, P.vy, lives, lost_life = 1, -5, lives - 1, true
     sfx("SFX_LOSE")
     music()
   end
@@ -138,13 +155,14 @@ local function update_play()
   P.t = P.t + 1
   if P.hurt > 0 then P.hurt = P.hurt - 1 end
   move()
-  if P.y > TH * 8 then P.dead, P.vy, lives = 1, -5, lives - 1 sfx("SFX_LOSE") return end -- into a pit
+  if P.y > TH * 8 then P.dead, P.vy, lives, lost_life = 1, -5, lives - 1, true sfx("SFX_LOSE") return end -- into a pit
   for i = #gems, 1, -1 do
     local g = gems[i]
     if overlap(P.x + 8, P.y + 6, 16, 26, g.x, g.y, 16, 16) then
       table.remove(gems, i)
       carried, score = carried + 1, score + 10
       sfx("SFX_GEM", 0.5)
+      earn("primera_gema")
     end
   end
   for i = #flying, 1, -1 do
@@ -155,6 +173,7 @@ local function update_play()
       table.remove(flying, i)
       carried = carried + 1
       sfx("SFX_GEM", 0.5)
+      earn("rescate")
     elseif g.life <= 0 or g.y > TH * 8 then table.remove(flying, i) end
   end
   for _, s in ipairs(springs) do
@@ -162,6 +181,7 @@ local function update_play()
     if P.vy >= 0 and overlap(P.x + 8, P.y + 24, 16, 8, s.x, s.y, 16, 16) then
       P.vy, P.ground, P.ball, P.jumped, s.t = SPRING, false, true, false, 12
       sfx("SFX_SPRING")
+      earn("muelle")
     end
   end
   for _, b in ipairs(beetles) do
@@ -176,18 +196,27 @@ local function update_play()
         if P.ball then -- rolled up: it breaks
           b.dead, P.vy, score = 1, P.vy > 0 and -3.5 or P.vy, score + 100
           sfx("SFX_POP", 0.6)
+          earn("rodando")
         else hurt() end
       end
     end
   end
   local target = P.x + 16 - 120 + P.vx * 14 -- the camera looks ahead of the run
   cam = math.max(0, math.min(TW * 8 - W, cam + (target - cam) * 0.15))
-  if P.x + 16 >= goal_x + 16 then state, timer = "won", 0 music() sfx("SFX_WIN") score = score + carried * 100 end
+  if P.x + 16 >= goal_x + 16 then state, timer = "won", 0 music() sfx("SFX_WIN") score = score + carried * 100
+    earn("meta")
+    if not lost_life then earn("intacto") end
+  end
 end
 
 function _update()
   timer = timer + 1
-  if state == "title" then
+  calm = settings().reduce_flashing
+  if toast_t > 0 then toast_t = toast_t - 1 end
+  if state == "how" then
+    how_t = how_t + 1
+    if btnp("b") or btnp("start") then state = "play" end
+  elseif state == "title" then
     if btnp("a") or btnp("start") then
       reset_level()
       play_layers()
@@ -211,7 +240,7 @@ local function draw_sprites()
   local function put(sh, f, x, y, flags)
     if n < 128 and x > -32 and x < W and y > -32 and y < H then spr(n, sh, f, x, y, flags) n = n + 1 end
   end
-  if P.hurt % 6 < 4 then
+  if calm or P.hurt % 6 < 4 then
     local f = P.ball and 4 + (timer // 2) % 4 or (math.abs(P.vx) > 0.3 and (timer // math.max(2, 8 - math.floor(math.abs(P.vx) * 1.5))) % 4 or 0)
     put(hero_sh, f, P.x - cam, P.y, prio(1) | (P.face < 0 and FLIP_X or 0))
   end
@@ -219,9 +248,22 @@ local function draw_sprites()
     if b.dead < 20 then put(beetle_sh, (timer // 8) % 2, b.x - cam, b.y, prio(1) | (b.dir > 0 and FLIP_X or 0) | (b.dead > 0 and MOSAIC or 0)) end
   end
   for _, g in ipairs(gems) do put(gem_sh, (timer // 6) % 4, g.x - cam, g.y, prio(1)) end
-  for _, g in ipairs(flying) do if g.life > 40 or g.life % 4 < 2 then put(gem_sh, (timer // 3) % 4, g.x - cam, g.y, prio(1)) end end
+  for _, g in ipairs(flying) do if calm or g.life > 40 or g.life % 4 < 2 then put(gem_sh, (timer // 3) % 4, g.x - cam, g.y, prio(1)) end end
   for _, s in ipairs(springs) do put(spring_sh, s.t > 0 and 1 or 0, s.x - cam, s.y, prio(1)) end
   put(goal_sh, state == "won" and (timer // 4) % 4 or 0, goal_x - cam, goal_y, prio(1))
+end
+
+local function draw_how() -- a card over the moving layers, with this level's own numbers
+  local lo, hi = math.floor(cam * 0.2), math.floor(cam * 0.7)
+  local opt = {font = "main", width = 392, color = 0x202048}
+  panel(24, 16, 432, 296)
+  text(lang.tr("how_title"), 240, 32, {font = "arcade", align = "center", color = 0xC02020})
+  local y = 50
+  for _, k in ipairs({"how_1", "how_2", "how_3"}) do
+    local _, h = text(lang.tr(k, {a = lo, b = hi, c = math.floor(cam), h = math.floor(cam * 0.5)}), 44, y, opt)
+    y = y + h + 6
+  end
+  text(lang.tr("how_back"), 240, 284, {font = "main", align = "center", color = 0x204080})
 end
 
 function _draw()
@@ -229,30 +271,35 @@ function _draw()
     mode7(0, 128 + 90 * math.cos(timer / 140), 128 + 90 * math.sin(timer / 140), timer / 2, 40, 60, 160)
     spr_clear()
     spr(0, hero_sh, 4 + (timer // 3) % 4, W // 2 - 16, 70, prio(0))
-    text("PANGOLIN", 240, 30, {font = "arcade", scale = 3, align = "center", color = 0xFFF070, gradient = 0xF06010,
+    text(lang.tr("title_1"), 240, 30, {font = "arcade", scale = 3, align = "center", color = 0xFFF070, gradient = 0xF06010,
                                outline = 0x101040, shadow = 0x000000})
-    text("VELOZ", 240, 84, {font = "arcade", scale = 2, align = "center", color = 0x80E0FF, outline = 0x101040})
-    if (timer // 30) % 2 == 0 then text("PULSA A", 240, 290, {font = "arcade", align = "center", color = 0xFFFFFF, outline = 0x101040}) end
+    text(lang.tr("title_2"), 240, 84, {font = "arcade", scale = 2, align = "center", color = 0x80E0FF, outline = 0x101040})
+    if calm or (timer // 30) % 2 == 0 then text(lang.tr("press"), 240, 290, {font = "arcade", align = "center", color = 0xFFFFFF, outline = 0x101040}) end
     return
   end
-  scroll(3, cam * 0.15, 0)
-  for y = 92, H - 1 do line_scroll(3, y, math.floor(cam * (0.2 + 0.5 * (y - 92) / 68)), 0) end -- the sea, line by line
-  scroll(2, cam * 0.5, 0)
-  scroll(1, cam, 0)
-  scroll(0, cam, 0)
+  local view = state == "how" and cam + how_t * 1.5 or cam -- the how screen keeps the layers moving
+  scroll(3, view * 0.15, 0)
+  for y = 92, H - 1 do line_scroll(3, y, math.floor(view * (0.2 + 0.5 * (y - 92) / 68)), 0) end -- the sea, line by line
+  scroll(2, view * 0.5, 0)
+  scroll(1, view, 0)
+  scroll(0, view, 0)
   mosaic(1 + mosaic_t // 2, 1 + mosaic_t // 2)
+  if state == "how" then spr_clear() draw_how() return end
   draw_sprites()
   local function hud(label, value, y)
     text(label, 16, y, {font = "arcade", color = 0xFFE020, outline = 0x101040})
     text(value, 176, y, {font = "arcade", color = 0xFFFFFF, outline = 0x101040})
   end
-  hud("PUNTOS", tostring(score), 10)
-  hud("TIEMPO", string.format("%d:%02d", clock // 3600, clock // 60 % 60), 30)
-  hud("GEMAS", tostring(carried), 50)
+  hud(lang.tr("score"), tostring(score), 10)
+  hud(lang.tr("time"), string.format("%d:%02d", clock // 3600, clock // 60 % 60), 30)
+  hud(lang.tr("gems"), tostring(carried), 50)
   text("x" .. lives, 464, 10, {font = "arcade", align = "right", color = 0xFFFFFF, outline = 0x101040})
+  if toast_t > 0 then
+    text(toast_text, 240, 292, {font = "arcade", align = "center", width = 440, color = 0xFFF070, outline = 0x101040})
+  end
   if state == "won" then
-    text("¡META!", 240, 120, {font = "arcade", scale = 3, align = "center", color = 0xFFF070, outline = 0x101040})
+    text(lang.tr("goal"), 240, 120, {font = "arcade", scale = 3, align = "center", color = 0xFFF070, outline = 0x101040})
   elseif state == "over" then
-    text("GAME OVER", 240, 140, {font = "arcade", scale = 3, align = "center", color = 0xFF4040, outline = 0x101040})
+    text(lang.tr("over"), 240, 140, {font = "arcade", scale = 3, align = "center", color = 0xFF4040, outline = 0x101040})
   end
 end

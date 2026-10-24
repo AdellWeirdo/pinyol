@@ -13,6 +13,13 @@ expect_lua ship.y < y0
 hold A 120
 expect_lua score > 0
 shot oleada
+expect_lua score > 0
+lua enter_how()
+tick 90
+expect_lua state == "how" and bullets:get(1) ~= nil
+shot como
+press B
+expect_lua state == "play"
 lua ship.safe = 0
 lua bullets:add(ship.x, ship.y, 0, 0)
 tick 2

@@ -3,6 +3,12 @@
 tick 30
 expect_lua state == "title"
 shot titulo
+lua state = "explain"
+tick 20
+expect_lua state == "explain"
+shot como
+press B
+expect_lua state == "title"
 press A
 expect_lua state == "play"
 hold RIGHT 60

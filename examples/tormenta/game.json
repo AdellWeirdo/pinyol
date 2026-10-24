@@ -2,9 +2,46 @@
   "id": "tormenta",
   "title": "Tormenta",
   "subtitle": "Recreativa vertical",
-  "look": "vertical",
   "engine": "pinyol@2",
   "main": "main.lua",
   "author": "pinyol examples",
-  "description": "Un matamarcianos vertical a la manera de las recreativas con la pantalla girada: se juega con la consola de lado, entre cientos de balas. Todo dibujado con código."
+  "description": "Un matamarcianos vertical a la manera de las recreativas con la pantalla girada: se juega con la consola de lado, entre cientos de balas. Todo dibujado con código.",
+  "achievements": [
+    {
+      "id": "despegue",
+      "name": "¡Despegue!",
+      "description": "Empieza una partida."
+    },
+    {
+      "id": "derribo",
+      "name": "Primer derribo",
+      "description": "Derriba una nave enemiga."
+    },
+    {
+      "id": "tocado",
+      "name": "Tocado",
+      "description": "Pierde una vida por una bala."
+    },
+    {
+      "id": "oleada",
+      "name": "Tercera oleada",
+      "description": "Llega a la tercera oleada."
+    },
+    {
+      "id": "jefe",
+      "name": "Cara a cara",
+      "description": "Llega hasta el jefe."
+    },
+    {
+      "id": "victoria",
+      "name": "Tormenta calmada",
+      "description": "Derrota al jefe y acaba la partida."
+    },
+    {
+      "id": "curioso",
+      "name": "Curioso",
+      "description": "Mira cómo funciona el modo vertical en el menú."
+    }
+  ],
+  "look": "vertical"
 }
