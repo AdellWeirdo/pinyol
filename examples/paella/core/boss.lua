@@ -15,7 +15,7 @@ B.active = false
 B.hp, B.max_hp = 100, 100
 -- the boss's life per chef: the weapons differ a lot in what they do to the open pot (cream and knives took 4 times as long as corks), so each chef gets the life that makes the
 -- fight about the same length (measured with a perfect bot)
-local HP = {estrella = 230, espuma = 240, pinche = 270, arrocero = 270, brioche = 230, crianza = 265}
+local HP = {estrella = 235, espuma = 305, pinche = 270, arrocero = 320, brioche = 280, crianza = 320}
 B.done = false
 
 local PLAN = {"rockets", "stomp", "beam", "pot"}
@@ -64,8 +64,9 @@ function B.hit_at(x, y, r, dmg)
     Fx.add("hit", x, y)
     return true
   end
-  -- the rest of the machine: a clank
-  if x > B.x - 155 and x < B.x + 150 and y > C.FLOOR - 330 then Fx.add("hit", x, y) return true end
+  -- the rest of the machine: a clank, but only while the pot and the head are shut: when one is open the shot goes on to it (the clank used to swallow every shot
+  -- before it reached the open pot, which sits behind the machine's outline, and only grenades could hurt the boss)
+  if not (B.pot_open or B.head_open) and x > B.x - 155 and x < B.x + 150 and y > C.FLOOR - 330 then Fx.add("hit", x, y) return true end
   return false
 end
 
