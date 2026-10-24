@@ -19,7 +19,7 @@ Each check is OK, WARN (worth fixing) or FAIL (a demo must not ship without it):
   fonts    the look's font pack, or a font of the game's own, is in fonts/ and used                                         WARN
   art      tools/sprite_check.py finds no cut frame or floating feet (if the game has art/)                                  WARN
   text     its test script plays with the simulator's --check-text: no text cut by the screen's edge or too big for its textbox, in es, ca and en   FAIL
-  pictures no raw RGB565 picture of 96 KB or more, drawn with img, that is not the whole screen (slow on the console: pack it)   WARN
+  pictures no raw RGB565 picture of 8 KB or more, drawn with img, that is not the whole screen (slow on the console: pack it)   WARN
   numbers  docs/measurements.md has the game's frame rate measured on the console                                           WARN
 Exit 1 if any FAIL.
 """
@@ -120,7 +120,7 @@ def check(game: Path) -> list[tuple[str, str, str]]:
         except ImportError:
             out.append(("art", "OK", "(numpy/scipy not installed: not checked)"))
     raw = [f"{p.stem} {p.stat().st_size // 1024} KB" for p in sorted((game / "assets").glob("*.rgb565"))
-           if p.stat().st_size >= 96 * 1024 and p.stat().st_size != 480 * 320 * 2
+           if p.stat().st_size >= 8 * 1024 and p.stat().st_size != 480 * 320 * 2
            and re.search(r'img\([^)]*["\']%s["\']' % re.escape(p.stem), code)] if (game / "assets").is_dir() else []  # (a bg() layer's image is another path)
     out.append(("pictures", "WARN" if raw else "OK", "raw and slow on the console (tools/png2asset.py --packed): " + ", ".join(raw[:4]) if raw else "no big raw picture"))
     meas = (ROOT / "docs" / "measurements.md").read_text(encoding="utf-8") if (ROOT / "docs" / "measurements.md").exists() else ""
