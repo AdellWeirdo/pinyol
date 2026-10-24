@@ -69,6 +69,31 @@ function S.back(name, x, y, flip)
   end
 end
 
+-- S.nine(sheet, frame, x, y, w, h, m, pw, ph): a frame picture of size pw x ph (top-left anchor) stretched to w x h keeping its corners (m pixels): four corners, four edges, the middle
+function S.nine(name, frame, x, y, w, h, m, pw, ph)
+  local sh = D.sheets[name]
+  local idx = sh.frames[frame]
+  local id = sh.id
+  if sh.pieces then id = id .. "_C" .. (idx // sh.per) idx = idx % sh.per end
+  local function part(sx, sy, sw, shh, dx, dy, dw, dh)
+    clip(dx, dy, dw, dh)
+    img(id, math.floor(dx - sx * dw / sw), math.floor(dy - sy * dh / shh), {frame = idx, scale_x = dw / sw, scale_y = dh / shh})
+    S.count = S.count + 1
+  end
+  local cw, ch = pw - 2 * m, ph - 2 * m
+  local mw, mh = w - 2 * m, h - 2 * m
+  part(0, 0, m, m, x, y, m, m)
+  part(pw - m, 0, m, m, x + w - m, y, m, m)
+  part(0, ph - m, m, m, x, y + h - m, m, m)
+  part(pw - m, ph - m, m, m, x + w - m, y + h - m, m, m)
+  part(m, 0, cw, m, x + m, y, mw, m)
+  part(m, ph - m, cw, m, x + m, y + h - m, mw, m)
+  part(0, m, m, ch, x, y + m, m, mh)
+  part(pw - m, m, m, ch, x + w - m, y + m, m, mh)
+  part(m, m, cw, ch, x + m, y + m, mw, mh)
+  clip()
+end
+
 function S.back_size(name) local b = D.backs[name] return b.w, b.h end
 
 return S

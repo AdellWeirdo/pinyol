@@ -577,6 +577,45 @@ return {
         ["fabrica"] = 1,
         ["torre"] = 2
       }
+    },
+    ["ui"] = {
+      ["id"] = "SPR_UI",
+      ["w"] = 330,
+      ["h"] = 120,
+      ["ax"] = 0,
+      ["ay"] = 0,
+      ["n"] = 6,
+      ["pieces"] = false,
+      ["per"] = 10,
+      ["frames"] = {
+        ["score"] = 0,
+        ["bar"] = 1,
+        ["life"] = 2,
+        ["gauge"] = 3,
+        ["boss"] = 4,
+        ["panel"] = 5
+      },
+      ["sizes"] = {
+        ["score"] = {126, 52},
+        ["bar"] = {133, 30},
+        ["life"] = {28, 26},
+        ["gauge"] = {19, 28},
+        ["boss"] = {156, 56},
+        ["panel"] = {176, 120}
+      }
+    },
+    ["logo"] = {
+      ["id"] = "SPR_LOGO",
+      ["w"] = 420,
+      ["h"] = 170,
+      ["ax"] = 210,
+      ["ay"] = 0,
+      ["n"] = 1,
+      ["pieces"] = false,
+      ["per"] = 1,
+      ["frames"] = {
+        ["logo"] = 0
+      }
     }
   },
   ["backs"] = {

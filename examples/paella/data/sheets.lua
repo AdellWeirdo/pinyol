@@ -871,6 +871,45 @@ return {
       },
       ["faces"] = "left",
       ["notes"] = "beam tiles horizontally; charge/spark/bolt are centred"
+    },
+    ["ui"] = {
+      ["id"] = "SPR_UI",
+      ["w"] = 330,
+      ["h"] = 120,
+      ["ax"] = 0,
+      ["ay"] = 0,
+      ["n"] = 6,
+      ["pieces"] = false,
+      ["per"] = 8,
+      ["frames"] = {
+        ["score"] = 0,
+        ["bar"] = 1,
+        ["life"] = 2,
+        ["gauge"] = 3,
+        ["boss"] = 4,
+        ["panel"] = 5
+      },
+      ["sizes"] = {
+        ["score"] = {119, 52},
+        ["bar"] = {144, 30},
+        ["life"] = {28, 28},
+        ["gauge"] = {28, 24},
+        ["boss"] = {173, 56},
+        ["panel"] = {223, 120}
+      }
+    },
+    ["logo"] = {
+      ["id"] = "SPR_LOGO",
+      ["w"] = 420,
+      ["h"] = 170,
+      ["ax"] = 210,
+      ["ay"] = 0,
+      ["n"] = 1,
+      ["pieces"] = false,
+      ["per"] = 2,
+      ["frames"] = {
+        ["logo"] = 0
+      }
     }
   },
   ["backs"] = {

@@ -39,8 +39,7 @@ function T.draw()
   S.count = 0
   S.back("title", 0, 0)
   local y = 22 + math.floor(math.sin(T.t / 25) * 3)
-  label("PAELLA", 240, y, {align = "center", scale = 4, gradient = 0xFF5020, color = 0xFFF0A0})
-  label(lang.tr("title_de"), 240, y + 66, {align = "center", scale = 2, fit = 440, gradient = 0xFFB020, color = 0xFFFFFF})
+  S.draw("logo", "logo", 240, y - 10, {})
   for i, it in ipairs(T.items) do
     local on = i == T.sel
     label((on and "> " or "  ") .. lang.tr("title_" .. it), 240, 214 + (i - 1) * 28, {align = "center", scale = 1, color = on and 0xFFFFFF or 0xA09070})
@@ -79,7 +78,7 @@ function SEL.draw()
   end
   label(lang.tr("select_title"), 240, 22, {align = "center", scale = 2, fit = 300, gradient = 0xFF8020})
   local id = X.CHEFS[SEL.sel]
-  panel(60, 238, 360, 70)
+  Hud.panel(50, 224, 380, 94)
   text(lang.tr("chef_" .. id .. "_name"), 240, 246, {font = "bold", align = "center", color = 0x402010})
   text(W.NAMES[id][lang.code] or W.NAMES[id].es, 240, 268, {font = "main", align = "center", color = 0x402010})
   text(lang.tr("chef_" .. id .. "_trait"), 240, 286, {font = "main", align = "center", color = 0x8a3a08})
@@ -107,7 +106,7 @@ function R.draw(chef)
   S.count = 0
   S.back("title", 0, 0)
   S.draw("chef_" .. Run.chef, "win_" .. (R.t // 8) % 4, 110, 300, {})
-  panel(190, 40, 270, 210)
+  Hud.panel(190, 30, 270, 230)
   text(lang.tr("res_title"), 325, 52, {font = "bold", align = "center", color = 0x8a3a08})
   local y = 92
   local function row(k, v) text(lang.tr(k), 206, y, {font = "main", color = 0x402010}) text(v, 446, y, {font = "main", align = "right", color = 0x402010}) y = y + 26 end

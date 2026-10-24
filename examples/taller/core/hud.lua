@@ -21,6 +21,12 @@ local function label(str, x, y, o)
 end
 H.label = label
 
+-- a parchment panel of the game's own interface kit (art/ui.png), stretched to w x h keeping its corners
+function H.panel(x, y, w, h)
+  local sz = S.sheets.ui.sizes.panel
+  S.nine("ui", "panel", x, y, w, h, 14, sz[1], sz[2])
+end
+
 local PART_ICON = {hammer = "part_hammer", springs = "part_springs", wrench = "part_wrench", boiler = "part_boiler"}
 
 local function bar(x, y, w, h, frac, color, back)
@@ -31,24 +37,32 @@ end
 
 function H.draw(play, t)
   local h = play.hero
-  label(lang.tr("hero_" .. h.id .. "_name"), 16, 10, {color = 0xFFFFFF})
-  bar(16, 28, 150, 10, h.hp / h.max_hp, h.hp / h.max_hp < 0.3 and 0xF04030 or 0xF0B020)
-  label("x" .. math.max(0, h.lives), 176, 24, {color = 0xFFFFFF})
+  label(lang.tr("hero_" .. h.id .. "_name"), 16, 8, {color = 0xFFFFFF})
+  -- the life gauge: the brass frame with its fill inside
+  S.draw("ui", "bar", 10, 30, {})
+  local frac = math.max(0, math.min(1, h.hp / h.max_hp))
+  rect(30, 39, math.floor(93 * frac), 12, frac < 0.3 and 0xF04030 or 0xF0B020)
+  S.draw("ui", "life", 150, 31, {})
+  label("x" .. math.max(0, h.lives), 182, 34, {color = 0xFFFFFF})
   -- the steam gauge
   local full = h.meter >= C.METER
-  bar(16, 46, 100, 6, h.meter / C.METER, full and ((t // 6) % 2 == 0 and 0xFFFFFF or 0x60D0FF) or 0x3090D0, 0x182030)
-  if full then label(lang.tr("hud_special"), 124, 42, {color = (t // 8) % 2 == 0 and 0xFFFFFF or 0x60D0FF}) end
-  label(string.format("%07d", Run.score), 16, 60, {scale = 2, gradient = 0xFF8020})
+  S.draw("ui", "gauge", 10, 66, {})
+  bar(40, 74, 100, 6, h.meter / C.METER, full and ((t // 6) % 2 == 0 and 0xFFFFFF or 0x60D0FF) or 0x3090D0, 0x182030)
+  if full then label(lang.tr("hud_special"), 150, 66, {color = (t // 8) % 2 == 0 and 0xFFFFFF or 0x60D0FF}) end
+  S.draw("ui", "score", 6, 98, {})
+  label(string.format("%07d", Run.score), 22, 116, {color = 0xFFE070})
   if h.part then
-    S.draw("parts", PART_ICON[h.part], 34, 142, {})
-    bar(70, 128, 80, 6, h.part_t / C.PART_TICKS, require("core.hero").PARTS[h.part].color, 0x201010)
-    label(lang.tr("part_" .. h.part), 70, 108, {color = 0xFFFFFF})
+    S.draw("parts", PART_ICON[h.part], 34, 192, {})
+    bar(70, 178, 80, 6, h.part_t / C.PART_TICKS, require("core.hero").PARTS[h.part].color, 0x201010)
+    label(lang.tr("part_" .. h.part), 70, 156, {color = 0xFFFFFF})
   end
   if Boss.active and not Boss.done then
-    local w = 300
-    rect(90, 296, w + 4, 14, 0x100010)
-    rect(92, 298, math.floor(w * math.max(0, Boss.hp) / Boss.max_hp), 10, Boss.hp < Boss.max_hp * 0.4 and 0xF04030 or 0xF0A020)
-    label(lang.tr("boss_name"), 240, 278, {align = "center", color = 0xFFFFFF})
+    local bx, by = 162, 252
+    S.draw("ui", "boss", bx, by, {})
+    local w = 100
+    rect(bx + 40, by + 21, w, 12, 0x201008)
+    rect(bx + 40, by + 21, math.floor(w * math.max(0, Boss.hp) / Boss.max_hp), 12, Boss.hp < Boss.max_hp * 0.4 and 0xF04030 or 0xF0A020)
+    label(lang.tr("boss_name"), 240, 232, {align = "center", color = 0xFFFFFF})
   end
   if play.go_t > 0 and (play.go_t // 20) % 2 == 0 and play.state == "play" then
     label("GO!", 410, 120, {scale = 2, gradient = 0xFF5020})

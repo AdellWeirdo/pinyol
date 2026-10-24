@@ -10,9 +10,9 @@ select_help,A elegir   B colores   C volver,A triar   B colors   C tornar,A choo
 hero_vera_name,VERA,VERA,VERA
 hero_tomas_name,TOMÁS,TOMÀS,TOMÁS
 hero_mina_name,MINA,MINA,MINA
-hero_vera_trait,"Inventora equilibrada: puño-llave inglesa, buen alcance y torbellino.","Inventora equilibrada: puny-clau anglesa, bon abast i torbellí.","Balanced inventor: wrench fist, good reach and a whirlwind."
-hero_tomas_trait,"Maestro relojero lento y enorme: puño-martillo, golpea muy fuerte.","Mestre rellotger lent i enorme: puny-martell, pega molt fort.","Huge slow master clockmaker: hammer fist, hits very hard."
-hero_mina_trait,Aprendiz ágil con patas de muelle: salta alto y golpea rápido.,Aprenent àgil amb potes de molla: salta alt i pega ràpid.,Agile apprentice with spring legs: jumps high and strikes fast.
+hero_vera_trait,"Equilibrada: puño-llave, buen alcance y torbellino.","Equilibrada: puny-clau, bon abast i torbellí.","Balanced: wrench fist, good reach, whirlwind."
+hero_tomas_trait,"Lento y enorme: puño-martillo, pega muy fuerte.","Lent i enorme: puny-martell, pega molt fort.","Slow and huge: hammer fist, hits very hard."
+hero_mina_trait,"Ágil, patas de muelle: salta alto y pega rápido.","Àgil, potes de molla: salta alt i pega ràpid.","Agile, spring legs: jumps high, strikes fast."
 hud_special,¡ESPECIAL!,ESPECIAL!,SPECIAL!
 part_hammer,MARTILLO,MARTELL,HAMMER
 part_springs,MUELLES,MOLLES,SPRINGS

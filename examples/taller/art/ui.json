@@ -1,0 +1,1 @@
+{"w": 330, "h": 120, "anchor": [0, 0], "frames": ["score", "bar", "life", "gauge", "boss", "panel"], "sizes": {"score": [126, 52], "bar": [133, 30], "life": [28, 26], "gauge": [19, 28], "boss": [156, 56], "panel": [176, 120]}}

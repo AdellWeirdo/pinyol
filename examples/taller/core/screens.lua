@@ -37,10 +37,8 @@ end
 function T.draw()
   S.count = 0
   S.back("title", 0, 0)
-  shade(0, 0, 480, 150)
-  local y = 18 + math.floor(math.sin(T.t / 25) * 3)
-  label(lang.tr("title_de"), 240, y, {align = "center", scale = 2, color = 0xFFF0A0, gradient = 0xFFB020})
-  label(lang.tr("title_name"), 240, y + 34, {align = "center", scale = 3, fit = 450, gradient = 0xFF5020, color = 0xFFF0A0})
+  local y = 14 + math.floor(math.sin(T.t / 25) * 3)
+  S.draw("logo", "logo", 240, y - 6, {})
   for i, it in ipairs(T.items) do
     local on = i == T.sel
     label((on and "> " or "  ") .. lang.tr("title_" .. it), 240, 224 + (i - 1) * 28, {align = "center", scale = 1, color = on and 0xFFFFFF or 0xA09070})
@@ -78,10 +76,10 @@ function SEL.draw()
   end
   label(lang.tr("select_title"), 240, 12, {align = "center", scale = 2, fit = 400, gradient = 0xFF8020})
   local id = X.HEROES[SEL.sel]
-  panel(30, 226, 420, 90)
-  text(lang.tr("hero_" .. id .. "_name"), 240, 232, {font = "bold", align = "center", color = 0x402010})
-  text(lang.tr("hero_" .. id .. "_trait"), 240, 252, {font = "main", align = "center", width = 390, color = 0x8a3a08})
-  text(lang.tr("select_help"), 240, 294, {font = "main", align = "center", color = 0x402010})
+  Hud.panel(20, 206, 440, 112)
+  text(lang.tr("hero_" .. id .. "_name"), 240, 214, {font = "bold", align = "center", color = 0x402010})
+  text(lang.tr("hero_" .. id .. "_trait"), 240, 238, {font = "main", align = "center", width = 410, color = 0x8a3a08})
+  text(lang.tr("select_help"), 240, 288, {font = "main", align = "center", color = 0x402010})
 end
 
 -- ------------------------------------------------------------------ the tally
@@ -105,7 +103,7 @@ function R.draw(hero)
   S.count = 0
   S.back("select", 0, 0)
   S.draw(Run.hero, "win_" .. (R.t // 10) % 3, 110, 262, {alt = Run.alt})
-  panel(200, 30, 260, 230)
+  Hud.panel(196, 24, 270, 240)
   text(lang.tr("res_title", {n = Run.stage}), 330, 42, {font = "bold", align = "center", color = 0x8a3a08})
   local y = 84
   local function row(k, v) text(lang.tr(k), 214, y, {font = "main", color = 0x402010}) text(v, 446, y, {font = "main", align = "right", color = 0x402010}) y = y + 26 end

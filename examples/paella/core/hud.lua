@@ -20,27 +20,39 @@ local function label(str, x, y, o)
 end
 H.label = label
 
+-- a paper panel of the game's own interface kit (art/ui.png), stretched to w x h keeping its corners
+function H.panel(x, y, w, h)
+  local sz = S.sheets.ui.sizes.panel
+  S.nine("ui", "panel", x, y, w, h, 14, sz[1], sz[2])
+end
+
 function H.draw(play, t)
   local c = play.chef
-  label(string.format("%07d", Run.score), 14, 8, {scale = 2, gradient = 0xFF8020})
-  label("x" .. math.max(0, c.lives), 14, 44, {color = 0xFFFFFF})
-  label(lang.tr("hud_bombs") .. " " .. string.format("%02d", c.grenades), 70, 44, {color = 0xFFFFFF})
+  S.draw("ui", "score", 6, 4, {})
+  label(string.format("%07d", Run.score), 22, 20, {color = 0xFFE070})
+  S.draw("ui", "life", 10, 58, {})
+  label("x" .. math.max(0, c.lives), 42, 62, {color = 0xFFFFFF})
+  S.draw("ui", "gauge", 84, 58, {})
+  label(string.format("%02d", c.grenades), 114, 62, {color = 0xFFFFFF})
   if c.up_shots > 0 then
-    rect(14, 66, 80, 8, 0x201010)
-    rect(15, 67, math.floor(78 * c.up_shots / 60), 6, 0xF0C020)
+    rect(14, 92, 80, 8, 0x201010)
+    rect(15, 93, math.floor(78 * c.up_shots / 60), 6, 0xF0C020)
   end
-  if c.shield > 0 then label(lang.tr("hud_shield"), 14, 78, {color = 0x60E0FF}) end
+  if c.shield > 0 then label(lang.tr("hud_shield"), 14, 104, {color = 0x60E0FF}) end
   -- the tractor's bar
   if c.vehicle then
     local v = c.vehicle
-    label(lang.tr("hud_tractor"), 14, 96, {color = 0xFFFFFF})
-    for i = 1, 8 do rect(14 + (i - 1) * 12, 114, 10, 8, i <= v.hp and 0x40E060 or 0x203020) end
+    label(lang.tr("hud_tractor"), 14, 122, {color = 0xFFFFFF})
+    S.draw("ui", "bar", 10, 140, {})
+    for i = 1, 8 do rect(22 + (i - 1) * 14, 148, 12, 12, i <= v.hp and 0x40E060 or 0x203020) end
   end
   if Boss.active and not Boss.done then
-    local w = 300
-    rect(90, 286, w + 4, 16, 0x100010)
-    rect(92, 288, math.floor(w * math.max(0, Boss.hp) / Boss.max_hp), 12, Boss.hp < 33 and 0xF04030 or 0xF0A020)
-    label(lang.tr("boss_name"), 240, 268, {align = "center", color = 0xFFFFFF})
+    local bx, by = 154, 256
+    S.draw("ui", "boss", bx, by, {})
+    local w = 118
+    rect(bx + 42, by + 22, w, 10, 0x201008)
+    rect(bx + 42, by + 22, math.floor(w * math.max(0, Boss.hp) / Boss.max_hp), 10, Boss.hp < Boss.max_hp * 0.33 and 0xF04030 or 0xF0A020)
+    label(lang.tr("boss_name"), 240, 238, {align = "center", color = 0xFFFFFF})
   end
   if play.go_t > 0 and (play.go_t // 20) % 2 == 0 then
     label("GO!", 400, 130, {scale = 2, gradient = 0xFF5020})

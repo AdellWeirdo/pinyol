@@ -38,7 +38,7 @@ function Ex.draw()
   local chef = play.chef.id
   local count = S.count
   shade(0, 0, 480, 320)
-  panel(10, 8, 460, 100)
+  Hud.panel(10, 8, 460, 104)
   text(lang.tr("ex_" .. pg .. "_title"), 240, 14, {font = "bold", align = "center", color = 0x8a3a08})
   text(lang.tr("ex_" .. pg .. "_text", {n = count, max = 380, line = 96}), 240, 40, {font = "main", align = "center", width = 440, color = 0x402010})
   if pg == "frames" then

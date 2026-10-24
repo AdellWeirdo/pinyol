@@ -38,6 +38,9 @@ for _id, _o in _J.OBJECTS.items():
 FOODS = ["jamon", "cheese", "paella", "tortilla", "melon", "sardine", "orange", "bread", "olive_can", "wine_skin", "churro", "ensaimada"]
 SHEETS["boss_fx"] = (128, 128, (64, 64), cat(seq("charge", 6), seq("beam", 4), seq("spark", 4), seq("bolt", 4)))
 
+SHEETS["ui"] = (330, 120, (0, 0), ["score", "bar", "life", "gauge", "boss", "panel"])
+SHEETS["logo"] = (420, 170, (210, 0), ["logo"])
+
 # pictures that are not sprite rows: name: (w, h)
 BACKGROUNDS = {}
 for z in ("puerto", "calle", "playa"):

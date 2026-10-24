@@ -1,0 +1,25 @@
+{
+  "asset": "SPR_LOGO",
+  "type": "sprite",
+  "format": "packed",
+  "bpp": 8,
+  "colours": 123,
+  "w": 420,
+  "h": 170,
+  "frames": 1,
+  "frame_ms": [
+    0
+  ],
+  "order": [
+    0
+  ],
+  "anchor": [
+    210,
+    0
+  ],
+  "tile": null,
+  "memory_bytes": {
+    "total": 38486,
+    "as_rgb565": 142800
+  }
+}

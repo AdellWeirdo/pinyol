@@ -22,6 +22,9 @@ for _id, _o in _J.OBJECTS.items():
     SHEETS[_id] = (_o["frame"][0], _o["frame"][1], _o["anchor"], [f for sh in _o["sheets"] for f in sh[3]])
 SHEETS["pillars"] = (128, 320, (64, 319), STAGES)
 
+SHEETS["ui"] = (330, 120, (0, 0), ["score", "bar", "life", "gauge", "boss", "panel"])
+SHEETS["logo"] = (420, 170, (210, 0), ["logo"])
+
 # pictures that are not sprite rows: name: (w, h)
 BACKGROUNDS = {}
 for _z in STAGES:
