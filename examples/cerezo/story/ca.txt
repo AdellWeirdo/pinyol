@@ -155,8 +155,8 @@ Oncle Noguer: Torna quan vulguis!
 Sardina: ...Psst. No espantis els peixos.
 Sardina: Vaig pescar una cosa estranya l'altre dia. Rodona, daurada, dins d'un besuc.
 Sardina: M'agrada molt. Per trenta cireres, és teu.
-* Pagar 30 cireres -> sardina_pago
-* És molt
++ Pagar 30 cireres -> sardina_pago
++ És molt
     Sardina: El mar és pacient. Jo també.
     -> END
 
@@ -279,7 +279,7 @@ Prem B per disparar pinyols. Amb C canvies d'objecte.
 
 == item_linterna
 Has aconseguit el FANAL!
-Prem B per encendre'l: il·lumina les sales fosques i crema teranyines.
+Prem C per triar-la i B per encendre-la: il·lumina les sales fosques i crema teranyines.
 -> END
 
 == item_llave_pequena

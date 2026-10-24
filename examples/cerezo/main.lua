@@ -43,6 +43,7 @@ end
 
 local function new_game()
   Game.reset()
+  Dialog.init(lang.code) -- the story binds to the new Game.story (taken once-only choices reset)
   set_menu_item()
   G.state = "play"
   hide_hud()
@@ -58,6 +59,7 @@ end
 local function continue_game()
   set_menu_item()
   Save.read()
+  Dialog.init(lang.code) -- the story binds to the restored Game.story
   Pal.fade("dark", 0)
   G.state = "play"
   show_hud()

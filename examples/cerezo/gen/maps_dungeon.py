@@ -73,7 +73,7 @@ def r5(c):
     c.put(2, 2, "t").put(12, 2, "t").put(7, 5, "p").scatter("m", 3).scatter("q", 2, salt=3).scatter("r", 3, salt=5)
     c.put(7, 8, "D")
 room(0, 1, {"e": "open", "n": "none", "s": "none", "w": "none"}, r5)
-thing(0, 1, "exit", 7, 8, to="overworld", tx=15 + 7, ty=3, face="down")
+thing(0, 1, "exit", 7, 8, to="overworld", tx=15 + 7, ty=4, face="down")
 thing(0, 1, "enemy", 4, 3, id="caracol", axis="h")
 thing(0, 1, "enemy", 10, 6, id="caracol", axis="v")
 thing(0, 1, "sign", 5, 1, text="estatua_b")

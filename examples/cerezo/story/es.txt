@@ -155,8 +155,8 @@ Tío Nogal: ¡Vuelve cuando quieras!
 Sardina: ...Pssst. No espantes a los peces.
 Sardina: Pesqué algo raro el otro día. Redondo, dorado, dentro de un besugo.
 Sardina: Me gusta mucho. Por treinta cerezas, es tuyo.
-* Pagar 30 cerezas -> sardina_pago
-* Es mucho
++ Pagar 30 cerezas -> sardina_pago
++ Es mucho
     Sardina: El mar es paciente. Yo también.
     -> END
 
@@ -279,7 +279,7 @@ Pulsa B para disparar pinyoles. Con C cambias de objeto.
 
 == item_linterna
 ¡Has conseguido la LINTERNA!
-Pulsa B para encenderla: ilumina las salas oscuras y quema telarañas.
+Pulsa C para elegirla y B para encenderla: ilumina las salas oscuras y quema telarañas.
 -> END
 
 == item_llave_pequena

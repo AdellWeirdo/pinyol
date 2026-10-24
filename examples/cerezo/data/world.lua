@@ -87,7 +87,7 @@ return {
           cy = 2,
           to = "raiz",
           tx = 7,
-          ty = 17,
+          ty = 16,
           face = "up",
           dir = "up"
         },
@@ -548,7 +548,7 @@ return {
           cy = 17,
           to = "overworld",
           tx = 22,
-          ty = 3,
+          ty = 4,
           face = "down"
         },
         {

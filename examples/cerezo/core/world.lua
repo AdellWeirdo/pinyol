@@ -5,13 +5,14 @@
 local C = require("core.const")
 local Areas = require("data.world").areas
 local Tiles = require("data.tiles")
+local Game = require("core.game")
 local W = {}
 
 W.area, W.aid, W.cells, W.ts = nil, nil, nil, nil
 W.sx, W.sy = 0, 0       -- the screen being shown (screens of the area, from 0)
 W.cam_x, W.cam_y = 0, 0 -- the area's pixel at the playfield's top-left corner
 W.shake_x, W.shake_y = 0, 0
-W.changes = {}          -- [area id] = {[cell index] = metatile name}: what has been cut, dug, opened
+-- what has been cut, dug, opened is Game.changes ([area id] = {[cell index] = metatile name}), so it is saved and starts again with the game
 
 local flag_cache = {}   -- [tileset][id] = {solid = true, becomes = "grass_a"...}
 local names = {}        -- [tileset][id] = name
@@ -72,8 +73,8 @@ end
 function W.set(gx, gy, name)
   local idx = W.index(gx, gy)
   W.cells[idx] = W.ts.id[name]
-  W.changes[W.aid] = W.changes[W.aid] or {}
-  W.changes[W.aid][idx] = name
+  Game.changes[W.aid] = Game.changes[W.aid] or {}
+  Game.changes[W.aid][idx] = name
   W.show(gx, gy, name)
 end
 
@@ -115,7 +116,7 @@ function W.load(aid, sx, sy)
   for i = 1, #a.cells do W.cells[i] = a.cells[i] end
   bg(1, {map = a.ground, prio = 2, wrap = false, pal = false})
   bg(2, {map = a.front, prio = 0, wrap = false, pal = false})
-  for idx, name in pairs(W.changes[aid] or {}) do
+  for idx, name in pairs(Game.changes[aid] or {}) do
     local gx, gy = (idx - 1) % a.gw, (idx - 1) // a.gw
     W.cells[idx] = W.ts.id[name]
     W.show(gx, gy, name)
@@ -154,7 +155,7 @@ function W.sync_anim(sx, sy)
     local name = frames[anim_state[an]]
     for _, idx in ipairs(idxs) do
       local gx, gy = (idx - 1) % W.area.gw, (idx - 1) // W.area.gw
-      if not (W.changes[W.aid] and W.changes[W.aid][idx]) then put(1, gx, gy, W.ts.ground[name]) end
+      if not (Game.changes[W.aid] and Game.changes[W.aid][idx]) then put(1, gx, gy, W.ts.ground[name]) end
     end
   end
 end

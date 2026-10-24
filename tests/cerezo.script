@@ -148,3 +148,7 @@ press A+B
 tick 10
 expect_lua G.state == "title"
 expect_ok
+# what has been cut, dug or opened is part of the saved game: it is written with text keys (store() takes no sparse numbers) and comes back with numbers
+lua local g = require("core.game") g.changes = {overworld = {[5] = "chest_open"}} local s = g.snapshot() SNAP_TEXT = s.changes.overworld["5"] g.restore(s) SNAP_BACK = g.changes.overworld[5]
+expect_lua SNAP_TEXT == "chest_open" and SNAP_BACK == "chest_open"
+expect_ok

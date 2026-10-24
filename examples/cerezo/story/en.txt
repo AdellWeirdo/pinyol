@@ -155,8 +155,8 @@ Uncle Walnut: Come back any time!
 Sardine: ...Psst. Do not scare the fish.
 Sardine: I caught something odd the other day. Round, golden, inside a bream.
 Sardine: I am fond of it. For thirty cherries, it is yours.
-* Pay 30 cherries -> sardina_pago
-* That is a lot
++ Pay 30 cherries -> sardina_pago
++ That is a lot
     Sardine: The sea is patient. So am I.
     -> END
 
@@ -279,7 +279,7 @@ Press B to shoot pits. C changes item.
 
 == item_linterna
 You got the LANTERN!
-Press B to light it: it brightens dark rooms and burns cobwebs.
+Press C to pick it and B to light it: it brightens dark rooms and burns cobwebs.
 -> END
 
 == item_llave_pequena

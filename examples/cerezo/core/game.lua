@@ -57,12 +57,23 @@ function Game.snapshot()
   for k, v in pairs(Game) do
     if type(v) ~= "function" then out[k] = type(v) == "table" and deep(v) or v end
   end
+  -- store() takes tables whose keys are strings or a plain list: a cell's index is a sparse number, so it is written as text
+  out.changes = {}
+  for aid, cells in pairs(Game.changes) do
+    out.changes[aid] = {}
+    for idx, name in pairs(cells) do out.changes[aid][tostring(idx)] = name end
+  end
   return out
 end
 
 function Game.restore(s)
   Game.reset()
   for k, v in pairs(s) do Game[k] = type(v) == "table" and deep(v) or v end
+  Game.changes = {}
+  for aid, cells in pairs(s.changes or {}) do
+    Game.changes[aid] = {}
+    for idx, name in pairs(cells) do Game.changes[aid][tonumber(idx)] = name end
+  end
 end
 
 Game.reset()

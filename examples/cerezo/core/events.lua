@@ -103,6 +103,7 @@ end
 -- ------------------------------------------------------------------ the three sockets of the stone seal
 Things.kinds.socket = function(def)
   local e = {kind = "socket", x = def.cx * C.T, y = def.cy * C.T, solid = true, hx = 0, hy = 0, hw = 16, hh = 16, sort = 8}
+  function e.update(self) if Game.flags.seal_open then self.dead = true end end -- the sockets leave the path once the seal is open
   function e.interact(self, hero)
     local placed = Game.flags["socket_" .. def.n]
     if placed then

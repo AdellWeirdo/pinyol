@@ -29,9 +29,14 @@ Things.kinds.gate = function(def)
     if def.rule == "flag" then return Game.flags[def.flag] == true end
     return D.enemies_left() == 0
   end
+  local function hero_in_door() -- a door does not shut on the hero standing in it
+    local h = E.hero
+    return h and U.overlap(h.x + 3, h.y + 8, 10, 7, def.cx * C.T, def.cy * C.T, C.T, C.T)
+  end
   function e.update(self)
     local ok = met()
     if self.state == nil then
+      if not ok and hero_in_door() then return end
       self.state = ok and "open" or "shut"
       W.show(def.cx, def.cy, self.state == "open" and def.open or def.shut)
       W.cells[W.index(def.cx, def.cy)] = W.id_of(self.state == "open" and def.open or def.shut)
@@ -42,7 +47,7 @@ Things.kinds.gate = function(def)
       W.cells[W.index(def.cx, def.cy)] = W.id_of(def.open)
       W.show(def.cx, def.cy, def.open)
       Sound.play("secret")
-    elseif not ok and self.state == "open" and def.rule == "flag" then
+    elseif not ok and self.state == "open" and def.rule == "flag" and not hero_in_door() then
       self.state = "shut"
       W.cells[W.index(def.cx, def.cy)] = W.id_of(def.shut)
       W.show(def.cx, def.cy, def.shut)

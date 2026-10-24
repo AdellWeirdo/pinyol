@@ -67,7 +67,7 @@ function M.update()
     if o == "palette" and (btnp("left") or btnp("right") or btnp("a")) then
       Pal.set_mode(Pal.mode + (btnp("left") and -1 or 1))
       Game.tried = Game.tried or {}
-      Game.tried[Pal.mode] = true
+      Game.tried["m" .. Pal.mode] = true -- string keys, store() refuses sparse number keys
       local n = 0
       for _ in pairs(Game.tried) do n = n + 1 end
       if n >= #Pal.modes then achieve("colorista") end

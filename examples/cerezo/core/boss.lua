@@ -169,7 +169,7 @@ function B.dying(b)
     -- the heart container and the golden cherry
     Sound.play("secret")
     local cx, cy = b.mounds[2][1], b.mounds[2][2] + 1
-    Things.spawn({kind = "chest_item", cx = cx, cy = cy, item = "contenedor_corazon", flag = "boss_heart"})
+    Things.spawn({kind = "chest_item", cx = cx, cy = cy, item = "contenedor_corazon", flag = "boss_heart", after = function() require("core.rewards").get("cereza_dorada") end}) -- the golden cherry
     require("core.music").jingle("jingle_win", 8)
     require("core.music").play("raiz")
     Game.cereza_pending = true

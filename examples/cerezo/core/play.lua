@@ -129,6 +129,20 @@ function P.update_slide()
     Music.play(Music.for_screen(W.area, s.new[1], s.new[2]))
     P.despawn_screen(s.old[1], s.old[2])
     h.x, h.y = math.floor(h.x), math.floor(h.y)
+    -- the 18 px push may leave him inside a wall: put him on the nearest free spot
+    local Hero = require("core.hero")
+    if not Hero.free(h, h.x, h.y) then
+      local fx, fy
+      for r = 1, 40 do
+        for dy = -r, r do
+          for dx = -r, r do
+            if not fx and (math.abs(dx) == r or math.abs(dy) == r) and Hero.free(h, h.x + dx, h.y + dy) then fx, fy = h.x + dx, h.y + dy end
+          end
+        end
+        if fx then break end
+      end
+      if fx then h.x, h.y = fx, fy end
+    end
     P.slide = nil
   end
 end
