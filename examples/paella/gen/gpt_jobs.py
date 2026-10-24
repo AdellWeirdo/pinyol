@@ -170,6 +170,31 @@ ENEMIES = {
     },
 }
 
+
+# El Gran Gaviotrón, the final boss: one canonical picture (boss_ref.png: a clockwork seagull war-walker with a seagull pilot in its porthole and the paellera closed under an
+# iron lid), then whole-body sheets, as an enemy. The lid is hinged open (never thrown away) so the silhouette keeps its height from sheet to sheet.
+ENEMIES["boss"] = {
+    "ref": None,  # boss_ref.png, made from the chosen design (boss_design.png)
+    "frame": (384, 320), "anchor": (192, 316), "height": 288, "faces": "left", "mult": {"pot_b": 1.07},
+    "sheets": [
+        ("idle", 4, "four frames of an IDLE loop: steam puffing from the pipes, the wind-up key turning, the long neck bobbing a little, the tiny seagull pilot looking around in the porthole, heavy breathing",
+         ["idle_0", "idle_1", "idle_2", "idle_3"], 0),
+        ("walk", 6, "a six-frame heavy WALK cycle on its two long mechanical legs, the whole body bobbing and the neck swaying, steam puffs", ["walk_0", "walk_1", "walk_2", "walk_3", "walk_4", "walk_5"], 0),
+        ("hit", 4, "two frames of getting HIT (the body jolts, sparks and popped rivets, the pilot flinches) and then two frames of an IDLE that is DAMAGED (dented plates, missing feathers, smoke pouring, a cracked porthole)",
+         ["hurt_0", "hurt_1", "dmg_0", "dmg_1"], 0),
+        ("gat", 4, "four frames of firing both wing GATLING guns forward: the barrels spinning, big muzzle flashes and flying shell casings, the body leaning back with recoil", ["gat_0", "gat_1", "gat_2", "gat_3"], 0),
+        ("stomp", 4, "four frames of a STOMP: the front leg lifts high, hangs, then slams down with a cloud of dust and sparks while the whole body bounces", ["stomp_0", "stomp_1", "stomp_2", "stomp_3"], 3),
+        ("beam", 6, "six frames: the head rears back and the beak opens wide showing a brass cannon barrel inside, charging with a growing orange glow (four frames), then firing with a big flash (two frames)",
+         ["charge_0", "charge_1", "charge_2", "charge_3", "fire_0", "fire_1"], 0),
+        ("pot_a", 4, "four frames: the iron lid on the back pan UNLATCHES, bursts open with steam and swings up on a hinge to stand open upright behind the pan, revealing the glowing orange saffron-rice core; the pilot ducks. "
+                     "The lid stays attached on its hinge", ["opening_0", "opening_1", "opening_2", "opening_3"], 0),
+        ("pot_b", 4, "four frames of a loop: the back pan wide open with its lid standing upright on its hinge, the glowing core pulsing and bubbling, flames licking and sparks, the pilot cowering behind the porthole",
+         ["open_0", "open_1", "open_2", "open_3"], 0),
+        ("dead", 6, "six frames of a COMIC DEATH, no blood: shaking, sparks and fire bursting from the seams, the lid blowing off, the tiny pilot ejected on a spring screaming, the legs folding and the machine "
+                    "collapsing into a smoking heap of feathers, gears and brass pipes with the wind-up key still turning; the last frame is the heap and stays", ["dead_0", "dead_1", "dead_2", "dead_3", "dead_4", "dead_5"], None),
+    ],
+}
+
 # object sheets (no canonical picture of their own: the first sheet sets the look, the style reference does the rest)
 OBJECTS = {
     "items": {

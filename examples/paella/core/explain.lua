@@ -1,5 +1,5 @@
 -- explain: "Cómo funciona", from the console's menu or the title. The mission stands still and the Neo Geo's tricks are shown with this game's own sprites: how many pictures a frame
--- is made of (the chip drew 380, 96 on a line), why a chef is two sprites pinned at the hips, how a sprite could only be shrunk and never grown, and how a handful of 15-colour
+-- is made of (the chip drew 380, 96 on a line), how a chef is one picture a frame, painted whole, how a sprite could only be shrunk and never grown, and how a handful of 15-colour
 -- palettes dressed the same picture many ways.
 local C = require("core.const")
 local S = require("core.spr")

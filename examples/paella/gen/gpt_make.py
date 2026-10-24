@@ -236,7 +236,7 @@ def make_enemy(eid: str, spec: dict, colours: int = 160) -> None:
             if not raw.exists():
                 print(f"  {eid}: {name} missing")
                 continue
-            for fname, fr in zip(fnames, fit_sheet(key_background(Image.open(raw)), n, spec["frame"], spec["anchor"], kf, spec["height"])):
+            for fname, fr in zip(fnames, fit_sheet(key_background(Image.open(raw)), n, spec["frame"], spec["anchor"], kf, spec["height"] * spec.get("mult", {}).get(name, 1))):
                 names.append(fname)
                 frames.append(fr)
     strip = Image.new("RGBA", (w * len(frames), h))

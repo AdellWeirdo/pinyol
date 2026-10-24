@@ -36,11 +36,6 @@ SHEETS["tractor"] = (_J.TRACTOR["frame"][0], _J.TRACTOR["frame"][1], _J.TRACTOR[
 for _id, _o in _J.OBJECTS.items():
     SHEETS[_id] = (_o["frame"][0], _o["frame"][1], _o["anchor"], [f for sh in _o["sheets"] for f in sh[3]])
 FOODS = ["jamon", "cheese", "paella", "tortilla", "melon", "sardine", "orange", "bread", "olive_can", "wine_skin", "churro", "ensaimada"]
-SHEETS["boss_body"] = (384, 320, (192, 300), cat(seq("idle", 6), seq("hurt", 2), seq("damaged", 3), seq("dead", 4)))
-SHEETS["boss_head"] = (192, 160, (150, 120), cat(seq("idle", 4), seq("open", 4), seq("fire", 3), seq("hurt", 3), seq("laugh", 4), seq("dead", 4)))
-SHEETS["boss_wing"] = (256, 192, (200, 40), cat(seq("rest", 4), seq("open", 4), seq("fire", 4), seq("hurt", 2), seq("broken", 2)))
-SHEETS["boss_leg"] = (160, 192, (80, 20), cat(["stand"], seq("step", 8), seq("stomp", 4), seq("broken", 2)))
-SHEETS["boss_pot"] = (224, 192, (112, 176), cat(["closed"], seq("opening", 6), seq("open", 4), seq("hit", 3), seq("cracked", 3), seq("destroyed", 4)))
 SHEETS["boss_fx"] = (128, 128, (64, 64), cat(seq("charge", 6), seq("beam", 4), seq("spark", 4), seq("bolt", 4)))
 
 # pictures that are not sprite rows: name: (w, h)
