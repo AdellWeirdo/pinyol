@@ -8,22 +8,31 @@
 --   lang.code                        -- the language in use; lang.set("en") changes it
 --   lang.plural("coins", n)          -- the key "coins" for one, "coins_n" for several, {n = n} filled in
 local M = {}
-local strings, order = {}, {}
+local strings, order, file_name = {}, {}, "strings.csv"
 M.code = "es"
 
-local function csv_fields(line) -- one line of a CSV: quotes, doubled quotes, commas inside quotes
+-- one line of a CSV: quotes, doubled quotes, commas inside quotes. Cut with find, not letter by letter: on the console every
+-- letter made a string, and the garbage of a 160-key file left the heap in pieces (a game ran 20% slower with its words in it)
+local function csv_fields(line)
   local out, i, n = {}, 1, #line
+  if not line:find('"', 1, true) then
+    while true do
+      local j = line:find(",", i, true)
+      if not j then out[#out + 1] = line:sub(i) return out end
+      out[#out + 1] = line:sub(i, j - 1)
+      i = j + 1
+    end
+  end
   while i <= n + 1 do
     local field
     if line:sub(i, i) == '"' then
-      local j = i + 1
-      local parts = {}
-      while j <= n do
-        local c = line:sub(j, j)
-        if c == '"' then
-          if line:sub(j + 1, j + 1) == '"' then parts[#parts + 1] = '"' j = j + 2
-          else break end
-        else parts[#parts + 1] = c j = j + 1 end
+      local j, parts = i + 1, {}
+      while true do
+        local q = line:find('"', j, true)
+        if not q then parts[#parts + 1] = line:sub(j) j = n + 1 break end
+        parts[#parts + 1] = line:sub(j, q - 1)
+        if line:sub(q + 1, q + 1) == '"' then parts[#parts + 1] = '"' j = q + 2
+        else j = q break end
       end
       field = table.concat(parts)
       i = j + 1
@@ -40,16 +49,17 @@ local function csv_fields(line) -- one line of a CSV: quotes, doubled quotes, co
   return out
 end
 
-function M.parse(text) -- the CSV's text -> {code -> {key -> string}}, the codes in order
+-- the CSV's text -> {code -> {key -> string}}, the codes in order; `only` ({code = true}) keeps just those columns
+function M.parse(text, only)
   local langs, out, first = {}, {}, true
   for line in (text .. "\n"):gmatch("(.-)\r?\n") do
     if line ~= "" then
       local f = csv_fields(line)
       if first then
-        for k = 2, #f do langs[k] = f[k] out[f[k]] = {} end
+        for k = 2, #f do langs[k] = f[k] if not only or only[f[k]] then out[f[k]] = {} end end
         first = false
       else
-        for k = 2, #f do if langs[k] and f[k] ~= nil then out[langs[k]][f[1]] = f[k] end end
+        for k = 2, #f do if langs[k] and out[langs[k]] and f[k] ~= nil then out[langs[k]][f[1]] = f[k] end end
       end
     end
   end
@@ -58,15 +68,31 @@ function M.parse(text) -- the CSV's text -> {code -> {key -> string}}, the codes
   return out, codes
 end
 
+-- only the first language (the one a missing word falls back to) and the one in use stay in memory: the other columns were a
+-- third of the game's words for nothing; lang.set to another reads the file again
+local function read(code)
+  local text = file(file_name)
+  if not text then error("lang: no " .. file_name .. " in the game", 2) end
+  local head = csv_fields(text:match("^[^\r\n]*") or "")
+  local base = head[2] or "es"
+  code = code or (settings and settings().lang) or base
+  local only = {[base] = true, [code] = true}
+  strings, order = M.parse(text, only)
+  order = {}
+  for k = 2, #head do order[#order + 1] = head[k] end
+  M.code = strings[code] and code or base
+end
+
 function M.load(code, name)
-  local text = file(name or "strings.csv")
-  if not text then error("lang: no " .. (name or "strings.csv") .. " in the game", 2) end
-  strings, order = M.parse(text)
-  M.set(code or (settings and settings().lang) or order[1] or "es")
+  file_name = name or "strings.csv"
+  read(code)
   return M
 end
 
 function M.set(code)
+  for _, c in ipairs(order) do
+    if c == code and not strings[code] then read(code) return end
+  end
   M.code = strings[code] and code or order[1] or code
 end
 

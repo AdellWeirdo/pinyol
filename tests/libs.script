@@ -138,3 +138,9 @@ expect_lua lang.code == "ca" and lang.tr("hello", {name = "Pau"}) == "Hola, Pau"
 expect_lua lang.tr("only_es") == "solo español" and lang.tr("nope") == "nope" and lang.plural("coins", 1) == "una moneda"
 lua lang.set("en")
 expect_lua lang.tr("hello", {name = "Pau"}) == "Hello, Pau" and rawlen(lang.keys()) == 4
+# lang keeps only the first language and the one in use (set to another reads the file again), and its quoted fields parse as before
+lua lang.load("ca")
+expect_lua lang.code == "ca" and lang.tr("hello", {name = "Pau"}) == "Hola, Pau" and rawlen(lang.keys()) == 4
+lua lang.set("en") lang.set("es") lang.set("ca")
+expect_lua lang.code == "ca" and lang.plural("coins", 3) == "3 monedes" and lang.tr("only_es") == "solo español"
+expect_lua lang.parse('key,es,ca\nq,"a, ""b""",x\n', {ca = true}).ca.q == "x" and lang.parse('key,es,ca\nq,"a, ""b""",x\n').es.q == 'a, "b"'
