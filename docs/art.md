@@ -32,6 +32,29 @@ uv run tools/make_atlas.py games/<id> PROPS ICO_KEY SPR_SIGN
 
 It writes `assets/PROPS.pk`, `art/.built/PROPS.png` and `props_atlas.lua`. Each picture gets a one-pixel edge so UV sampling cannot pick up its neighbour. Use `local a = require("props_atlas").ICO_KEY`, then `quad(a.id, x1, y1, x2, y2, x3, y3, x4, y4, {uv = a.uv})`. One call makes one page; split groups that do not fit. Animated strips and pictures over 126 pixels on either side stay as their own assets. Pages are 32 KB when unpacked as RGB565, within the measured cache-friendly quad size; speed still depends on how much screen area the quads cover.
 
+## Sprites that fit: scale, ground and cells
+
+Generated sheets come out at any size, in any place, with sparks and smoke round the body. `tools/sprite_kit.py` is what the engine knows about turning them into frames that sit
+together in a game (every rule below was a mistake made once, in Paella or Taller), and `tools/sprite_check.py` audits what came out:
+
+- **Every sheet has its own scale.** The model fits the character to the sheet: a sheet of four poses draws it 30% bigger than one of six, so one scale for a whole character is wrong.
+  Scale each sheet by an UPRIGHT frame of it (`kf`): never a crouch, a tuck or raised arms, or the sheet is scaled wrong and the character grows when it jumps.
+- **The soles of the body stand on the anchor's row in every frame**, jumps and falls included: the game lifts a jump with its own height. The body is the largest blob (sparks, smoke
+  and gears are not what stands).
+- **Centre the feet, not the arm**: the anchor's column is the middle of the body's lowest 18%, so a punch that reaches out does not slide the character.
+- **Never cut a frame**: it moves inside its cell, and the cell has room below the ground line for what falls (`auto_cell` finds the size; debris of a death cut by the bottom edge was
+  the commonest fault).
+- **Things have their own size** next to the characters (a barrel is not a street lamp: `sizes`), **and an effect its kind's** (a hit spark is a fist, not a hero: `groups`), all the frames
+  of a kind by one factor.
+- **15 colours: `MAXCOVERAGE`**, not median cut (which turns a rare teal jacket brown); a second set of colours is another palette in the same order (`alternate`).
+- **Paint order**: by depth, but the player's character over the enemies, and hits and dust over everyone.
+
+```sh
+uv run tools/sprite_check.py games/mygame/art --contact /tmp/art.png     # errors: clipped frames and soles off the ground; warnings: sizes and sliding feet
+```
+
+`look_check` runs it too (as a warning). A game's art script calls `sprite_kit.build_character(sheets, height)` (the cell is found) and `fit_objects(...)`: see `examples/taller/gen/gpt_make.py`.
+
 ## 0. Choose a look
 
 A game looks like the console it is made for. Pick one with whoever the game is for (ask, if they have not said),

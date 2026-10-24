@@ -1,1 +1,1 @@
-{"w": 128, "h": 320, "anchor": [64, 319], "frames": ["calle", "fabrica", "torre"]}
+{"w": 128, "h": 320, "anchor": [64, 319], "frames": ["calle", "fabrica", "torre"], "edge_ok": true}

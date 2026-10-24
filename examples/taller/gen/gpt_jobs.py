@@ -64,7 +64,7 @@ for hid, h in HEROES.items():
 CHARS["rodete"] = {
     "ref": ("RODETE, " + AUTO + ": a stocky humanoid with a round tin-bucket head with two lamp eyes and a grilled mouth, big gloved pipe fists; the basic street thug. Full body, side view "
             "facing RIGHT, fists up, about 116 pixels tall in the game. " + STYLE + " " + FLAT),
-    "frame": (256, 196), "anchor": (128, 156), "height": 116, "faces": "right",
+    "frame": (256, 232), "anchor": (128, 156), "height": 116, "faces": "right",
     "sheets": [
         ("move", 6, "six frames: two of an IDLE loop (swaying, the key turning) and a four-frame heavy WALK cycle", ["idle_0", "idle_1", "walk_0", "walk_1", "walk_2", "walk_3"], 0),
         ("fight", 5, "three frames of a big PUNCH (wind-up, impact, recovery) and two frames of getting HIT (recoil, sparks)", ["atk_0", "atk_1", "atk_2", "hurt_0", "hurt_1"], 0),
@@ -74,7 +74,7 @@ CHARS["rodete"] = {
 CHARS["resorte"] = {
     "ref": ("RESORTE, " + AUTO + ": a thin bouncy one with huge coiled springs for legs, a small head like a bell with a bowler hat, long wiry arms with scissor hands, a manic grin; a jumping "
             "enemy that pounces from above. Full body, side view facing RIGHT, crouched on its springs, about 112 pixels tall in the game. " + STYLE + " " + FLAT),
-    "frame": (256, 196), "anchor": (128, 156), "height": 112, "faces": "right",
+    "frame": (256, 232), "anchor": (128, 156), "height": 112, "faces": "right",
     "sheets": [
         ("move", 6, "six frames: two of an IDLE loop (bouncing on the springs) and a four-frame HOP cycle forward (crouch, launch, in the air, land)", ["idle_0", "idle_1", "hop_0", "hop_1", "hop_2", "hop_3"], 0),
         ("fight", 5, "three frames of a POUNCE attack (coiling down on its springs, leaping forward with the scissor hands out, landing in a crouch) and two frames of getting HIT (recoiling, standing at its normal height) Draw ONLY the character, every frame at exactly the SAME size and scale as the reference, standing on the same ground line; NO smoke or steam clouds, NO dust, NO motion lines, NO swoosh, NO shock rings, NO sparks around it.", ["atk_0", "atk_1", "atk_2", "hurt_0", "hurt_1"], 3),

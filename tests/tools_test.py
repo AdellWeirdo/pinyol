@@ -221,6 +221,7 @@ print("looks: ok")
 
 # slice_pic + lib/slices: a 400x40 picture cut in 160-px columns, only the ones on screen drawn
 import slice_pic  # noqa: E402
+import numpy as np  # noqa: E402
 
 sl = out / "slices"
 shutil.copytree(ROOT / "tests/games/device/fonts", sl / "fonts")
@@ -275,3 +276,44 @@ assert errs == [] and "sprites" in seen, (errs, seen)
 errs, seen = look_check.play(pl, looks.get("gameboy"), headless, None)
 assert any("sprites on the screen" in e for e in errs) and any("on one line" in e for e in errs), (errs, seen)
 print("look_check --play: ok")
+
+# sprite_kit + sprite_check: a sheet of three poses of one body, drawn at different sizes and places, comes out at one size, soles on the anchor's row, feet on its column
+import sprite_check  # noqa: E402
+import sprite_kit as K  # noqa: E402
+
+def pose(w, h, body_h, dx=0, arm=0):
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    px = im.load()
+    for y in range(h - body_h - 5, h - 5):          # a body 20 wide, standing 5 px above the cell's bottom
+        for x in range(w // 2 - 10 + dx, w // 2 + 10 + dx):
+            px[x, y] = (200, 60, 60, 255)
+    for x in range(w // 2 + 10 + dx, w // 2 + 10 + dx + arm):  # an arm reaching out
+        for y in range(h - body_h, h - body_h + 8):
+            px[x, y] = (60, 60, 200, 255)
+    return im
+
+sheet = Image.new("RGBA", (300, 120), (0, 0, 0, 0))
+for i, (bh, dx, arm) in enumerate(((80, 0, 0), (60, 5, 0), (90, -8, 30))):  # three poses of "the same" character, each drawn differently
+    sheet.alpha_composite(pose(100, 120, bh, dx, arm), (i * 100, 0))
+fitted = K.fit_sheet(K.key_background(sheet), 3, (160, 160), (80, 150), 0, 100)
+for f in fitted:
+    ys, xs = np.where(np.array(f.getchannel("A")) >= 128)
+    assert ys.max() + 1 == 150, ys.max() + 1                       # the soles on the anchor's row
+    body = np.array(f.getchannel("A"))[ys.max() - 10:ys.max() + 1] >= 128
+    cx = (np.where(body.any(axis=0))[0].min() + np.where(body.any(axis=0))[0].max()) / 2
+    assert abs(cx - 80) <= 1.5, cx                                 # the feet's middle on the anchor's column, not dragged by the arm
+    assert xs.min() >= 0 and xs.max() < 160 and ys.min() >= 0       # inside its cell
+strip, meta = K.build_character([(sheet, 3, ["a_0", "a_1", "a_2"], 0)], 100)
+K.write_strip(out / "kit_art", "hero", strip, meta, alt=True)
+errs, warns, _ = sprite_check.audit(out / "kit_art/hero.json")
+assert errs == [], errs
+assert (out / "kit_art/hero_b.png").exists() and meta["w"] % 8 == 0 and meta["h"] % 8 == 0 and 0 < meta["anchor"][1] < meta["h"], meta
+# a frame cut by its cell is caught
+cut = Image.new("RGBA", (200, 100), (0, 0, 0, 0))
+cut.alpha_composite(pose(100, 100, 100, 40), (0, 0)); cut.alpha_composite(pose(100, 100, 60), (100, 0))
+(out / "kit_art/bad.png").parent.mkdir(exist_ok=True)
+cut.save(out / "kit_art/bad.png")
+(out / "kit_art/bad.json").write_text(json.dumps({"w": 100, "h": 100, "anchor": [50, 95], "frames": ["idle_0", "idle_1"]}))
+errs, _, _ = sprite_check.audit(out / "kit_art/bad.json")
+assert any("clipped" in e for e in errs), errs
+print("sprite_kit: ok")

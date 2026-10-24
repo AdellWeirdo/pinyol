@@ -59,6 +59,7 @@ over the box's border or past the screen's edge, readable on what is under it.
   check the art with `uv run tools/look_check.py games/<id>` (palette banks, colours, sprite sizes, forbidden code).
   The table of looks and their limits is `tools/looks.json`. The small looks are drawn by code
   (`art.py`): they need no image generation.
+- Generated sprites: fit them with `tools/sprite_kit.py` (one scale per sheet from an upright frame, soles on the ground row, feet centred, never cut, objects and effects at their own size) and check them with `uv run tools/sprite_check.py games/<id>/art`: docs/art.md, "Sprites that fit".
 - Pictures: generated images (backgrounds removed, frames cut, scale and feet fitted) are in
   [docs/art.md](docs/art.md): read it before making art. Or draw them by code in the game's `art.py`, as the
   template does.

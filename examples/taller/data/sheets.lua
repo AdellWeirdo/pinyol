@@ -340,7 +340,7 @@ return {
     ["rodete"] = {
       ["id"] = "SPR_RODETE",
       ["w"] = 256,
-      ["h"] = 196,
+      ["h"] = 232,
       ["ax"] = 128,
       ["ay"] = 156,
       ["n"] = 17,
@@ -370,7 +370,7 @@ return {
     ["resorte"] = {
       ["id"] = "SPR_RESORTE",
       ["w"] = 256,
-      ["h"] = 196,
+      ["h"] = 232,
       ["ax"] = 128,
       ["ay"] = 156,
       ["n"] = 17,
@@ -576,7 +576,8 @@ return {
         ["calle"] = 0,
         ["fabrica"] = 1,
         ["torre"] = 2
-      }
+      },
+      ["edge_ok"] = true
     },
     ["ui"] = {
       ["id"] = "SPR_UI",

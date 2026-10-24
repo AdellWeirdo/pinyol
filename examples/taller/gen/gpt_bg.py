@@ -97,7 +97,7 @@ def make() -> None:
     for i, f in enumerate(frames):
         strip.alpha_composite(f, (i * 128, 0))
     M.quantized(strip, 15).save(ART / "pillars.png")
-    (ART / "pillars.json").write_text(json.dumps({"w": 128, "h": 320, "anchor": [64, 319], "frames": ["calle", "fabrica", "torre"]}))
+    (ART / "pillars.json").write_text(json.dumps({"w": 128, "h": 320, "anchor": [64, 319], "frames": ["calle", "fabrica", "torre"], "edge_ok": True}))
     print("backgrounds made")
 
 

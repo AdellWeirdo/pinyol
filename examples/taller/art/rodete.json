@@ -1,1 +1,1 @@
-{"w": 256, "h": 196, "anchor": [128, 156], "faces": "right", "frames": ["idle_0", "idle_1", "walk_0", "walk_1", "walk_2", "walk_3", "atk_0", "atk_1", "atk_2", "hurt_0", "hurt_1", "fall_0", "fall_1", "lie_0", "die_0", "die_1", "die_2"]}
+{"w": 256, "h": 232, "anchor": [128, 156], "faces": "right", "frames": ["idle_0", "idle_1", "walk_0", "walk_1", "walk_2", "walk_3", "atk_0", "atk_1", "atk_2", "hurt_0", "hurt_1", "fall_0", "fall_1", "lie_0", "die_0", "die_1", "die_2"]}
