@@ -65,7 +65,7 @@ def main(src: Path) -> None:
     import subprocess
     for png, aid in (("loading_mono.png", "LOAD_MONO"), ("loading.png", "LOAD")):
         subprocess.run([sys.executable, str(ROOT / "tools" / "png2asset.py"), str(HERE / png), str(HERE.parent / "assets"), aid,
-                        "--type", "background"], check=True)
+                        "--type", "background", "--packed"], check=True)
     print(f"loading screen: {W}x{H}, two colours a block")
 
 

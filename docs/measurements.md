@@ -1019,3 +1019,30 @@ Silent copies driven by a bot (the three heroes in stage 1, stages 2 and 3, the 
 | Paella, the boss alone (70 s) | 36.4 / 55.4 / 59.8 | 15.0 ms (21.7) | 3.0 / 10.6 ms | 55 KB, 1536 KB |
 
 The dips are the first draws of a sheet's pieces (Taller's heroes have 43 frames each) and the boss's entrance; Taller's PSRAM runs tight (a largest free block of 8 KB), so a sheet that loads late can still wait. Preloading a hero's sheets behind the select screen would remove them: not done.
+
+## 2026-10-24 · All twelve flagship demos on the console, and the raw picture that ran at 12 fps
+
+Each demo sent as a silent copy with `tools/board_perf.py` (35 s of its own start; Taller and Paella with their `tour.lua`).
+
+| Demo | fps min / mean | render ms (worst) | Note |
+|---|---|---|---|
+| Cerezo | 52.9 / 58.8 | 15.9 (16.2) | |
+| Tumba | 55.9 / 59.2 | 15.9 (16.4) | |
+| Malabarista | 57.8 / 59.5 | 14.3 (16.0) | |
+| Pozo | 54.0 / 59.0 | 15.8 (16.4) | |
+| Botín | 48.9 / 56.2 | 14.7 (16.4) | |
+| Veloz | 55.6 / 59.2 | 16.1 (16.4) | |
+| Gótico | 56.6 / 59.3 | 15.2 (16.7) | |
+| Tormenta | 58.0 / 59.4 | 16.1 (16.3) | |
+| Laberinto | 57.7 / 59.4 | 16.2 (16.6) | |
+| Taller (tour) | 40.9 / 56.6 | 15.2 (19.1) | the 40.9 is the first level's sheets loading; 19 KB of PSRAM left, largest block 5 KB |
+| Paella (tour) | 38.1 / 52.1 | 16.7 (22.4) | the first three cooks 39-46 fps while their pieces load; 72 KB of PSRAM left, largest block 20 KB |
+| **Socavón, before** | **12.0 / 34.2** | 48.1 (81.2) | the loading screen and the title |
+| **Socavón, after** | 58.5 / 59.4 | 15.8 (16.3) | the two loading pictures packed |
+
+Socavón's loading screen and title draw two raw 448×288 RGB565 pictures (`LOAD`, `LOAD_MONO`, 252 KB each). Played, the game ran at 58-59 fps, but those two screens ran at
+12-20 fps: one such picture alone cost 34 ms a frame (against 7 ms for the same size packed... and nothing for a raw picture that covers the whole 480×320 screen, which has its own path,
+as Malabarista's glass does). The console's strips are turned, so the picture's rows are not contiguous in them and a raw picture that is not the whole screen is written pixel by pixel across
+them; a packed one (`png2asset.py --packed`) is stored column by column, as the strips want it. Packing `LOAD` and `LOAD_MONO` (11 and 2 colours, 4 bits, 67 KB each) made both screens
+58-60 fps. The audio was suspected first and is not it: the music, the pilot tone and the noise channel, alone and together, left the blank frame at 59.6 fps.
+`tools/png2asset.py` now warns when it writes such a picture, and `tools/demo_check.py` has a `pictures` row for a game that draws one with `img`.

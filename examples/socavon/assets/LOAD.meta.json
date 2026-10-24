@@ -1,6 +1,9 @@
 {
   "asset": "LOAD",
   "type": "background",
+  "format": "packed",
+  "bpp": 4,
+  "colours": 11,
   "w": 448,
   "h": 288,
   "frames": 1,
@@ -15,14 +18,8 @@
     287
   ],
   "tile": null,
-  "rgb565": {
-    "endian": "little",
-    "order": "rgb",
-    "alpha": "none"
-  },
   "memory_bytes": {
-    "pixels": 258048,
-    "mask": 0,
-    "total": 258048
+    "total": 69032,
+    "as_rgb565": 258048
   }
 }

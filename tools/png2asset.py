@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import sys
 import re
 import struct
 import tempfile
@@ -233,6 +234,9 @@ def tiles_and_map(px: bytes, w: int, h: int, flips: bool = True) -> tuple[list[b
     return tiles, entries
 
 
+SLOW_RAW = 96 * 1024  # a raw picture of this size or more, not the whole screen, is slow on the console (see the warning in main)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("png", type=Path)
@@ -320,6 +324,10 @@ def convert(a: argparse.Namespace, p: argparse.ArgumentParser) -> None:
         return
     export(a.assets, a.id, frames, a.ms, anchor, a.type)
     print(f"{a.assets / a.id}: {a.frames} frame(s) of {fw}x{img.height}")
+    if fw * img.height * 2 >= SLOW_RAW and (fw, img.height) != (480, 320) and len(img.getcolors(1 << 16) or range(257)) <= 256:
+        print(f"warning: {a.id} is a raw {fw}x{img.height} picture: the console's strips are turned, so a raw RGB565 picture that is not the whole screen "
+              f"is drawn pixel by pixel across them (34 ms measured for 448x288 in Socavon, 12 fps); add --packed (same picture, 4x smaller, 59 fps)",
+              file=sys.stderr)
 
 
 if __name__ == "__main__":
