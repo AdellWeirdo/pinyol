@@ -145,7 +145,18 @@ local function move(d)
   sfx("TICK", 1, {pitch = 1 + (sel - 1) * 0.02}) -- a little higher along the row
 end
 
+-- Back from a game the list opens at once, on the game just left. The key or the click that chose "back to the list" in its menu is
+-- still down in the first ticks: it would be a press here and launch that game again ("it restarts"). The list answers only after
+-- a few ticks with nothing held, nothing touched.
+local GUARD = 12
+guard = GUARD -- (global: tests/cirera.script)
+local function idle()
+  local _, _, down = pen()
+  return not (down or btn("a") or btn("b") or btn("c") or btn("start") or btn("up") or btn("down") or btn("left") or btn("right"))
+end
+
 local function update_list()
+  if guard > 0 then guard = idle() and guard - 1 or GUARD return end
   if asking then -- "switch off?"
     if btnp("a") then console_off() end
     if btnp("b") then asking = false end

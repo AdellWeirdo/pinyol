@@ -696,6 +696,8 @@ if (new URLSearchParams(location.search).get('embed') === '1') {
    hands over or that is dropped on it: before a game starts, here; after, the tab opens it in a fresh player. */
 const FRAME = new URLSearchParams(location.search).get('frame') === '1' && parent !== window;
 if (FRAME) {
+  /* "Back to the list" in the game's menu (I): the site's Juega tab stops the game and shows its list */
+  Module.pinyolLeave = () => parent.postMessage({ pinyol: 'menu' }, location.origin);
   document.documentElement.classList.add('frame');
   document.body.classList.add('frame');
   const tellSize = () => parent.postMessage({ pinyol: 'size', h: Math.ceil(document.querySelector('main').getBoundingClientRect().height) + (document.documentElement.classList.contains('pad-mode') ? 12 : 0) }, location.origin);

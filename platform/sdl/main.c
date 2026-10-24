@@ -560,8 +560,12 @@ static int run_console(const char *menu_dir) {
         bp_config game = {dir, NULL, false};
         switch_req = false;
         if (!game_init(&game)) hal_log("%s: incomplete, back to the menu", launch_id);
-        else
+        else {
+            SDL_SetWindowTitle(win, say("Cirera  ·  tecla I: menú del juego  ·  mantén I: volver a la lista", "Cirera  ·  tecla I: menú del joc  ·  mantén I: tornar a la llista",
+                                        "Cirera  ·  I key: game menu  ·  hold I: back to the list"));
             while (!game_quit_requested() && !switch_req && !closed) console_frame();
+        }
+        SDL_SetWindowTitle(win, "Cirera");
         game_shutdown();
         if (closed) return 0;
     }
@@ -714,8 +718,12 @@ void hal_power_off(void) {
 }
 #else
 static const char last_id[1] = "";
-bool hal_can_switch_game(void) { return false; }
-void hal_switch_game(void) {}
+/* In the browser the game list is the page's: the player in a frame of the site's Juega tab (player.html sets Module.pinyolLeave) tells it to
+ * stop the game and show the list, so "Back to the list" in the game's menu is there too, as on the console */
+EM_JS(int, web_can_leave, (void), { return Module.pinyolLeave ? 1 : 0; });
+EM_JS(void, web_leave, (void), { if (Module.pinyolLeave) Module.pinyolLeave(); });
+bool hal_can_switch_game(void) { return web_can_leave(); }
+void hal_switch_game(void) { web_leave(); }
 static const char *games_dir(void) { return getenv("PINYOL_GAMES"); }
 void hal_launch(const char *id) { hal_log("console: launch %s", id); }
 void hal_power_off(void) { hal_log("console: off"); }

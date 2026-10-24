@@ -42,6 +42,12 @@
     if (e.origin !== location.origin || e.source !== frame.contentWindow || !e.data) return;
     if (e.data.pinyol === 'size' && e.data.h > 0) { frame.style.aspectRatio = 'auto'; frame.style.height = Math.min(e.data.h, TOUCH ? innerHeight : Infinity) + 'px'; }
     if (e.data.pinyol === 'ready') isReady();
+    if (e.data.pinyol === 'menu') { // "Back to the list" in the game's own menu: no game, and the list in view
+      show(null);
+      history.pushState(null, '', location.pathname);
+      const list = document.querySelector('.picks');
+      if (list) list.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+    }
     if (e.data.pinyol === 'dropped' && e.data.zip instanceof ArrayBuffer) open(e.data.zip);
   });
 

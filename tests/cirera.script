@@ -6,6 +6,7 @@ press A
 tick 2
 expect_lua state == "list" and GAMES[3] ~= nil
 shot lista
+tick 14
 press RIGHT
 tick 30
 expect_lua sel == 2
@@ -13,6 +14,12 @@ press LEFT
 press LEFT
 tick 10
 expect_lua sel == 1
+# back from a game, the key that chose "back to the list" is still down: it must not launch the game again
+lua guard = 12
+hold A 20
+expect_lua state == "list"
+tick 14
+expect_lua state == "list"
 press B
 tick 2
 shot apagar
