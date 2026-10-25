@@ -12,7 +12,7 @@ import argparse, collections, concurrent.futures as cf, csv, os, re, statistics,
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HEADLESS = ROOT / "build" / "pinyol_headless"
+HEADLESS = Path(os.environ.get("PINYOL_HEADLESS") or ROOT / "build" / "pinyol_headless")
 BOT = ROOT / "tools" / "playtest_bot.lua"
 BANDS = [(0.0, 0.3), (0.3, 0.5), (0.5, 0.7), (0.7, 1.01)]
 RESULT = re.compile(r"PT_RESULT (.*)")

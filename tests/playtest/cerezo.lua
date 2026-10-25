@@ -1,4 +1,5 @@
 -- playtest adapter for Cerezo (see docs/playtest.md).
+-- playtest-gate: win   (tests/playtest_gate.py: the perfect player must finish the game; ctest runs it)
 -- perfect(): a player who knows the quest (the 15 milestones, in order) and the map. It reads the game's own cells, flags and entities and
 --   walks with a BFS over the real collision (an 8 px grid of hero positions; bushes and cobwebs count as passable and are cut or burnt on the
 --   way), steps round the 18 px push of a screen change that would leave him inside a wall (a game bug, bugs/b04), fights with the pala

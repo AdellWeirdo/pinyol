@@ -64,9 +64,26 @@ over the box's border or past the screen's edge, readable on what is under it.
 
 ## Playtest it when it is finished
 
-`uv run tools/playtest.py games/<id>` plays it with 50 perfect and 50 imperfect bots (human-like and monkeys) and writes a report of
-crashes, softlocks, flashing, where players die and how hard it is (docs/playtest.md). Give the game a `tests/playtest.lua` adapter
-(progress, end, `where`, a perfect player) so the numbers mean something; the bots run in the background, a few at a time.
+A game is not finished until a perfect player can finish it. Tests that teleport the hero, set flags or press a debug hook to skip a part do not
+prove that: four examples passed all their tests and could not be won (a key behind a one-way floor, a door that never opened, a boss that took
+no damage from the weapon). So:
+
+1. Give the game `tests/playtest.lua` (an adapter, docs/playtest.md): `progress()`, `done()`, `where()` and a `perfect()` player that plays the real
+   game with the game's own state (a solver or a BFS over the real map). Put `-- playtest-gate: win` on its second line: `ctest` (tests/playtest_gate.py)
+   then fails if that player ever stops finishing the game.
+2. `uv run tools/playtest.py games/<id>` plays 50 perfect and 50 imperfect bots (human-like at skill 0.1 to 0.9, and monkeys that mash buttons and open the
+   console's menu items) and writes a report of crashes, softlocks, flashing, where players die and how hard it is. Read it; fix what it finds.
+3. A level checker that is cheaper than the real physics (a reachability flood, a rule of thumb) is not proof: check the levels by playing them.
+
+What the bots found, so you do not write it again:
+- A menu item of your own ("how to play") is called at any moment, also on a title before any level or room exists: it must work then, go back to where it was
+  opened from, and give the game back exactly as it was (no reload that resets keys, points or locks).
+- `store()` takes tables with text keys or a plain list: a table keyed by sparse numbers (cell indexes) must be written with text keys. What a game changes in
+  the world (opened, cut, dug) is part of the saved game and is reset with a new game; so is the story state.
+- A number that counts a list (`balls_n`) must match the list: give the adapter an `invariants()` that says so.
+- Pay after the check, not before (a crash on the last life must not pay points). Hit tests: a big "clank" box must not swallow a shot that is on its way to
+  the weak point.
+- `_draw` only runs for a `shot` or with `--check-strips`: a draw that fails (a negative camera while the screen shakes) shows only there.
 
 ## Art and sound
 

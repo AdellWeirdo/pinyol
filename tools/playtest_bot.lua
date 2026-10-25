@@ -16,6 +16,17 @@ local pending = {} -- human: a press that waits (button -> tick it starts)
 local release_until, extra, idle_until = {}, nil, 0
 local explore = {until_t = 0, set = {}}
 
+-- the console's menu items the game offers (its own "Cómo funciona"...): remember their callbacks so the monkeys can use them like a player opening the menu
+local menu_cbs = {}
+local real_menuitem = menuitem
+if real_menuitem then
+  menuitem = function(label, cb)
+    if cb then menu_cbs[label] = cb else menu_cbs = {} end
+    return real_menuitem(label, cb)
+  end
+  if _resume then pcall(_resume) end -- the game sets its items again, now through the wrapper
+end
+
 local function safe(f, ...)
   if not f then return nil end
   local ok, a = pcall(f, ...)
@@ -49,6 +60,12 @@ local function perfect_intent()
 end
 
 local function monkey_intent()
+  if rnd() < 0.002 then -- open one of the game's menu items: an error in it is the game's, and ends the run as a crash
+    local labels = {}
+    for l in pairs(menu_cbs) do labels[#labels + 1] = l end
+    table.sort(labels)
+    if #labels > 0 then menu_cbs[labels[rnd(#labels)]]() end
+  end
   if PT.t >= explore.until_t then
     explore.until_t = PT.t + 2 + rnd(10)
     explore.set = {}
@@ -144,6 +161,10 @@ function _update(...)
   held = {}
   for k, v in pairs(intent) do held[k] = v end
   local r = game_update(...)
+  if PT.t % 10 == 0 and A.invariants then -- a rule the game's own numbers must keep (a count that must match a list...): the first break is recorded
+    local v = safe(A.invariants)
+    if v then PT.anomalies["inv_" .. tostring(v):gsub("[^%w_]", "_")] = PT.anomalies["inv_" .. tostring(v):gsub("[^%w_]", "_")] or PT.t end
+  end
   local d = safe(A.done)
   if d == "win" or d == "lose" then finish(d) return r end
   local p, dig = snapshot()

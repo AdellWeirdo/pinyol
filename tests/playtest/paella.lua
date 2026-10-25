@@ -1,4 +1,5 @@
 -- playtest adapter for Paella de combate (see docs/playtest.md).
+-- playtest-gate: win   (tests/playtest_gate.py: the perfect player must finish the game; ctest runs it)
 --
 -- The chef: PT_CFG.chef, else chefs[seed % 6 + 1] (estrella espuma pinche arrocero brioche crianza). The adapter starts the mission itself (dbg_play).
 -- PT_CFG.boss_only = true starts straight at the boss (a quick way to measure the boss fight).
