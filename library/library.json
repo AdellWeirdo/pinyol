@@ -2,11 +2,11 @@
  {
   "id": "time_fighters",
   "title": "Plasma Heroes",
-  "description": "Puzzle arcade de combates entre figuras de la cultura: organiza el plasma por colores, detonalo y envia ataques al rival. Version 2.0.1 con 19 personajes, Arcade, versus local, modos Clasico y Ultimate, tutorial, desbloqueos, galeria y records; todas las canciones completas.",
+  "description": "Puzzle arcade de combates entre figuras de la cultura. Organiza el plasma por colores, detonalo y envia ataques al rival. Version 2.0.2: 19 personajes, Arcade de 7 rivales mas Tesla, versus local, Clasico y Ultimate, tutorial, galeria y records; canciones completas.",
   "author": "AdellWeirdo",
   "license": "CC BY 4.0",
-  "issue": 10,
-  "date": "2026-10-24",
+  "issue": 14,
+  "date": "2026-10-25",
   "cover": true
  },
  {
