@@ -232,7 +232,7 @@ def level3() -> Level:
     lv.thing("chest", 68, 15)
     lv.thing("enemy", 70, 11, type="pez_globo", dir=-1, range=5)
     lv.thing("enemy", 74, 8, type="medusa")
-    lv.rect(76, 3, 78, 9, "B")
+    lv.rect(76, 3, 78, 9, "b")  # blue blocks here shut the sea: they break only with a smash in the air and a swimmer cannot smash
     lv.rect(76, 10, 78, 15, "#")
     lv.rect(77, 10, 77, 12, ".")
     lv.thing("jewel", 77, 12, n=3)

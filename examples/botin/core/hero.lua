@@ -219,12 +219,14 @@ local function swim(h, l, r, u, d)
   end
   if h.swim_ram > 0 then h.vx = h.face * C.SWIM_SPEED * 2.2 end
   if In.btnp("a") then
-    h.vy = C.SWIM_KICK
+    h.leap = W.water_y and h.y + h.h * 0.4 < W.water_y + 6 -- a kick at the surface is a leap out of the water (the plain kick left him 4 px short of the dock)
+    h.vy = h.leap and C.JUMP or C.SWIM_KICK
     Sound.play("swim")
     Fx.add("bubble", H.cx(h) - h.face * 4, h.y + 3)
   end
   if d then h.vy = h.vy + 0.05 end
-  h.vy = U.clamp(h.vy + C.SWIM_GRAV, -2.4, C.SWIM_MAX)
+  h.vy = U.clamp(h.vy + C.SWIM_GRAV, h.leap and C.JUMP or -2.4, C.SWIM_MAX)
+  h.leap = false
   -- the sea's currents push
   local _, _, cc = P.touches(h.x + 2, h.y + 2, h.w - 4, h.h - 4, {l = true, r = true, u = true})
   if cc == "l" then h.vx = h.vx - 0.07 elseif cc == "r" then h.vx = h.vx + 0.07 elseif cc == "u" then h.vy = h.vy - 0.08 end
